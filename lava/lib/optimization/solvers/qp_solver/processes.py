@@ -1,9 +1,6 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
-# Copyright (C) 2021 Intel Corporation
-# SPDX-License-Identifier: BSD-3-Clause
-# See: https://spdx.org/licenses/
 
 from lava.magma.core.process.process import AbstractProcess
 from lava.magma.core.process.variable import Var
@@ -95,7 +92,17 @@ class solutionNeurons(AbstractProcess):
             Defaults to (1,1).
             qp_neurons_init (1-D np.array): initial value of qp solution neurons
             grad_bias (1-D np.array): The bias of the gradient of the QP. This 
-            is the value 'p' in the QP definition.          
+            is the value 'p' in the QP definition. 
+            alpha (1-D np.array): Defines the learning rate for gradient 
+            descent. Defaults to 1.         
+            beta (1-D np.array): Defines the learning rate for constraint-
+            checking. Defaults to 1.
+            alpha_decay_schedule: The number of iterations after which one right 
+            shift operation takes place for alpha. Default intialization 
+            to a very high value of 10000.
+            beta_growth_schedule: The number of iterations after which one left 
+            shift operation takes place for beta. Default intialization 
+            to a very high value of 10000. 
         """
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1, 1))
@@ -105,9 +112,6 @@ class solutionNeurons(AbstractProcess):
         # In/outPorts that come from/go to the constraint normals process
         self.s_in_cn = InPort(shape=(shape[0],))      
         self.a_out_cn = OutPort(shape=(shape[0],))
-        # Inports for learning constants
-        self.s_in_alpha = InPort(shape=(shape[1],))
-        self.s_in_beta = InPort(shape=(shape[1],))  
         # OutPort for constraint checking  
         self.a_out_cc = OutPort(shape=(shape[0],))
         self.qp_neuron_state = Var(shape=shape,
@@ -120,7 +124,23 @@ class solutionNeurons(AbstractProcess):
                                               np.zeros((shape))
                                             )
                             )
-
+        self.alpha = Var(shape=shape, 
+                        init=kwargs.pop("alpha", 1))
+        self.beta = Var(shape=shape, 
+                        init=kwargs.pop("beta", 1))
+        self.alpha_decay_schedule = Var(shape=shape, 
+                                        init=kwargs.pop("alpha_decay_schedule", 
+                                                        10000
+                                                        )
+                                        )  
+        self.beta_growth_schedule = Var(shape=shape, 
+                                        init=kwargs.pop("beta_growth_schedule", 
+                                                        10000
+                                                        )
+                                        )
+        self.decay_counter = Var(shape=shape, init=0)
+        self.growth_counter = Var(shape=shape, init=0)
+        
 class constraintNormals(AbstractProcess):
     """Connections influencing the gradient dynamics when constraints are 
     violated. 
@@ -148,64 +168,4 @@ class constraintNormals(AbstractProcess):
                            init=kwargs.pop("constraint_normals", 0)
                            )
 
-class learningConstantAlpha(AbstractProcess):
-    """The learning constants that define the speed of convergence of the 
-    vanilla gradient descent
-    """
 
-    def __init__(self, **kwargs):
-        """
-        Intialize the values of alpha, beta and the decay/growth schedules.
-        
-        Kwargs:
-            shape (int tuple): A tuple defining the shape of the connections 
-            matrix. Defaults to (1,1).
-            alpha (1-D np.array): Defines the learning rate for gradient 
-            descent. Defaults to 1.
-            alpha_decay_schedule: The number of iterations after which one right 
-            shift operation takes place for alpha. Default intialization 
-            to a very high value of 10000.
-        """
-        super().__init__(**kwargs)
-        shape = kwargs.get("shape", (1, 1))      
-        self.a_out = OutPort(shape=(shape[0],))
-        self.alpha = Var(shape=shape, 
-                         init=kwargs.pop("alpha", 1))                 
-        self.alpha_decay_schedule = Var(shape=shape, 
-                                        init=kwargs.pop("alpha_decay_schedule", 
-                                                        10000
-                                                        )
-                                        )  
-        self.decay_counter = Var(shape=shape, 
-                                  init=0)
-
-class learningConstantBeta(AbstractProcess):
-    """The learning constants that define the magnitude of correction from 
-    constraint checking
-    """
-
-    def __init__(self, **kwargs):
-        """
-        Intialize the values of beta and the growth schedules.
-        
-        Kwargs:
-            shape (int tuple): A tuple defining the shape of the connections 
-            matrix. Defaults to (1,1).
-            beta (1-D np.array): Defines the learning rate for constraint-
-            checking. Defaults to 1.
-            beta_growth_schedule: The number of iterations after which one left 
-            shift operation takes place for beta. Default intialization 
-            to a very high value of 10000. 
-        """
-        super().__init__(**kwargs)
-        shape = kwargs.get("shape", (1, 1))      
-        self.a_out = OutPort(shape=(shape[0],))                
-        self.beta = Var(shape=shape, 
-                        init=kwargs.pop("beta", 1))
-        self.beta_growth_schedule = Var(shape=shape, 
-                                        init=kwargs.pop("beta_growth_schedule", 
-                                                        10000
-                                                        )
-                                        )
-        self.growth_counter = Var(shape=shape, 
-                                  init=0)

@@ -3,7 +3,6 @@
 # See: https://spdx.org/licenses/
 
 import numpy as np
-
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.magma.core.model.py.ports import PyInPort, PyOutPort
 from lava.magma.core.model.py.type import LavaPyType
@@ -14,7 +13,7 @@ from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from processes import *
 
 
-@implements(proc=constraintDirections, protocol=LoihiProtocol)
+@implements(proc=ConstraintDirections, protocol=LoihiProtocol)
 @requires(CPU)
 class PyDenseModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
@@ -28,7 +27,7 @@ class PyDenseModel(PyLoihiProcessModel):
         self.a_out.send(a_out)
         self.a_out.flush()
 
-@implements(proc=constraintNeurons, protocol=LoihiProtocol)
+@implements(proc=ConstraintNeurons, protocol=LoihiProtocol)
 @requires(CPU)
 class PyDenseModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
@@ -42,7 +41,7 @@ class PyDenseModel(PyLoihiProcessModel):
         self.a_out.send(a_out)
         self.a_out.flush()
 
-@implements(proc=quadraticConnectivity, protocol=LoihiProtocol)
+@implements(proc=QuadraticConnectivity, protocol=LoihiProtocol)
 @requires(CPU)
 class PyDenseModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
@@ -56,7 +55,7 @@ class PyDenseModel(PyLoihiProcessModel):
         self.a_out.send(a_out)
         self.a_out.flush()
 
-@implements(proc=solutionNeurons, protocol=LoihiProtocol)
+@implements(proc=SolutionNeurons, protocol=LoihiProtocol)
 @requires(CPU)
 class PyDenseModel(PyLoihiProcessModel):
     s_in_qc: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
@@ -102,7 +101,7 @@ class PyDenseModel(PyLoihiProcessModel):
         self.a_out_qc.flush()
         self.a_out_cc.flush()
 
-@implements(proc=constraintNormals, protocol=LoihiProtocol)
+@implements(proc=ConstraintNormals, protocol=LoihiProtocol)
 @requires(CPU)
 class PyDenseModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
@@ -116,7 +115,7 @@ class PyDenseModel(PyLoihiProcessModel):
         self.a_out.send(a_out)
         self.a_out.flush()
 
-@implements(proc=constraintCheck, protocol=LoihiProtocol)
+@implements(proc=ConstraintCheck, protocol=LoihiProtocol)
 class SubDenseLayerModel(AbstractSubProcessModel):
     """Implement constraintCheckProcess behavior via sub Processes."""
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
@@ -131,11 +130,11 @@ class SubDenseLayerModel(AbstractSubProcessModel):
         constraint_bias = proc.init_args.get("constraint_bias", 0)
         
         # Initialize subprocesses
-        self.constraintDirections = constraintDirections(
+        self.constraintDirections = ConstraintDirections(
                                     shape=constraint_matrix.shape, 
                                     weights=constraint_matrix
                                     )
-        self.constraintNeurons = constraintNeurons(shape=constraint_bias.shape,
+        self.constraintNeurons = ConstraintNeurons(shape=constraint_bias.shape,
                                                    thresholds=constraint_bias)
         
         # connect subprocesses
@@ -151,7 +150,7 @@ class SubDenseLayerModel(AbstractSubProcessModel):
         proc.vars.constraint_bias.alias(self.constraintNeurons.vars.thresholds)
 
 
-@implements(proc=gradientDynamics, protocol=LoihiProtocol)
+@implements(proc=GradientDynamics, protocol=LoihiProtocol)
 class SubDenseLayerModel(AbstractSubProcessModel):
     """Implement gradientDynamics Process behavior via sub Processes."""
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
@@ -185,11 +184,11 @@ class SubDenseLayerModel(AbstractSubProcessModel):
         beta_growth_schedule = proc.init_args.get("beta_decay_schedule", 10000)
 
         # Initialize subprocesses
-        self.qC = quadraticConnectivity(shape_hess, hessian)
-        self.sN = solutionNeurons(shape_sol, qp_neuron_state, grad_bias, alpha, 
+        self.qC = QuadraticConnectivity(shape_hess, hessian)
+        self.sN = SolutionNeurons(shape_sol, qp_neuron_state, grad_bias, alpha, 
                                   beta, alpha_decay_schedule, 
                                   beta_growth_schedule)                           
-        self.cN = constraintNormals(shape_A_T, A_T)
+        self.cN = ConstraintNormals(shape_A_T, A_T)
 
         # connect subprocesses
         proc.in_ports.s_in.connect(self.cN.in_ports.s_in)  

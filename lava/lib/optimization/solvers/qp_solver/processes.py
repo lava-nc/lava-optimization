@@ -7,7 +7,7 @@ from lava.magma.core.process.variable import Var
 from lava.magma.core.process.ports.ports import InPort, OutPort
 import numpy as np
 
-class constraintDirections(AbstractProcess):
+class ConstraintDirections(AbstractProcess):
     """Connections in the constraint-checking group of neurons. 
     Realizes the following abstract behavior:
     a_out = A * s_in
@@ -31,7 +31,7 @@ class constraintDirections(AbstractProcess):
                            init=kwargs.pop("constraint_directions", 0)
                            )
 
-class constraintNeurons(AbstractProcess):
+class ConstraintNeurons(AbstractProcess):
     """Process to check the violation of the linear constraints of the QP. A 
     graded spike corresponding to the violated constraint is sent from the out 
     port.
@@ -57,7 +57,7 @@ class constraintNeurons(AbstractProcess):
 
 
 
-class quadraticConnectivity(AbstractProcess):
+class QuadraticConnectivity(AbstractProcess):
     """The connections that define the Hessian of the quadratic cost function 
     Realizes the following abstract behavior:
     a_out = A * s_in
@@ -79,7 +79,7 @@ class quadraticConnectivity(AbstractProcess):
         self.weights = Var(shape=shape, 
                            init=kwargs.pop("hessian", 0))
 
-class solutionNeurons(AbstractProcess):
+class SolutionNeurons(AbstractProcess):
     """The neurons that evolve according to the constraint-corrected gradient
     dynamics. 
     """
@@ -144,7 +144,7 @@ class solutionNeurons(AbstractProcess):
         self.decay_counter = Var(shape=(1,1), init=0)
         self.growth_counter = Var(shape=(1,1), init=0)
         
-class constraintNormals(AbstractProcess):
+class ConstraintNormals(AbstractProcess):
     """Connections influencing the gradient dynamics when constraints are 
     violated. 
     Realizes the following abstract behavior:
@@ -172,7 +172,7 @@ class constraintNormals(AbstractProcess):
                            )
 
 
-class constraintCheck(AbstractProcess):
+class ConstraintCheck(AbstractProcess):
     """Check if linear constraints (equality/inequality) are violated for the 
     qp. Recieves and sends graded spike from and to the gradientDynamics 
     process. House the constraintDirections and constraintNeurons as 
@@ -199,7 +199,7 @@ class constraintCheck(AbstractProcess):
                                   )
         self.a_out = OutPort(shape=(shape[0], 1))
 
-class gradientDynamics(AbstractProcess):
+class GradientDynamics(AbstractProcess):
     """Perform gradient descent with constraint correction to converge at the 
     solution of the QP  
     """

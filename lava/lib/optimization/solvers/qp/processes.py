@@ -159,7 +159,7 @@ class ConstraintNormals(AbstractProcess):
         Kwargs:
             shape (int tuple): A tuple defining the shape of the connections 
             matrix. Defaults to (1,1).
-            constraint_directions (1-D  or 2-D np.array): Define the normals 
+            constraint_normals (1-D  or 2-D np.array): Define the normals 
             of the linear constraint hyperplanes. This is A^T in the constraints 
             of the QP. Defaults to 0   
         """

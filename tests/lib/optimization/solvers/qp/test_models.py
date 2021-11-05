@@ -29,7 +29,7 @@ QuadraticConnectivity, GradientDynamics
 
 class InSpikeSetProcess(AbstractProcess):
     def __init__(self, **kwargs):
-        """intialize the constraintDirectionsProcess
+        """Use to set value of input spike to a process
         
         Kwargs:
             in_shape (int tuple): set a_out to custom value 
@@ -44,7 +44,7 @@ class InSpikeSetProcess(AbstractProcess):
         
 class OutProbeProcess(AbstractProcess):
     def __init__(self, **kwargs):
-        """intialize the constraintDirectionsProcess
+        """Use to set read output spike from a process
 
         Kwargs:
             out_shape (int tuple): set OutShape to custom value 
@@ -77,14 +77,13 @@ class PyDenseModel(PyLoihiProcessModel):
         self.spike_out = s_in
 
 
-
+print("[LavaQpOpt][INFO]:Starting Floating Point tests for models in"
+    + " QP solver.")
 class TestModelsFloatingPoint(unittest.TestCase):
     """Tests of all models of the QP solver in floating point
     """
 
     def test_process_constraint_directions(self):
-        print("[LavaQpOpt][INFO]:Starting Floating Point tests for models in"
-           + " QP solver.")
         process = ConstraintDirections()
         self.assertEqual(process.vars.weights.get()==0, True) 
         print("[LavaQpOpt][INFO]: Default initialization test passed for " 
@@ -157,13 +156,16 @@ class TestModelsFloatingPoint(unittest.TestCase):
         self.assertEqual(process.vars.beta_growth_schedule.get()==beta_g, True)
         self.assertEqual(process.vars.decay_counter.get()==0, True)
         self.assertEqual(process.vars.growth_counter.get()==0, True)
+        self.assertEqual(np.all(process.s_in_qc.shape==(p.shape[0],1)), 
+                         True) 
+        self.assertEqual(np.all(process.s_in_cn.shape==(p.shape[0],1)), 
+                         True) 
+        self.assertEqual(np.all(process.a_out_qc.shape==(p.shape[0],1)), 
+                         True)
+        self.assertEqual(np.all(process.a_out_cc.shape==(p.shape[0],1)), 
+                         True) 
         print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
         + "SolutionNeurons")
-        # self.assertEqual(np.all(process.s_in.shape==(weights.shape[1],1)), 
-        #                  True) 
-        # self.assertEqual(np.all(process.a_out.shape==(weights.shape[0],1)), 
-        #                  True) 
-        
 
     def test_process_constraint_normals(self):
         process = ConstraintNormals()
@@ -205,12 +207,64 @@ class TestModelsFloatingPoint(unittest.TestCase):
       
     
     def test_process_constraint_check(self):
-        
-        pass
+        A = np.array(
+                  [[2,    3, 6],
+                   [43,   3, 2]]
+                  )
+
+        b = np.array([2, 4]).T
+        process = ConstraintCheck(constraint_matrix=A, 
+                                  constraint_bias=b)
+        self.assertEqual(np.all(process.vars.constraint_matrix.get()==A), True)
+        self.assertEqual(np.all(process.vars.constraint_bias.get()==b), True)
+        self.assertEqual(np.all(process.s_in.shape==(A.shape[1],1)), 
+                         True) 
+        self.assertEqual(np.all(process.a_out.shape==(A.shape[0],1)), 
+                         True) 
+        print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
+        + "ConstraintCheck")
 
     def test_process_gradient_dynamics(self):
+        hessian = np.array(
+            [[2,  43, 2],
+            [43,   3, 4],
+            [2,    4, 1]]
+            )
 
-        pass
+        A_T = np.array(
+            [[2,    3, 6],
+            [43,   3, 2]]
+            ).T
+
+        init_sol = np.array([2, 4, 6, 4, 1]).T
+        p = np.array([4, 3, 2, 1, 1]).T
+        alpha, beta, alpha_d, beta_g = 3, 2, 100, 100
+        process = GradientDynamics(hessian=hessian, constraint_matrix_T = A_T, 
+                                  qp_neurons_init=init_sol,
+                                  grad_bias=p, alpha=alpha, beta=beta, 
+                                  alpha_decay_schedule=alpha_d, 
+                                  beta_growth_schedule=beta_g)
+        self.assertEqual(np.all(process.vars.constraint_matrix_T.get()==A_T), 
+                        True)
+        self.assertEqual(np.all(process.vars.hessian.get()==hessian), True)
+        self.assertEqual(np.all(process.vars.qp_neuron_state.get()==init_sol), 
+                        True)
+        self.assertEqual(np.all(process.vars.grad_bias.get()==p), True)
+        self.assertEqual(np.all(process.vars.alpha.get()==alpha), True)
+        self.assertEqual(np.all(process.vars.beta.get()==beta), True)
+        self.assertEqual(process.vars.alpha_decay_schedule.get()==alpha_d, 
+                        True)
+        self.assertEqual(process.vars.beta_growth_schedule.get()==beta_g, True)
+        self.assertEqual(np.all(process.s_in.shape==(A_T.shape[0],1)), 
+                         True) 
+        self.assertEqual(np.all(process.a_out.shape==(hessian.shape[0],1)), 
+                         True) 
+        print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
+        + "GradientDynamics")
     
+    def test_QP(self):
+        # connect constraint check and gradient dynamics
+        pass
+
 if __name__ == '__main__':
     unittest.main()

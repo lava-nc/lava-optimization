@@ -18,6 +18,8 @@ from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi2SimCfg   
+from lava.lib.optimization.solvers.qp.models import ConstraintCheck, \
+ConstraintDirections
 from lava.lib.optimization.solvers.qp.processes import ConstraintCheck, \
 SolutionNeurons, ConstraintNormals, ConstraintDirections, \
 QuadraticConnectivity, GradientDynamics
@@ -103,7 +105,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
         in_spike_process.a_out.connect(process.s_in)
         process.a_out.connect(out_spike_process.s_in)
 
-        in_spike_process.run(condition=RunSteps(num_steps=1), 
+        in_spike_process.run(condition=RunSteps(num_steps=50), 
                              run_cfg=Loihi2SimCfg())
         # in_spike_process.stop()
         # self.assertEqual(np.all(out_spike_process.vars.spike_out.get()

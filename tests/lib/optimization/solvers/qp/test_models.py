@@ -17,10 +17,13 @@ from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.run_conditions import RunSteps
-from lava.magma.core.run_configs import Loihi2SimCfg   
+from lava.magma.core.run_configs import Loihi1SimCfg   
+
 from lava.lib.optimization.solvers.qp.models import ConstraintCheck, \
-ConstraintDirections
-from lava.lib.optimization.solvers.qp.processes import ConstraintCheck, \
+SolutionNeurons, ConstraintNormals, ConstraintDirections, \
+QuadraticConnectivity, GradientDynamics
+
+from lava.lib.optimization.solvers.qp.processes import ConstraintCheck, ConstraintNeurons, \
 SolutionNeurons, ConstraintNormals, ConstraintDirections, \
 QuadraticConnectivity, GradientDynamics
 
@@ -67,7 +70,7 @@ class PyDenseModel(PyLoihiProcessModel):
 @requires(CPU)
 class PyDenseModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
-    spike_out: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=8)
+    spike_out: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=24)
 
     def run_spk(self):
         s_in = self.s_in.recv()
@@ -78,13 +81,14 @@ class PyDenseModel(PyLoihiProcessModel):
 class TestModelsFloatingPoint(unittest.TestCase):
     """Tests of all models of the QP solver in floating point
     """
-    print("[LavaQpOpt][INFO]:Starting Floating Point tests for models in QP"
-           + "solver.")
+
     def test_process_constraint_directions(self):
+        print("[LavaQpOpt][INFO]:Starting Floating Point tests for models in"
+           + " QP solver.")
         process = ConstraintDirections()
         self.assertEqual(process.vars.weights.get()==0, True) 
         print("[LavaQpOpt][INFO]: Default initialization test passed for " 
-        + "Constraint Directions")
+        + "ConstraintDirections")
         weights = np.array(
                   [[2,    3, 6],
                    [43,   3, 2]]
@@ -94,8 +98,10 @@ class TestModelsFloatingPoint(unittest.TestCase):
         self.assertEqual(np.all(process.vars.weights.get()==weights), True)
         self.assertEqual(np.all(process.s_in.shape==(weights.shape[1],1)), 
                          True) 
+        self.assertEqual(np.all(process.a_out.shape==(weights.shape[0],1)), 
+                         True) 
         print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
-        + "Constraint Directions")
+        + "ConstraintDirections")
 
         input_spike = np.array([[1],[1],[1]])
         in_spike_process = InSpikeSetProcess(in_shape=input_spike.shape, 
@@ -105,34 +111,106 @@ class TestModelsFloatingPoint(unittest.TestCase):
         in_spike_process.a_out.connect(process.s_in)
         process.a_out.connect(out_spike_process.s_in)
 
-        in_spike_process.run(condition=RunSteps(num_steps=50), 
-                             run_cfg=Loihi2SimCfg())
+        # in_spike_process.run(condition=RunSteps(num_steps=1), 
+        #                      run_cfg=Loihi1SimCfg())
         # in_spike_process.stop()
         # self.assertEqual(np.all(out_spike_process.vars.spike_out.get()
         #                         ==(weights@input_spike)
         #                         ), True)
-        print("[LavaQpOpt][INFO]: Behavioral test passed for " 
-        + "Constraint Directions")
+        #print("[LavaQpOpt][INFO]: Behavioral test passed for " 
+        #+ "ConstraintDirections")
 
 
         # default initialize, assinged initialization, process behavior 
         self.assertEqual(True, True)
 
     def test_process_constraint_neurons(self):
-        # initialize and 
-        self.assertEqual(True, True)
+        process = ConstraintDirections()
+        self.assertEqual(process.vars.weights.get()==0, True) 
+        print("[LavaQpOpt][INFO]: Default initialization test passed for " 
+        + "ConstraintNeurons")
+        inp_bias = np.array([2, 4, 6]).T
+        process = ConstraintNeurons(shape = inp_bias.shape, 
+                                        thresholds=inp_bias)
+        self.assertEqual(np.all(process.vars.thresholds.get()==inp_bias), True)
+        self.assertEqual(np.all(process.s_in.shape==(inp_bias.shape[0],1)), 
+                         True) 
+        print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
+        + "ConstraintNeurons")
+    
+    def tests_process_solution_neurons(self):
+        init_sol = np.array([2, 4, 6, 4, 1]).T
+        p = np.array([4, 3, 2, 1, 1]).T
+        alpha, beta, alpha_d, beta_g = 3, 2, 100, 100
+        process = SolutionNeurons(shape=init_sol.shape, 
+                                  qp_neurons_init=init_sol,
+                                  grad_bias=p, alpha=alpha, beta=beta, 
+                                  alpha_decay_schedule=alpha_d, 
+                                  beta_growth_schedule=beta_g)
+        self.assertEqual(np.all(process.vars.qp_neuron_state.get()==init_sol), 
+                                True)
+        self.assertEqual(np.all(process.vars.grad_bias.get()==p), True)
+        self.assertEqual(np.all(process.vars.alpha.get()==alpha), True)
+        self.assertEqual(np.all(process.vars.beta.get()==beta), True)
+        self.assertEqual(process.vars.alpha_decay_schedule.get()==alpha_d, 
+                        True)
+        self.assertEqual(process.vars.beta_growth_schedule.get()==beta_g, True)
+        self.assertEqual(process.vars.decay_counter.get()==0, True)
+        self.assertEqual(process.vars.growth_counter.get()==0, True)
+        print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
+        + "SolutionNeurons")
+        # self.assertEqual(np.all(process.s_in.shape==(weights.shape[1],1)), 
+        #                  True) 
+        # self.assertEqual(np.all(process.a_out.shape==(weights.shape[0],1)), 
+        #                  True) 
+        
 
     def test_process_constraint_normals(self):
-        # default initialize, assinged initialization, process behavior  
-        self.assertEqual(True, True)
+        process = ConstraintNormals()
+        self.assertEqual(process.vars.weights.get()==0, True) 
+        print("[LavaQpOpt][INFO]: Default initialization test passed for " 
+        + "ConstraintNormals")
+        weights = np.array(
+                  [[2,    3, 6],
+                   [43,   3, 2]]
+                  ).T
+        process = ConstraintNormals(shape = weights.shape, 
+                                        constraint_normals=weights)
+        self.assertEqual(np.all(process.vars.weights.get()==weights), True)
+        self.assertEqual(np.all(process.s_in.shape==(weights.shape[1],1)), 
+                         True) 
+        self.assertEqual(np.all(process.a_out.shape==(weights.shape[0],1)), 
+                         True) 
+        print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
+        + "ConstraintNormals")
     
     def test_process_quadratic_connectivity(self):
-        # initialize and 
-        self.assertEqual(True, True)
+        process = QuadraticConnectivity()
+        self.assertEqual(process.vars.weights.get()==0, True) 
+        print("[LavaQpOpt][INFO]: Default initialization test passed for " 
+        + "QuadraticConnectivity")
+        weights = np.array(
+                  [[2,    43, 2],
+                   [43,   3, 4],
+                   [2,    4, 1]]
+                  )
+        process = QuadraticConnectivity(shape=weights.shape, hessian=weights)
+        self.assertEqual(np.all(process.vars.weights.get()==weights), True)
+        self.assertEqual(np.all(process.s_in.shape==(weights.shape[1],1)), 
+                         True) 
+        self.assertEqual(np.all(process.a_out.shape==(weights.shape[0],1)), 
+                         True) 
+        print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
+        + "QuadraticConnectivity")
+      
     
     def test_process_constraint_check(self):
-        # initialize and 
-        self.assertEqual(True, True)
+        
+        pass
+
+    def test_process_gradient_dynamics(self):
+
+        pass
     
 if __name__ == '__main__':
     unittest.main()

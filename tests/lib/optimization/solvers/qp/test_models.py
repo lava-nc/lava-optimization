@@ -20,12 +20,10 @@ from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg   
 
 from lava.lib.optimization.solvers.qp.models import ConstraintCheck, \
-SolutionNeurons, ConstraintNormals, ConstraintDirections, \
+ConstraintNeurons, SolutionNeurons, ConstraintNormals, ConstraintDirections, \
 QuadraticConnectivity, GradientDynamics
 
-from lava.lib.optimization.solvers.qp.processes import ConstraintCheck, ConstraintNeurons, \
-SolutionNeurons, ConstraintNormals, ConstraintDirections, \
-QuadraticConnectivity, GradientDynamics
+
 
 class InSpikeSetProcess(AbstractProcess):
     def __init__(self, **kwargs):
@@ -58,7 +56,7 @@ class OutProbeProcess(AbstractProcess):
 
 @implements(proc=InSpikeSetProcess, protocol=LoihiProtocol)
 @requires(CPU)
-class PyDenseModel(PyLoihiProcessModel):
+class PyISSModel(PyLoihiProcessModel):
     a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32, precision=24)
     spike_inp: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=24)
 
@@ -66,9 +64,10 @@ class PyDenseModel(PyLoihiProcessModel):
         a_out = self.spike_inp
         self.a_out.send(a_out)
         self.a_out.flush()
+
 @implements(proc=OutProbeProcess, protocol=LoihiProtocol)
 @requires(CPU)
-class PyDenseModel(PyLoihiProcessModel):
+class PyOPPModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
     spike_out: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=24)
 
@@ -76,9 +75,6 @@ class PyDenseModel(PyLoihiProcessModel):
         s_in = self.s_in.recv()
         self.spike_out = s_in
 
-
-print("[LavaQpOpt][INFO]:Starting Floating Point tests for models in"
-    + " QP solver.")
 class TestModelsFloatingPoint(unittest.TestCase):
     """Tests of all models of the QP solver in floating point
     """
@@ -110,36 +106,52 @@ class TestModelsFloatingPoint(unittest.TestCase):
         in_spike_process.a_out.connect(process.s_in)
         process.a_out.connect(out_spike_process.s_in)
 
-        # in_spike_process.run(condition=RunSteps(num_steps=1), 
-        #                      run_cfg=Loihi1SimCfg())
-        # in_spike_process.stop()
-        # self.assertEqual(np.all(out_spike_process.vars.spike_out.get()
-        #                         ==(weights@input_spike)
-        #                         ), True)
-        #print("[LavaQpOpt][INFO]: Behavioral test passed for " 
-        #+ "ConstraintDirections")
-
-
-        # default initialize, assinged initialization, process behavior 
-        self.assertEqual(True, True)
+        in_spike_process.run(condition=RunSteps(num_steps=1), 
+                              run_cfg=Loihi1SimCfg())
+        in_spike_process.pause()
+        self.assertEqual(np.all(out_spike_process.vars.spike_out.get()
+                                ==(weights@input_spike)
+                                ), True)
+        in_spike_process.stop()
+        print("[LavaQpOpt][INFO]: Behavioral test passed for " 
+        + "ConstraintDirections")
 
     def test_process_constraint_neurons(self):
-        process = ConstraintDirections()
-        self.assertEqual(process.vars.weights.get()==0, True) 
+        process = ConstraintNeurons()
+        self.assertEqual(process.vars.thresholds.get()==0, True) 
         print("[LavaQpOpt][INFO]: Default initialization test passed for " 
         + "ConstraintNeurons")
-        inp_bias = np.array([2, 4, 6]).T
-        process = ConstraintNeurons(shape = inp_bias.shape, 
+        inp_bias = np.array([[2, 4, 6]]).T
+        process = ConstraintNeurons(shape=inp_bias.shape, 
                                         thresholds=inp_bias)
         self.assertEqual(np.all(process.vars.thresholds.get()==inp_bias), True)
         self.assertEqual(np.all(process.s_in.shape==(inp_bias.shape[0],1)), 
                          True) 
         print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
         + "ConstraintNeurons")
+        input_spike = np.array([[1],[5],[2]])
+        in_spike_process = InSpikeSetProcess(in_shape=input_spike.shape, 
+                                            spike_in=input_spike)
+        out_spike_process = OutProbeProcess(out_shape=process.a_out.shape)
+
+        in_spike_process.a_out.connect(process.s_in)
+        process.a_out.connect(out_spike_process.s_in)
+
+        in_spike_process.run(condition=RunSteps(num_steps=1), 
+                              run_cfg=Loihi1SimCfg())
+        in_spike_process.pause()
+        self.assertEqual(np.all(out_spike_process.vars.spike_out.get()
+                                ==((input_spike-inp_bias)
+                                   *(input_spike<inp_bias)
+                                  )
+                                ), True)
+        in_spike_process.stop()
+        print("[LavaQpOpt][INFO]: Behavioral test passed for " 
+        + "ConstraintNeurons")
     
     def tests_process_solution_neurons(self):
-        init_sol = np.array([2, 4, 6, 4, 1]).T
-        p = np.array([4, 3, 2, 1, 1]).T
+        init_sol = np.array([[2, 4, 6, 4, 1]]).T
+        p = np.array([[4, 3, 2, 1, 1]]).T
         alpha, beta, alpha_d, beta_g = 3, 2, 100, 100
         process = SolutionNeurons(shape=init_sol.shape, 
                                   qp_neurons_init=init_sol,
@@ -167,6 +179,32 @@ class TestModelsFloatingPoint(unittest.TestCase):
         print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
         + "SolutionNeurons")
 
+        input_spike_cn = np.array([[1],[5],[2],[2],[0]])
+        input_spike_qc = np.array([[8],[2],[22],[21],[1]])
+        in_spike_cn_process = InSpikeSetProcess(in_shape=input_spike_cn.shape, 
+                                                spike_in=input_spike_cn)
+        in_spike_qc_process = InSpikeSetProcess(in_shape=input_spike_qc.shape, 
+                                                spike_in=input_spike_qc)
+        out_spike_cc_process = OutProbeProcess(out_shape=process.a_out_cc.shape)
+        out_spike_qc_process = OutProbeProcess(out_shape=process.a_out_qc.shape)
+
+        in_spike_cn_process.a_out.connect(process.s_in_cn)
+        in_spike_qc_process.a_out.connect(process.s_in_qc)
+        process.a_out_cc.connect(out_spike_cc_process.s_in)
+        process.a_out_qc.connect(out_spike_qc_process.s_in)
+
+        in_spike_cn_process.run(condition=RunSteps(num_steps=1), 
+                              run_cfg=Loihi1SimCfg())
+        in_spike_cn_process.pause()
+        self.assertEqual(np.all(out_spike_cc_process.vars.spike_out.get()
+                                ==(-alpha*(input_spike_qc+p)
+                                   -beta*input_spike_cn)
+                                ), True)
+        in_spike_cn_process.stop()
+        print("[LavaQpOpt][INFO]: Behavioral test passed for " 
+        + "ConstraintNeurons")
+
+
     def test_process_constraint_normals(self):
         process = ConstraintNormals()
         self.assertEqual(process.vars.weights.get()==0, True) 
@@ -184,6 +222,23 @@ class TestModelsFloatingPoint(unittest.TestCase):
         self.assertEqual(np.all(process.a_out.shape==(weights.shape[0],1)), 
                          True) 
         print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
+        + "ConstraintNormals")
+        input_spike = np.array([[1],[2]])
+        in_spike_process = InSpikeSetProcess(in_shape=input_spike.shape, 
+                                            spike_in=input_spike)
+        out_spike_process = OutProbeProcess(out_shape=process.a_out.shape)
+
+        in_spike_process.a_out.connect(process.s_in)
+        process.a_out.connect(out_spike_process.s_in)
+
+        in_spike_process.run(condition=RunSteps(num_steps=1), 
+                              run_cfg=Loihi1SimCfg())
+        in_spike_process.pause()
+        self.assertEqual(np.all(out_spike_process.vars.spike_out.get()
+                                ==(weights@input_spike)
+                                ), True)
+        in_spike_process.stop()
+        print("[LavaQpOpt][INFO]: Behavioral test passed for " 
         + "ConstraintNormals")
     
     def test_process_quadratic_connectivity(self):
@@ -204,6 +259,24 @@ class TestModelsFloatingPoint(unittest.TestCase):
                          True) 
         print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
         + "QuadraticConnectivity")
+        
+        input_spike = np.array([[1],[2], [1]])
+        in_spike_process = InSpikeSetProcess(in_shape=input_spike.shape, 
+                                            spike_in=input_spike)
+        out_spike_process = OutProbeProcess(out_shape=process.a_out.shape)
+
+        in_spike_process.a_out.connect(process.s_in)
+        process.a_out.connect(out_spike_process.s_in)
+
+        in_spike_process.run(condition=RunSteps(num_steps=1), 
+                              run_cfg=Loihi1SimCfg())
+        in_spike_process.pause()
+        self.assertEqual(np.all(out_spike_process.vars.spike_out.get()
+                                ==(weights@input_spike)
+                                ), True)
+        in_spike_process.stop()
+        print("[LavaQpOpt][INFO]: Behavioral test passed for " 
+        + "QuadraticConnectivity")
       
     
     def test_process_constraint_check(self):
@@ -223,6 +296,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
                          True) 
         print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
         + "ConstraintCheck")
+
 
     def test_process_gradient_dynamics(self):
         hessian = np.array(
@@ -263,8 +337,11 @@ class TestModelsFloatingPoint(unittest.TestCase):
         + "GradientDynamics")
     
     def test_QP(self):
-        # connect constraint check and gradient dynamics
+        # connect constraint check and gradient dynamics to solve full QP
         pass
 
 if __name__ == '__main__':
     unittest.main()
+        
+    # print("[LavaQpOpt][INFO]:Starting Floating Point tests for models in"
+    #     + " QP solver.")

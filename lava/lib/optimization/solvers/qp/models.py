@@ -30,7 +30,7 @@ class PyCDModel(PyLoihiProcessModel):
 
 @implements(proc=ConstraintNeurons, protocol=LoihiProtocol)
 @requires(CPU)
-class PyCNModel(PyLoihiProcessModel):
+class PyCNeuModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
     a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32, precision=24)
     thresholds: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=24)
@@ -104,7 +104,7 @@ class PySNModel(PyLoihiProcessModel):
 
 @implements(proc=ConstraintNormals, protocol=LoihiProtocol)
 @requires(CPU)
-class PyCNModel(PyLoihiProcessModel):
+class PyCNorModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
     a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32, precision=24)
     weights: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=8)

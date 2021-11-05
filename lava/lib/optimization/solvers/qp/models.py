@@ -14,10 +14,9 @@ from lava.lib.optimization.solvers.qp.processes import ConstraintDirections, \
 ConstraintCheck, ConstraintNeurons, ConstraintNormals, QuadraticConnectivity, \
 SolutionNeurons, GradientDynamics
 
-
 @implements(proc=ConstraintDirections, protocol=LoihiProtocol)
 @requires(CPU)
-class PyDenseModel(PyLoihiProcessModel):
+class PyCDModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
     a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32, precision=24)
     weights: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=8)
@@ -31,7 +30,7 @@ class PyDenseModel(PyLoihiProcessModel):
 
 @implements(proc=ConstraintNeurons, protocol=LoihiProtocol)
 @requires(CPU)
-class PyDenseModel(PyLoihiProcessModel):
+class PyCNModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
     a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32, precision=24)
     thresholds: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=24)
@@ -45,7 +44,7 @@ class PyDenseModel(PyLoihiProcessModel):
 
 @implements(proc=QuadraticConnectivity, protocol=LoihiProtocol)
 @requires(CPU)
-class PyDenseModel(PyLoihiProcessModel):
+class PyQCModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
     a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32, precision=24)
     weights: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=8)
@@ -59,7 +58,7 @@ class PyDenseModel(PyLoihiProcessModel):
 
 @implements(proc=SolutionNeurons, protocol=LoihiProtocol)
 @requires(CPU)
-class PyDenseModel(PyLoihiProcessModel):
+class PySNModel(PyLoihiProcessModel):
     s_in_qc: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
     a_out_qc: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32, 
                                      precision=24)
@@ -81,14 +80,14 @@ class PyDenseModel(PyLoihiProcessModel):
         
         self.decay_counter +=1
         if (self.decay_counter == self.alpha_decay_schedule):
-            # TODO: guard against shift overflows
+            # TODO: guard against shift overflows in Fixed-point
             self.alpha = np.right_shift(self.alpha, 1)
             self.decay_counter = np.zeros(self.decay_counter.shape)
         
         self.growth_counter +=1
         if (self.growth_counter == self.beta_growth_schedule):
             self.beta = np.left_shift(self.beta, 1)
-            # TODO: guard against shift overflows
+            # TODO: guard against shift overflows in Fixed-point
             self.growth_counter = np.zeros(self.growth_counter.shape)
 
         self.qp_neuron_state = -self.alpha*(s_in_qc+self.grad_bias) \
@@ -105,7 +104,7 @@ class PyDenseModel(PyLoihiProcessModel):
 
 @implements(proc=ConstraintNormals, protocol=LoihiProtocol)
 @requires(CPU)
-class PyDenseModel(PyLoihiProcessModel):
+class PyCNModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
     a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32, precision=24)
     weights: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=8)
@@ -118,7 +117,7 @@ class PyDenseModel(PyLoihiProcessModel):
         self.a_out.flush()
 
 @implements(proc=ConstraintCheck, protocol=LoihiProtocol)
-class SubDenseLayerModel(AbstractSubProcessModel):
+class SubCCModel(AbstractSubProcessModel):
     """Implement constraintCheckProcess behavior via sub Processes."""
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
     constraint_matrix: np.ndarray = LavaPyType(np.ndarray, np.int32, 
@@ -153,7 +152,7 @@ class SubDenseLayerModel(AbstractSubProcessModel):
 
 
 @implements(proc=GradientDynamics, protocol=LoihiProtocol)
-class SubDenseLayerModel(AbstractSubProcessModel):
+class SubGDModel(AbstractSubProcessModel):
     """Implement gradientDynamics Process behavior via sub Processes."""
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
     hessian: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=8)

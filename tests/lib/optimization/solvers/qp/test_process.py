@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
+# Initialization tests for all the processes in QP
 import unittest
 import numpy as np
 from numpy.core.fromnumeric import shape
@@ -11,6 +12,8 @@ ConstraintNeurons, SolutionNeurons, ConstraintNormals, ConstraintDirections, \
 QuadraticConnectivity, GradientDynamics
 class TestModelsFloatingPoint(unittest.TestCase):
     """Initializations Tests of all processes of the QP solver in floating point
+    All tests check if the vars are properly assinged in the processes and if 
+    the ports are shaped properly
     """
 
     def test_process_constraint_directions(self):

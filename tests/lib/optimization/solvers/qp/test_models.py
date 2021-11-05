@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
+# Behavioral tests for all the models in QP
 import unittest
 import numpy as np
 from numpy.core.fromnumeric import shape
@@ -75,11 +76,14 @@ class PyOPPModel(PyLoihiProcessModel):
         self.spike_out = s_in
 
 class TestModelsFloatingPoint(unittest.TestCase):
-    """Tests of all models of the QP solver in floating point
+    """Tests of all model behaviors of the QP solver in floating point. Refer 
+    to QP solver process diagram.
     """
 
     def test_model_constraint_directions(self):
-
+        """test behavior of constraint directions process  
+        (Matrix-vector multiplication)
+        """
         weights = np.array(
                   [[2,    3, 6],
                    [43,   3, 2]]
@@ -106,6 +110,9 @@ class TestModelsFloatingPoint(unittest.TestCase):
         + "ConstraintDirections")
 
     def test_model_constraint_neurons(self):
+        """test behavior of constraint directions process  
+        (vector-vector addition)
+        """
         inp_bias = np.array([[2, 4, 6]]).T
         process = ConstraintNeurons(shape=inp_bias.shape, 
                                         thresholds=inp_bias)
@@ -130,6 +137,9 @@ class TestModelsFloatingPoint(unittest.TestCase):
         + "ConstraintNeurons")
     
     def tests_model_solution_neurons(self):
+        """test behavior of SolutionNeurons process  
+        -alpha*(input_spike_1 + p)- beta*input_spike_2
+        """
         init_sol = np.array([[2, 4, 6, 4, 1]]).T
         p = np.array([[4, 3, 2, 1, 1]]).T
         alpha, beta, alpha_d, beta_g = 3, 2, 100, 100
@@ -166,6 +176,9 @@ class TestModelsFloatingPoint(unittest.TestCase):
 
 
     def test_model_constraint_normals(self):
+        """test behavior of ConstraintNormals process  
+        (Matrix-vector multiplication)
+        """
         weights = np.array(
                   [[2,    3, 6],
                    [43,   3, 2]]
@@ -191,6 +204,9 @@ class TestModelsFloatingPoint(unittest.TestCase):
         + "ConstraintNormals")
     
     def test_model_quadratic_connectivity(self):
+        """test behavior of QuadraticConnectivity process  
+        (Matrix-vector multiplication)
+        """
         weights = np.array(
                   [[2,    43, 2],
                    [43,   3, 4],
@@ -217,6 +233,9 @@ class TestModelsFloatingPoint(unittest.TestCase):
       
     
     def test_model_constraint_check(self):
+        """test behavior of ConstraintCheck process  
+        (Ax-b)*(Ax<b)
+        """
         A = np.array(
                   [[2,    3, 6],
                    [43,   3, 2]]
@@ -244,6 +263,9 @@ class TestModelsFloatingPoint(unittest.TestCase):
         
 
     def test_model_gradient_dynamics(self):
+        """test behavior of GradientDynamics process  
+            -alpha*(P@x_init + p)- beta*A_T@graded_constraint_spike
+        """
         P = np.array(
             [[2,  43, 2],
             [43,   3, 4],
@@ -279,7 +301,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
         #                         ==(-alpha*(P@init_sol+p) \
         #                            -beta*A_T@input_spike)
         #                         ), True)
-        #in_spike_process.stop()
+        # in_spike_process.stop()
         print("[LavaQpOpt][INFO]: Behavioral test passed for GradientDynamics")
         
     def test_QP(self):

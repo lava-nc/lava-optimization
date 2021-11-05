@@ -92,6 +92,7 @@ class PySNModel(PyLoihiProcessModel):
 
         self.qp_neuron_state = -self.alpha*(s_in_qc+self.grad_bias) \
                                 -self.beta*s_in_cn
+        
         # Perhaps reduce the number of OutPorts if behaviour is consistent, 
         # to mimic actual hardware microcode implementation
         a_out_qc = self.qp_neuron_state
@@ -133,7 +134,7 @@ class SubCCModel(AbstractSubProcessModel):
         # Initialize subprocesses
         self.constraintDirections = ConstraintDirections(
                                     shape=constraint_matrix.shape, 
-                                    weights=constraint_matrix
+                                    constraint_directions=constraint_matrix
                                     )
         self.constraintNeurons = ConstraintNeurons(shape=constraint_bias.shape,
                                                    thresholds=constraint_bias)
@@ -142,12 +143,11 @@ class SubCCModel(AbstractSubProcessModel):
         proc.in_ports.s_in.connect(self.constraintDirections.in_ports.s_in)
         self.constraintDirections.out_ports.a_out.connect(
                                         self.constraintNeurons.in_ports.s_in)
-        self.constraintNeurons.out_ports.s_out.connect(proc.out_ports.s_out)
-        
+        self.constraintNeurons.out_ports.a_out.connect(proc.out_ports.a_out)
+    
         #alias process variables to subprocess variables
         proc.vars.constraint_matrix.alias(
             self.constraintDirections.vars.weights)
-
         proc.vars.constraint_bias.alias(self.constraintNeurons.vars.thresholds)
 
 
@@ -176,20 +176,20 @@ class SubGDModel(AbstractSubProcessModel):
         grad_bias = proc.init_args.get("grad_bias", 
                                         np.zeros(shape_sol)
                                       ) 
-        qp_neuron_state = proc.init_args.get("qp_neurons_init", 
+        qp_neuron_i = proc.init_args.get("qp_neurons_init", 
                                               np.zeros(shape_sol)
                                             )
         alpha = proc.init_args.get("alpha", np.ones(shape_sol))
         beta = proc.init_args.get("beta", np.ones(shape_sol))
-        alpha_decay_schedule = proc.init_args.get("alpha_decay_schedule", 10000)
-        beta_growth_schedule = proc.init_args.get("beta_decay_schedule", 10000)
+        a_d = proc.init_args.get("alpha_decay_schedule", 10000)
+        b_g = proc.init_args.get("beta_decay_schedule", 10000)
 
         # Initialize subprocesses
-        self.qC = QuadraticConnectivity(shape_hess, hessian)
-        self.sN = SolutionNeurons(shape_sol, qp_neuron_state, grad_bias, alpha, 
-                                  beta, alpha_decay_schedule, 
-                                  beta_growth_schedule)                           
-        self.cN = ConstraintNormals(shape_A_T, A_T)
+        self.qC = QuadraticConnectivity(shape=shape_hess, hessian=hessian)
+        self.sN = SolutionNeurons(shape=shape_sol, qp_neurons_init=qp_neuron_i, 
+                                  grad_bias=grad_bias, alpha=alpha, beta=beta, 
+                                  alpha_decay_schedule= a_d,beta_growth_schedule=b_g)                           
+        self.cN = ConstraintNormals(shape=shape_A_T, constraint_normals=A_T)
 
         # connect subprocesses
         proc.in_ports.s_in.connect(self.cN.in_ports.s_in)  

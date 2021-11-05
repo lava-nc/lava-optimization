@@ -231,7 +231,7 @@ class GradientDynamics(AbstractProcess):
         A_T = kwargs.pop("constraint_matrix_T", 0)
         shape_hess = hessian.shape
         shape_A_T = A_T.shape
-        self.s_in = InPort(shape=(shape_A_T[0], 1))
+        self.s_in = InPort(shape=(shape_A_T[1], 1))
         self.hessian = Var(shape=shape_hess, init=hessian)
         self.constraint_matrix_T = Var(shape=shape_A_T, init=A_T)
         self.grad_bias = Var(shape=(shape_hess[0], 1), 

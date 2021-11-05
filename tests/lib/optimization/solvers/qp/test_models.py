@@ -24,7 +24,6 @@ ConstraintNeurons, SolutionNeurons, ConstraintNormals, ConstraintDirections, \
 QuadraticConnectivity, GradientDynamics
 
 
-
 class InSpikeSetProcess(AbstractProcess):
     def __init__(self, **kwargs):
         """Use to set value of input spike to a process
@@ -201,6 +200,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
                                    -beta*input_spike_cn)
                                 ), True)
         in_spike_cn_process.stop()
+        #TODO: counter checks, right/left shift checks
         print("[LavaQpOpt][INFO]: Behavioral test passed for " 
         + "ConstraintNeurons")
 
@@ -285,7 +285,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
                    [43,   3, 2]]
                   )
 
-        b = np.array([2, 4]).T
+        b = np.array([[2, 4]]).T
         process = ConstraintCheck(constraint_matrix=A, 
                                   constraint_bias=b)
         self.assertEqual(np.all(process.vars.constraint_matrix.get()==A), True)
@@ -297,9 +297,26 @@ class TestModelsFloatingPoint(unittest.TestCase):
         print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
         + "ConstraintCheck")
 
+        input_spike = np.array([[1],[2],[1]])
+        in_spike_process = InSpikeSetProcess(in_shape=input_spike.shape, 
+                                            spike_in=input_spike)
+        out_spike_process = OutProbeProcess(out_shape=process.a_out.shape)
+
+        in_spike_process.a_out.connect(process.s_in)
+        process.a_out.connect(out_spike_process.s_in)
+
+        in_spike_process.run(condition=RunSteps(num_steps=1), 
+                              run_cfg=Loihi1SimCfg(select_sub_proc_model=True))
+        in_spike_process.pause()
+        self.assertEqual(np.all(out_spike_process.vars.spike_out.get()
+                                ==((A@input_spike-b)*(A@input_spike < b))
+                                ), True)
+        in_spike_process.stop()
+        print("[LavaQpOpt][INFO]: Behavioral test passed for ConstraintCheck")
+        
 
     def test_process_gradient_dynamics(self):
-        hessian = np.array(
+        P = np.array(
             [[2,  43, 2],
             [43,   3, 4],
             [2,    4, 1]]
@@ -310,17 +327,17 @@ class TestModelsFloatingPoint(unittest.TestCase):
             [43,   3, 2]]
             ).T
 
-        init_sol = np.array([2, 4, 6, 4, 1]).T
-        p = np.array([4, 3, 2, 1, 1]).T
+        init_sol = np.array([[2, 4, 6]]).T
+        p = np.array([[4, 3, 2]]).T
         alpha, beta, alpha_d, beta_g = 3, 2, 100, 100
-        process = GradientDynamics(hessian=hessian, constraint_matrix_T = A_T, 
+        process = GradientDynamics(hessian=P, constraint_matrix_T = A_T, 
                                   qp_neurons_init=init_sol,
                                   grad_bias=p, alpha=alpha, beta=beta, 
                                   alpha_decay_schedule=alpha_d, 
                                   beta_growth_schedule=beta_g)
         self.assertEqual(np.all(process.vars.constraint_matrix_T.get()==A_T), 
                         True)
-        self.assertEqual(np.all(process.vars.hessian.get()==hessian), True)
+        self.assertEqual(np.all(process.vars.hessian.get()==P), True)
         self.assertEqual(np.all(process.vars.qp_neuron_state.get()==init_sol), 
                         True)
         self.assertEqual(np.all(process.vars.grad_bias.get()==p), True)
@@ -329,13 +346,31 @@ class TestModelsFloatingPoint(unittest.TestCase):
         self.assertEqual(process.vars.alpha_decay_schedule.get()==alpha_d, 
                         True)
         self.assertEqual(process.vars.beta_growth_schedule.get()==beta_g, True)
-        self.assertEqual(np.all(process.s_in.shape==(A_T.shape[0],1)), 
+        self.assertEqual(np.all(process.s_in.shape==(A_T.shape[1],1)), 
                          True) 
-        self.assertEqual(np.all(process.a_out.shape==(hessian.shape[0],1)), 
+        self.assertEqual(np.all(process.a_out.shape==(P.shape[0],1)), 
                          True) 
         print("[LavaQpOpt][INFO]: Custom initialization test passed for " 
         + "GradientDynamics")
-    
+
+        input_spike = np.array([[1],[2]])
+        in_spike_process = InSpikeSetProcess(in_shape=input_spike.shape, 
+                                            spike_in=input_spike)
+        out_spike_process = OutProbeProcess(out_shape=process.a_out.shape)
+
+        in_spike_process.a_out.connect(process.s_in)
+        process.a_out.connect(out_spike_process.s_in)
+
+        in_spike_process.run(condition=RunSteps(num_steps=1), 
+                              run_cfg=Loihi1SimCfg(select_sub_proc_model=True))
+        in_spike_process.pause()
+        self.assertEqual(np.all(out_spike_process.vars.spike_out.get()
+                                ==(-alpha*(P@init_sol+p) \
+                                   -beta*A_T@input_spike)
+                                ), True)
+        in_spike_process.stop()
+        print("[LavaQpOpt][INFO]: Behavioral test passed for GradientDynamics")
+        
     def test_QP(self):
         # connect constraint check and gradient dynamics to solve full QP
         pass

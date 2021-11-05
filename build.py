@@ -13,7 +13,7 @@ use_plugin('pypi:pybuilder_bandit')
 
 name = "lava-nc/lava-optmization"
 default_task = ["analyze", "publish"]
-version = "0.0.1"
+version = "0.1.0"
 summary = "A library of solvers that leverage neuromorphic hardware for constrained optimization. Lava-Optimization is part of Lava Framework "
 url = "https://lava-nc.org"
 license = ["BSD-3-Clause"]

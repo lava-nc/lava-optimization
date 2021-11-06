@@ -78,10 +78,12 @@ class PySNModel(PyLoihiProcessModel):
     growth_counter: int = LavaPyType(int, np.int32, precision=24)
 
     def run_spk(self):
-        a_out_qc = self.qp_neuron_state
-        self.a_out_qc.send(a_out_qc)
+        a_out = self.qp_neuron_state
+        self.a_out_cc.send(a_out)
+        self.a_out_cc.flush()
+        self.a_out_qc.send(a_out)
         self.a_out_qc.flush()
-        
+
         s_in_qc = self.s_in_qc.recv()
         s_in_cn = self.s_in_cn.recv()
         
@@ -103,10 +105,7 @@ class PySNModel(PyLoihiProcessModel):
         # Perhaps reduce the number of OutPorts if behaviour is consistent, 
         # to mimic actual hardware microcode implementation
         
-        a_out_cc = self.qp_neuron_state
-
-       
-        self.a_out_cc.send(a_out_cc)
+ 
         
         self.a_out_cc.flush()
 

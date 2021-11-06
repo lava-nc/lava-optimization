@@ -160,8 +160,11 @@ class TestModelsFloatingPoint(unittest.TestCase):
         in_spike_qc_process.a_out.connect(process.s_in_qc)
         process.a_out_cc.connect(out_spike_cc_process.s_in)
         process.a_out_qc.connect(out_spike_qc_process.s_in)
-
-        in_spike_cn_process.run(condition=RunSteps(num_steps=1), 
+        
+        # testing for two timesteps because of design of 
+        # solution neurons for recurrent connectivity. Nth 
+        # state available only at N+1th timestep
+        in_spike_cn_process.run(condition=RunSteps(num_steps=2), 
                               run_cfg=Loihi1SimCfg())
         in_spike_cn_process.pause()
         self.assertEqual(np.all(out_spike_cc_process.vars.spike_out.get()
@@ -292,7 +295,11 @@ class TestModelsFloatingPoint(unittest.TestCase):
         in_spike_process.a_out.connect(process.s_in)
         process.a_out.connect(out_spike_process.s_in)
 
-        in_spike_process.run(condition=RunSteps(num_steps=1), 
+        # testing for two timesteps because of design of 
+        # solution neurons for recurrent connectivity. Nth 
+        # state available only at N+1th timestep  
+
+        in_spike_process.run(condition=RunSteps(num_steps=2), 
                               run_cfg=Loihi1SimCfg(select_sub_proc_model=True))
         in_spike_process.pause()
         
@@ -304,6 +311,37 @@ class TestModelsFloatingPoint(unittest.TestCase):
         print("[LavaQpOpt][INFO]: Behavioral test passed for GradientDynamics")
         
     def test_QP(self): 
+        P = np.array(
+        [[10,  0, 0],
+         [0,   2, 0],
+         [0,   0, 1]]
+        )
+
+        p = np.array([[4, 3, 2]]).T
+
+        A = np.array(
+        [[2,  3, 6],
+         [43, 3, 2]]
+        )
+
+        b = np.array([[2, 4]]).T 
+        alpha, beta = 1, 1
+        init_sol = np.array([[2, 4, 6]]).T
+
+        ConsCheck = ConstraintCheck(constraint_matrix=A, constraint_bias=b)
+        GradDyn = GradientDynamics(hessian=P, constraint_matrix_T = A.T, 
+                                   qp_neurons_init=init_sol,
+                                   grad_bias=p, alpha=alpha, beta=beta)
+
+        # core solver 
+        ConsCheck.a_out.connect(GradDyn.s_in)
+        GradDyn.a_out.connect(ConsCheck.s_in)
+
+        GradDyn.run(condition=RunSteps(num_steps=1), 
+                              run_cfg=Loihi1SimCfg(select_sub_proc_model=True))
+        GradDyn.stop()
+        print("QP Solver running!")
+
         # connect constraint check and gradient dynamics to solve full QP
         pass
 

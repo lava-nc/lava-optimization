@@ -20,7 +20,7 @@ from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg   
 
-from lava.lib.optimization.solvers.qp.models import ConstraintCheck, \
+from src.lava.lib.optimization.solvers.qp.models import ConstraintCheck, \
 ConstraintNeurons, SolutionNeurons, ConstraintNormals, ConstraintDirections, \
 QuadraticConnectivity, GradientDynamics
 
@@ -74,7 +74,6 @@ class PyOPPModel(PyLoihiProcessModel):
     def run_spk(self):
         s_in = self.s_in.recv()
         self.spike_out = s_in
-
 class TestModelsFloatingPoint(unittest.TestCase):
     """Tests of all model behaviors of the QP solver in floating point. Refer 
     to QP solver process diagram.
@@ -285,26 +284,26 @@ class TestModelsFloatingPoint(unittest.TestCase):
                                   grad_bias=p, alpha=alpha, beta=beta, 
                                   alpha_decay_schedule=alpha_d, 
                                   beta_growth_schedule=beta_g)
+        
         input_spike = np.array([[1],[2]])
         in_spike_process = InSpikeSetProcess(in_shape=input_spike.shape, 
                                             spike_in=input_spike)
         out_spike_process = OutProbeProcess(out_shape=process.a_out.shape)
-
         in_spike_process.a_out.connect(process.s_in)
         process.a_out.connect(out_spike_process.s_in)
 
-        # in_spike_process.run(condition=RunSteps(num_steps=1), 
-        #                       run_cfg=Loihi1SimCfg(select_sub_proc_model=True))
-        # in_spike_process.pause()
+        in_spike_process.run(condition=RunSteps(num_steps=1), 
+                              run_cfg=Loihi1SimCfg(select_sub_proc_model=True))
+        in_spike_process.pause()
         
-        # self.assertEqual(np.all(out_spike_process.vars.spike_out.get()
-        #                         ==(-alpha*(P@init_sol+p) \
-        #                            -beta*A_T@input_spike)
-        #                         ), True)
-        # in_spike_process.stop()
+        self.assertEqual(np.all(out_spike_process.vars.spike_out.get()
+                                ==(-alpha*(P@init_sol+p) \
+                                   -beta*A_T@input_spike)
+                                ), True)
+        in_spike_process.stop()
         print("[LavaQpOpt][INFO]: Behavioral test passed for GradientDynamics")
         
-    def test_QP(self):
+    def test_QP(self): 
         # connect constraint check and gradient dynamics to solve full QP
         pass
 

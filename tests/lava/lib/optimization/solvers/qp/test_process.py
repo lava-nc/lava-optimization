@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 from numpy.core.fromnumeric import shape
   
-from lava.lib.optimization.solvers.qp.processes import ConstraintCheck, \
+from src.lava.lib.optimization.solvers.qp.processes import ConstraintCheck, \
 ConstraintNeurons, SolutionNeurons, ConstraintNormals, ConstraintDirections, \
 QuadraticConnectivity, GradientDynamics
 class TestModelsFloatingPoint(unittest.TestCase):

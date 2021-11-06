@@ -13,7 +13,7 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
-from lava.lib.optimization.solvers.qp.processes import ConstraintDirections, \
+from src.lava.lib.optimization.solvers.qp.processes import ConstraintDirections, \
 ConstraintCheck, ConstraintNeurons, ConstraintNormals, QuadraticConnectivity, \
 SolutionNeurons, GradientDynamics
 
@@ -78,6 +78,10 @@ class PySNModel(PyLoihiProcessModel):
     growth_counter: int = LavaPyType(int, np.int32, precision=24)
 
     def run_spk(self):
+        a_out_qc = self.qp_neuron_state
+        self.a_out_qc.send(a_out_qc)
+        self.a_out_qc.flush()
+        
         s_in_qc = self.s_in_qc.recv()
         s_in_cn = self.s_in_cn.recv()
         
@@ -98,12 +102,12 @@ class PySNModel(PyLoihiProcessModel):
         
         # Perhaps reduce the number of OutPorts if behaviour is consistent, 
         # to mimic actual hardware microcode implementation
-        a_out_qc = self.qp_neuron_state
+        
         a_out_cc = self.qp_neuron_state
 
-        self.a_out_qc.send(a_out_qc)
+       
         self.a_out_cc.send(a_out_cc)
-        self.a_out_qc.flush()
+        
         self.a_out_cc.flush()
 
 @implements(proc=ConstraintNormals, protocol=LoihiProtocol)
@@ -196,10 +200,10 @@ class SubGDModel(AbstractSubProcessModel):
         self.cN = ConstraintNormals(shape=shape_A_T, constraint_normals=A_T)
 
         # connect subprocesses
-        self.sN.out_ports.a_out_qc.connect(self.qC.in_ports.s_in)
-        self.qC.out_ports.a_out.connect(self.sN.in_ports.s_in_qc)
-        proc.in_ports.s_in.connect(self.cN.in_ports.s_in)  
+        proc.in_ports.s_in.connect(self.cN.in_ports.s_in) 
         self.cN.out_ports.a_out.connect(self.sN.in_ports.s_in_cn)
+        self.sN.out_ports.a_out_qc.connect(self.qC.in_ports.s_in)
+        self.qC.out_ports.a_out.connect(self.sN.in_ports.s_in_qc)  
         self.sN.out_ports.a_out_cc.connect(proc.out_ports.a_out)
 
         #alias process variables to subprocess variables

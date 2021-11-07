@@ -17,25 +17,30 @@ class Cost:
 
     @property
     def is_linear(self):
+        """Whether the cost function only include linear terms."""
         if self.quadratic_term is None:
             return True
         return False
 
     @property
     def is_augmented(self):
+        """Whether augmented terms are present in the cost function."""
         if self.augmented_terms is None:
             return False
         return True
 
     @property
     def augmented_terms(self):
+        """Augmented terms present in the cost function."""
         self._cost_terms.get("augmented_terms", None)
         return None
 
     @property
     def linear_term(self):
+        """Linear term of the cost function in a optimization problem."""
         return self._cost_terms.get("linear_term", None)
 
     @property
     def quadratic_term(self):
+        """Quadratic term of the cost function in a optimization problem."""
         return self._cost_terms.get("quadratic_term", None)

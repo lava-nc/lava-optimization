@@ -6,7 +6,7 @@ from src.lava.lib.optimization.solvers.abstract.processes import Readout, \
     HostMonitor
 
 
-class OptimizationSolver():
+class OptimizationSolver:
     """Abstract optimization solver from which to derive actual solvers.
 
     Kwargs:
@@ -42,7 +42,7 @@ class OptimizationSolver():
     def _build(self, snn, integrator):
         """Create  process network that actually solves the problem.
 
-        :param snn: Neural network that solves the problem through its dynamics.
+        :param snn: neural network that solves the problem through its dynamics.
         :param integrator: integrator that notifies solution via a spike.
         """
         # Create postprocessor processes

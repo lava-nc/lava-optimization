@@ -6,7 +6,7 @@
 import unittest
 import numpy as np
 from numpy.core.fromnumeric import shape
-
+import time
 from lava.magma.core.process.process import AbstractProcess
 from lava.magma.core.process.variable import Var
 from lava.magma.core.process.ports.ports import InPort, OutPort
@@ -135,7 +135,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
         print("[LavaQpOpt][INFO]: Behavioral test passed for " 
         + "ConstraintNeurons")
     
-    def tests_model_solution_neurons(self):
+    def test_model_solution_neurons(self):
         """test behavior of SolutionNeurons process  
         -alpha*(input_spike_1 + p)- beta*input_spike_2
         """
@@ -168,13 +168,13 @@ class TestModelsFloatingPoint(unittest.TestCase):
                               run_cfg=Loihi1SimCfg())
         in_spike_cn_process.pause()
         self.assertEqual(np.all(out_spike_cc_process.vars.spike_out.get()
-                                ==(-alpha*(input_spike_qc+p)
+                                ==(init_sol-alpha*(input_spike_qc+p)
                                    -beta*input_spike_cn)
                                 ), True)
         in_spike_cn_process.stop()
         #TODO: counter checks, right/left shift checks
         print("[LavaQpOpt][INFO]: Behavioral test passed for " 
-        + "ConstraintNeurons")
+        + "SolutionNeurons")
 
 
     def test_model_constraint_normals(self):
@@ -302,51 +302,64 @@ class TestModelsFloatingPoint(unittest.TestCase):
         in_spike_process.run(condition=RunSteps(num_steps=2), 
                               run_cfg=Loihi1SimCfg(select_sub_proc_model=True))
         in_spike_process.pause()
-        
         self.assertEqual(np.all(out_spike_process.vars.spike_out.get()
-                                ==(-alpha*(P@init_sol+p) \
+                                ==(init_sol+-alpha*(P@init_sol+p) \
                                    -beta*A_T@input_spike)
                                 ), True)
         in_spike_process.stop()
         print("[LavaQpOpt][INFO]: Behavioral test passed for GradientDynamics")
         
     def test_QP(self): 
+
+
         P = np.array(
-        [[10,  0, 0],
-         [0,   2, 0],
-         [0,   0, 1]]
+        [[300,  0, 0],
+         [0,   1, 0],
+         [0,   0, 5]]
         )
-
-        p = np.array([[4, 3, 2]]).T
-
-        A = np.array(
-        [[2,  3, 6],
-         [43, 3, 2]]
+        p = np.array([[1, 2, 1]]).T
+        A = -np.array(
+        [[1,  2, 2],
+         [2, 100, 3]]
         )
-
-        b = np.array([[2, 4]]).T 
-        alpha, beta = 1, 1
+        b = -np.array([[-50, 50]]).T 
+        alpha, beta = 0.001, 1
+        alpha_d, beta_g = 10000, 10000
+        ####### Precondition the problem before feeding it into Loihi ##########
+        preconditioner_P = np.sqrt(np.diag(1/np.linalg.norm(P, axis=1)))
+        P_pre = preconditioner_P@P@preconditioner_P
+        p_pre = preconditioner_P@p
+        F = np.diag(1/np.linalg.norm(A, axis=1))
+        A = F@A@preconditioner_P
+        b = F@b
+        P = P_pre
+        p = p_pre
+        #####################################################################
         init_sol = np.array([[2, 4, 6]]).T
-
+        k_max = 10
         ConsCheck = ConstraintCheck(constraint_matrix=A, constraint_bias=b)
         GradDyn = GradientDynamics(hessian=P, constraint_matrix_T = A.T, 
-                                   qp_neurons_init=init_sol,
-                                   grad_bias=p, alpha=alpha, beta=beta)
+                                  qp_neurons_init=init_sol,
+                                  grad_bias=p, alpha=alpha, beta=beta, 
+                                  alpha_decay_schedule=alpha_d, 
+                                  beta_growth_schedule=beta_g)
 
-        # core solver 
+        #print(GradDyn.vars.qp_neuron_state.get())
+
+        # core solver
+        GradDyn.a_out.connect(ConsCheck.s_in) 
         ConsCheck.a_out.connect(GradDyn.s_in)
-        GradDyn.a_out.connect(ConsCheck.s_in)
 
-        GradDyn.run(condition=RunSteps(num_steps=1), 
+        tic = time.time()
+        GradDyn.run(condition=RunSteps(num_steps=k_max), 
                               run_cfg=Loihi1SimCfg(select_sub_proc_model=True))
+        GradDyn.pause()
+        pre_sol = GradDyn.vars.qp_neuron_state.get()
         GradDyn.stop()
-        print("QP Solver running!")
-
-        # connect constraint check and gradient dynamics to solve full QP
-        pass
+        toc = time.time() 
+        print("[LavaQpOpt][INFO]: The solution after {} runs is {}".format(k_max,
+                            pre_sol))
+        print("[LavaQpOpt][INFO]: QP Solver ran in {} seconds".format(toc-tic))
 
 if __name__ == '__main__':
     unittest.main()
-        
-    # print("[LavaQpOpt][INFO]:Starting Floating Point tests for models in"
-    #     + " QP solver.")

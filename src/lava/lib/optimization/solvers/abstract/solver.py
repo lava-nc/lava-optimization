@@ -89,3 +89,18 @@ class OptimizationSolver:
     def _check_solution(self, solution):
         """Verify that a solution is consistent, complete and optimal."""
         pass
+
+
+class LinearSolver(OptimizationSolver):
+    """A solver for optimization problems with linear cost and constraints."""
+    pass
+
+
+class CombinatorialSolver(OptimizationSolver):
+    """A solver for optimization problems with discrete variables."""
+    pass
+
+
+class NonLinearSolver(OptimizationSolver):
+    """A solver for optimization problems with nonlinear cost or constraints."""
+    pass

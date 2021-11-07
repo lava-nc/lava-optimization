@@ -38,6 +38,7 @@ class DiscreteConstraint(AbstractConstraint):
 
 class ContinuousConstraint(AbstractConstraint):
     """Constraint involving only continuous variables."""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._constraint_terms = kwargs

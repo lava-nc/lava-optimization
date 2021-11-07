@@ -57,8 +57,8 @@ class OutProbeProcess(AbstractProcess):
 @implements(proc=InSpikeSetProcess, protocol=LoihiProtocol)
 @requires(CPU)
 class PyISSModel(PyLoihiProcessModel):
-    a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32, precision=24)
-    spike_inp: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=24)
+    a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64, precision=64)
+    spike_inp: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=64)
 
     def run_spk(self):    
         a_out = self.spike_inp
@@ -68,8 +68,8 @@ class PyISSModel(PyLoihiProcessModel):
 @implements(proc=OutProbeProcess, protocol=LoihiProtocol)
 @requires(CPU)
 class PyOPPModel(PyLoihiProcessModel):
-    s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=24)
-    spike_out: np.ndarray = LavaPyType(np.ndarray, np.int32, precision=24)
+    s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64, precision=64)
+    spike_out: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=64)
 
     def run_spk(self):
         s_in = self.s_in.recv()
@@ -313,8 +313,8 @@ class TestModelsFloatingPoint(unittest.TestCase):
 
 
         P = np.array(
-        [[300,  0, 0],
-         [0,   1, 0],
+        [[100,  0, 0],
+         [0,   15, 0],
          [0,   0, 5]]
         )
         p = np.array([[1, 2, 1]]).T
@@ -322,6 +322,8 @@ class TestModelsFloatingPoint(unittest.TestCase):
         [[1,  2, 2],
          [2, 100, 3]]
         )
+        p = np.array([[1, 2, 1]]).T
+
         b = -np.array([[-50, 50]]).T 
         alpha, beta = 0.001, 1
         alpha_d, beta_g = 10000, 10000
@@ -335,8 +337,18 @@ class TestModelsFloatingPoint(unittest.TestCase):
         P = P_pre
         p = p_pre
         #####################################################################
-        init_sol = np.array([[2, 4, 6]]).T
-        k_max = 10
+        # P = np.array(
+        #     [[2,  43, 2],
+        #     [43,   3, 4],
+        #     [2,    4, 1]]
+        #     )
+
+        # A = np.array(
+        #     [[2,    3, 6],
+        #     [43,   3, 2]]
+        #     )
+        init_sol = np.random.rand(3,1)
+        k_max = 400
         ConsCheck = ConstraintCheck(constraint_matrix=A, constraint_bias=b)
         GradDyn = GradientDynamics(hessian=P, constraint_matrix_T = A.T, 
                                   qp_neurons_init=init_sol,
@@ -358,7 +370,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
         GradDyn.stop()
         toc = time.time() 
         print("[LavaQpOpt][INFO]: The solution after {} runs is {}".format(k_max,
-                            pre_sol))
+                            preconditioner_P@pre_sol))
         print("[LavaQpOpt][INFO]: QP Solver ran in {} seconds".format(toc-tic))
 
 if __name__ == '__main__':

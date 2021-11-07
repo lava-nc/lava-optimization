@@ -6,14 +6,15 @@ from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
-from src.lava.lib.optimization.solvers.abstract.processes import Readout, \
-    HostMonitor
+from src.lava.lib.optimization.solvers.abstract.processes import (
+    Readout,
+    HostMonitor,
+)
 
 
 @implements(proc=Readout, protocol=LoihiProtocol)
 @requires(CPU)
 class PyReadoutModel(PyLoihiProcessModel):
-
     def run_spk(self):
         pass
 

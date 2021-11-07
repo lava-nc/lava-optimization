@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
-from src.lava.lib.optimization.solvers.abstract.processes import Readout, \
-    HostMonitor
+from src.lava.lib.optimization.solvers.abstract.processes import (
+    Readout,
+    HostMonitor,
+)
 
 
 class OptimizationSolver:
@@ -46,8 +48,9 @@ class OptimizationSolver:
         :param integrator: integrator that notifies solution via a spike.
         """
         # Create postprocessor processes
-        self.read_out = Readout(population_size=snn.readout_size,
-                                target_cost=self.target_cost)
+        self.read_out = Readout(
+            population_size=snn.readout_size, target_cost=self.target_cost
+        )
         self.host_monitor = HostMonitor(population_size=snn.readout_size)
 
         # Connect processes.
@@ -55,22 +58,32 @@ class OptimizationSolver:
         snn.ref_vars.snn_state(self.read_out.ref_ports.snn_state)
         integrator.out_ports.cost.connect(self.read_out.in_ports.cost)
         self.read_out.out_ports.solving_state.connect(
-            self.host_monitor.in_ports.solving_state)
+            self.host_monitor.in_ports.solving_state
+        )
         self.read_out.out_ports.solving_time.connect(
-            self.host_monitor.in_ports.solving_time)
+            self.host_monitor.in_ports.solving_time
+        )
 
     def _run(self, timeout, backend=None):
         pass
 
-    def solve(self, problem=None, problems: list = None, timeout=None,
-              target_cost=None, backend=None, seed=1):
+    def solve(
+        self,
+        problem=None,
+        problems: list = None,
+        timeout=None,
+        target_cost=None,
+        backend=None,
+        seed=1,
+    ):
         """Tries to solve a given optimization problem.
 
         :param problem: the optimization problem to be solved
         :param problems list tuple: set of problems to be solved
         :param seed: seed for python's RNG.
         :param timeout: maximum number of timesteps to search for a solution.
-        :param target_cost: if an optimal solution is not needed or possible, target_costs set's the number of
+        :param target_cost: if an optimal solution is not needed or possible, 
+        target_costs set's the number of
         satisfying variables that cause the reporting neuron to spike.
         :return: Solution to the problem if one is found.
         """

@@ -28,7 +28,9 @@ class ConstraintDirections(AbstractProcess):
         shape = kwargs.get("shape", (1, 1))
         self.s_in = InPort(shape=(shape[1], 1))
         self.a_out = OutPort(shape=(shape[0], 1))
-        self.weights = Var(shape=shape, init=kwargs.pop("constraint_directions", 0))
+        self.weights = Var(
+            shape=shape, init=kwargs.pop("constraint_directions", 0)
+        )
 
 
 class ConstraintNeurons(AbstractProcess):
@@ -113,9 +115,15 @@ class SolutionNeurons(AbstractProcess):
         self.qp_neuron_state = Var(
             shape=shape, init=kwargs.pop("qp_neurons_init", np.zeros(shape))
         )
-        self.grad_bias = Var(shape=shape, init=kwargs.pop("grad_bias", np.zeros(shape)))
-        self.alpha = Var(shape=shape, init=kwargs.pop("alpha", np.ones((shape[0], 1))))
-        self.beta = Var(shape=shape, init=kwargs.pop("beta", np.ones((shape[0], 1))))
+        self.grad_bias = Var(
+            shape=shape, init=kwargs.pop("grad_bias", np.zeros(shape))
+        )
+        self.alpha = Var(
+            shape=shape, init=kwargs.pop("alpha", np.ones((shape[0], 1)))
+        )
+        self.beta = Var(
+            shape=shape, init=kwargs.pop("beta", np.ones((shape[0], 1)))
+        )
         self.alpha_decay_schedule = Var(
             shape=(1, 1), init=kwargs.pop("alpha_decay_schedule", 10000)
         )
@@ -148,7 +156,9 @@ class ConstraintNormals(AbstractProcess):
         shape = kwargs.get("shape", (1, 1))
         self.s_in = InPort(shape=(shape[1], 1))
         self.a_out = OutPort(shape=(shape[0], 1))
-        self.weights = Var(shape=shape, init=kwargs.pop("constraint_normals", 0))
+        self.weights = Var(
+            shape=shape, init=kwargs.pop("constraint_normals", 0)
+        )
 
 
 class ConstraintCheck(AbstractProcess):

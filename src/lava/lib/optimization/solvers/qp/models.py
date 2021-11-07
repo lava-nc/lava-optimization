@@ -78,6 +78,8 @@ class PySNModel(PyLoihiProcessModel):
     growth_counter: int = LavaPyType(int, np.int32, precision=24)
 
     def run_spk(self):
+        # Perhaps reduce the number of OutPorts if behaviour is consistent, 
+        # to mimic actual hardware microcode implementation
         a_out = self.qp_neuron_state
         self.a_out_cc.send(a_out)
         self.a_out_cc.flush()
@@ -99,16 +101,10 @@ class PySNModel(PyLoihiProcessModel):
             # TODO: guard against shift overflows in Fixed-point
             self.growth_counter = np.zeros(self.growth_counter.shape)
 
-        self.qp_neuron_state = -self.alpha*(s_in_qc+self.grad_bias) \
+        self.qp_neuron_state += -self.alpha*(s_in_qc+self.grad_bias) \
                                 -self.beta*s_in_cn
-        
-        # Perhaps reduce the number of OutPorts if behaviour is consistent, 
-        # to mimic actual hardware microcode implementation
-        
- 
-        
-        self.a_out_cc.flush()
-
+        #print(s_in_qc)
+        #print(self.qp_neuron_state)
 @implements(proc=ConstraintNormals, protocol=LoihiProtocol)
 @requires(CPU)
 class PyCNorModel(PyLoihiProcessModel):

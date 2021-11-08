@@ -4,9 +4,14 @@
 
 import unittest
 import numpy as np
-from src.lava.lib.optimization.problems.constraints import \
-    AbstractConstraint, DiscreteConstraint, ContinuousConstraint, \
-    MixedConstraint, EqualityConstraint, InequalityConstraint
+from src.lava.lib.optimization.problems.constraints import (
+    AbstractConstraint,
+    DiscreteConstraint,
+    ContinuousConstraint,
+    MixedConstraint,
+    EqualityConstraint,
+    InequalityConstraint,
+)
 
 
 class TestAbstractConstraint(unittest.TestCase):
@@ -35,8 +40,9 @@ class TestDiscreteConstraint(unittest.TestCase):
     def setUp(self) -> None:
         self.var_subset_1d = np.random.randint(0, 10, 5)
         self.relation_2d = np.random.randint(0, 10, (5, 5))
-        self.constraint = DiscreteConstraint(var_subset=self.var_subset_1d,
-                                             relation=self.relation_2d)
+        self.constraint = DiscreteConstraint(
+            var_subset=self.var_subset_1d, relation=self.relation_2d
+        )
 
     def test_create_obj(self):
         self.assertIsInstance(self.constraint, AbstractConstraint)
@@ -76,5 +82,5 @@ class TestUnconstrained(unittest.TestCase):
     pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -17,7 +17,7 @@ from src.lava.lib.optimization.solvers.qp.processes import (
 )
 
 
-class TestModelsFloatingPoint(unittest.TestCase):
+class TestProcessesFloatingPoint(unittest.TestCase):
     """Initializations Tests of all processes of the QP solver in floating point
     All tests check if the vars are properly assinged in the processes and if
     the ports are shaped properly
@@ -66,7 +66,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
             + "ConstraintNeurons"
         )
 
-    def tests_process_solution_neurons(self):
+    def test_process_solution_neurons(self):
         init_sol = np.array([[2, 4, 6, 4, 1]]).T
         p = np.array([[4, 3, 2, 1, 1]]).T
         alpha, beta, alpha_d, beta_g = 3, 2, 100, 100
@@ -211,13 +211,6 @@ class TestModelsFloatingPoint(unittest.TestCase):
             + "GradientDynamics"
         )
 
-    def test_QP(self):
-        # connect constraint check and gradient dynamics to solve full QP
-        pass
-
 
 if __name__ == "__main__":
     unittest.main()
-
-    # print("[LavaQpOpt][INFO]:Starting Floating Point tests for models in"
-    #     + " QP solver.")

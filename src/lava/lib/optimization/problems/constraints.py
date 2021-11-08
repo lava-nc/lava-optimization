@@ -16,8 +16,7 @@ class AbstractConstraint:
 
     @property
     def is_linear(self):
-        """Whether the constraint only include linear terms.
-        """
+        """Whether the constraint only include linear terms."""
         return None
 
     @property
@@ -43,8 +42,6 @@ class DiscreteConstraint(AbstractConstraint):
         self.relation = kwargs.get("relation", None)
 
 
-
-
 class ContinuousConstraint(AbstractConstraint):
     """Constraint involving only continuous variables."""
 
@@ -65,14 +62,17 @@ class ContinuousConstraint(AbstractConstraint):
 
 class MixedConstraint(ContinuousConstraint):
     """A constraint affecting both discrete and continuous variables."""
+
     pass
 
 
 class EqualityConstraint(ContinuousConstraint):
     """An equality constraint."""
+
     pass
 
 
 class InequalityConstraint(ContinuousConstraint):
     """An inequality constraint."""
+
     pass

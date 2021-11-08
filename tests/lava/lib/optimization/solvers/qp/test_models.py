@@ -370,8 +370,6 @@ class TestModelsFloatingPoint(unittest.TestCase):
         P = np.array([[100, 0, 0], [0, 15, 0], [0, 0, 5]])
         p = np.array([[1, 2, 1]]).T
         A = -np.array([[1, 2, 2], [2, 100, 3]])
-        p = np.array([[1, 2, 1]]).T
-
         b = -np.array([[-50, 50]]).T
         alpha, beta = 0.001, 1
         alpha_d, beta_g = 10000, 10000

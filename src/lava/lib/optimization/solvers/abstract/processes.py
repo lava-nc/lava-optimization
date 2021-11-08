@@ -6,8 +6,7 @@ from lava.magma.core.process.process import AbstractProcess
 
 
 class Readout(AbstractProcess):
-    """Listener for solver network solution message reads solution when found.
-    """
+    """Listener for solver network solution message reads solution when found."""
 
     pass
 

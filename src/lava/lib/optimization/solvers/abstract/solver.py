@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
-from src.lava.lib.optimization.solvers.abstract.processes import Readout, \
-    HostMonitor
+from src.lava.lib.optimization.solvers.abstract.processes import (
+    Readout,
+    HostMonitor,
+)
 
 
 class OptimizationSolver:
@@ -63,26 +65,39 @@ class OptimizationSolver:
         :param integrator: integrator that notifies solution via a spike.
         """
         # Create postprocessor processes
-        self.read_out = Readout(population_size=self.solver_net.readout_size,
-                                target_cost=self.target_cost)
+        self.read_out = Readout(
+            population_size=self.solver_net.readout_size,
+            target_cost=self.target_cost,
+        )
         self.host_monitor = HostMonitor(
-            population_size=self.solver_net.readout_size)
+            population_size=self.solver_net.readout_size
+        )
 
         # Connect processes.
         self.solver_net.out_ports.to_integrator.connect(
-            self.integrator.in_ports.from_snn)
+            self.integrator.in_ports.from_snn
+        )
         self.solver_net.ref_vars.snn_state(self.read_out.ref_ports.snn_state)
         self.integrator.out_ports.cost.connect(self.read_out.in_ports.cost)
         self.read_out.out_ports.solving_state.connect(
-            self.host_monitor.in_ports.solving_state)
+            self.host_monitor.in_ports.solving_state
+        )
         self.read_out.out_ports.solving_time.connect(
-            self.host_monitor.in_ports.solving_time)
+            self.host_monitor.in_ports.solving_time
+        )
 
     def _run(self, timeout, backend=None):
         pass
 
-    def solve(self, problem, problems: list = None, timeout=None,
-              target_cost=None, backend=None, seed=1):
+    def solve(
+        self,
+        problem,
+        problems: list = None,
+        timeout=None,
+        target_cost=None,
+        backend=None,
+        seed=1,
+    ):
         """Tries to solve a given optimization problem.
 
         :param problem: the optimization problem to be solved
@@ -112,14 +127,17 @@ class OptimizationSolver:
 
 class LinearSolver(OptimizationSolver):
     """A solver for optimization problems with linear cost and constraints."""
+
     pass
 
 
 class CombinatorialSolver(OptimizationSolver):
     """A solver for optimization problems with discrete variables."""
+
     pass
 
 
 class NonLinearSolver(OptimizationSolver):
     """A solver for optimization problems with nonlinear cost or constraints."""
+
     pass

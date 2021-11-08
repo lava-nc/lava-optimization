@@ -35,12 +35,8 @@ class TestProcessesFloatingPoint(unittest.TestCase):
             shape=weights.shape, constraint_directions=weights
         )
         self.assertEqual(np.all(process.vars.weights.get() == weights), True)
-        self.assertEqual(
-            np.all(process.s_in.shape == (weights.shape[1], 1)), True
-        )
-        self.assertEqual(
-            np.all(process.a_out.shape == (weights.shape[0], 1)), True
-        )
+        self.assertEqual(np.all(process.s_in.shape == (weights.shape[1], 1)), True)
+        self.assertEqual(np.all(process.a_out.shape == (weights.shape[0], 1)), True)
         print(
             "[LavaQpOpt][INFO]: Custom initialization test passed for "
             + "ConstraintDirections"
@@ -55,12 +51,8 @@ class TestProcessesFloatingPoint(unittest.TestCase):
         )
         inp_bias = np.array([[2, 4, 6]]).T
         process = ConstraintNeurons(shape=inp_bias.shape, thresholds=inp_bias)
-        self.assertEqual(
-            np.all(process.vars.thresholds.get() == inp_bias), True
-        )
-        self.assertEqual(
-            np.all(process.s_in.shape == (inp_bias.shape[0], 1)), True
-        )
+        self.assertEqual(np.all(process.vars.thresholds.get() == inp_bias), True)
+        self.assertEqual(np.all(process.s_in.shape == (inp_bias.shape[0], 1)), True)
         print(
             "[LavaQpOpt][INFO]: Custom initialization test passed for "
             + "ConstraintNeurons"
@@ -79,32 +71,18 @@ class TestProcessesFloatingPoint(unittest.TestCase):
             alpha_decay_schedule=alpha_d,
             beta_growth_schedule=beta_g,
         )
-        self.assertEqual(
-            np.all(process.vars.qp_neuron_state.get() == init_sol), True
-        )
+        self.assertEqual(np.all(process.vars.qp_neuron_state.get() == init_sol), True)
         self.assertEqual(np.all(process.vars.grad_bias.get() == p), True)
         self.assertEqual(np.all(process.vars.alpha.get() == alpha), True)
         self.assertEqual(np.all(process.vars.beta.get() == beta), True)
-        self.assertEqual(
-            process.vars.alpha_decay_schedule.get() == alpha_d, True
-        )
-        self.assertEqual(
-            process.vars.beta_growth_schedule.get() == beta_g, True
-        )
+        self.assertEqual(process.vars.alpha_decay_schedule.get() == alpha_d, True)
+        self.assertEqual(process.vars.beta_growth_schedule.get() == beta_g, True)
         self.assertEqual(process.vars.decay_counter.get() == 0, True)
         self.assertEqual(process.vars.growth_counter.get() == 0, True)
-        self.assertEqual(
-            np.all(process.s_in_qc.shape == (p.shape[0], 1)), True
-        )
-        self.assertEqual(
-            np.all(process.s_in_cn.shape == (p.shape[0], 1)), True
-        )
-        self.assertEqual(
-            np.all(process.a_out_qc.shape == (p.shape[0], 1)), True
-        )
-        self.assertEqual(
-            np.all(process.a_out_cc.shape == (p.shape[0], 1)), True
-        )
+        self.assertEqual(np.all(process.s_in_qc.shape == (p.shape[0], 1)), True)
+        self.assertEqual(np.all(process.s_in_cn.shape == (p.shape[0], 1)), True)
+        self.assertEqual(np.all(process.a_out_qc.shape == (p.shape[0], 1)), True)
+        self.assertEqual(np.all(process.a_out_cc.shape == (p.shape[0], 1)), True)
         print(
             "[LavaQpOpt][INFO]: Custom initialization test passed for "
             + "SolutionNeurons"
@@ -118,16 +96,10 @@ class TestProcessesFloatingPoint(unittest.TestCase):
             + "ConstraintNormals"
         )
         weights = np.array([[2, 3, 6], [43, 3, 2]]).T
-        process = ConstraintNormals(
-            shape=weights.shape, constraint_normals=weights
-        )
+        process = ConstraintNormals(shape=weights.shape, constraint_normals=weights)
         self.assertEqual(np.all(process.vars.weights.get() == weights), True)
-        self.assertEqual(
-            np.all(process.s_in.shape == (weights.shape[1], 1)), True
-        )
-        self.assertEqual(
-            np.all(process.a_out.shape == (weights.shape[0], 1)), True
-        )
+        self.assertEqual(np.all(process.s_in.shape == (weights.shape[1], 1)), True)
+        self.assertEqual(np.all(process.a_out.shape == (weights.shape[0], 1)), True)
         print(
             "[LavaQpOpt][INFO]: Custom initialization test passed for "
             + "ConstraintNormals"
@@ -143,12 +115,8 @@ class TestProcessesFloatingPoint(unittest.TestCase):
         weights = np.array([[2, 43, 2], [43, 3, 4], [2, 4, 1]])
         process = QuadraticConnectivity(shape=weights.shape, hessian=weights)
         self.assertEqual(np.all(process.vars.weights.get() == weights), True)
-        self.assertEqual(
-            np.all(process.s_in.shape == (weights.shape[1], 1)), True
-        )
-        self.assertEqual(
-            np.all(process.a_out.shape == (weights.shape[0], 1)), True
-        )
+        self.assertEqual(np.all(process.s_in.shape == (weights.shape[1], 1)), True)
+        self.assertEqual(np.all(process.a_out.shape == (weights.shape[0], 1)), True)
         print(
             "[LavaQpOpt][INFO]: Custom initialization test passed for "
             + "QuadraticConnectivity"
@@ -159,9 +127,7 @@ class TestProcessesFloatingPoint(unittest.TestCase):
 
         b = np.array([[2, 4]]).T
         process = ConstraintCheck(constraint_matrix=A, constraint_bias=b)
-        self.assertEqual(
-            np.all(process.vars.constraint_matrix.get() == A), True
-        )
+        self.assertEqual(np.all(process.vars.constraint_matrix.get() == A), True)
         self.assertEqual(np.all(process.vars.constraint_bias.get() == b), True)
         self.assertEqual(np.all(process.s_in.shape == (A.shape[1], 1)), True)
         self.assertEqual(np.all(process.a_out.shape == (A.shape[0], 1)), True)
@@ -188,22 +154,14 @@ class TestProcessesFloatingPoint(unittest.TestCase):
             alpha_decay_schedule=alpha_d,
             beta_growth_schedule=beta_g,
         )
-        self.assertEqual(
-            np.all(process.vars.constraint_matrix_T.get() == A_T), True
-        )
+        self.assertEqual(np.all(process.vars.constraint_matrix_T.get() == A_T), True)
         self.assertEqual(np.all(process.vars.hessian.get() == P), True)
-        self.assertEqual(
-            np.all(process.vars.qp_neuron_state.get() == init_sol), True
-        )
+        self.assertEqual(np.all(process.vars.qp_neuron_state.get() == init_sol), True)
         self.assertEqual(np.all(process.vars.grad_bias.get() == p), True)
         self.assertEqual(np.all(process.vars.alpha.get() == alpha), True)
         self.assertEqual(np.all(process.vars.beta.get() == beta), True)
-        self.assertEqual(
-            process.vars.alpha_decay_schedule.get() == alpha_d, True
-        )
-        self.assertEqual(
-            process.vars.beta_growth_schedule.get() == beta_g, True
-        )
+        self.assertEqual(process.vars.alpha_decay_schedule.get() == alpha_d, True)
+        self.assertEqual(process.vars.beta_growth_schedule.get() == beta_g, True)
         self.assertEqual(np.all(process.s_in.shape == (A_T.shape[1], 1)), True)
         self.assertEqual(np.all(process.a_out.shape == (P.shape[0], 1)), True)
         print(

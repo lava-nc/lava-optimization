@@ -9,7 +9,7 @@ from lava.magma.core.run_configs import Loihi1SimCfg
 from src.lava.lib.optimization.solvers.abstract.solver import (
     OptimizationSolver,
 )
-from src.lava.lib.optimization.problems.problems import QpProblem
+from src.lava.lib.optimization.problems.problems import QP
 
 from src.lava.lib.optimization.solvers.qp.models import (
     ConstraintCheck,
@@ -17,10 +17,8 @@ from src.lava.lib.optimization.solvers.qp.models import (
 )
 
 # Future inheritance from OptimizationSolver class
-class QpSolver:
-    def __init__(
-        self, alpha, beta, alpha_decay_schedule, beta_growth_schedule
-    ):
+class QPSolver:
+    def __init__(self, alpha, beta, alpha_decay_schedule, beta_growth_schedule):
         self.alpha = alpha
         self.beta = beta
         self.beta_g = beta_growth_schedule
@@ -36,14 +34,23 @@ class QpSolver:
         # self.solver_net.run()
         pass
 
-    def solve(self, problem: QpProblem):
+    def solve(self, problem: QP):
         self.solver_net = self.create_network(problem)
-        Q, p, A, k = problem._Q, problem._p, problem._A, problem._k
+        Q, p, = (
+            problem._Q,
+            problem._p,
+        )
+        if problem._A is not None:
+            A, k = problem._A, problem._k
+            F = np.diag(1 / np.linalg.norm(A, axis=1))
+        else:
+            A, k = np.zeros((Q.shape[0], Q.shape[1])), np.zeros((Q.shape[0], 1))
+            # Dummy preconditioner
+            F = np.diag(np.linalg.norm(A, axis=1))
         # Precondition the problem before feeding it into Loihi
         preconditioner_Q = np.sqrt(np.diag(1 / np.linalg.norm(Q, axis=1)))
         Q_pre = preconditioner_Q @ Q @ preconditioner_Q
         p_pre = preconditioner_Q @ p
-        F = np.diag(1 / np.linalg.norm(A, axis=1))
         A = F @ A @ preconditioner_Q
         k = F @ k
         Q = Q_pre
@@ -83,9 +90,7 @@ class QpSolver:
                 i_max, preconditioner_Q @ pre_sol
             )
         )
-        print(
-            "[LavaQpOpt][INFO]: QP Solver ran in {} seconds".format(toc - tic)
-        )
+        print("[LavaQpOpt][INFO]: QP Solver ran in {} seconds".format(toc - tic))
         # Future release working with readout and hostmonitor processes
         # self.integrator = self.create_integrator(problem)
         # self._build()

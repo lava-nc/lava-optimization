@@ -33,6 +33,7 @@ import glob
 import shutil
 
 from sys import version_info
+
 py3 = version_info[0] == 3
 py2 = not py3
 if py2:
@@ -64,11 +65,13 @@ except subprocess.CalledProcessError as e:
 
 try:
     from pybuilder.cli import main
+
     # verbose, debug, skip all optional...
     if main("-v", "-X", "-o", "--reset-plugins", "clean", "package"):
         raise RuntimeError("PyBuilder build failed")
 
     from pybuilder.reactor import Reactor
+
     reactor = Reactor.current_instance()
     project = reactor.project
     dist_dir = project.expand_path("$dir_dist")

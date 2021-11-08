@@ -3,8 +3,9 @@
 # See: https://spdx.org/licenses/
 
 import numpy as np
-from src.lava.lib.optimization.problems.problems import QpProblem
-from src.lava.lib.optimization.solvers.qp.solver import QpSolver
+from src.lava.lib.optimization.problems.problems import QP
+from src.lava.lib.optimization.solvers.qp.solver import QPSolver
+
 
 def main():
     Q = np.array([[100, 0, 0], [0, 15, 0], [0, 0, 5]])
@@ -15,11 +16,14 @@ def main():
     alpha, beta = 0.001, 1
     alpha_d, beta_g = 10000, 10000
 
-    problem = QpProblem(Q=Q, p=p, A=A, k=k)
-    solver = QpSolver(alpha=alpha, beta=beta, alpha_decay_schedule=alpha_d, beta_growth_schedule=beta_g)
+    problem = QP(Q=Q, p=p, A=A, k=k)
+    solver = QPSolver(
+        alpha=alpha,
+        beta=beta,
+        alpha_decay_schedule=alpha_d,
+        beta_growth_schedule=beta_g,
+    )
     solver.solve(problem)
-
-
 
 
 if __name__ == "__main__":

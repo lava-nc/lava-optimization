@@ -69,9 +69,7 @@ class OptimizationSolver:
             population_size=self.solver_net.readout_size,
             target_cost=self.target_cost,
         )
-        self.host_monitor = HostMonitor(
-            population_size=self.solver_net.readout_size
-        )
+        self.host_monitor = HostMonitor(population_size=self.solver_net.readout_size)
 
         # Connect processes.
         self.solver_net.out_ports.to_integrator.connect(

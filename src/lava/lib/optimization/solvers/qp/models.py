@@ -28,9 +28,7 @@ from src.lava.lib.optimization.solvers.qp.processes import (
 @requires(CPU)
 class PyCDModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64, precision=24)
-    a_out: PyOutPort = LavaPyType(
-        PyOutPort.VEC_DENSE, np.float64, precision=24
-    )
+    a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64, precision=24)
     weights: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
 
     def run_spk(self):
@@ -45,9 +43,7 @@ class PyCDModel(PyLoihiProcessModel):
 @requires(CPU)
 class PyCNeuModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64, precision=24)
-    a_out: PyOutPort = LavaPyType(
-        PyOutPort.VEC_DENSE, np.float64, precision=24
-    )
+    a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64, precision=24)
     thresholds: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
 
     def run_spk(self):
@@ -62,9 +58,7 @@ class PyCNeuModel(PyLoihiProcessModel):
 @requires(CPU)
 class PyQCModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64, precision=24)
-    a_out: PyOutPort = LavaPyType(
-        PyOutPort.VEC_DENSE, np.float64, precision=24
-    )
+    a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64, precision=24)
     weights: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
 
     def run_spk(self):
@@ -78,21 +72,11 @@ class PyQCModel(PyLoihiProcessModel):
 @implements(proc=SolutionNeurons, protocol=LoihiProtocol)
 @requires(CPU)
 class PySNModel(PyLoihiProcessModel):
-    s_in_qc: PyInPort = LavaPyType(
-        PyInPort.VEC_DENSE, np.float64, precision=24
-    )
-    a_out_qc: PyOutPort = LavaPyType(
-        PyOutPort.VEC_DENSE, np.float64, precision=24
-    )
-    s_in_cn: PyInPort = LavaPyType(
-        PyInPort.VEC_DENSE, np.float64, precision=24
-    )
-    a_out_cc: PyOutPort = LavaPyType(
-        PyOutPort.VEC_DENSE, np.float64, precision=24
-    )
-    qp_neuron_state: np.ndarray = LavaPyType(
-        np.ndarray, np.float64, precision=24
-    )
+    s_in_qc: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64, precision=24)
+    a_out_qc: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64, precision=24)
+    s_in_cn: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64, precision=24)
+    a_out_cc: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64, precision=24)
+    qp_neuron_state: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
     grad_bias: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
     alpha: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
     beta: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
@@ -136,9 +120,7 @@ class PySNModel(PyLoihiProcessModel):
 @requires(CPU)
 class PyCNorModel(PyLoihiProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64, precision=24)
-    a_out: PyOutPort = LavaPyType(
-        PyOutPort.VEC_DENSE, np.float64, precision=24
-    )
+    a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64, precision=24)
     weights: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
 
     def run_spk(self):
@@ -154,15 +136,9 @@ class SubCCModel(AbstractSubProcessModel):
     """Implement constraintCheckProcess behavior via sub Processes."""
 
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64, precision=24)
-    constraint_matrix: np.ndarray = LavaPyType(
-        np.ndarray, np.float64, precision=24
-    )
-    constraint_bias: np.ndarray = LavaPyType(
-        np.ndarray, np.float64, precision=24
-    )
-    a_out: PyOutPort = LavaPyType(
-        PyOutPort.VEC_DENSE, np.float64, precision=24
-    )
+    constraint_matrix: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
+    constraint_bias: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
+    a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64, precision=24)
 
     def __init__(self, proc):
         """Builds sub Process structure of the Process."""
@@ -186,9 +162,7 @@ class SubCCModel(AbstractSubProcessModel):
         self.constraintNeurons.out_ports.a_out.connect(proc.out_ports.a_out)
 
         # alias process variables to subprocess variables
-        proc.vars.constraint_matrix.alias(
-            self.constraintDirections.vars.weights
-        )
+        proc.vars.constraint_matrix.alias(self.constraintDirections.vars.weights)
         proc.vars.constraint_bias.alias(self.constraintNeurons.vars.thresholds)
 
 
@@ -198,20 +172,14 @@ class SubGDModel(AbstractSubProcessModel):
 
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64, precision=24)
     hessian: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
-    constraint_matrix_T: np.ndarray = LavaPyType(
-        np.ndarray, np.float64, precision=24
-    )
+    constraint_matrix_T: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
     grad_bias: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
-    qp_neuron_state: np.ndarray = LavaPyType(
-        np.ndarray, np.float64, precision=24
-    )
+    qp_neuron_state: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
     alpha: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
     beta: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=24)
     alpha_decay_schedule: int = LavaPyType(int, np.int32, precision=24)
     beta_growth_schedule: int = LavaPyType(int, np.int32, precision=24)
-    a_out: PyOutPort = LavaPyType(
-        PyOutPort.VEC_DENSE, np.float64, precision=24
-    )
+    a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64, precision=24)
 
     def __init__(self, proc):
         """Builds sub Process structure of the Process."""
@@ -221,9 +189,7 @@ class SubGDModel(AbstractSubProcessModel):
         A_T = proc.init_args.get("constraint_matrix_T", 0)
         shape_A_T = A_T.shape
         grad_bias = proc.init_args.get("grad_bias", np.zeros(shape_sol))
-        qp_neuron_i = proc.init_args.get(
-            "qp_neurons_init", np.zeros(shape_sol)
-        )
+        qp_neuron_i = proc.init_args.get("qp_neurons_init", np.zeros(shape_sol))
         alpha = proc.init_args.get("alpha", np.ones(shape_sol))
         beta = proc.init_args.get("beta", np.ones(shape_sol))
         a_d = proc.init_args.get("alpha_decay_schedule", 10000)

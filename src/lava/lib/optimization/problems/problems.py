@@ -13,7 +13,7 @@ class OptimizationProblem:
         self.constraints = constraints
 
 
-class QpProblem:
+class QP:
     def __init__(self, Q, p, A=None, k=None, A_eq=None, k_eq=None):
         """A Rudimentary interface for the QP solver. Inequality Constraints should be of
         the form Ax<=b.
@@ -25,12 +25,9 @@ class QpProblem:
             :param k_eq: Eqaulity constraints offsets
 
         """
-
         try:
             if (A is None and k is not None) or (A is not None and k is None):
-                raise Exception(
-                    "Please properly define your Inequality constraints"
-                )
+                raise Exception("Please properly define your Inequality constraints")
         except Exception as error:
             print("Input error:")
 
@@ -38,18 +35,23 @@ class QpProblem:
             if (A_eq is None and k_eq is not None) or (
                 A_eq is not None and k_eq is None
             ):
-                raise Exception(
-                    "Please properly define your Equality constraints"
-                )
+                raise Exception("Please properly define your Equality constraints")
         except Exception as error:
             print("Input error:")
 
         self._Q = Q
         self._p = p
-        self._A = A
-        self._k = k
-        self._A_eq = A_eq
-        self._k_eq = k_eq
+
+        if A is not None:
+            self._A = A
+            self._k = k
+        else:
+            self._A = None
+            self._k = None
+
+        if A_eq is not None:
+            self._A_eq = A_eq
+            self._k_eq = k_eq
 
         if A_eq is not None:
             A_eq_new = np.vstack((A_eq, -A_eq))

@@ -82,7 +82,7 @@ class OptimizationSolver:
         :param problems list tuple: set of problems to be solved
         :param seed: seed for python's RNG.
         :param timeout: maximum number of timesteps to search for a solution.
-        :param target_cost: if an optimal solution is not needed or possible, 
+        :param target_cost: if an optimal solution is not needed or possible,
         target_costs set's the number of
         satisfying variables that cause the reporting neuron to spike.
         :return: Solution to the problem if one is found.

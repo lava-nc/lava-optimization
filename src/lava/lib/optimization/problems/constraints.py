@@ -6,11 +6,13 @@
 class AbstractConstraint:
     """Abstract constraint class from which the actual constraints derive.
 
-    :param var_subset: the set of variables affected by this constraint.
+    :param var_subset: List of indexes of the set of variables affected by this
+    constraint.
     """
 
     def __init__(self, **kwargs):
         self.var_subset = kwargs.get("var_subset", None)
+        self._is_discrete = None
 
     @property
     def is_linear(self):
@@ -21,7 +23,11 @@ class AbstractConstraint:
     @property
     def is_discrete(self):
         """Whether the variables are all discrete."""
-        return None
+        return self._is_discrete
+
+    @is_discrete.setter
+    def is_discrete(self, value):
+        self._is_discrete = value
 
 
 class DiscreteConstraint(AbstractConstraint):
@@ -33,7 +39,10 @@ class DiscreteConstraint(AbstractConstraint):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.is_discrete = True
         self.relation = kwargs.get("relation", None)
+
+
 
 
 class ContinuousConstraint(AbstractConstraint):

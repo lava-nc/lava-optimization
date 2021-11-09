@@ -7,10 +7,10 @@ import numpy as np
 from src.lava.lib.optimization.problems.constraints import (
     AbstractConstraint,
     DiscreteConstraint,
-    ContinuousConstraint,
-    MixedConstraint,
-    EqualityConstraint,
-    InequalityConstraint,
+    # ContinuousConstraint,
+    # MixedConstraint,
+    # EqualityConstraint,
+    # InequalityConstraint,
 )
 
 

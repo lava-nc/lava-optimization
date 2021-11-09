@@ -6,9 +6,10 @@ import numpy as np
 import time
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg
-from src.lava.lib.optimization.solvers.abstract.solver import (
-    OptimizationSolver,
-)
+
+# from src.lava.lib.optimization.solvers.abstract.solver import (
+#     OptimizationSolver,
+# )
 from src.lava.lib.optimization.problems.problems import QP
 
 from src.lava.lib.optimization.solvers.qp.models import (
@@ -16,13 +17,19 @@ from src.lava.lib.optimization.solvers.qp.models import (
     GradientDynamics,
 )
 
+
 # Future inheritance from OptimizationSolver class
 class QPSolver:
-    def __init__(self, alpha, beta, alpha_decay_schedule, beta_growth_schedule):
+    """Solve QP by connecting the two LAVA processes"""
+
+    def __init__(
+        self, alpha, beta, alpha_decay_schedule, beta_growth_schedule, runs=400
+    ):
         self.alpha = alpha
         self.beta = beta
         self.beta_g = beta_growth_schedule
         self.alpha_d = alpha_decay_schedule
+        self.runs = runs
 
     def create_network(self, problem):
         return None
@@ -57,7 +64,7 @@ class QPSolver:
         p = p_pre
         #####################################################################
         init_sol = np.random.rand(Q.shape[0], 1)
-        i_max = 400
+        i_max = self.runs
         ConsCheck = ConstraintCheck(constraint_matrix=A, constraint_bias=k)
         GradDyn = GradientDynamics(
             hessian=Q,

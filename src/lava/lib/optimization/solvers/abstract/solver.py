@@ -61,7 +61,8 @@ class OptimizationSolver:
     def _build(self):
         """Create  process network that actually solves the problem.
 
-        :param solver_net: neural network that solves the problem through its dynamics.
+        :param solver_net: neural network that solves the problem through its
+        dynamics.
         :param integrator: integrator that notifies solution via a spike.
         """
         # Create postprocessor processes
@@ -69,7 +70,9 @@ class OptimizationSolver:
             population_size=self.solver_net.readout_size,
             target_cost=self.target_cost,
         )
-        self.host_monitor = HostMonitor(population_size=self.solver_net.readout_size)
+        self.host_monitor = HostMonitor(
+            population_size=self.solver_net.readout_size
+        )
 
         # Connect processes.
         self.solver_net.out_ports.to_integrator.connect(
@@ -102,7 +105,8 @@ class OptimizationSolver:
         :param problems list tuple: set of problems to be solved
         :param seed: seed for python's RNG.
         :param timeout: maximum number of timesteps to search for a solution.
-        :param target_cost: if an optimal solution is not needed or possible, target_costs set's the number of
+        :param target_cost: if an optimal solution is not needed or possible
+        target_costs set's the number of
         satisfying variables that cause the reporting neuron to spike.
         :return: Solution to the problem if one is found.
         """
@@ -136,6 +140,7 @@ class CombinatorialSolver(OptimizationSolver):
 
 
 class NonLinearSolver(OptimizationSolver):
-    """A solver for optimization problems with nonlinear cost or constraints."""
+    """A solver for optimization problems with nonlinear cost or constraints.
+    """
 
     pass

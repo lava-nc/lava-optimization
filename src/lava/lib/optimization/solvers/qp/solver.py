@@ -51,7 +51,9 @@ class QPSolver:
             A, k = problem._A, problem._k
             F = np.diag(1 / np.linalg.norm(A, axis=1))
         else:
-            A, k = np.zeros((Q.shape[0], Q.shape[1])), np.zeros((Q.shape[0], 1))
+            A, k = np.zeros((Q.shape[0], Q.shape[1])), np.zeros(
+                (Q.shape[0], 1)
+            )
             # Dummy preconditioner
             F = np.diag(np.linalg.norm(A, axis=1))
         # Precondition the problem before feeding it into Loihi
@@ -97,7 +99,9 @@ class QPSolver:
                 i_max, preconditioner_Q @ pre_sol
             )
         )
-        print("[LavaQpOpt][INFO]: QP Solver ran in {} seconds".format(toc - tic))
+        print(
+            "[LavaQpOpt][INFO]: QP Solver ran in {} seconds".format(toc - tic)
+        )
         # Future release working with readout and hostmonitor processes
         # self.integrator = self.create_integrator(problem)
         # self._build()

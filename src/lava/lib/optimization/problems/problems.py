@@ -15,7 +15,8 @@ class OptimizationProblem:
 
 class QP:
     def __init__(self, Q, p, A=None, k=None, A_eq=None, k_eq=None):
-        """A Rudimentary interface for the QP solver. Inequality Constraints should be of the form Ax<=b.
+        """A Rudimentary interface for the QP solver. Inequality Constraints
+        should be of the form Ax<=k.
         :param Q: Quadratic term of the cost function
         :param p: Linear term of the cost function
         :param A: Inequality constrainting hyperplanes
@@ -26,9 +27,13 @@ class QP:
         """
 
         if (A is None and k is not None) or (A is not None and k is None):
-            raise Exception("Please properly define your Inequality constraints")
+            raise Exception(
+                "Please properly define your Inequality constraints"
+            )
 
-        if (A_eq is None and k_eq is not None) or (A_eq is not None and k_eq is None):
+        if (A_eq is None and k_eq is not None) or (
+            A_eq is not None and k_eq is None
+        ):
             raise Exception("Please properly define your Equality constraints")
 
         self._Q = Q

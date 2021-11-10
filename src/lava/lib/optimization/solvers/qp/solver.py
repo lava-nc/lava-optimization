@@ -23,13 +23,12 @@ class QPSolver:
     """Solve QP by connecting the two LAVA processes"""
 
     def __init__(
-        self, alpha, beta, alpha_decay_schedule, beta_growth_schedule, runs=400
+        self, alpha, beta, alpha_decay_schedule, beta_growth_schedule
     ):
         self.alpha = alpha
         self.beta = beta
         self.beta_g = beta_growth_schedule
         self.alpha_d = alpha_decay_schedule
-        self.runs = runs
 
     def create_network(self, problem):
         return None
@@ -41,7 +40,7 @@ class QPSolver:
         # self.solver_net.run()
         pass
 
-    def solve(self, problem: QP):
+    def solve(self, problem: QP, iterations=400):
         self.solver_net = self.create_network(problem)
         Q, p, = (
             problem._Q,
@@ -66,7 +65,7 @@ class QPSolver:
         p = p_pre
         #####################################################################
         init_sol = np.random.rand(Q.shape[0], 1)
-        i_max = self.runs
+        i_max = iterations
         ConsCheck = ConstraintCheck(constraint_matrix=A, constraint_bias=k)
         GradDyn = GradientDynamics(
             hessian=Q,
@@ -95,12 +94,15 @@ class QPSolver:
         GradDyn.stop()
         toc = time.time()
         print(
-            "[LavaQpOpt][INFO]: The solution after {} runs is {}".format(
+            "[LavaQpOpt][INFO]: The solution after {} iterations \
+            is \n {}".format(
                 i_max, preconditioner_Q @ pre_sol
             )
         )
         print(
-            "[LavaQpOpt][INFO]: QP Solver ran in {} seconds".format(toc - tic)
+            "\n [LavaQpOpt][INFO]: QP Solver ran in {} seconds".format(
+                toc - tic
+            )
         )
         # Future release working with readout and hostmonitor processes
         # self.integrator = self.create_integrator(problem)

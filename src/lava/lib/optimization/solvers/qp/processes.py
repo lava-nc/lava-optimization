@@ -11,17 +11,19 @@ import numpy as np
 class ConstraintDirections(AbstractProcess):
     """Connections in the constraint-checking group of neurons.
     Realizes the following abstract behavior:
-    a_out = A * s_in
+    a_out = weights * s_in
 
     intialize the constraintDirectionsProcess
 
-    Kwargs:
-        shape (int tuple): Define the shape of the connections
-        matrix as a tuple. Defaults to (1,1)
-        constraint_directions (1-D  or 2-D np.array): Define the directions
-        of the linear constraint hyperplanes. This is 'A' in the constraints
-        of the QP. Defaults to 0
-    """
+        Kwargs
+        ------
+        shape : int tuple, optional
+            Define the shape of the connections matrix as a tuple. Defaults to
+            (1,1)
+        constraint_directions : (1-D  or 2-D np.array), optional
+            Define the directions of the linear constraint hyperplanes. This is
+            'A' in the constraints of the QP. Defaults to 0
+     """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -38,14 +40,19 @@ class ConstraintNeurons(AbstractProcess):
     graded spike corresponding to the violated constraint is sent from the out
     port.
 
+    Realizes the following abstract behavior:
+    a_out = (s_in - thresholds) * (s_in < thresholds)
+
     Intialize the constraintNeurons Process.
 
-    Kwargs:
-        shape (int tuple): Define the shape of the thresholds vector.
-        Defaults to (1,1).
-        thresholds (1-D np.array): Define the thresholds of the neurons
-        in the constraint checking layer. This is usually 'k' in the
-        constraints of the QP. Default value of thresholds is 0.
+        Kwargs:
+        ------
+        shape : int tuple, optional
+            Define the shape of the thresholds vector. Defaults to (1,1).
+        thresholds : 1-D np.array, optional
+            Define the thresholds of the neurons in the
+            constraint checking layer. This is usually 'k' in the constraints
+            of the QP. Default value of thresholds is 0.
     """
 
     def __init__(self, **kwargs):
@@ -59,15 +66,18 @@ class ConstraintNeurons(AbstractProcess):
 class QuadraticConnectivity(AbstractProcess):
     """The connections that define the Hessian of the quadratic cost function
     Realizes the following abstract behavior:
-    a_out = A * s_in
+    a_out = weights * s_in
 
     Intialize the quadraticConnectivity process.
 
-    Kwargs:
-        shape (int tuple): A tuple defining the shape of the connections
-        matrix. Defaults to (1,1).
-        hessian (1-D  or 2-D np.array): Define the hessian matrix ('Q' in
-        the cost function of the QP) in the QP. Defaults to 0.
+        Kwargs:
+        ------
+        shape : int tuple, optional
+            A tuple defining the shape of the connections matrix. Defaults to
+            (1,1).
+        hessian : (1-D  or 2-D np.array, optional
+            Define the hessian matrix ('Q' in the cost function of the QP) in
+            the QP. Defaults to 0.
     """
 
     def __init__(self, **kwargs):
@@ -81,25 +91,32 @@ class QuadraticConnectivity(AbstractProcess):
 class SolutionNeurons(AbstractProcess):
     """The neurons that evolve according to the constraint-corrected gradient
     dynamics.
+    Implements the abstract behaviour
+    qp_neuron_state += (-alpha * (s_in_qc + grad_bias) - beta * s_in_cn)
 
     Intialize the solutionNeurons process.
 
-    Kwargs:
-        shape (int tuple): A tuple defining the shape of the qp neurons.
-        Defaults to (1,1).
-        qp_neurons_init (1-D np.array): initial value of qp solution neurons
-        grad_bias (1-D np.array): The bias of the gradient of the QP. This
-        is the value 'p' in the QP definition.
-        alpha (1-D np.array): Defines the learning rate for gradient
-        descent. Defaults to 1.
-        beta (1-D np.array): Defines the learning rate for constraint-
-        checking. Defaults to 1.
-        alpha_decay_schedule (int): The number of iterations after which one
-        right shift operation takes place for alpha. Default intialization
-        to a very high value of 10000.
-        beta_growth_schedule (int): The number of iterations after which one
-        left shift operation takes place for beta. Default intialization
-        to a very high value of 10000.
+        Kwargs:
+        -------
+        shape : int tuple, optional
+            A tuple defining the shape of the qp neurons. Defaults to (1,1).
+        qp_neurons_init : 1-D np.array, optional
+            initial value of qp solution neurons
+        grad_bias : 1-D np.array, optional
+            The bias of the gradient of the QP. This is the value 'p' in the
+            QP definition.
+        alpha : 1-D np.array, optional
+            Defines the learning rate for gradient descent. Defaults to 1.
+        beta : 1-D np.array, optional
+            Defines the learning rate for constraint-checking. Defaults to 1.
+        alpha_decay_schedule : int, optional
+            The number of iterations after which one right shift operation
+            takes place for alpha. Default intialization to a very high value
+            of 10000.
+        beta_growth_schedule : int, optional
+            The number of iterations after which one left shift operation takes
+            place for beta. Default intialization to a very high value of
+            10000.
     """
 
     def __init__(self, **kwargs):
@@ -138,17 +155,19 @@ class ConstraintNormals(AbstractProcess):
     """Connections influencing the gradient dynamics when constraints are
     violated.
     Realizes the following abstract behavior:
-    a_out = A * s_in
+    a_out = weights * s_in
 
     Intialize the constraint normals to assign weights to constraint
     violation spikes.
 
-    Kwargs:
-        shape (int tuple): A tuple defining the shape of the connections
-        matrix. Defaults to (1,1).
-        constraint_normals (1-D  or 2-D np.array): Define the normals
-        of the linear constraint hyperplanes. This is A^T in the constraints
-        of the QP. Defaults to 0
+        Kwargs:
+        ------
+        shape : int tuple, optional
+            A tuple defining the shape of the connections matrix. Defaults to
+            (1,1).
+        constraint_normals : 1-D  or 2-D np.array
+            Define the normals of the linear constraint hyperplanes. This is
+            A^T in the constraints of the QP. Defaults to 0
     """
 
     def __init__(self, **kwargs):
@@ -167,13 +186,19 @@ class ConstraintCheck(AbstractProcess):
     process. House the constraintDirections and constraintNeurons as
     sub-processes.
 
+    Implements Abstract behavior:
+    (constraint_matrix*x-constraint_bias)*(constraint_matrix*x<constraint_bias)
+
     Initialize constraintCheck Process.
 
-    Kwargs:
-        constraint_matrix (1-D  or 2-D np.array):  The value of the constraint
-        matrix. This is 'A' in the linear constraints
-        constraint_bias (1-D np.array):  The value of the constraint
-        bias. This is 'k' in the linear constraints
+        Kwargs:
+        ------
+        constraint_matrix : 1-D  or 2-D np.array, optional
+        The value of the constraint matrix. This is 'A' in the linear
+        constraints.
+        constraint_bias : 1-D np.array, optional
+            The value of the constraint bias. This is 'k' in the linear
+            constraints.
     """
 
     def __init__(self, **kwargs):
@@ -191,26 +216,37 @@ class ConstraintCheck(AbstractProcess):
 class GradientDynamics(AbstractProcess):
     """Perform gradient descent with constraint correction to converge at the
     solution of the QP.
+
+    Implements Abstract behavior:
+    -alpha*(Q@x_init + p)- beta*A_T@graded_constraint_spike
+
     Initialize gradientDynamics Process.
 
-    Kwargs:
-        hessian (1-D  or 2-D np.array): Define the hessian matrix ('Q' in
-        the cost function of the QP) in the QP. Defaults to 0.
-        constraint_matrix_T (1-D  or 2-D np.array):  The value of the transpose
-        of the constraint matrix. This is 'A^T' in the linear constraints.
-        grad_bias (1-D np.array): The bias of the gradient of the QP. This
-        is the value 'p' in the QP definition.
-        qp_neurons_init (1-D np.array): initial value of qp solution neurons
-        alpha (1-D np.array): Defines the learning rate for gradient
-        descent. Defaults to 1.
-        beta (1-D np.array): Defines the learning rate for constraint-
-        checking. Defaults to 1.
-        alpha_decay_schedule (int): The number of iterations after which one
-        right shift operation takes place for alpha. Default intialization
-        to a very high value of 10000.
-        beta_growth_schedule (int): The number of iterations after which one
-        left shift operation takes place for beta. Default intialization
-        to a very high value of 10000.
+        Kwargs:
+        ------
+        hessian : 1-D  or 2-D np.array, optional
+            Define the hessian matrix ('Q' in the cost function of the QP) in
+            the QP. Defaults to 0.
+        constraint_matrix_T : 1-D  or 2-D np.array, optional
+            The value of the transpose of the constraint matrix. This is 'A^T'
+            in the linear constraints.
+        grad_bias : 1-D np.array, optional
+            The bias of the gradient of the QP. This is the value 'p' in the QP
+            definition.
+        qp_neurons_init : 1-D np.array, optional
+            Initial value of qp solution neurons
+        alpha : 1-D np.array, optional
+            Define the learning rate for gradient descent. Defaults to 1.
+        beta : 1-D np.array, optional
+            Define the learning rate for constraint-checking. Defaults to 1.
+        alpha_decay_schedule : int, optional
+            The number of iterations after which one right shift operation
+            takes place for alpha. Default intialization to a very high value
+            of 10000.
+        beta_growth_schedule : int, optional
+            The number of iterations after which one left shift operation takes
+            place for beta. Default intialization to a very high value of
+            10000.
     """
 
     def __init__(self, **kwargs):

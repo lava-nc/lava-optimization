@@ -4,6 +4,7 @@
 
 """
 Implement behaviors (models) of the processes defined in processes.py
+For further documentation please refer to processes.py
 """
 import numpy as np
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
@@ -35,7 +36,7 @@ class PyCDModel(PyLoihiProcessModel):
 
     def run_spk(self):
         s_in = self.s_in.recv()
-        # matrix multiplication
+        # process behavior: matrix multiplication
         a_out = self.weights @ s_in
         self.a_out.send(a_out)
         self.a_out.flush()
@@ -52,7 +53,7 @@ class PyCNeuModel(PyLoihiProcessModel):
 
     def run_spk(self):
         s_in = self.s_in.recv()
-        # constraint violation check
+        # process behavior: constraint violation check
         a_out = (s_in - self.thresholds) * (s_in < self.thresholds)
         self.a_out.send(a_out)
         self.a_out.flush()
@@ -69,7 +70,7 @@ class PyQCModel(PyLoihiProcessModel):
 
     def run_spk(self):
         s_in = self.s_in.recv()
-        # matrix multiplication
+        # process behavior: matrix multiplication
         a_out = self.weights @ s_in
         self.a_out.send(a_out)
         self.a_out.flush()
@@ -102,8 +103,6 @@ class PySNModel(PyLoihiProcessModel):
     growth_counter: int = LavaPyType(int, np.int32, precision=24)
 
     def run_spk(self):
-        # Perhaps reduce the number of OutPorts if behaviour is consistent,
-        # to mimic actual hardware microcode implementation
         a_out = self.qp_neuron_state
         self.a_out_cc.send(a_out)
         self.a_out_cc.flush()
@@ -125,11 +124,10 @@ class PySNModel(PyLoihiProcessModel):
             # TODO: guard against shift overflows in fixed-point
             self.growth_counter = np.zeros(self.growth_counter.shape)
 
+        # process behavior: gradient update
         self.qp_neuron_state += (
             -self.alpha * (s_in_qc + self.grad_bias) - self.beta * s_in_cn
         )
-        # print(s_in_qc)
-        # print(self.qp_neuron_state)
 
 
 @implements(proc=ConstraintNormals, protocol=LoihiProtocol)
@@ -143,7 +141,7 @@ class PyCNorModel(PyLoihiProcessModel):
 
     def run_spk(self):
         s_in = self.s_in.recv()
-        # matrix multiplication
+        # process behavior: matrix multiplication
         a_out = self.weights @ s_in
         self.a_out.send(a_out)
         self.a_out.flush()
@@ -178,7 +176,7 @@ class SubCCModel(AbstractSubProcessModel):
             shape=constraint_bias.shape, thresholds=constraint_bias
         )
 
-        # connect subprocesses
+        # connect subprocesses to obtain required process behavior
         proc.in_ports.s_in.connect(self.constraintDirections.in_ports.s_in)
         self.constraintDirections.out_ports.a_out.connect(
             self.constraintNeurons.in_ports.s_in
@@ -242,7 +240,7 @@ class SubGDModel(AbstractSubProcessModel):
         )
         self.cN = ConstraintNormals(shape=shape_A_T, constraint_normals=A_T)
 
-        # connect subprocesses
+        # connect subprocesses to obtain required process behavior
         proc.in_ports.s_in.connect(self.cN.in_ports.s_in)
         self.cN.out_ports.a_out.connect(self.sN.in_ports.s_in_cn)
         self.sN.out_ports.a_out_qc.connect(self.qC.in_ports.s_in)

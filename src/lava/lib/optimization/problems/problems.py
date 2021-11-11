@@ -4,28 +4,11 @@
 
 import numpy as np
 
-
-class OptimizationProblem:
-    """Abstract constraint optimization problem from which the actual problems
-    derive.
-
-    Init Parameters
-    ----------
-    cost : cost, optional
-        Cost term for the optimization problem, by default None
-    constraints : constraint, optional
-        Constraints for the optimization problem, by default None
-    """
-
-    def __init__(self, cost=None, constraints=None):
-        self.cost = cost
-        self.constraints = constraints
-
-
 class QP:
     """A Rudimentary interface for the QP solver. Inequality Constraints
     should be of the form Ax<=k. Equality constraints are expressed as
-    sandwiched inequality constraints.
+    sandwiched inequality constraints. The cost of the QP is of the form
+    1/2*x^t*Q*x + p^Tx
 
         Parameters
         ----------
@@ -54,14 +37,16 @@ class QP:
     def __init__(self, Q, p=None, A=None, k=None, A_eq=None, k_eq=None):
         if (A is None and k is not None) or (A is not None and k is None):
             raise ValueError(
-                "Please properly define your Inequality constraints"
+                "Please properly define your Inequality constraints. Supply \
+                all A and k "
             )
 
         if (A_eq is None and k_eq is not None) or (
             A_eq is not None and k_eq is None
         ):
             raise ValueError(
-                "Please properly define your Equality constraints"
+                "Please properly define your Equality constraints. Supply \
+                all A_eq and k_eq."
             )
 
         self._Q = Q

@@ -6,10 +6,6 @@ import numpy as np
 import time
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg
-
-# from src.lava.lib.optimization.solvers.abstract.solver import (
-#     OptimizationSolver,
-# )
 from src.lava.lib.optimization.problems.problems import QP
 
 from src.lava.lib.optimization.solvers.qp.models import (
@@ -20,7 +16,22 @@ from src.lava.lib.optimization.solvers.qp.models import (
 
 # Future inheritance from OptimizationSolver class
 class QPSolver:
-    """Solve QP by connecting the two LAVA processes"""
+    """Solve Full QP by connecting two LAVA processes GradDynamics and
+    ConstraintCheck
+
+        Parameters
+        ----------
+        alpha : 1-D np.array
+            The learning rate for gradient descent
+        beta : 1-D np.array
+            The learning rate for constraint correction
+        alpha_decay_schedule : int, default 10000
+            Number of iterations after which one right shift takes place for
+            alpha
+        beta_growth_schedule : int, default 10000
+            Number of iterations after which one left shift takes place for
+            beta
+    """
 
     def __init__(
         self, alpha, beta, alpha_decay_schedule, beta_growth_schedule
@@ -30,18 +41,16 @@ class QPSolver:
         self.beta_g = beta_growth_schedule
         self.alpha_d = alpha_decay_schedule
 
-    def create_network(self, problem):
-        return None
-
-    def create_integrator(self, problem):
-        return None
-
-    def _run(self, timeout, backend=None):
-        # self.solver_net.run()
-        pass
-
     def solve(self, problem: QP, iterations=400):
-        self.solver_net = self.create_network(problem)
+        """solves the supplied QP problem
+
+        Parameters
+        ----------
+        problem : QP
+            The QP containing the matrices that set up the problem
+        iterations : int, optional
+            Number of iterations for which QP has to run, by default 400
+        """
         Q, p, = (
             problem._Q,
             problem._p,
@@ -78,8 +87,6 @@ class QPSolver:
             beta_growth_schedule=self.beta_g,
         )
 
-        # print(GradDyn.vars.qp_neuron_state.get())
-
         # core solver
         GradDyn.a_out.connect(ConsCheck.s_in)
         ConsCheck.a_out.connect(GradDyn.s_in)
@@ -94,8 +101,8 @@ class QPSolver:
         GradDyn.stop()
         toc = time.time()
         print(
-            "[LavaQpOpt][INFO]: The solution after {} iterations \
-            is \n {}".format(
+            "[LavaQpOpt][INFO]: The solution after {} iterations is \n \
+            {}".format(
                 i_max, preconditioner_Q @ pre_sol
             )
         )
@@ -104,7 +111,3 @@ class QPSolver:
                 toc - tic
             )
         )
-        # Future release working with readout and hostmonitor processes
-        # self.integrator = self.create_integrator(problem)
-        # self._build()
-        # super().solve(**kwargs)

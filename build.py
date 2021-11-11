@@ -7,9 +7,9 @@ use_plugin("python.flake8")
 # use_plugin("python.coverage")
 use_plugin("python.distutils")
 use_plugin("python.sphinx")
-use_plugin('python.install_dependencies')
+use_plugin("python.install_dependencies")
 use_plugin("python.pycharm")
-use_plugin('pypi:pybuilder_bandit')
+use_plugin("pypi:pybuilder_bandit")
 
 name = "lava-nc/lava-optmization"
 default_task = ["analyze", "publish"]
@@ -53,12 +53,12 @@ def set_properties(project):
         "target/*,.svn,CVS,.bzr,.hg,.git,__pycache__,.pybuilder/*",
     )
 
-    project.get_property('distutils_commands').append('build')
-    project.get_property('distutils_commands').append('sdist')
-    project.get_property('distutils_commands').append('bdist_dumb')
+    project.get_property("distutils_commands").append("build")
+    project.get_property("distutils_commands").append("sdist")
+    project.get_property("distutils_commands").append("bdist_dumb")
 
-    project.set_property('bandit_break_build', True)
-    project.set_property('bandit_include_testsources', False)
+    project.set_property("bandit_break_build", True)
+    project.set_property("bandit_include_testsources", False)
 
 
 @init(environments="unit")
@@ -82,7 +82,7 @@ def set_properties_unit(project):
     project.plugin_depends_on("sphinx_tabs")
 
     project.set_property("verbose", True)
-    
+
     project.set_property("coverage_threshold_warn", 0)
     project.set_property("coverage_break_build", False)
 
@@ -96,5 +96,5 @@ def set_properties_unit(project):
 
     project.set_property("unittest_module_glob", "test_*")
 
-    project.set_property('bandit_break_build', True)
-    project.set_property('bandit_include_testsources', False)
+    project.set_property("bandit_break_build", True)
+    project.set_property("bandit_include_testsources", False)

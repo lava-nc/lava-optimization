@@ -44,7 +44,7 @@ class ConstraintNeurons(AbstractProcess):
         shape (int tuple): Define the shape of the thresholds vector.
         Defaults to (1,1).
         thresholds (1-D np.array): Define the thresholds of the neurons
-        in the constraint checking layer. This is usually 'b' in the
+        in the constraint checking layer. This is usually 'k' in the
         constraints of the QP. Default value of thresholds is 0.
     """
 
@@ -66,7 +66,7 @@ class QuadraticConnectivity(AbstractProcess):
     Kwargs:
         shape (int tuple): A tuple defining the shape of the connections
         matrix. Defaults to (1,1).
-        hessian (1-D  or 2-D np.array): Define the hessian matrix ('P' in
+        hessian (1-D  or 2-D np.array): Define the hessian matrix ('Q' in
         the cost function of the QP) in the QP. Defaults to 0.
     """
 
@@ -173,7 +173,7 @@ class ConstraintCheck(AbstractProcess):
         constraint_matrix (1-D  or 2-D np.array):  The value of the constraint
         matrix. This is 'A' in the linear constraints
         constraint_bias (1-D np.array):  The value of the constraint
-        bias. This is 'b' in the linear constraints
+        bias. This is 'k' in the linear constraints
     """
 
     def __init__(self, **kwargs):
@@ -194,7 +194,7 @@ class GradientDynamics(AbstractProcess):
     Initialize gradientDynamics Process.
 
     Kwargs:
-        hessian (1-D  or 2-D np.array): Define the hessian matrix ('P' in
+        hessian (1-D  or 2-D np.array): Define the hessian matrix ('Q' in
         the cost function of the QP) in the QP. Defaults to 0.
         constraint_matrix_T (1-D  or 2-D np.array):  The value of the transpose
         of the constraint matrix. This is 'A^T' in the linear constraints.

@@ -17,7 +17,7 @@ from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg
 
-from src.lava.lib.optimization.solvers.qp.models import (
+from lava.lib.optimization.solvers.qp.models import (
     ConstraintCheck,
     ConstraintNeurons,
     SolutionNeurons,
@@ -87,7 +87,7 @@ class PyOPPModel(PyLoihiProcessModel):
 
 class TestModelsFloatingPoint(unittest.TestCase):
     """Tests of all model behaviors of the QP solver in floating point. Refer
-    to QP processes.py in qp/solver repo to understand behaviours.
+    to QP models.py in qp/solver repo to understand behaviours.
     """
 
     def test_model_constraint_directions(self):

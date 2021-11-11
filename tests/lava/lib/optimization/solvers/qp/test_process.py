@@ -6,7 +6,7 @@
 import unittest
 import numpy as np
 
-from src.lava.lib.optimization.solvers.qp.processes import (
+from lava.lib.optimization.solvers.qp.processes import (
     ConstraintCheck,
     ConstraintNeurons,
     SolutionNeurons,
@@ -19,8 +19,9 @@ from src.lava.lib.optimization.solvers.qp.processes import (
 
 class TestProcessesFloatingPoint(unittest.TestCase):
     """Initializations Tests of all processes of the QP solver in floating point
-    All tests check if the vars are properly assinged in the processes and if
-    the ports are shaped properly
+    All tests check if the vars are properly assigned in the processes and if
+    the ports are shaped properly. Refer to QP models.py in qp/solver repo to
+    understand behaviours.
     """
 
     def test_process_constraint_directions(self):

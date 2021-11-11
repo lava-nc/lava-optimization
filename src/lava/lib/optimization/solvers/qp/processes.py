@@ -23,7 +23,7 @@ class ConstraintDirections(AbstractProcess):
         constraint_directions : (1-D  or 2-D np.array), optional
             Define the directions of the linear constraint hyperplanes. This is
             'A' in the constraints of the QP. Defaults to 0
-     """
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

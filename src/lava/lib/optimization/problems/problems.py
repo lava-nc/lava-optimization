@@ -4,6 +4,7 @@
 
 import numpy as np
 
+
 class QP:
     """A Rudimentary interface for the QP solver. Inequality Constraints
     should be of the form Ax<=k. Equality constraints are expressed as

@@ -315,13 +315,13 @@ class TestModelsFloatingPoint(unittest.TestCase):
         """test behavior of GradientDynamics process
         -alpha*(P@x_init + p)- beta*A_T@graded_constraint_spike
         """
-        Q = np.array([[2, 43, 2], [43, 3, 4], [2, 4, 1]])
+        Q = np.array([[2.54, 43.32, 2], [43, 3.34, 4], [2, 4.43, 1]])
 
-        A_T = np.array([[2, 3, 6], [43, 3, 2]]).T
+        A_T = np.array([[2, 3.435, 6.76], [43, 3, 2]]).T
 
         init_sol = np.array([[2, 4, 6]]).T
-        p = np.array([[4, 3, 2]]).T
-        alpha, beta, alpha_d, beta_g = 3, 2, 100, 100
+        p = np.array([[4.56, 3.7, 2.3]]).T
+        alpha, beta, alpha_d, beta_g = 3.5, 2, 100, 100
         process = GradientDynamics(
             hessian=Q,
             constraint_matrix_T=A_T,
@@ -350,6 +350,10 @@ class TestModelsFloatingPoint(unittest.TestCase):
             run_cfg=Loihi1SimCfg(select_sub_proc_model=True),
         )
         in_spike_process.pause()
+        print(out_spike_process.vars.spike_out.get())
+        print(
+            init_sol + -alpha * (Q @ init_sol + p) - beta * A_T @ input_spike
+        )
         self.assertEqual(
             np.all(
                 out_spike_process.vars.spike_out.get()

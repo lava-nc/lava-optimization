@@ -115,14 +115,14 @@ class PySNModel(PyLoihiProcessModel):
 
         self.decay_counter += 1
         if self.decay_counter == self.alpha_decay_schedule:
-            # TODO: guard against shift overflows in Fixed-point
+            # TODO: guard against shift overflows in fixed-point
             self.alpha = np.right_shift(self.alpha, 1)
             self.decay_counter = np.zeros(self.decay_counter.shape)
 
         self.growth_counter += 1
         if self.growth_counter == self.beta_growth_schedule:
             self.beta = np.left_shift(self.beta, 1)
-            # TODO: guard against shift overflows in Fixed-point
+            # TODO: guard against shift overflows in fixed-point
             self.growth_counter = np.zeros(self.growth_counter.shape)
 
         self.qp_neuron_state += (

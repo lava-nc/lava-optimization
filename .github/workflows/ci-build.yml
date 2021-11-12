@@ -64,8 +64,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pybuilder
-        wget https://github.com/lava-nc/lava/releases/download/v0.1.1/lava-nc-0.1.1.tar.gz
-        pip install lava-nc-0.1.1.tar.gz
 
     - name: Run unit tests
       run: |

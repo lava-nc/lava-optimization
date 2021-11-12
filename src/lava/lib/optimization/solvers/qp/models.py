@@ -7,7 +7,6 @@ Implement behaviors (models) of the processes defined in processes.py
 For further documentation please refer to processes.py
 """
 import numpy as np
-import typing as ty
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.magma.core.model.py.ports import PyInPort, PyOutPort
 from lava.magma.core.model.py.type import LavaPyType

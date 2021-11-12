@@ -7,14 +7,13 @@ import time
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg
 from lava.lib.optimization.problems.problems import QP
-
 from lava.lib.optimization.solvers.qp.models import (
     ConstraintCheck,
     GradientDynamics,
 )
 
 
-# Future inheritance from OptimizationSolver class
+# Future: inheritance from OptimizationSolver class
 class QPSolver:
     """Solve Full QP by connecting two LAVA processes GradDynamics and
     ConstraintCheck
@@ -34,14 +33,18 @@ class QPSolver:
     """
 
     def __init__(
-        self, alpha, beta, alpha_decay_schedule, beta_growth_schedule
+        self,
+        alpha: np.ndarray,
+        beta: np.ndarray,
+        alpha_decay_schedule: int,
+        beta_growth_schedule: int,
     ):
         self.alpha = alpha
         self.beta = beta
         self.beta_g = beta_growth_schedule
         self.alpha_d = alpha_decay_schedule
 
-    def solve(self, problem: QP, iterations=400):
+    def solve(self, problem: QP, iterations: int = 400):
         """solves the supplied QP problem
 
         Parameters
@@ -54,9 +57,9 @@ class QPSolver:
         (
             Q,
             p,
-        ) = (problem.get_hessian, problem.get_linear_cost)
-        if problem.get_constraint_matrix is not None:
-            A, k = problem.get_constraint_matrix, problem.get_constraint_offset
+        ) = (problem.get_Q, problem.get_p)
+        if problem.get_A is not None:
+            A, k = problem.get_A, problem.get_k
             F = np.diag(1 / np.linalg.norm(A, axis=1))
         else:
             A, k = np.zeros((Q.shape[0], Q.shape[1])), np.zeros(

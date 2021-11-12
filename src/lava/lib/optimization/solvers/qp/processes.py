@@ -6,6 +6,7 @@ from lava.magma.core.process.process import AbstractProcess
 from lava.magma.core.process.variable import Var
 from lava.magma.core.process.ports.ports import InPort, OutPort
 import numpy as np
+import typing as ty
 
 
 class ConstraintDirections(AbstractProcess):
@@ -25,7 +26,7 @@ class ConstraintDirections(AbstractProcess):
             'A' in the constraints of the QP. Defaults to 0
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1, 1))
         self.s_in = InPort(shape=(shape[1], 1))
@@ -55,7 +56,7 @@ class ConstraintNeurons(AbstractProcess):
             of the QP. Default value of thresholds is 0.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1, 1))
         self.s_in = InPort(shape=(shape[0], 1))
@@ -75,12 +76,12 @@ class QuadraticConnectivity(AbstractProcess):
         shape : int tuple, optional
             A tuple defining the shape of the connections matrix. Defaults to
             (1,1).
-        hessian : (1-D  or 2-D np.array, optional
+        hessian : 1-D  or 2-D np.array, optional
             Define the hessian matrix ('Q' in the cost function of the QP) in
             the QP. Defaults to 0.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1, 1))
         self.s_in = InPort(shape=(shape[1], 1))
@@ -119,7 +120,7 @@ class SolutionNeurons(AbstractProcess):
             10000.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1, 1))
         # In/outPorts that come from/go to the quadratic connectivity process
@@ -170,7 +171,7 @@ class ConstraintNormals(AbstractProcess):
             A^T in the constraints of the QP. Defaults to 0
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1, 1))
         self.s_in = InPort(shape=(shape[1], 1))
@@ -201,7 +202,7 @@ class ConstraintCheck(AbstractProcess):
             constraints.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         constraint_matrix = kwargs.pop("constraint_matrix", 0)
         shape = constraint_matrix.shape
@@ -249,7 +250,7 @@ class GradientDynamics(AbstractProcess):
             10000.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: ty.Any):
         """ """
         super().__init__(**kwargs)
         hessian = kwargs.pop("hessian", 0)

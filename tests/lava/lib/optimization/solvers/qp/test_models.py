@@ -90,6 +90,25 @@ class TestModelsFloatingPoint(unittest.TestCase):
     to QP models.py in qp/solver repo to understand behaviours.
     """
 
+    def test_floating_send(self):
+        input_spike = np.array([[1.34], [1], [1]])
+        in_spike_process = InSpikeSetProcess(
+            in_shape=input_spike.shape, spike_in=input_spike
+        )
+        out_spike_process = OutProbeProcess(
+            out_shape=in_spike_process.a_out.shape
+        )
+
+        in_spike_process.a_out.connect(out_spike_process.s_in)
+        # process.a_out.connect(out_spike_process.s_in)
+
+        in_spike_process.run(
+            condition=RunSteps(num_steps=1), run_cfg=Loihi1SimCfg()
+        )
+        in_spike_process.pause()
+        print(out_spike_process.vars.spike_out.get())
+        in_spike_process.stop()
+
     def test_model_constraint_directions(self):
         """test behavior of constraint directions process
         (Matrix-vector multiplication)
@@ -112,6 +131,10 @@ class TestModelsFloatingPoint(unittest.TestCase):
             condition=RunSteps(num_steps=1), run_cfg=Loihi1SimCfg()
         )
         in_spike_process.pause()
+        print(out_spike_process.vars.spike_out.get())
+        # print(
+        #     weights @ input_spike
+        # )
         self.assertEqual(
             np.all(
                 out_spike_process.vars.spike_out.get()
@@ -333,10 +356,6 @@ class TestModelsFloatingPoint(unittest.TestCase):
             run_cfg=Loihi1SimCfg(select_sub_proc_model=True),
         )
         in_spike_process.pause()
-        # print(out_spike_process.vars.spike_out.get())
-        # print(
-        #     init_sol + -alpha * (Q @ init_sol + p) - beta * A_T @ input_spike
-        # )
         self.assertEqual(
             np.all(
                 out_spike_process.vars.spike_out.get()

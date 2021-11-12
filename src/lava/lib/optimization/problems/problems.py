@@ -3,6 +3,7 @@
 # See: https://spdx.org/licenses/
 
 import numpy as np
+import typing as ty
 
 
 class QP:
@@ -35,7 +36,15 @@ class QP:
             and vice-versa.
     """
 
-    def __init__(self, Q, p=None, A=None, k=None, A_eq=None, k_eq=None):
+    def __init__(
+        self,
+        Q: np.ndarray,
+        p: ty.Optional[np.ndarray] = None,
+        A: ty.Optional[np.ndarray] = None,
+        k: ty.Optional[np.ndarray] = None,
+        A_eq: ty.Optional[np.ndarray] = None,
+        k_eq: ty.Optional[np.ndarray] = None,
+    ):
         if (A is None and k is not None) or (A is not None and k is None):
             raise ValueError(
                 "Please properly define your Inequality constraints. Supply \
@@ -79,21 +88,21 @@ class QP:
                 self._k = k_eq_new
 
     @property
-    def get_hessian(self):
+    def get_Q(self) -> np.ndarray:
         return self._Q
 
     @property
-    def get_linear_cost(self):
+    def get_p(self) -> np.ndarray:
         return self._p
 
     @property
-    def get_constraint_matrix(self):
+    def get_A(self) -> np.ndarray:
         return self._A
 
     @property
-    def get_constraint_offset(self):
+    def get_k(self) -> np.ndarray:
         return self._k
 
     @property
-    def num_variables(self):
+    def num_variables(self) -> int:
         return len(self._p)

@@ -3,8 +3,8 @@
 # See: https://spdx.org/licenses/
 
 import numpy as np
-from src.lava.lib.optimization.problems.problems import QP
-from src.lava.lib.optimization.solvers.qp.solver import QPSolver
+from lava.lib.optimization.problems.problems import QP
+from lava.lib.optimization.solvers.qp.solver import QPSolver
 
 
 def main():

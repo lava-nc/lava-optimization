@@ -14,7 +14,7 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
-from src.lava.lib.optimization.solvers.qp.processes import (
+from lava.lib.optimization.solvers.qp.processes import (
     ConstraintDirections,
     ConstraintCheck,
     ConstraintNeurons,

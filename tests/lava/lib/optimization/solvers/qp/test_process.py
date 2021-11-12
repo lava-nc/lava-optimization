@@ -6,7 +6,7 @@
 import unittest
 import numpy as np
 
-from src.lava.lib.optimization.solvers.qp.processes import (
+from lava.lib.optimization.solvers.qp.processes import (
     ConstraintCheck,
     ConstraintNeurons,
     SolutionNeurons,

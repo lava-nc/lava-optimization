@@ -14,18 +14,18 @@ class QP:
 
         Parameters
         ----------
-        Q : 2-D or 1-D np.array
+        hessian : 2-D or 1-D np.array
             Quadratic term of the cost function
-        p : 1-D np.array, optional
+        linear_offset : 1-D np.array, optional
             Linear term of the cost function, defaults vector of zeros of the
             size of the number of variables in the QP
-        A : 2-D or 1-D np.array, optional
+        constraint_hyperplanes : 2-D or 1-D np.array, optional
             Inequality constrainting hyperplanes, by default None
-        k : 1-D np.array, optional
+        constraint_biases : 1-D np.array, optional
             Ineqaulity constraints offsets, by default None
-        A_eq : 2-D or 1-D np.array, optional
+        constraint_hyperplanes_eq : 2-D or 1-D np.array, optional
             Equality constrainting hyperplanes, by default None
-        k_eq : 1-D np.array, optional
+        constraint_biases_eq : 1-D np.array, optional
             Eqaulity constraints offsets, by default None
 
         Raises

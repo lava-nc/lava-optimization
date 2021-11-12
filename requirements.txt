@@ -1,1 +1,2 @@
+https://github.com/lava-nc/lava/releases/download/v0.1.1/lava-nc-0.1.1.tar.gz
 numpy

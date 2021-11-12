@@ -120,10 +120,6 @@ class TestModelsFloatingPoint(unittest.TestCase):
             True,
         )
         in_spike_process.stop()
-        print(
-            "[LavaQpOpt][INFO]: Behavioral test passed for "
-            + "ConstraintDirections"
-        )
 
     def test_model_constraint_neurons(self):
         """test behavior of constraint directions process
@@ -152,10 +148,6 @@ class TestModelsFloatingPoint(unittest.TestCase):
             True,
         )
         in_spike_process.stop()
-        print(
-            "[LavaQpOpt][INFO]: Behavioral test passed for "
-            + "ConstraintNeurons"
-        )
 
     def test_model_solution_neurons(self):
         """test behavior of SolutionNeurons process
@@ -212,11 +204,6 @@ class TestModelsFloatingPoint(unittest.TestCase):
             True,
         )
         in_spike_cn_process.stop()
-        # TODO: counter checks, right/left shift checks
-        print(
-            "[LavaQpOpt][INFO]: Behavioral test passed for "
-            + "SolutionNeurons"
-        )
 
     def test_model_constraint_normals(self):
         """test behavior of ConstraintNormals process
@@ -247,10 +234,6 @@ class TestModelsFloatingPoint(unittest.TestCase):
             True,
         )
         in_spike_process.stop()
-        print(
-            "[LavaQpOpt][INFO]: Behavioral test passed for "
-            + "ConstraintNormals"
-        )
 
     def test_model_quadratic_connectivity(self):
         """test behavior of QuadraticConnectivity process
@@ -314,7 +297,6 @@ class TestModelsFloatingPoint(unittest.TestCase):
             True,
         )
         in_spike_process.stop()
-        print("[LavaQpOpt][INFO]: Behavioral test passed for ConstraintCheck")
 
     def test_model_gradient_dynamics(self):
         """test behavior of GradientDynamics process
@@ -371,7 +353,6 @@ class TestModelsFloatingPoint(unittest.TestCase):
             True,
         )
         in_spike_process.stop()
-        print("[LavaQpOpt][INFO]: Behavioral test passed for GradientDynamics")
 
 
 if __name__ == "__main__":

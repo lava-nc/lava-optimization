@@ -262,10 +262,6 @@ class TestModelsFloatingPoint(unittest.TestCase):
             True,
         )
         in_spike_process.stop()
-        print(
-            "[LavaQpOpt][INFO]: Behavioral test passed for "
-            + "QuadraticConnectivity"
-        )
 
     def test_model_constraint_check(self):
         """test behavior of ConstraintCheck process

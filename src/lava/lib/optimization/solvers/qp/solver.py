@@ -51,12 +51,12 @@ class QPSolver:
         iterations : int, optional
             Number of iterations for which QP has to run, by default 400
         """
-        Q, p, = (
-            problem._Q,
-            problem._p,
-        )
-        if problem._A is not None:
-            A, k = problem._A, problem._k
+        (
+            Q,
+            p,
+        ) = (problem.get_hessian, problem.get_linear_cost)
+        if problem.get_constraint_matrix is not None:
+            A, k = problem.get_constraint_matrix, problem.get_constraint_offset
             F = np.diag(1 / np.linalg.norm(A, axis=1))
         else:
             A, k = np.zeros((Q.shape[0], Q.shape[1])), np.zeros(

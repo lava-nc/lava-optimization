@@ -27,10 +27,7 @@ class TestProcessesFloatingPoint(unittest.TestCase):
     def test_process_constraint_directions(self):
         process = ConstraintDirections()
         self.assertEqual(process.vars.weights.get() == 0, True)
-        print(
-            "[LavaQpOpt][INFO]: Default initialization test passed for "
-            + "ConstraintDirections"
-        )
+
         weights = np.array([[2, 3, 6], [43, 3, 2]])
         process = ConstraintDirections(
             shape=weights.shape, constraint_directions=weights
@@ -42,18 +39,10 @@ class TestProcessesFloatingPoint(unittest.TestCase):
         self.assertEqual(
             np.all(process.a_out.shape == (weights.shape[0], 1)), True
         )
-        print(
-            "[LavaQpOpt][INFO]: Custom initialization test passed for "
-            + "ConstraintDirections"
-        )
 
     def test_process_constraint_neurons(self):
         process = ConstraintNeurons()
         self.assertEqual(process.vars.thresholds.get() == 0, True)
-        print(
-            "[LavaQpOpt][INFO]: Default initialization test passed for "
-            + "ConstraintNeurons"
-        )
         inp_bias = np.array([[2, 4, 6]]).T
         process = ConstraintNeurons(shape=inp_bias.shape, thresholds=inp_bias)
         self.assertEqual(
@@ -61,10 +50,6 @@ class TestProcessesFloatingPoint(unittest.TestCase):
         )
         self.assertEqual(
             np.all(process.s_in.shape == (inp_bias.shape[0], 1)), True
-        )
-        print(
-            "[LavaQpOpt][INFO]: Custom initialization test passed for "
-            + "ConstraintNeurons"
         )
 
     def test_process_solution_neurons(self):
@@ -106,18 +91,10 @@ class TestProcessesFloatingPoint(unittest.TestCase):
         self.assertEqual(
             np.all(process.a_out_cc.shape == (p.shape[0], 1)), True
         )
-        print(
-            "[LavaQpOpt][INFO]: Custom initialization test passed for "
-            + "SolutionNeurons"
-        )
 
     def test_process_constraint_normals(self):
         process = ConstraintNormals()
         self.assertEqual(process.vars.weights.get() == 0, True)
-        print(
-            "[LavaQpOpt][INFO]: Default initialization test passed for "
-            + "ConstraintNormals"
-        )
         weights = np.array([[2, 3, 6], [43, 3, 2]]).T
         process = ConstraintNormals(
             shape=weights.shape, constraint_normals=weights
@@ -129,18 +106,10 @@ class TestProcessesFloatingPoint(unittest.TestCase):
         self.assertEqual(
             np.all(process.a_out.shape == (weights.shape[0], 1)), True
         )
-        print(
-            "[LavaQpOpt][INFO]: Custom initialization test passed for "
-            + "ConstraintNormals"
-        )
 
     def test_process_quadratic_connectivity(self):
         process = QuadraticConnectivity()
         self.assertEqual(process.vars.weights.get() == 0, True)
-        print(
-            "[LavaQpOpt][INFO]: Default initialization test passed for "
-            + "QuadraticConnectivity"
-        )
         weights = np.array([[2, 43, 2], [43, 3, 4], [2, 4, 1]])
         process = QuadraticConnectivity(shape=weights.shape, hessian=weights)
         self.assertEqual(np.all(process.vars.weights.get() == weights), True)
@@ -149,10 +118,6 @@ class TestProcessesFloatingPoint(unittest.TestCase):
         )
         self.assertEqual(
             np.all(process.a_out.shape == (weights.shape[0], 1)), True
-        )
-        print(
-            "[LavaQpOpt][INFO]: Custom initialization test passed for "
-            + "QuadraticConnectivity"
         )
 
     def test_process_constraint_check(self):
@@ -166,10 +131,6 @@ class TestProcessesFloatingPoint(unittest.TestCase):
         self.assertEqual(np.all(process.vars.constraint_bias.get() == b), True)
         self.assertEqual(np.all(process.s_in.shape == (A.shape[1], 1)), True)
         self.assertEqual(np.all(process.a_out.shape == (A.shape[0], 1)), True)
-        print(
-            "[LavaQpOpt][INFO]: Custom initialization test passed for "
-            + "ConstraintCheck"
-        )
 
     def test_process_gradient_dynamics(self):
         P = np.array([[2, 43, 2], [43, 3, 4], [2, 4, 1]])
@@ -207,10 +168,6 @@ class TestProcessesFloatingPoint(unittest.TestCase):
         )
         self.assertEqual(np.all(process.s_in.shape == (A_T.shape[1], 1)), True)
         self.assertEqual(np.all(process.a_out.shape == (P.shape[0], 1)), True)
-        print(
-            "[LavaQpOpt][INFO]: Custom initialization test passed for "
-            + "GradientDynamics"
-        )
 
 
 if __name__ == "__main__":

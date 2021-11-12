@@ -79,8 +79,20 @@ class QP:
                 self._k = k_eq_new
 
     @property
-    def hessian(self):
+    def get_hessian(self):
         return self._Q
+
+    @property
+    def get_linear_cost(self):
+        return self._p
+
+    @property
+    def get_constraint_matrix(self):
+        return self._A
+
+    @property
+    def get_constraint_offset(self):
+        return self._k
 
     @property
     def num_variables(self):

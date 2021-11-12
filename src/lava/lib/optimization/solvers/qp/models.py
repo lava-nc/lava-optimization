@@ -14,7 +14,7 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
-from lava.lib.optimization.solvers.qp.processes import (
+from src.lava.lib.optimization.solvers.qp.processes import (
     ConstraintDirections,
     ConstraintCheck,
     ConstraintNeurons,
@@ -183,8 +183,8 @@ class SubGDModel(AbstractSubProcessModel):
         hessian = proc.init_args.get("hessian", 0)
         shape_hess = hessian.shape
         shape_sol = (shape_hess[0], 1)
-        A_T = proc.init_args.get("constraint_matrix_T", 0)
-        shape_A_T = A_T.shape
+        constraint_matrix_T = proc.init_args.get("constraint_matrix_T", 0)
+        shape_constraint_matrix_T = constraint_matrix_T.shape
         grad_bias = proc.init_args.get("grad_bias", np.zeros(shape_sol))
         qp_neuron_i = proc.init_args.get(
             "qp_neurons_init", np.zeros(shape_sol)
@@ -205,7 +205,10 @@ class SubGDModel(AbstractSubProcessModel):
             alpha_decay_schedule=a_d,
             beta_growth_schedule=b_g,
         )
-        self.cN = ConstraintNormals(shape=shape_A_T, constraint_normals=A_T)
+        self.cN = ConstraintNormals(
+            shape=shape_constraint_matrix_T,
+            constraint_normals=constraint_matrix_T,
+        )
 
         # connect subprocesses to obtain required process behavior
         proc.in_ports.s_in.connect(self.cN.in_ports.s_in)

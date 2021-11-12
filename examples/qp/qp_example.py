@@ -3,8 +3,8 @@
 # See: https://spdx.org/licenses/
 
 import numpy as np
-from lava.lib.optimization.problems.problems import QP
-from lava.lib.optimization.solvers.qp.solver import QPSolver
+from src.lava.lib.optimization.problems.problems import QP
+from src.lava.lib.optimization.solvers.qp.solver import QPSolver
 
 
 def main():
@@ -21,7 +21,7 @@ def main():
     alpha, beta = 0.001, 1
     alpha_d, beta_g = 10000, 10000
     iterations = 400
-    problem = QP(Q=Q, p=p, A=A, k=k)
+    problem = QP(Q, p, A, k)
     solver = QPSolver(
         alpha=alpha,
         beta=beta,

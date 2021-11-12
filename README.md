@@ -22,7 +22,15 @@ The current focus lies on solvers for the following problems:
 
  ![Overview_Solvers](https://user-images.githubusercontent.com/83413252/135428779-d128aaaa-54ed-4ae1-a5b1-8e0fcc08c96e.png?raw=true "Lava features a growing suite of constraint
 	 optimization solvers")
-	
+
+
+## Tutorials
+
+### QP Solver
+
+- [Solving LASSO.](https://github.com/lava-nc/lava-optimization/tree/main/tutorials/qp/tutorial_01_solving_lasso.ipynb)
+
+
 ## Example
 
 ### QP Solver

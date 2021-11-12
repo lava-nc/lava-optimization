@@ -37,7 +37,6 @@ class PyCDModel(PyLoihiProcessModel):
         # process behavior: matrix multiplication
         a_out = self.weights @ s_in
         self.a_out.send(a_out)
-        self.a_out.flush()
 
 
 @implements(proc=ConstraintNeurons, protocol=LoihiProtocol)
@@ -52,7 +51,6 @@ class PyCNeuModel(PyLoihiProcessModel):
         # process behavior: constraint violation check
         a_out = (s_in - self.thresholds) * (s_in < self.thresholds)
         self.a_out.send(a_out)
-        self.a_out.flush()
 
 
 @implements(proc=QuadraticConnectivity, protocol=LoihiProtocol)
@@ -67,7 +65,6 @@ class PyQCModel(PyLoihiProcessModel):
         # process behavior: matrix multiplication
         a_out = self.weights @ s_in
         self.a_out.send(a_out)
-        self.a_out.flush()
 
 
 @implements(proc=SolutionNeurons, protocol=LoihiProtocol)
@@ -89,9 +86,7 @@ class PySNModel(PyLoihiProcessModel):
     def run_spk(self):
         a_out = self.qp_neuron_state
         self.a_out_cc.send(a_out)
-        self.a_out_cc.flush()
         self.a_out_qc.send(a_out)
-        self.a_out_qc.flush()
 
         s_in_qc = self.s_in_qc.recv()
         s_in_cn = self.s_in_cn.recv()
@@ -126,7 +121,6 @@ class PyCNorModel(PyLoihiProcessModel):
         # process behavior: matrix multiplication
         a_out = self.weights @ s_in
         self.a_out.send(a_out)
-        self.a_out.flush()
 
 
 @implements(proc=ConstraintCheck, protocol=LoihiProtocol)

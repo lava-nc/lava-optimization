@@ -11,7 +11,7 @@ use_plugin("python.install_dependencies")
 use_plugin("python.pycharm")
 use_plugin("pypi:pybuilder_bandit")
 
-name = "lava-nc/lava-optmization"
+name = "lava-optimization"
 default_task = ["analyze", "publish"]
 version = "0.1.0"
 summary = "A library of solvers that leverage neuromorphic hardware for constrained optimization. Lava-Optimization is part of Lava Framework "

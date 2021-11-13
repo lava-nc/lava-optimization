@@ -7,9 +7,9 @@ use_plugin("python.flake8")
 # use_plugin("python.coverage")
 use_plugin("python.distutils")
 use_plugin("python.sphinx")
-use_plugin('python.install_dependencies')
+use_plugin("python.install_dependencies")
 use_plugin("python.pycharm")
-use_plugin('pypi:pybuilder_bandit')
+use_plugin("pypi:pybuilder_bandit")
 
 name = "lava-nc/lava-optmization"
 default_task = ["analyze", "publish"]
@@ -21,8 +21,8 @@ license = ["BSD-3-Clause"]
 
 @init
 def set_properties(project):
-    project.set_property("dir_source_main_python", "src/lava")
-    project.set_property("dir_source_unittest_python", "tests")
+    project.set_property("dir_source_main_python", "src")
+    project.set_property("dir_source_unittest_python", "tests/lava")
     project.set_property("dir_source_main_scripts", "scripts")
     project.set_property("dir_docs", "docs")
 
@@ -53,20 +53,21 @@ def set_properties(project):
         "target/*,.svn,CVS,.bzr,.hg,.git,__pycache__,.pybuilder/*",
     )
 
-    project.get_property('distutils_commands').append('build')
-    project.get_property('distutils_commands').append('sdist')
-    project.get_property('distutils_commands').append('bdist_dumb')
+    project.get_property("distutils_commands").append("build")
+    project.get_property("distutils_commands").append("sdist")
+    project.get_property("distutils_commands").append("bdist_dumb")
 
-    project.set_property('bandit_break_build', True)
-    project.set_property('bandit_include_testsources', False)
+    project.set_property("bandit_break_build", True)
+    project.set_property("bandit_include_testsources", False)
 
 
 @init(environments="unit")
 def set_properties_unit(project):
-    project.set_property("dir_source_main_python", "src/lava")
-    project.set_property("dir_source_unittest_python", "tests")
+    project.set_property("dir_source_main_python", "src")
+    project.set_property("dir_source_unittest_python", "tests/lava")
     project.set_property("dir_source_main_scripts", "scripts")
     project.set_property("dir_docs", "docs")
+    project.build_depends_on("lava", url="https://github.com/lava-nc/lava/releases/download/v0.1.1/lava-nc-0.1.1.tar.gz")
 
     project.set_property("sphinx_config_path", "docs")
     project.set_property("sphinx_source_dir", "docs")
@@ -82,7 +83,7 @@ def set_properties_unit(project):
     project.plugin_depends_on("sphinx_tabs")
 
     project.set_property("verbose", True)
-    
+
     project.set_property("coverage_threshold_warn", 0)
     project.set_property("coverage_break_build", False)
 
@@ -96,5 +97,5 @@ def set_properties_unit(project):
 
     project.set_property("unittest_module_glob", "test_*")
 
-    project.set_property('bandit_break_build', True)
-    project.set_property('bandit_include_testsources', False)
+    project.set_property("bandit_break_build", True)
+    project.set_property("bandit_include_testsources", False)

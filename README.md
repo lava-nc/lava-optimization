@@ -50,11 +50,11 @@ alpha_d, beta_g = 10000, 10000
 iterations = 400
 problem = QP(Q, p, A, k)
 solver = QPSolver(
-alpha=alpha,
-beta=beta,
-alpha_decay_schedule=alpha_d,
-beta_growth_schedule=beta_g,
-)
+                alpha=alpha,
+                beta=beta,
+                alpha_decay_schedule=alpha_d,
+                beta_growth_schedule=beta_g,
+                )
 solver.solve(problem, iterations=iterations)
 ```
 
@@ -66,10 +66,6 @@ variables = ['var1', 'var2', 'var3']
 domains = dict(var1 = {0, 1, 2}, var2 = {'a', 'b', 'c'}, var3 ={'red', 'blue', 'green'})
 solver = CspSolver()
 problem=CSP(variables, domains, constraints)
-solution, t_sol = solver.solve(problem, timeout=5000, backend='Loihi2', profile=True)
-```
-	
-```python
 solution, t_sol = solver.solve(problem, timeout=5000, backend='Loihi2', profile=True)
 print(solver.time_to_solution[-1], solver.energy_to_solution[-1])
 ```

@@ -3,7 +3,6 @@
 # See: https://spdx.org/licenses/
 
 import numpy as np
-import time
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg
 from lava.lib.optimization.problems.problems import QP
@@ -15,7 +14,7 @@ from lava.lib.optimization.solvers.qp.models import (
 
 # Future: inheritance from OptimizationSolver class
 class QPSolver:
-    """Solve Full QP by connecting two LAVA processes GradDynamics and
+    """Solve Full QP by connecting two Lava processes, GradDynamics and
     ConstraintCheck
 
         Parameters
@@ -104,23 +103,15 @@ class QPSolver:
         GradDyn.a_out.connect(ConsCheck.s_in)
         ConsCheck.a_out.connect(GradDyn.s_in)
 
-        tic = time.time()
         GradDyn.run(
             condition=RunSteps(num_steps=i_max),
             run_cfg=Loihi1SimCfg(select_sub_proc_model=True),
         )
-        GradDyn.pause()
         pre_sol = GradDyn.vars.qp_neuron_state.get()
         GradDyn.stop()
-        toc = time.time()
         print(
             "[LavaQpOpt][INFO]: The solution after {} iterations is \n \
             {}".format(
                 i_max, precond_hess @ pre_sol
-            )
-        )
-        print(
-            "\n [LavaQpOpt][INFO]: QP Solver ran in {} seconds".format(
-                toc - tic
             )
         )

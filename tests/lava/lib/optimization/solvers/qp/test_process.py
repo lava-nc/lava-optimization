@@ -3,9 +3,11 @@
 # See: https://spdx.org/licenses/
 
 # Initialization tests for all the processes in QP
+import sys
+print(sys.path)
+'''
 import unittest
 import numpy as np
-
 from lava.lib.optimization.solvers.qp.processes import (
     ConstraintCheck,
     ConstraintNeurons,
@@ -173,3 +175,4 @@ class TestProcessesFloatingPoint(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+'''

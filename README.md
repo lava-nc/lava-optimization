@@ -28,7 +28,7 @@ The current focus lies on solvers for the following problems:
 
 ### QP Solver
 
-- [Solving LASSO.](https://github.com/lava-nc/lava-optimization/tree/main/tutorials/qp/tutorial_01_solving_lasso.ipynb)
+- [Solving LASSO.](https://github.com/lava-nc/lava-optimization/tree/main/src/tutorials/qp/tutorial_01_solving_lasso.ipynb)
 
 
 ## Example

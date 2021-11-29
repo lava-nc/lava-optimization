@@ -49,7 +49,7 @@ class PyCNeuModel(PyLoihiProcessModel):
     def run_spk(self):
         s_in = self.s_in.recv()
         # process behavior: constraint violation check
-        a_out = (s_in - self.thresholds) * (s_in < self.thresholds)
+        a_out = (s_in - self.thresholds) * (s_in > self.thresholds)
         self.a_out.send(a_out)
 
 

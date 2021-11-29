@@ -3,7 +3,6 @@
 # See: https://spdx.org/licenses/
 
 import numpy as np
-import time
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg
 from lava.lib.optimization.problems.problems import QP
@@ -15,7 +14,7 @@ from lava.lib.optimization.solvers.qp.models import (
 
 # Future: inheritance from OptimizationSolver class
 class QPSolver:
-    """Solve Full QP by connecting two LAVA processes GradDynamics and
+    """Solve Full QP by connecting two Lava processes, GradDynamics and
     ConstraintCheck
 
         Parameters
@@ -30,6 +29,7 @@ class QPSolver:
         beta_growth_schedule : int, default 10000
             Number of iterations after which one left shift takes place for
             beta
+
     """
 
     def __init__(
@@ -53,6 +53,11 @@ class QPSolver:
             The QP containing the matrices that set up the problem
         iterations : int, optional
             Number of iterations for which QP has to run, by default 400
+
+        Returns
+        --------
+        sol : 1-D np.array
+            Solution to the quadratic program
         """
         (
             hessian,
@@ -63,26 +68,12 @@ class QPSolver:
                 problem.get_constraint_hyperplanes,
                 problem.get_constraint_biases,
             )
-            precond_cons_planes = np.diag(
-                1 / np.linalg.norm(constraint_hyperplanes, axis=1)
-            )
+
         else:
             constraint_hyperplanes, constraint_biases = np.zeros(
                 (hessian.shape[0], hessian.shape[1])
             ), np.zeros((hessian.shape[0], 1))
-            # Dummy preconditioner
-            precond_cons_planes = np.diag(
-                np.linalg.norm(constraint_hyperplanes, axis=1)
-            )
-        # Precondition the problem before feeding it into Loihi
-        precond_hess = np.sqrt(np.diag(1 / np.linalg.norm(hessian, axis=1)))
-        hessian = precond_hess @ hessian @ precond_hess
-        linear_offset = precond_hess @ linear_offset
-        constraint_hyperplanes = (
-            precond_cons_planes @ constraint_hyperplanes @ precond_hess
-        )
-        constraint_biases = precond_cons_planes @ constraint_biases
-        #####################################################################
+
         init_sol = np.random.rand(hessian.shape[0], 1)
         i_max = iterations
         ConsCheck = ConstraintCheck(
@@ -104,23 +95,10 @@ class QPSolver:
         GradDyn.a_out.connect(ConsCheck.s_in)
         ConsCheck.a_out.connect(GradDyn.s_in)
 
-        tic = time.time()
         GradDyn.run(
             condition=RunSteps(num_steps=i_max),
             run_cfg=Loihi1SimCfg(select_sub_proc_model=True),
         )
-        GradDyn.pause()
-        pre_sol = GradDyn.vars.qp_neuron_state.get()
+        sol = GradDyn.vars.qp_neuron_state.get()
         GradDyn.stop()
-        toc = time.time()
-        print(
-            "[LavaQpOpt][INFO]: The solution after {} iterations is \n \
-            {}".format(
-                i_max, precond_hess @ pre_sol
-            )
-        )
-        print(
-            "\n [LavaQpOpt][INFO]: QP Solver ran in {} seconds".format(
-                toc - tic
-            )
-        )
+        return sol

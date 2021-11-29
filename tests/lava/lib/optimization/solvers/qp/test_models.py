@@ -94,7 +94,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
         """test behavior of constraint directions process
         (Matrix-vector multiplication)
         """
-        weights = np.array([[2, 3, 6], [43, 3, 2]])
+        weights = np.array([[2.5, 3.2, 6], [43, 3, 2]])
         process = ConstraintDirections(
             shape=weights.shape, constraint_directions=weights
         )
@@ -141,7 +141,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
         self.assertEqual(
             np.all(
                 out_spike_process.vars.spike_out.get()
-                == ((input_spike - inp_bias) * (input_spike < inp_bias))
+                == ((input_spike - inp_bias) * (input_spike > inp_bias))
             ),
             True,
         )
@@ -282,7 +282,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
         self.assertEqual(
             np.all(
                 out_spike_process.vars.spike_out.get()
-                == ((A @ input_spike - k) * (A @ input_spike < k))
+                == ((A @ input_spike - k) * (A @ input_spike > k))
             ),
             True,
         )
@@ -292,9 +292,9 @@ class TestModelsFloatingPoint(unittest.TestCase):
         """test behavior of GradientDynamics process
         -alpha*(Q@x_init + p)- beta*A_T@graded_constraint_spike
         """
-        Q = np.array([[2, 43, 2], [43, 3, 4], [2, 4, 1]])
+        Q = np.array([[2, 43.2, 2], [43, 3, 4], [2, 4, 1]])
 
-        A_T = np.array([[2, 3, 6], [43, 3, 2]]).T
+        A_T = np.array([[2, 3.3, 6], [43, 3, 2]]).T
 
         init_sol = np.array([[2, 4, 6]]).T
         p = np.array([[4, 3, 2]]).T
@@ -331,7 +331,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
                 out_spike_process.vars.spike_out.get()
                 == (
                     init_sol
-                    + -alpha * (Q @ init_sol + p)
+                    - alpha * (Q @ init_sol + p)
                     - beta * A_T @ input_spike
                 )
             ),

@@ -1,15 +1,15 @@
 # Neuromorphic Constraint Optimization Library
-	
+
 **A library of solvers that leverage neuromorphic hardware for constrained optimization.**
-			
+
 Constrained optimization searches for the values of input variables that minimize or maximize a given objective function, while the variables are subject to constraints. This kind of problem is ubiquitous throughout scientific domains and industries.
-Constrained optimization is a promising application for neuromorphic computing as 
+Constrained optimization is a promising application for neuromorphic computing as
 it [naturally aligns with the dynamics of spiking neural networks](https://doi.org/10.1109/JPROC.2021.3067593). When individual neurons represent states of variables, the neuronal connections can directly encode constraints between the variables: in its simplest form, recurrent inhibitory synapses connect neurons that represent mutually exclusive variable states, while recurrent excitatory synapses link neurons representing reinforcing states. Implemented on massively parallel neuromorphic hardware, such a spiking neural network can simultaneously evaluate conflicts and cost functions involving many variables, and update all variables accordingly. This allows a quick convergence towards an optimal state. In addition, the fine-scale timing dynamics of SNNs allow them to readily escape from local minima.
-	
-This Lava repository currently provides constraint optimization solvers that leverage the benefits of neuromorphic computing for the following problems: 
-	
+
+This Lava repository currently provides constraint optimization solvers that leverage the benefits of neuromorphic computing for the following problems:
+
 - Quadratic Programming (QP)
-	
+
 In the future, the library will be extended by solvers targeting further constraint optimization problems that are relevant for robotics and operations research.
 The current focus lies on solvers for the following problems:
 
@@ -28,7 +28,7 @@ The current focus lies on solvers for the following problems:
 
 ### QP Solver
 
-- [Solving LASSO.](https://github.com/lava-nc/lava-optimization/tree/main/src/tutorials/qp/tutorial_01_solving_lasso.ipynb)
+- [Solving LASSO.](https://github.com/lava-nc/lava-optimization/tree/main/tutorials/qp/tutorial_01_solving_lasso.ipynb)
 
 
 ## Example
@@ -61,7 +61,7 @@ solver.solve(problem, iterations=iterations)
 ### Coming up next: CSPSolver
 ```python
 from lava.lib.optimization import CspSolver
-	
+
 variables = ['var1', 'var2', 'var3']
 domains = dict(var1 = {0, 1, 2}, var2 = {'a', 'b', 'c'}, var3 = {'red', 'blue', 'green'})
 solver = CspSolver()
@@ -71,12 +71,12 @@ print(solver.time_to_solution[-1], solver.energy_to_solution[-1])
 ```
 
 ## Requirements
-- Working installation of Lava [see Lava installation 
-tutorial.](https://github.com/lava-nc/lava/blob/main/src/lava/tutorials/in_depth/tutorial01_installing_lava.ipynb)
+- Working installation of Lava [see Lava installation
+tutorial.](https://github.com/lava-nc/lava/blob/main/tutorials/in_depth/tutorial01_installing_lava.ipynb)
 
 ## Setup
 - Clone the lava-optimization repository.
-- Add lava-optimization/src to your PYTHONPATH variable. For example, from 
+- Add lava-optimization/src to your PYTHONPATH variable. For example, from
 lava-optimization/src/ run the following on your terminal:
  ```bash
 export PYTHONPATH=$PYTHONPATH:$(pwd)

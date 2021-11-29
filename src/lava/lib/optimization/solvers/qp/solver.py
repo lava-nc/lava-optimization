@@ -55,35 +55,45 @@ class QPSolver:
             Number of iterations for which QP has to run, by default 400
         """
         (
-            Q,
-            p,
-        ) = (problem.get_Q, problem.get_p)
-        if problem.get_A is not None:
-            A, k = problem.get_A, problem.get_k
-            F = np.diag(1 / np.linalg.norm(A, axis=1))
-        else:
-            A, k = np.zeros((Q.shape[0], Q.shape[1])), np.zeros(
-                (Q.shape[0], 1)
+            hessian,
+            linear_offset,
+        ) = (problem.get_hessian, problem.get_linear_offset)
+        if problem.get_constraint_hyperplanes is not None:
+            constraint_hyperplanes, constraint_biases = (
+                problem.get_constraint_hyperplanes,
+                problem.get_constraint_biases,
             )
+            precond_cons_planes = np.diag(
+                1 / np.linalg.norm(constraint_hyperplanes, axis=1)
+            )
+        else:
+            constraint_hyperplanes, constraint_biases = np.zeros(
+                (hessian.shape[0], hessian.shape[1])
+            ), np.zeros((hessian.shape[0], 1))
             # Dummy preconditioner
-            F = np.diag(np.linalg.norm(A, axis=1))
+            precond_cons_planes = np.diag(
+                np.linalg.norm(constraint_hyperplanes, axis=1)
+            )
         # Precondition the problem before feeding it into Loihi
-        preconditioner_Q = np.sqrt(np.diag(1 / np.linalg.norm(Q, axis=1)))
-        Q_pre = preconditioner_Q @ Q @ preconditioner_Q
-        p_pre = preconditioner_Q @ p
-        A = F @ A @ preconditioner_Q
-        k = F @ k
-        Q = Q_pre
-        p = p_pre
+        precond_hess = np.sqrt(np.diag(1 / np.linalg.norm(hessian, axis=1)))
+        hessian = precond_hess @ hessian @ precond_hess
+        linear_offset = precond_hess @ linear_offset
+        constraint_hyperplanes = (
+            precond_cons_planes @ constraint_hyperplanes @ precond_hess
+        )
+        constraint_biases = precond_cons_planes @ constraint_biases
         #####################################################################
-        init_sol = np.random.rand(Q.shape[0], 1)
+        init_sol = np.random.rand(hessian.shape[0], 1)
         i_max = iterations
-        ConsCheck = ConstraintCheck(constraint_matrix=A, constraint_bias=k)
+        ConsCheck = ConstraintCheck(
+            constraint_matrix=constraint_hyperplanes,
+            constraint_bias=constraint_biases,
+        )
         GradDyn = GradientDynamics(
-            hessian=Q,
-            constraint_matrix_T=A.T,
+            hessian=hessian,
+            constraint_matrix_T=constraint_hyperplanes.T,
             qp_neurons_init=init_sol,
-            grad_bias=p,
+            grad_bias=linear_offset,
             alpha=self.alpha,
             beta=self.beta,
             alpha_decay_schedule=self.alpha_d,
@@ -106,7 +116,7 @@ class QPSolver:
         print(
             "[LavaQpOpt][INFO]: The solution after {} iterations is \n \
             {}".format(
-                i_max, preconditioner_Q @ pre_sol
+                i_max, precond_hess @ pre_sol
             )
         )
         print(

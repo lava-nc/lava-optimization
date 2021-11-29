@@ -11,9 +11,9 @@ use_plugin("python.install_dependencies")
 use_plugin("python.pycharm")
 use_plugin("pypi:pybuilder_bandit")
 
-name = "lava-nc/lava-optmization"
+name = "lava-optimization"
 default_task = ["analyze", "publish"]
-version = "0.1.0"
+version = "0.1.1"
 summary = "A library of solvers that leverage neuromorphic hardware for constrained optimization. Lava-Optimization is part of Lava Framework "
 url = "https://lava-nc.org"
 license = ["BSD-3-Clause"]
@@ -21,8 +21,8 @@ license = ["BSD-3-Clause"]
 
 @init
 def set_properties(project):
-    project.set_property("dir_source_main_python", "src/lava")
-    project.set_property("dir_source_unittest_python", "tests")
+    project.set_property("dir_source_main_python", "src")
+    project.set_property("dir_source_unittest_python", "tests/lava")
     project.set_property("dir_source_main_scripts", "scripts")
     project.set_property("dir_docs", "docs")
 
@@ -63,10 +63,11 @@ def set_properties(project):
 
 @init(environments="unit")
 def set_properties_unit(project):
-    project.set_property("dir_source_main_python", "src/lava")
-    project.set_property("dir_source_unittest_python", "tests")
+    project.set_property("dir_source_main_python", "src")
+    project.set_property("dir_source_unittest_python", "tests/lava")
     project.set_property("dir_source_main_scripts", "scripts")
     project.set_property("dir_docs", "docs")
+    project.build_depends_on("lava", url="https://github.com/lava-nc/lava/releases/download/v0.1.1/lava-nc-0.1.1.tar.gz")
 
     project.set_property("sphinx_config_path", "docs")
     project.set_property("sphinx_source_dir", "docs")

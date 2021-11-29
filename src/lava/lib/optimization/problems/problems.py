@@ -14,18 +14,18 @@ class QP:
 
         Parameters
         ----------
-        Q : 2-D or 1-D np.array
+        hessian : 2-D or 1-D np.array
             Quadratic term of the cost function
-        p : 1-D np.array, optional
+        linear_offset : 1-D np.array, optional
             Linear term of the cost function, defaults vector of zeros of the
             size of the number of variables in the QP
-        A : 2-D or 1-D np.array, optional
+        constraint_hyperplanes : 2-D or 1-D np.array, optional
             Inequality constrainting hyperplanes, by default None
-        k : 1-D np.array, optional
+        constraint_biases : 1-D np.array, optional
             Ineqaulity constraints offsets, by default None
-        A_eq : 2-D or 1-D np.array, optional
+        constraint_hyperplanes_eq : 2-D or 1-D np.array, optional
             Equality constrainting hyperplanes, by default None
-        k_eq : 1-D np.array, optional
+        constraint_biases_eq : 1-D np.array, optional
             Eqaulity constraints offsets, by default None
 
         Raises
@@ -38,71 +38,90 @@ class QP:
 
     def __init__(
         self,
-        Q: np.ndarray,
-        p: ty.Optional[np.ndarray] = None,
-        A: ty.Optional[np.ndarray] = None,
-        k: ty.Optional[np.ndarray] = None,
-        A_eq: ty.Optional[np.ndarray] = None,
-        k_eq: ty.Optional[np.ndarray] = None,
+        hessian: np.ndarray,
+        linear_offset: ty.Optional[np.ndarray] = None,
+        constraint_hyperplanes: ty.Optional[np.ndarray] = None,
+        constraint_biases: ty.Optional[np.ndarray] = None,
+        constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
+        constraint_biases_eq: ty.Optional[np.ndarray] = None,
     ):
-        if (A is None and k is not None) or (A is not None and k is None):
+        if (
+            constraint_hyperplanes is None and constraint_biases is not None
+        ) or (
+            constraint_hyperplanes is not None and constraint_biases is None
+        ):
             raise ValueError(
                 "Please properly define your Inequality constraints. Supply \
                 all A and k "
             )
 
-        if (A_eq is None and k_eq is not None) or (
-            A_eq is not None and k_eq is None
+        if (
+            constraint_hyperplanes_eq is None
+            and constraint_biases_eq is not None
+        ) or (
+            constraint_hyperplanes_eq is not None
+            and constraint_biases_eq is None
         ):
             raise ValueError(
                 "Please properly define your Equality constraints. Supply \
                 all A_eq and k_eq."
             )
 
-        self._Q = Q
+        self._hessian = hessian
 
-        if p is not None:
-            self._p = p
+        if linear_offset is not None:
+            self._linear_offset = linear_offset
         else:
-            self._p = np.zeros((Q.shape[0], 1))
+            self._linear_offset = np.zeros((hessian.shape[0], 1))
 
-        if A is not None:
-            self._A = A
-            self._k = k
+        if constraint_hyperplanes is not None:
+            self._constraint_hyperplanes = constraint_hyperplanes
+            self._constraint_biases = constraint_biases
         else:
-            self._A = None
-            self._k = None
+            self._constraint_hyperplanes = None
+            self._constraint_biases = None
 
-        if A_eq is not None:
-            self._A_eq = A_eq
-            self._k_eq = k_eq
+        if constraint_hyperplanes_eq is not None:
+            self._constraint_hyperplanes_eq = constraint_hyperplanes_eq
+            self._constraint_biases_eq = constraint_biases_eq
 
-        if A_eq is not None:
-            A_eq_new = np.vstack((A_eq, -A_eq))
-            k_eq_new = np.vstack((k_eq, -k_eq))
-            if A is not None:
-                self._A = np.vstack((self._A, A_eq_new))
-                self._k = np.vstack((self._k, k_eq_new))
+        if constraint_hyperplanes_eq is not None:
+            constraint_hyperplanes_eq_new = np.vstack(
+                (constraint_hyperplanes_eq, -constraint_hyperplanes_eq)
+            )
+            constraint_biases_eq_new = np.vstack(
+                (constraint_biases_eq, -constraint_biases_eq)
+            )
+            if constraint_hyperplanes is not None:
+                self._constraint_hyperplanes = np.vstack(
+                    (
+                        self._constraint_hyperplanes,
+                        constraint_hyperplanes_eq_new,
+                    )
+                )
+                self._constraint_biases = np.vstack(
+                    (self._constraint_biases, constraint_biases_eq_new)
+                )
             else:
-                self._A = A_eq_new
-                self._k = k_eq_new
+                self._constraint_hyperplanes = constraint_hyperplanes_eq_new
+                self._constraint_biases = constraint_biases_eq_new
 
     @property
-    def get_Q(self) -> np.ndarray:
-        return self._Q
+    def get_hessian(self) -> np.ndarray:
+        return self._hessian
 
     @property
-    def get_p(self) -> np.ndarray:
-        return self._p
+    def get_linear_offset(self) -> np.ndarray:
+        return self._linear_offset
 
     @property
-    def get_A(self) -> np.ndarray:
-        return self._A
+    def get_constraint_hyperplanes(self) -> np.ndarray:
+        return self._constraint_hyperplanes
 
     @property
-    def get_k(self) -> np.ndarray:
-        return self._k
+    def get_constraint_biases(self) -> np.ndarray:
+        return self._constraint_biases
 
     @property
     def num_variables(self) -> int:
-        return len(self._p)
+        return len(self._linear_offset)

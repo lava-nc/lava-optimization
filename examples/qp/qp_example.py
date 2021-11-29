@@ -22,6 +22,7 @@ def main():
     alpha_d, beta_g = 10000, 10000
     iterations = 400
     problem = QP(Q=Q, p=p, A=A, k=k)
+
     solver = QPSolver(
         alpha=alpha,
         beta=beta,

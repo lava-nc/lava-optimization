@@ -13,7 +13,7 @@ use_plugin("pypi:pybuilder_bandit")
 
 name = "lava-optimization"
 default_task = ["analyze", "publish"]
-version = "0.1.1"
+version = "0.1.2"
 summary = "A library of solvers that leverage neuromorphic hardware for constrained optimization. Lava-Optimization is part of Lava Framework "
 url = "https://lava-nc.org"
 license = ["BSD-3-Clause"]
@@ -67,7 +67,7 @@ def set_properties_unit(project):
     project.set_property("dir_source_unittest_python", "tests/lava")
     project.set_property("dir_source_main_scripts", "scripts")
     project.set_property("dir_docs", "docs")
-    project.build_depends_on("lava", url="git+https://github.com/lava-nc/lava.git")
+    project.build_depends_on("lava", url="https://github.com/lava-nc/lava/releases/download/v0.2.0/lava-nc-0.2.0.tar.gz")
 
     project.set_property("sphinx_config_path", "docs")
     project.set_property("sphinx_source_dir", "docs")

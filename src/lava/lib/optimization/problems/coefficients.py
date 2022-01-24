@@ -15,7 +15,7 @@ class CoefficientTensorsMixin:
 
         Parameters
         ----------
-        kwargs:  the tensor coefficients of the function.
+        coefficients:  the tensor coefficients of the function.
         """
         c_dict = dict()
         for coefficient in coefficients:

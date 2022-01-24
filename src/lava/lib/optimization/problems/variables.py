@@ -103,3 +103,25 @@ class ContinuousVariables:
     @bounds.setter
     def bounds(self, value: ty.List[ty.Tuple]):
         self._bounds = value
+
+
+class Variables:
+    def __init__(self):
+        self._discrete = DiscreteVariables()
+        self._continuous = ContinuousVariables()
+
+    @property
+    def continuous(self):
+        return self._continuous
+
+    @continuous.setter
+    def continuous(self, value):
+        self._continuous = value
+
+    @property
+    def discrete(self):
+        return self._discrete
+
+    @discrete.setter
+    def discrete(self, value):
+        self._discrete = value

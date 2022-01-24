@@ -7,7 +7,8 @@ import unittest
 
 from src.lava.lib.optimization.problems.variables import (Variable,
                                                           DiscreteVariables,
-                                                          ContinuousVariables)
+                                                          ContinuousVariables,
+                                                          Variables)
 
 
 class TestVariable(unittest.TestCase):
@@ -99,6 +100,36 @@ class TestContinuousVariables(unittest.TestCase):
     @unittest.skip("WIP")
     def test_bounds_validation(self):
         pass
+
+
+class TestVariables(unittest.TestCase):
+    def setUp(self) -> None:
+        self.vars = Variables()
+
+    def test_obj_creation(self):
+        self.assertIsInstance(self.vars, Variables)
+
+    def test_has_discrete_bucket(self):
+        self.assertIsInstance(self.vars.discrete, DiscreteVariables)
+
+    def test_has_continuous_bucket(self):
+        self.assertIsInstance(self.vars.continuous, ContinuousVariables)
+
+    def test_set_discrete(self):
+        new_vars = DiscreteVariables([3, 3, 3])
+        self.vars.discrete = new_vars
+        self.assertIs(self.vars.discrete, new_vars)
+
+    def test_set_continuous(self):
+        new_vars = ContinuousVariables([(1, 4), (0, 1)])
+        self.vars.continuous = new_vars
+        self.assertIs(self.vars.continuous, new_vars)
+
+    def test_discrete_attribute_class(self):
+        self.assertIsInstance(self.vars.discrete, DiscreteVariables)
+
+    def test_continuous_attribute_class(self):
+        self.assertIsInstance(self.vars.continuous, ContinuousVariables)
 
 
 if __name__ == '__main__':

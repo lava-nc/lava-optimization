@@ -113,5 +113,39 @@ class TestInequalityConstraint(unittest.TestCase):
         self.assertIsInstance(self.constraint, CoefficientTensorsMixin)
 
 
+
+class TestArithmeticConstraint(unittest.TestCase):
+    def setUp(self) -> None:
+        self.constraint = ArithmeticConstraints()
+
+    def test_create_obj(self):
+        self.assertIsInstance(self.constraint, ArithmeticConstraints)
+
+    def test_set_arithmetic_constraints_equality(self):
+        new_constraints_eq = (np.asarray(1),
+                              np.ones(2),
+                              np.ones((2, 2)),
+                              )
+        self.constraint.equality = new_constraints_eq
+        for n, coefficient in enumerate(new_constraints_eq):
+            with self.subTest(msg=f'{n}'):
+                self.assertTrue((coefficient ==
+                                 self.constraint.equality.coefficients[
+                                     n]).all())
+
+    def test_set_arithmetic_constraints_inequality(self):
+        new_constraints_ineq = (np.asarray(1),
+                                np.ones(2),
+                                np.ones((2, 2)),
+                                )
+        self.constraint.inequality = new_constraints_ineq
+        for n, coefficient in enumerate(new_constraints_ineq):
+            with self.subTest(msg=f'{n}'):
+                self.assertTrue((
+                                        coefficient ==
+                                        self.constraint.inequality.coefficients[
+                                            n]).all())
+
+
 if __name__ == '__main__':
     unittest.main()

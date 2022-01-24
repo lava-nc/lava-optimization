@@ -64,6 +64,14 @@ class TestCoefficientsTensors(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     CoefficientTensorsMixin(value)
 
+    def test_set_coefficients(self):
+        new_coefficients = (np.asarray(5),
+                            4*np.ones(2),
+                            3*np.ones((2, 2)),
+                            2*np.ones((2, 2, 2))
+                            )
+        self.coefficients_np.coefficients = new_coefficients
+        self.assertIs(self.coefficients_np.coefficients, new_coefficients)
 
 if __name__ == '__main__':
     unittest.main()

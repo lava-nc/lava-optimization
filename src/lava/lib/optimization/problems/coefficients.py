@@ -34,6 +34,10 @@ class CoefficientTensorsMixin:
     def coefficients(self):
         return self._coefficients
 
+    @coefficients.setter
+    def coefficients(self, value):
+        self._coefficients = value
+
     def get_coefficient(self, order: int):
         try:
             return self.coefficients[order]

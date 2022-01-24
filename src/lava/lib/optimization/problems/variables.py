@@ -74,22 +74,32 @@ class DiscreteVariables:
 
 
 class ContinuousVariables:
+    """Set of variables to which any values in specified ranges can be assigned.
+
+    Parameters
+    ----------
+    bounds: List of 2-tuples defining the range from which each corresponding
+    variable (by index) can take values.
+    """
+
     def __init__(self, bounds: ty.List[ty.Tuple] = None):
         self._bounds = bounds
 
     @property
     def variable_set(self):
+        """List of continuous variables as instances of the Variable class."""
         return [Variable(name=str(n)) for n in range(self.num_variables)]
 
     @property
     def num_variables(self):
+        """Number of variables in this set."""
         return len(self._bounds)
 
     @property
     def bounds(self):
+        """Limit values defining the ranges of allowed values for variables."""
         return self._bounds
 
     @bounds.setter
     def bounds(self, value: ty.List[ty.Tuple]):
         self._bounds = value
-

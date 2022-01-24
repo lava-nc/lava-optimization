@@ -12,7 +12,11 @@ class DiscreteConstraints:
     """
 
     def __init__(self, constraints: ty.List[ty.Tuple[int, int, npt.ArrayLike]]):
-        self._constraints =constraints
+        self._constraints = constraints
+        self.set_relations_var_subsets(self._constraints)
+
+
+    def set_relations_var_subsets(self, constraints):
         var_subsets, relations = self.get_scope_and_relations(constraints)
         self.validate_subsets_and_relations_match(var_subsets, relations)
         self._var_subset = var_subsets
@@ -25,6 +29,15 @@ class DiscreteConstraints:
     @property
     def var_subsets(self):
         return self._var_subset
+
+    @property
+    def constraints(self):
+        return self._constraints
+
+    @constraints.setter
+    def constraints(self, value):
+        self.set_relations_var_subsets(value)
+        self._constraints = value
 
     def get_scope_and_relations(self, constraints):
         var_subsets = [tuple(c[:-1]) for c in constraints]

@@ -9,7 +9,8 @@ import numpy as np
 from lava.lib.optimization.problems.constraints import (DiscreteConstraints,
                                                         EqualityConstraints,
                                                         InequalityConstraints,
-                                                        ArithmeticConstraints)
+                                                        ArithmeticConstraints,
+                                                        Constraints)
 from src.lava.lib.optimization.problems.coefficients import \
     CoefficientTensorsMixin
 
@@ -145,6 +146,41 @@ class TestArithmeticConstraint(unittest.TestCase):
                                         coefficient ==
                                         self.constraint.inequality.coefficients[
                                             n]).all())
+
+
+class TestConstraints(unittest.TestCase):
+    def setUp(self) -> None:
+        self.constraints = Constraints()
+
+    def test_create_obj(self):
+        self.assertIsInstance(self.constraints, Constraints)
+
+    def test_discrete_defaults_to_none(self):
+        self.assertIsNone(self.constraints.discrete)
+
+    def test_arithmetic_defaults_to_none(self):
+        self.assertIsNone(self.constraints.arithmetic)
+
+    def test_set_discrete_constraints(self):
+        new_constraints = [(0, 1, np.eye(5))]
+        self.constraints.discrete = DiscreteConstraints(new_constraints)
+        self.assertIs(self.constraints.discrete._constraints, new_constraints)
+
+    def test_class_of_setted_discrete_constraints(self):
+        new_constraints = [(0, 1, np.eye(5))]
+        self.constraints.discrete = DiscreteConstraints(new_constraints)
+        self.assertIsInstance(self.constraints.discrete, DiscreteConstraints)
+
+    def teest_set_arithmetic_constraint(self):
+        new_constraint = ArithmeticConstraints()
+        self.constraints.arithmetic = new_constraint
+        self.assertIs(self.constraints.arithmetic, new_constraint)
+
+    def test_class_of_setted_arithmetic_constraints(self):
+        new_constraint = ArithmeticConstraints()
+        self.constraints.arithmetic = new_constraint
+        self.assertIsInstance(self.constraints.arithmetic,
+                              ArithmeticConstraints)
 
 
 if __name__ == '__main__':

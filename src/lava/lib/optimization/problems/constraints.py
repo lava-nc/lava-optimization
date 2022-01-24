@@ -9,6 +9,7 @@ from src.lava.lib.optimization.problems.coefficients import \
 
 CTType = ty.Union[ty.List, npt.ArrayLike]
 
+
 class DiscreteConstraints:
     """Set of constraints involving only discrete variables.
 
@@ -138,3 +139,36 @@ class InequalityConstraints(CoefficientTensorsMixin):
 
     def __init__(self, *coefficients: CTType):
         super().__init__(*coefficients)
+
+
+class ArithmeticConstraints():
+    def __init__(self,
+                 eq: CTType = None,
+                 ineq: CTType = None
+                 ):
+        """Constraints defined via an arithmetic relation between tensors."""
+        self._equality = None if eq is None else EqualityConstraints(*eq)
+        self._inequality = None if ineq is None else InequalityConstraints(
+            *ineq)
+
+    @property
+    def equality(self):
+        return self._equality
+
+    @equality.setter
+    def equality(self, value):
+        if value is None:
+            self._equality = None
+        else:
+            self._equality = EqualityConstraints(*value)
+
+    @property
+    def inequality(self):
+        return self._inequality
+
+    @inequality.setter
+    def inequality(self, value):
+        if value is None:
+            self._inequality = None
+        else:
+            self._inequality = InequalityConstraints(*value)

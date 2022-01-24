@@ -8,7 +8,8 @@ import unittest
 import numpy as np
 from lava.lib.optimization.problems.constraints import (DiscreteConstraints,
                                                         EqualityConstraints,
-                                                        InequalityConstraints)
+                                                        InequalityConstraints,
+                                                        ArithmeticConstraints)
 from src.lava.lib.optimization.problems.coefficients import \
     CoefficientTensorsMixin
 
@@ -111,7 +112,6 @@ class TestInequalityConstraint(unittest.TestCase):
 
     def test_created_obj_includes_mixin(self):
         self.assertIsInstance(self.constraint, CoefficientTensorsMixin)
-
 
 
 class TestArithmeticConstraint(unittest.TestCase):

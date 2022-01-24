@@ -76,3 +76,11 @@ class DiscreteVariables:
 class ContinuousVariables:
     def __init__(self, bounds: ty.List[ty.Tuple] = None):
         self._bounds = bounds
+
+    @property
+    def variable_set(self):
+        return [Variable(name=str(n)) for n in range(self.num_variables)]
+
+    @property
+    def num_variables(self):
+        return len(self._bounds)

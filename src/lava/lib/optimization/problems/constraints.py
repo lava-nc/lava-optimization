@@ -99,9 +99,20 @@ class DiscreteConstraints:
 
 
 class EqualityConstraints(CoefficientTensorsMixin):
-    """An equality constraint.
+    """List of equality constraints defined by tensor coefficients.
 
-    :param coefficients: cost tensor coefficients.
+    We consider generalized constraints of arbitrary degree:
+
+    .. math::
+        h(x) = 0
+    where the terms of $h(x)$ have the form:
+    .. math::
+         g(x)= \sum_{ijk...} \epsilon_{ijk...} \cdot x_i \cdot x_j
+        \cdot x_k \cdot ...
+
+    Parameters
+    ----------
+    coefficients: tensor coefficients defining the constraints.
     """
 
     def __init__(self, *coefficients: CTType):
@@ -109,9 +120,20 @@ class EqualityConstraints(CoefficientTensorsMixin):
 
 
 class InequalityConstraints(CoefficientTensorsMixin):
-    """An inequality constraint.
+    """List of inequality constraints defined by tensor coefficients.
 
-    :param coefficients: cost tensor coefficients.
+    We consider generalized constraints of arbitrary degree:
+
+    .. math::
+        g(x) \leq 0
+    where the terms of $g(x)$ have the form:
+    .. math::
+         \sum_{ijk...} \epsilon_{ijk...} \cdot x_i \cdot x_j \cdot x_k \cdot
+        ...
+
+    Parameters
+    ----------
+    coefficients: tensor coefficients defining the constraints.
     """
 
     def __init__(self, *coefficients: CTType):

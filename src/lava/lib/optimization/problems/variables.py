@@ -84,3 +84,12 @@ class ContinuousVariables:
     @property
     def num_variables(self):
         return len(self._bounds)
+
+    @property
+    def bounds(self):
+        return self._bounds
+
+    @bounds.setter
+    def bounds(self, value: ty.List[ty.Tuple]):
+        self._bounds = value
+

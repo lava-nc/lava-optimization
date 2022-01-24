@@ -93,6 +93,9 @@ class TestContinuousVariables(unittest.TestCase):
     def test_len_variable_set(self):
         self.assertEqual(len(self.cvars.variable_set), 3)
 
+    def test_get_bounds(self):
+        self.assertIs(self.cvars.bounds, self.bounds)
+
     @unittest.skip("WIP")
     def test_bounds_validation(self):
         pass

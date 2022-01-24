@@ -172,3 +172,25 @@ class ArithmeticConstraints():
             self._inequality = None
         else:
             self._inequality = InequalityConstraints(*value)
+
+
+class Constraints:
+    def __init__(self):
+        self._discrete = None
+        self._arithmetic = None
+
+    @property
+    def arithmetic(self):
+        return self._arithmetic
+
+    @arithmetic.setter
+    def arithmetic(self, value):
+        self._arithmetic = value
+
+    @property
+    def discrete(self):
+        return self._discrete
+
+    @discrete.setter
+    def discrete(self, value):
+        self._discrete = value

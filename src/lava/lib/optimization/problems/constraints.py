@@ -4,7 +4,10 @@
 import typing as ty
 
 import numpy.typing as npt
+from src.lava.lib.optimization.problems.coefficients import \
+    CoefficientTensorsMixin
 
+CTType = ty.Union[ty.List, npt.ArrayLike]
 
 class DiscreteConstraints:
     """Set of constraints involving only discrete variables.
@@ -22,8 +25,7 @@ class DiscreteConstraints:
     constraint they define.
     """
 
-    def __init__(self, constraints: ty.List[ty.Tuple[int, int, ...,
-                                                     npt.ArrayLike]]):
+    def __init__(self, constraints: ty.List[ty.Tuple[int, int, npt.ArrayLike]]):
         self._constraints = constraints
         self.set_relations_var_subsets(self._constraints)
 
@@ -94,3 +96,23 @@ class DiscreteConstraints:
         """
         for subset, relation in zip(subsets, relations):
             assert len(subset) == relation.ndim
+
+
+class EqualityConstraints(CoefficientTensorsMixin):
+    """An equality constraint.
+
+    :param coefficients: cost tensor coefficients.
+    """
+
+    def __init__(self, *coefficients: CTType):
+        super().__init__(*coefficients)
+
+
+class InequalityConstraints(CoefficientTensorsMixin):
+    """An inequality constraint.
+
+    :param coefficients: cost tensor coefficients.
+    """
+
+    def __init__(self, *coefficients: CTType):
+        super().__init__(*coefficients)

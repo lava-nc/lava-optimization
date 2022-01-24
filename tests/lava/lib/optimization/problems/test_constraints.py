@@ -6,7 +6,11 @@
 import unittest
 
 import numpy as np
-from lava.lib.optimization.problems.constraints import DiscreteConstraints
+from lava.lib.optimization.problems.constraints import (DiscreteConstraints,
+                                                        EqualityConstraints,
+                                                        InequalityConstraints)
+from src.lava.lib.optimization.problems.coefficients import \
+    CoefficientTensorsMixin
 
 
 class TestDiscreteConstraint(unittest.TestCase):
@@ -75,6 +79,38 @@ class TestDiscreteConstraint(unittest.TestCase):
             with self.subTest(msg=f'Relation index {n}'):
                 self.assertTrue(
                     (self.dconstraint._relations[n] == relation).all())
+
+
+class TestEqualityConstraint(unittest.TestCase):
+    def setUp(self) -> None:
+        coefficients_np = (np.asarray(1),
+                           np.ones(2),
+                           np.ones((2, 2)),
+                           np.ones((2, 2, 2))
+                           )
+        self.constraint = EqualityConstraints(*coefficients_np)
+
+    def test_create_obj(self):
+        self.assertIsInstance(self.constraint, EqualityConstraints)
+
+    def test_created_obj_includes_mixin(self):
+        self.assertIsInstance(self.constraint, CoefficientTensorsMixin)
+
+
+class TestInequalityConstraint(unittest.TestCase):
+    def setUp(self) -> None:
+        coefficients_np = (np.asarray(1),
+                           np.ones(2),
+                           np.ones((2, 2)),
+                           np.ones((2, 2, 2))
+                           )
+        self.constraint = InequalityConstraints(*coefficients_np)
+
+    def test_create_obj(self):
+        self.assertIsInstance(self.constraint, InequalityConstraints)
+
+    def test_created_obj_includes_mixin(self):
+        self.assertIsInstance(self.constraint, CoefficientTensorsMixin)
 
 
 if __name__ == '__main__':

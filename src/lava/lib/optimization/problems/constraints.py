@@ -146,17 +146,33 @@ class ArithmeticConstraints():
                  eq: CTType = None,
                  ineq: CTType = None
                  ):
-        """Constraints defined via an arithmetic relation between tensors."""
+        """Constraints defined via an arithmetic relation between tensors.
+
+        These class includes two types of arithmetic constraints, inequality
+        $g(x) \leq 0$ and equality $h(x) = 0$ constraints.
+
+        Parameters
+        ----------
+        eq: tuple of tensor coefficients defining the equality constraints.
+        ineq: tuple of tensor coefficients defining the inequality constraints.
+        """
         self._equality = None if eq is None else EqualityConstraints(*eq)
         self._inequality = None if ineq is None else InequalityConstraints(
             *ineq)
 
     @property
     def equality(self):
+        """EqualityConstraints object defined by tensor coefficients."""
         return self._equality
 
     @equality.setter
     def equality(self, value):
+        """Set EqualityConstraints object from tensor coefficients.
+
+        Parameters
+        ----------
+        value: tensor coefficients defining the constraints.
+        """
         if value is None:
             self._equality = None
         else:
@@ -164,10 +180,16 @@ class ArithmeticConstraints():
 
     @property
     def inequality(self):
+        """InequalityConstraints object defined by tensor coefficients."""
         return self._inequality
 
     @inequality.setter
     def inequality(self, value):
+        """Set InequalityConstraints object from tensor coefficients.
+
+        Parameters
+        ----------
+        value: tensor coefficients defining the constraints."""
         if value is None:
             self._inequality = None
         else:
@@ -175,22 +197,33 @@ class ArithmeticConstraints():
 
 
 class Constraints:
+    """A set of constraints, including both discrete and arithmetic.
+
+    Discrete constraints can be of any arity and are defined by a tuple
+    containing variable subsets and a relation tensor. Arithmetic constraints
+    include equality and inequality constraints and are defined by a series
+    of tensors defining the coefficients of scalar function of the variable
+    vectors.
+    """
+
     def __init__(self):
         self._discrete = None
         self._arithmetic = None
 
     @property
     def arithmetic(self):
+        """Constraints defined via an arithmetic relation."""
         return self._arithmetic
 
     @arithmetic.setter
-    def arithmetic(self, value):
+    def arithmetic(self, value: ArithmeticConstraints):
         self._arithmetic = value
 
     @property
     def discrete(self):
+        """Constraints over discrete variables only, defined via a relation."""
         return self._discrete
 
     @discrete.setter
-    def discrete(self, value):
+    def discrete(self, value: DiscreteConstraints):
         self._discrete = value

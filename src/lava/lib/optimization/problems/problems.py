@@ -55,7 +55,9 @@ class QUBO(OptimizationProblem):
         None. Variables are binary and their number must match the dimension of
         the Q matrix.
 
-        :param q: squared Q matrix defining the QUBO problem over a binary
+        Parameters
+        ----------
+        q: squared Q matrix defining the QUBO problem over a binary
         vector x as: minimize x^T*Q*x.
         """
         super().__init__()
@@ -89,15 +91,42 @@ class QUBO(OptimizationProblem):
         return None
 
     def validate_input(self, q):
-        """Validate the cost coefficient is a square matrix."""
+        """Validate the cost coefficient is a square matrix.
+
+        Parameters
+        ----------
+        q: Quadratic coefficient of the cost function.
+        """
         m, n = q.shape
         assert m == n, "q matrix is not a square matrix."
 
 
+DType = ty.Union[ty.List[int], ty.List[ty.Tuple[ty.Any]]]
+CType = ty.List[ty.Tuple[int, int, npt.ArrayLike]]
+
+
 class CSP(OptimizationProblem):
+    """A constraint satisfaction problem.
+
+     The CSP is in usually represented by the tuple (variables, domains,
+     constraints). However, because every variable must have a domain, the
+     user only provides the domains and constraints.
+
+    Parameters
+    ----------
+    domains: either a list of tuples with values that each variable can take or
+    a list of integers specifying the domain size for each variable.
+
+    constraints: Discrete constraints defining mutually allowed values
+    between variables. Has to be a list of n-tuples where the first n-1 elements
+    are the variables related by the n-th element of the tuple. The n-th element
+    is a tensor indicating what values of the variables are simultaneously
+    allowed.
+    """
+
     def __init__(self,
-                 domains=None,
-                 constraints=None):
+                 domains: DType = None,
+                 constraints: CType = None):
         super().__init__()
         self._variables.discrete = DiscreteVariables(domains)
         self._constant_cost = Cost(0)
@@ -105,14 +134,17 @@ class CSP(OptimizationProblem):
 
     @property
     def variables(self):
+        """Discrete variables over which the problem is specified."""
         return self._variables.discrete
 
     @property
     def cost(self):
+        """Constant cost function, CSPs require feasibility not minimization."""
         return self._constant_cost
 
     @property
     def constraints(self):
+        """Specification of mutually allowed values between variables."""
         return self._constraints.discrete
 
     @constraints.setter

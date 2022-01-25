@@ -5,10 +5,12 @@
 import unittest
 
 import numpy as np
-from src.lava.lib.optimization.problems.constraints import Constraints
+from src.lava.lib.optimization.problems.constraints import (Constraints,
+                                                            DiscreteConstraints)
 from src.lava.lib.optimization.problems.cost import Cost
 from src.lava.lib.optimization.problems.problems import (OptimizationProblem,
-                                                         QUBO)
+                                                         QUBO,
+                                                         CSP)
 from src.lava.lib.optimization.problems.variables import (Variables,
                                                           DiscreteVariables)
 
@@ -124,6 +126,67 @@ class TestQUBO(unittest.TestCase):
     def test_validate_input_method_does_not_fail_assertion(self):
         try:
             self.qubo.validate_input(np.eye(10))
+        except AssertionError as ex:
+            self.fail("Assertion failed with correct input!")
+
+
+
+class TestCSP(unittest.TestCase):
+    def setUp(self) -> None:
+        self.domain_sizes = [5,5,4]
+        self.constraints = [(0, 1, np.logical_not(np.eye(5))),
+                            (1,2, np.eye(5,4))]
+        self.csp=CSP(domains=[5,5,4], constraints=self.constraints)
+
+    def test_create_obj(self):
+        self.assertIsInstance(self.csp, CSP)
+
+    def test_cost_class(self):
+        self.assertIsInstance(self.csp.cost, Cost)
+
+    def test_cost_is_constant(self):
+        self.assertEqual(self.csp.cost.max_degree, 0)
+
+    def test_cannot_set_cost(self):
+        with self.assertRaises(AttributeError):
+            self.csp.cost=np.eye(10)
+
+    def test_variables_class(self):
+        self.assertIsInstance(self.csp.variables, DiscreteVariables)
+
+    def test_variables_domain_sizes(self):
+        for n, size in enumerate(self.csp.variables.domain_sizes):
+            with self.subTest(msg=f'Var ID {n}'):
+                self.assertEqual(size, self.domain_sizes[n])
+
+    def test_constraints_class(self):
+        self.assertIsInstance(self.csp.constraints, DiscreteConstraints)
+
+    def test_constraints_var_subsets(self):
+        for n, (v1, v2, rel)  in enumerate(self.constraints):
+            with self.subTest(msg=f'Constraint {n}.'):
+                self.assertEqual(self.csp.constraints.var_subsets[n], (v1,v2))
+
+    def test_constraints_relations(self):
+        for n, (v1, v2, rel)  in enumerate(self.constraints):
+            with self.subTest(msg=f'Constraint {n}.'):
+                self.assertTrue((self.csp.constraints.relations[n]==rel).all())
+
+
+    def test_set_constraints(self):
+        new_constraints=[(0, 1, np.eye(5))]
+        self.csp.constraints=new_constraints
+        self.assertIs(self.csp.constraints._constraints, new_constraints)
+
+    @unittest.skip("WIP")
+    def test_validate_input_method_fails_assertion(self):
+        with self.assertRaises(AssertionError):
+            self.csp.validate_input(np.eye(10).reshape(5, 20))
+
+    @unittest.skip("WIP")
+    def test_validate_input_method_does_not_fail_assertion(self):
+        try:
+            self.csp.validate_input(np.eye(10))
         except AssertionError as ex:
             self.fail("Assertion failed with correct input!")
 

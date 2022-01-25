@@ -6,8 +6,11 @@ import typing as ty
 from abc import ABC, abstractmethod
 
 import numpy as np
+import numpy.typing as npt
 from src.lava.lib.optimization.problems.constraints import Constraints
-from src.lava.lib.optimization.problems.variables import Variables
+from src.lava.lib.optimization.problems.cost import Cost
+from src.lava.lib.optimization.problems.variables import (Variables,
+                                                          DiscreteVariables)
 
 
 class OptimizationProblem(ABC):
@@ -40,6 +43,54 @@ class OptimizationProblem(ABC):
     def constraints(self):
         """Constrains to be satisfied by mutual assignments to variables."""
         pass
+
+
+class QUBO(OptimizationProblem):
+    def __init__(self, q: npt.ArrayLike):
+        """A Quadratic Unconstrained Binary Optimization (QUBO) problem.
+
+        The cost to be minimized is of the form $x^T \cdot Q \cdot x$.
+        the problem is unconstrained by definition, thus, constraints are set to
+        None. Variables are binary and their number must match the dimension of
+        the Q matrix.
+
+        :param q: squared Q matrix defining the QUBO problem over a binary
+        vector x as: minimize x^T*Q*x.
+        """
+        super().__init__()
+        self.validate_input(q)
+        self._q_cost = Cost(q)
+        self._b_variables = DiscreteVariables(domains=[2] * q.shape[0])
+
+    @property
+    def variables(self):
+        """Binary variables of the QUBO problem."""
+        return self._b_variables
+
+    @property
+    def cost(self):
+        """Quadratic cost to be minimized."""
+        return self._q_cost
+
+    @cost.setter
+    def cost(self, value):
+        """Quadratic cost setter, binary variables are updated accordingly."""
+        self.validate_input(value)
+        q = Cost(value)
+        assert list(q.coefficients.keys()) == [2], "Cost must be a quadratic " \
+                                                   "matrix."
+        self._b_variables = DiscreteVariables(domains=[2] * value.shape[0])
+        self._q_cost = q
+
+    @property
+    def constraints(self):
+        """As an unconstrained problem, QUBO constraints are None."""
+        return None
+
+    def validate_input(self, q):
+        """Validate the cost coefficient is a square matrix."""
+        m, n = q.shape
+        assert m == n, "q matrix is not a square matrix."
 
 
 class QP:

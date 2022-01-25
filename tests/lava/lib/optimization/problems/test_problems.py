@@ -84,6 +84,9 @@ class TestQUBO(unittest.TestCase):
             with self.subTest(msg=f'Var ID {n}'):
                 self.assertEqual(size, 2)
 
+    def test_number_of_variables(self):
+        self.assertEqual(self.qubo.variables.num_variables, 10)
+
     def test_constraints_is_none(self):
         self.assertIsNone(self.qubo.constraints)
 
@@ -92,9 +95,14 @@ class TestQUBO(unittest.TestCase):
             self.qubo.constraints = np.eye(10)
 
     def test_set_cost(self):
-        new_cost = np.eye(10)
+        new_cost = np.eye(4)
         self.qubo.cost = new_cost
         self.assertIs(self.qubo.cost.get_coefficient(2), new_cost)
+
+    def test_variables_update_after_setting_cost(self):
+        new_cost = np.eye(4)
+        self.qubo.cost = new_cost
+        self.assertEqual(self.qubo.variables.num_variables, 4)
 
     def test_class_of_setted_cost(self):
         new_cost = np.eye(10)

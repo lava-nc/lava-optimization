@@ -2,8 +2,44 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
-import numpy as np
 import typing as ty
+from abc import ABC, abstractmethod
+
+import numpy as np
+from src.lava.lib.optimization.problems.constraints import Constraints
+from src.lava.lib.optimization.problems.variables import Variables
+
+
+class OptimizationProblem(ABC):
+    """Interface for any concrete optimization problem.
+
+    Any optimization problem can be defined by a set of variables, cost and
+    constraints.  Although for some problems some of these elements may be
+    absent, the user still has to specify them, e.g., defining constraints as
+    None.
+    """
+
+    def __init__(self):
+        self._variables = Variables()
+        self._constraints = Constraints()
+
+    @property
+    @abstractmethod
+    def variables(self):
+        """Variables over which the optimization problem is defined."""
+        pass
+
+    @property
+    @abstractmethod
+    def cost(self):
+        """Function to be optimized and defined over the problem variables."""
+        pass
+
+    @property
+    @abstractmethod
+    def constraints(self):
+        """Constrains to be satisfied by mutual assignments to variables."""
+        pass
 
 
 class QP:
@@ -37,18 +73,18 @@ class QP:
     """
 
     def __init__(
-        self,
-        hessian: np.ndarray,
-        linear_offset: ty.Optional[np.ndarray] = None,
-        constraint_hyperplanes: ty.Optional[np.ndarray] = None,
-        constraint_biases: ty.Optional[np.ndarray] = None,
-        constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
-        constraint_biases_eq: ty.Optional[np.ndarray] = None,
+            self,
+            hessian: np.ndarray,
+            linear_offset: ty.Optional[np.ndarray] = None,
+            constraint_hyperplanes: ty.Optional[np.ndarray] = None,
+            constraint_biases: ty.Optional[np.ndarray] = None,
+            constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
+            constraint_biases_eq: ty.Optional[np.ndarray] = None,
     ):
         if (
-            constraint_hyperplanes is None and constraint_biases is not None
+                constraint_hyperplanes is None and constraint_biases is not None
         ) or (
-            constraint_hyperplanes is not None and constraint_biases is None
+                constraint_hyperplanes is not None and constraint_biases is None
         ):
             raise ValueError(
                 "Please properly define your Inequality constraints. Supply \
@@ -56,11 +92,11 @@ class QP:
             )
 
         if (
-            constraint_hyperplanes_eq is None
-            and constraint_biases_eq is not None
+                constraint_hyperplanes_eq is None
+                and constraint_biases_eq is not None
         ) or (
-            constraint_hyperplanes_eq is not None
-            and constraint_biases_eq is None
+                constraint_hyperplanes_eq is not None
+                and constraint_biases_eq is None
         ):
             raise ValueError(
                 "Please properly define your Equality constraints. Supply \

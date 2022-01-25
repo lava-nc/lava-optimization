@@ -7,7 +7,8 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import numpy.typing as npt
-from src.lava.lib.optimization.problems.constraints import Constraints
+from src.lava.lib.optimization.problems.constraints import (Constraints,
+                                                            DiscreteConstraints)
 from src.lava.lib.optimization.problems.cost import Cost
 from src.lava.lib.optimization.problems.variables import (Variables,
                                                           DiscreteVariables)
@@ -91,6 +92,32 @@ class QUBO(OptimizationProblem):
         """Validate the cost coefficient is a square matrix."""
         m, n = q.shape
         assert m == n, "q matrix is not a square matrix."
+
+
+class CSP(OptimizationProblem):
+    def __init__(self,
+                 domains=None,
+                 constraints=None):
+        super().__init__()
+        self._variables.discrete = DiscreteVariables(domains)
+        self._constant_cost = Cost(0)
+        self._constraints.discrete = DiscreteConstraints(constraints)
+
+    @property
+    def variables(self):
+        return self._variables.discrete
+
+    @property
+    def cost(self):
+        return self._constant_cost
+
+    @property
+    def constraints(self):
+        return self._constraints.discrete
+
+    @constraints.setter
+    def constraints(self, value):
+        self._constraints.discrete = DiscreteConstraints(value)
 
 
 class QP:

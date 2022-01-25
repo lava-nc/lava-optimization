@@ -7,11 +7,15 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import numpy.typing as npt
-from src.lava.lib.optimization.problems.constraints import (Constraints,
-                                                            DiscreteConstraints)
-from src.lava.lib.optimization.problems.cost import Cost
-from src.lava.lib.optimization.problems.variables import (Variables,
-                                                          DiscreteVariables)
+from lava.lib.optimization.problems.constraints import (
+    Constraints,
+    DiscreteConstraints,
+)
+from lava.lib.optimization.problems.cost import Cost
+from lava.lib.optimization.problems.variables import (
+    Variables,
+    DiscreteVariables,
+)
 
 
 class OptimizationProblem(ABC):
@@ -48,7 +52,7 @@ class OptimizationProblem(ABC):
 
 class QUBO(OptimizationProblem):
     def __init__(self, q: npt.ArrayLike):
-        """A Quadratic Unconstrained Binary Optimization (QUBO) problem.
+        r"""A Quadratic Unconstrained Binary Optimization (QUBO) problem.
 
         The cost to be minimized is of the form $x^T \cdot Q \cdot x$.
         the problem is unconstrained by definition, thus, constraints are set to
@@ -80,8 +84,8 @@ class QUBO(OptimizationProblem):
         """Quadratic cost setter, binary variables are updated accordingly."""
         self.validate_input(value)
         q = Cost(value)
-        assert list(q.coefficients.keys()) == [2], "Cost must be a quadratic " \
-                                                   "matrix."
+        if list(q.coefficients.keys()) != [2]:
+            raise ValueError("Cost must be a quadratic " "matrix.")
         self._b_variables = DiscreteVariables(domains=[2] * value.shape[0])
         self._q_cost = q
 
@@ -98,7 +102,8 @@ class QUBO(OptimizationProblem):
         q: Quadratic coefficient of the cost function.
         """
         m, n = q.shape
-        assert m == n, "q matrix is not a square matrix."
+        if m != n:
+            raise ValueError("q matrix is not a square matrix.")
 
 
 DType = ty.Union[ty.List[int], ty.List[ty.Tuple[ty.Any]]]
@@ -124,9 +129,7 @@ class CSP(OptimizationProblem):
     allowed.
     """
 
-    def __init__(self,
-                 domains: DType = None,
-                 constraints: CType = None):
+    def __init__(self, domains: DType = None, constraints: CType = None):
         super().__init__()
         self._variables.discrete = DiscreteVariables(domains)
         self._constant_cost = Cost(0)
@@ -183,18 +186,18 @@ class QP:
     """
 
     def __init__(
-            self,
-            hessian: np.ndarray,
-            linear_offset: ty.Optional[np.ndarray] = None,
-            constraint_hyperplanes: ty.Optional[np.ndarray] = None,
-            constraint_biases: ty.Optional[np.ndarray] = None,
-            constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
-            constraint_biases_eq: ty.Optional[np.ndarray] = None,
+        self,
+        hessian: np.ndarray,
+        linear_offset: ty.Optional[np.ndarray] = None,
+        constraint_hyperplanes: ty.Optional[np.ndarray] = None,
+        constraint_biases: ty.Optional[np.ndarray] = None,
+        constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
+        constraint_biases_eq: ty.Optional[np.ndarray] = None,
     ):
         if (
-                constraint_hyperplanes is None and constraint_biases is not None
+            constraint_hyperplanes is None and constraint_biases is not None
         ) or (
-                constraint_hyperplanes is not None and constraint_biases is None
+            constraint_hyperplanes is not None and constraint_biases is None
         ):
             raise ValueError(
                 "Please properly define your Inequality constraints. Supply \
@@ -202,11 +205,11 @@ class QP:
             )
 
         if (
-                constraint_hyperplanes_eq is None
-                and constraint_biases_eq is not None
+            constraint_hyperplanes_eq is None
+            and constraint_biases_eq is not None
         ) or (
-                constraint_hyperplanes_eq is not None
-                and constraint_biases_eq is None
+            constraint_hyperplanes_eq is not None
+            and constraint_biases_eq is None
         ):
             raise ValueError(
                 "Please properly define your Equality constraints. Supply \

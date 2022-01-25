@@ -9,8 +9,7 @@ import numpy.typing as npt
 
 
 class CoefficientTensorsMixin:
-    def __init__(self,
-                 *coefficients: ty.Union[ty.List, npt.ArrayLike]):
+    def __init__(self, *coefficients: ty.Union[ty.List, npt.ArrayLike]):
         """Coefficients for a scalar function of a vector.
 
         Parameters
@@ -23,8 +22,10 @@ class CoefficientTensorsMixin:
                 coefficient = np.asarray(coefficient)
                 rank = coefficient.ndim
             elif type(coefficient) is not np.ndarray:
-                raise ValueError("Coefficients should be either Numpy arrays "
-                                 "or (possibly nested) lists.")
+                raise ValueError(
+                    "Coefficients should be either Numpy arrays "
+                    "or (possibly nested) lists."
+                )
             else:
                 rank = coefficient.ndim
             c_dict[rank] = coefficient
@@ -43,8 +44,9 @@ class CoefficientTensorsMixin:
             return self.coefficients[order]
         except KeyError:
             print(
-                f'''Order {order} not found, coefficients were only given for 
-                orders: {list(self.coefficients.keys())}.''')
+                f"""Order {order} not found, coefficients were only given for
+                orders: {list(self.coefficients.keys())}."""
+            )
             raise
 
     @property

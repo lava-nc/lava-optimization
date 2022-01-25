@@ -5,8 +5,9 @@
 import typing as ty
 
 import numpy.typing as npt
-from src.lava.lib.optimization.problems.coefficients import \
-    CoefficientTensorsMixin
+from lava.lib.optimization.problems.coefficients import (
+    CoefficientTensorsMixin,
+)
 
 CTType = ty.Union[ty.List, npt.ArrayLike]
 
@@ -20,10 +21,11 @@ class Cost(CoefficientTensorsMixin):
     into the cost. Tuple elements have the same type as coefficients.
     """
 
-    def __init__(self,
-                 *coefficients: CTType,
-                 augmented_terms: ty.Tuple[CTType, ...] = None,
-                 ):
+    def __init__(
+        self,
+        *coefficients: CTType,
+        augmented_terms: ty.Tuple[CTType, ...] = None,
+    ):
         super().__init__(*coefficients)
         self._augmented_terms = augmented_terms
 

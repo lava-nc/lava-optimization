@@ -5,14 +5,15 @@
 
 import unittest
 
-from src.lava.lib.optimization.problems.variables import (Variable,
-                                                          DiscreteVariables,
-                                                          ContinuousVariables,
-                                                          Variables)
+from lava.lib.optimization.problems.variables import (
+    Variable,
+    DiscreteVariables,
+    ContinuousVariables,
+    Variables,
+)
 
 
 class TestVariable(unittest.TestCase):
-
     def setUp(self) -> None:
         self.name = "var"
         self.var = Variable(name=self.name)
@@ -41,7 +42,7 @@ class TestDiscreteVariables(unittest.TestCase):
 
     def test_variable_set_creation(self):
         for n, var in enumerate(self.dvars.variable_set):
-            with self.subTest(msg=f'ID={n}'):
+            with self.subTest(msg=f"ID={n}"):
                 self.assertIsInstance(var, Variable)
 
     def test_len_variable_set(self):
@@ -55,7 +56,7 @@ class TestDiscreteVariables(unittest.TestCase):
 
     def test_domains(self):
         for n, domain in enumerate(self.dvars.domains):
-            with self.subTest(msg=f'{n}'):
+            with self.subTest(msg=f"{n}"):
                 self.assertEqual(len(domain), self.domains[n])
 
     def test_set_domains(self):
@@ -88,7 +89,7 @@ class TestContinuousVariables(unittest.TestCase):
 
     def test_variable_set_creation(self):
         for n, var in enumerate(self.cvars.variable_set):
-            with self.subTest(msg=f'ID={n}'):
+            with self.subTest(msg=f"ID={n}"):
                 self.assertIsInstance(var, Variable)
 
     def test_len_variable_set(self):
@@ -132,5 +133,5 @@ class TestVariables(unittest.TestCase):
         self.assertIsInstance(self.vars.continuous, ContinuousVariables)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

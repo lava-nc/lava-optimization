@@ -4,8 +4,9 @@
 import typing as ty
 
 import numpy.typing as npt
-from src.lava.lib.optimization.problems.coefficients import \
-    CoefficientTensorsMixin
+from lava.lib.optimization.problems.coefficients import (
+    CoefficientTensorsMixin,
+)
 
 CTType = ty.Union[ty.List, npt.ArrayLike]
 
@@ -26,7 +27,9 @@ class DiscreteConstraints:
     constraint they define.
     """
 
-    def __init__(self, constraints: ty.List[ty.Tuple[int, int, npt.ArrayLike]]):
+    def __init__(
+        self, constraints: ty.List[ty.Tuple[int, int, npt.ArrayLike]]
+    ):
         self._constraints = constraints
         self.set_relations_var_subsets(self._constraints)
 
@@ -96,17 +99,21 @@ class DiscreteConstraints:
         subsets.
         """
         for subset, relation in zip(subsets, relations):
-            assert len(subset) == relation.ndim
+            if len(subset) != relation.ndim:
+                raise ValueError(
+                    "Relation and variable subset dimensions "
+                    "don't match for this constraint!"
+                )
 
 
 class EqualityConstraints(CoefficientTensorsMixin):
-    """List of equality constraints defined by tensor coefficients.
+    r"""List of equality constraints defined by tensor coefficients.
 
     We consider generalized constraints of arbitrary degree:
 
     .. math::
         h(x) = 0
-    where the terms of $h(x)$ have the form:
+    where the terms of :math:`h(x)` have the form:
     .. math::
          g(x)= \sum_{ijk...} \epsilon_{ijk...} \cdot x_i \cdot x_j
         \cdot x_k \cdot ...
@@ -121,13 +128,13 @@ class EqualityConstraints(CoefficientTensorsMixin):
 
 
 class InequalityConstraints(CoefficientTensorsMixin):
-    """List of inequality constraints defined by tensor coefficients.
+    r"""List of inequality constraints defined by tensor coefficients.
 
     We consider generalized constraints of arbitrary degree:
 
     .. math::
         g(x) \leq 0
-    where the terms of $g(x)$ have the form:
+    where the terms of :math:`g(x)` have the form:
     .. math::
          \sum_{ijk...} \epsilon_{ijk...} \cdot x_i \cdot x_j \cdot x_k \cdot
         ...
@@ -141,12 +148,9 @@ class InequalityConstraints(CoefficientTensorsMixin):
         super().__init__(*coefficients)
 
 
-class ArithmeticConstraints():
-    def __init__(self,
-                 eq: CTType = None,
-                 ineq: CTType = None
-                 ):
-        """Constraints defined via an arithmetic relation between tensors.
+class ArithmeticConstraints:
+    def __init__(self, eq: CTType = None, ineq: CTType = None):
+        r"""Constraints defined via an arithmetic relation between tensors.
 
         These class includes two types of arithmetic constraints, inequality
         $g(x) \leq 0$ and equality $h(x) = 0$ constraints.
@@ -157,8 +161,9 @@ class ArithmeticConstraints():
         ineq: tuple of tensor coefficients defining the inequality constraints.
         """
         self._equality = None if eq is None else EqualityConstraints(*eq)
-        self._inequality = None if ineq is None else InequalityConstraints(
-            *ineq)
+        self._inequality = (
+            None if ineq is None else InequalityConstraints(*ineq)
+        )
 
     @property
     def equality(self):

@@ -28,6 +28,15 @@ class OptimizationSolverProcess(AbstractProcess):
         self.eq_constraints = []
         for coeff in problem.constraints.equality.coefficients:
             self.eq_constraints.append(InPort(shape=coeff.shape))
+        if problem.discrete.constraints is not None:
+            d_constraints = problem.constraints.discrete
+            num_dconstraints = len(d_constraints.var_subsets)
+            max_arity = len(d_constraints.var_subsets[0])
+            self.discrete_constraints_relations = InPort(
+                shape=(len(d_constraints.relations), max_arity))
+            subsets_shape = (num_dconstraints,) + (
+            problem.variables.discrete.num_vars,) * max_arity
+            self.discrete_constraints_subsets = InPort(shape=subsets_shape)
         self.solution = OutPort(shape=(problem.num_vars,))
         self.variable_assignment = Var(shape=(problem.num_vars,))
         self.optimality = Var(shape=(1,))

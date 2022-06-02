@@ -7,15 +7,17 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import numpy.typing as npt
+
 from lava.lib.optimization.problems.constraints import (
     Constraints,
+    ArithmeticConstraints,
     DiscreteConstraints,
 )
 from lava.lib.optimization.problems.cost import Cost
 from lava.lib.optimization.problems.variables import (
     Variables,
-    DiscreteVariables,
-)
+    ContinuousVariables,
+    DiscreteVariables)
 
 
 class OptimizationProblem(ABC):
@@ -105,8 +107,11 @@ class QUBO(OptimizationProblem):
         if m != n:
             raise ValueError("q matrix is not a square matrix.")
 
+    def verify_solution(self, solution):
+        raise NotImplementedError
 
-DType = ty.Union[ty.List[int], ty.List[ty.Tuple[ty.Any]]]
+
+DType = ty.Union[ty.List[int], ty.List[ty.Tuple]]
 CType = ty.List[ty.Tuple[int, int, npt.ArrayLike]]
 
 
@@ -154,8 +159,11 @@ class CSP(OptimizationProblem):
     def constraints(self, value):
         self._constraints.discrete = DiscreteConstraints(value)
 
+    def verify_solution(self, solution):
+        raise NotImplementedError
 
-class QP:
+
+class QP(OptimizationProblem):
     """A Rudimentary interface for the QP solver. Inequality Constraints
     should be of the form Ax<=k. Equality constraints are expressed as
     sandwiched inequality constraints. The cost of the QP is of the form
@@ -184,93 +192,83 @@ class QP:
             are not properly defined. Ex: Defining A_eq while not defining k_eq
             and vice-versa.
     """
-
     def __init__(
-        self,
-        hessian: np.ndarray,
-        linear_offset: ty.Optional[np.ndarray] = None,
-        constraint_hyperplanes: ty.Optional[np.ndarray] = None,
-        constraint_biases: ty.Optional[np.ndarray] = None,
-        constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
-        constraint_biases_eq: ty.Optional[np.ndarray] = None,
-    ):
-        if (
-            constraint_hyperplanes is None and constraint_biases is not None
-        ) or (
-            constraint_hyperplanes is not None and constraint_biases is None
-        ):
-            raise ValueError(
-                "Please properly define your Inequality constraints. Supply \
-                all A and k "
-            )
+            self,
+            hessian: npt.ArrayLike,
+            linear_offset: ty.Optional[np.ndarray] = None,
+            constraint_hyperplanes: ty.Optional[np.ndarray] = None,
+            constraint_biases: ty.Optional[np.ndarray] = None,
+            constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
+            constraint_biases_eq: ty.Optional[np.ndarray] = None, ):
+        super().__init__()
+        self.c_variables = ContinuousVariables(hessian.shape[0])
+        self.q_cost = Cost(linear_offset, hessian)
+        self._constraints.arithmetic = ArithmeticConstraints(
+            ineq=[constraint_biases,
+                  constraint_hyperplanes],
+            eq=[constraint_biases_eq,
+                constraint_hyperplanes_eq])
 
-        if (
-            constraint_hyperplanes_eq is None
-            and constraint_biases_eq is not None
-        ) or (
-            constraint_hyperplanes_eq is not None
-            and constraint_biases_eq is None
-        ):
-            raise ValueError(
-                "Please properly define your Equality constraints. Supply \
-                all A_eq and k_eq."
-            )
+    @property
+    def variables(self):
+        return self.c_variables
 
-        self._hessian = hessian
+    @property
+    def cost(self):
+        return self.q_cost
 
-        if linear_offset is not None:
-            self._linear_offset = linear_offset
-        else:
-            self._linear_offset = np.zeros((hessian.shape[0], 1))
+    @property
+    def constraints(self):
+        return self._constraints.arithmetic
 
-        if constraint_hyperplanes is not None:
-            self._constraint_hyperplanes = constraint_hyperplanes
-            self._constraint_biases = constraint_biases
-        else:
-            self._constraint_hyperplanes = None
-            self._constraint_biases = None
-
-        if constraint_hyperplanes_eq is not None:
-            self._constraint_hyperplanes_eq = constraint_hyperplanes_eq
-            self._constraint_biases_eq = constraint_biases_eq
-
-        if constraint_hyperplanes_eq is not None:
-            constraint_hyperplanes_eq_new = np.vstack(
-                (constraint_hyperplanes_eq, -constraint_hyperplanes_eq)
-            )
-            constraint_biases_eq_new = np.vstack(
-                (constraint_biases_eq, -constraint_biases_eq)
-            )
-            if constraint_hyperplanes is not None:
-                self._constraint_hyperplanes = np.vstack(
-                    (
-                        self._constraint_hyperplanes,
-                        constraint_hyperplanes_eq_new,
-                    )
-                )
-                self._constraint_biases = np.vstack(
-                    (self._constraint_biases, constraint_biases_eq_new)
-                )
-            else:
-                self._constraint_hyperplanes = constraint_hyperplanes_eq_new
-                self._constraint_biases = constraint_biases_eq_new
 
     @property
     def get_hessian(self) -> np.ndarray:
-        return self._hessian
+        return self.cost.get_coefficient(order=2)
 
     @property
     def get_linear_offset(self) -> np.ndarray:
-        return self._linear_offset
+        return self.cost.get_coefficient(order=1)
 
     @property
     def get_constraint_hyperplanes(self) -> np.ndarray:
-        return self._constraint_hyperplanes
+        return self.constraints.inequality.get_coefficient(order=2)
 
     @property
     def get_constraint_biases(self) -> np.ndarray:
-        return self._constraint_biases
+        return self.constraints.inequality.get_coefficient(order=1)
 
     @property
     def num_variables(self) -> int:
-        return len(self._linear_offset)
+        return self.variables.num_variables
+
+
+class LP(OptimizationProblem):
+    def __init__(self, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
+                 bounds=None, x0=None):
+        """Example adopting the interface from scipy.optimize.linprog.
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
+
+        minimize c @ x
+        such that:
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+        lb <= x <= ub
+        """
+        super().__init__()
+        self.c_variables = ContinuousVariables(bounds=bounds)
+        self.l_cost = Cost(c)
+        self.a_constraints = ArithmeticConstraints(ineq=[b_ub, A_ub],
+                                                   eq=[b_eq, A_eq])
+
+    @property
+    def variables(self):
+        return self.c_variables
+
+    @property
+    def cost(self):
+        return self.l_cost
+
+    @property
+    def constraints(self):
+        return self.a_constraints

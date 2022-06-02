@@ -1,11 +1,11 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
-from lava.lib.optimization.problems.problems import OptimizationProblem
-from lava.lib.optimization.solvers.generic.processes import \
-    OptimizationSolverProcess
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg
+
+from lava.lib.optimization.problems.problems import OptimizationProblem
+from lava.lib.optimization.solvers.generic.processes import SolverProcessBuilder
 
 
 # from lava.utils.profiler import LavaProfiler
@@ -27,6 +27,7 @@ class OptimizationSolver:
 
     def __init__(self, run_cfg=None):
         self._run_cfg = run_cfg
+        self._process_builder = SolverProcessBuilder()
 
     @property
     def run_cfg(self):
@@ -55,7 +56,8 @@ class OptimizationSolver:
         solution: candidate solution to the input optimization problem.
 
         """
-        self.solver_process = OptimizationSolverProcess(problem=problem)
+        self._process_builder.create_constructor(problem)
+        self.solver_process = self._process_builder.solver_process
         if profiling:
             profiler = LavaProfiler()
             solver_process = profiler.profile(self.solver_process)
@@ -66,3 +68,7 @@ class OptimizationSolver:
         solution = self.solver_process.variable_assignment.get()
         self.solver_process.stop()
         return solution
+
+    @classmethod
+    def get_process(cls, spec=None):
+        pass

@@ -192,6 +192,7 @@ class QP(OptimizationProblem):
             are not properly defined. Ex: Defining A_eq while not defining k_eq
             and vice-versa.
     """
+
     def __init__(
             self,
             hessian: npt.ArrayLike,
@@ -220,7 +221,6 @@ class QP(OptimizationProblem):
     @property
     def constraints(self):
         return self._constraints.arithmetic
-
 
     @property
     def get_hessian(self) -> np.ndarray:

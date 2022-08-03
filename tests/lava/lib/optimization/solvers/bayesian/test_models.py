@@ -17,8 +17,6 @@ from lava.magma.core.run_configs import Loihi1SimCfg
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
 from lava.lib.optimization.problems.bayesian.models import (
-    DualContInputFunction,
-    SingleInputLinearFunction,
     SingleInputNonLinearFunction
 )
 from lava.lib.optimization.solvers.bayesian.models import (
@@ -167,7 +165,7 @@ class TestModels(unittest.TestCase):
         optimizer.next_point_out.connect(problem.x_in)
         problem.y_out.connect(optimizer.results_in)
 
-        # initialize the search space being exactly as it was argued to
+        # validate the search space is exactly as it was argued to
         # the solver
         initial_ss: np.ndarray = optimizer.search_space
         self.assertEqual(initial_ss.shape, search_space.shape)

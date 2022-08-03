@@ -16,11 +16,13 @@ from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
-from lava.lib.optimization.solvers.bayesian.models import (
-    BayesianOptimizer,
+from lava.lib.optimization.problems.bayesian.models import (
     DualContInputFunction,
     SingleInputLinearFunction,
     SingleInputNonLinearFunction
+)
+from lava.lib.optimization.solvers.bayesian.models import (
+    BayesianOptimizer
 )
 
 
@@ -209,80 +211,6 @@ class TestModels(unittest.TestCase):
             self.assertIn(f, valid_files)
 
         shutil.rmtree(log_dir)
- 
-
-    def test_model_dual_cont_input_func(self) -> None:
-        """test behavior of the DualContInputFunction process"""
-
-        input_spike = np.ndarray((2,1), buffer=np.array([0.1, 0.1]))
-        valid_spike = np.array([0.1, 0.1, 1.00540399861])
-
-        input_probe = InputParamVecProcess(num_params=2, spike=input_spike)
-        bb_process = DualContInputFunction()
-        output_probe = OutputPerfVecProcess(num_params=2,num_objectives=1)
-
-        input_probe.x_out.connect(bb_process.x_in)
-        bb_process.y_out.connect(output_probe.y_in)
-
-        output_probe.run(
-            condition=RunSteps(num_steps=1),
-            run_cfg=Loihi1SimCfg()
-        )
-
-        result: np.ndarray = output_probe.recv_data.get()
-        self.assertEqual(result[0][0], valid_spike[0])
-        self.assertEqual(result[1][0], valid_spike[1])
-        self.assertAlmostEqual(result[2][0], valid_spike[2])
-
-        output_probe.stop()
-
-    def test_model_single_input_linear_func(self) -> None:
-        """test behavior of the SingleInputLinearFunction process"""
-        
-        input_spike = np.array([5])
-        valid_spike = np.array([5, 49])
-
-        input_probe = InputParamVecProcess(num_params=1, spike=input_spike)
-        bb_process = SingleInputLinearFunction()
-        output_probe = OutputPerfVecProcess(num_params=1, num_objectives=1)
-
-        input_probe.x_out.connect(bb_process.x_in)
-        bb_process.y_out.connect(output_probe.y_in)
-
-        output_probe.run(
-            condition=RunSteps(num_steps=1),
-            run_cfg=Loihi1SimCfg()
-        )
-
-        result: np.ndarray = output_probe.recv_data.get()
-        self.assertEqual(result[0][0], valid_spike[0])
-        self.assertEqual(result[1][0], valid_spike[1])
-
-        output_probe.stop()
-
-    def test_model_single_input_nonlinear_func(self) -> None:
-        """test behavior of the SingleInputNonLinearFunction process"""
-
-        input_spike = np.array([5])
-        valid_spike = np.array([5, 0.727989444555])
-
-        input_probe = InputParamVecProcess(num_params=1, spike=input_spike)
-        bb_process = SingleInputNonLinearFunction()
-        output_probe = OutputPerfVecProcess(num_params=1, num_objectives=1)
-
-        input_probe.x_out.connect(bb_process.x_in)
-        bb_process.y_out.connect(output_probe.y_in)
-
-        output_probe.run(
-            condition=RunSteps(num_steps=1),
-            run_cfg=Loihi1SimCfg()
-        )
-
-        result: np.ndarray = output_probe.recv_data.get()
-        self.assertEqual(result[0][0], valid_spike[0])
-        self.assertAlmostEqual(result[1][0], valid_spike[1])
-
-        output_probe.stop()
 
 
 if __name__ == "__main__":

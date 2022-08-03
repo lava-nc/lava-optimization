@@ -1,3 +1,7 @@
+# Copyright (C) 2022 Intel Corporation
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# See: https://spdx.org/licenses/
+
 import numpy as np
 import random
 from schema import SchemaError

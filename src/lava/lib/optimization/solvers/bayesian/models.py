@@ -56,10 +56,10 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
             # receive a result vector from the black-box function
             result_vec: np.ndarray = self.results_in.recv()
 
-            opt_result: OptimizeResult = self.process_result_vector(result_vec)
+            self.opt_result: OptimizeResult = self.process_result_vector(result_vec)
 
             if self.enable_plotting[0] == True:
-                self.plot_results(opt_result)
+                self.plot_results(self.opt_result)
         else:
             # initialize the search space from the standard Bayesian
             # optimization search space schema; for more information,
@@ -129,6 +129,9 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
                 cv2.imwrite(path, padded_image)
 
         self.create_videos()
+
+        if hasattr(self, "opt_result"):
+            print(self.opt_result)
 
     def init_search_space(self) -> list[Space]:
         """initialize the search space from the standard schema

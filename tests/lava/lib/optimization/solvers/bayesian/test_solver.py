@@ -7,7 +7,7 @@ from lava.lib.optimization.problems.bayesian.models import SingleInputNonLinearF
 from lava.lib.optimization.solvers.bayesian.solver import BayesianSolver
 
 class TeatSolvers(unittest.TestCase):
-    """Test initialization and runtime of BayesianSolver class
+    """Test initialization and runtime of the BayesianSolver class
     
     Refer to Bayesian solver.py for more information
     """
@@ -119,7 +119,7 @@ class TeatSolvers(unittest.TestCase):
             self.assertEqual(opt.enable_plotting, flag)
             del opt
         
-        # test all valid initial point generator config
+        # test all valid initial point generator configs
         for config in self.valid_ip_configs:
             opt = BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],

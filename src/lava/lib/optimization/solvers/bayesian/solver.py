@@ -82,9 +82,8 @@ class BayesianSolver:
                         "GP" - gaussian process regressor
             }
         num_objectives : int
-            specify the number of objectives to optimizer over; currently
+            specify the number of objectives to optimize over; currently
             limited to single objective
-
         """
         # validate input argument specifying the acquisition function config
         valid_acq_funcs: list[str] = ["LCB", "EI", "PI", "gp_hedge", "EIps", "PIps"]

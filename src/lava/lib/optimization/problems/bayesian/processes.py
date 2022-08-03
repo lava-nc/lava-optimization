@@ -1,5 +1,3 @@
-import numpy as np
-
 from lava.magma.core.process.ports.ports import InPort, OutPort
 from lava.magma.core.process.process import AbstractProcess
 from lava.magma.core.process.variable import Var

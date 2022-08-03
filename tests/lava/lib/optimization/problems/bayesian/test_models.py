@@ -1,5 +1,4 @@
 import numpy as np
-import random
 import unittest
 
 from lava.magma.core.decorator import implements, requires
@@ -80,7 +79,7 @@ class PyOutputPerfVecProcess(PyLoihiProcessModel):
 
 
 class TestModels(unittest.TestCase):
-    """Tests all model behaviors associated with the Bayesian solver
+    """Tests all model behaviors associated with the Bayesian problems
 
     Refer to Bayesian models.py to learn more about behaviors.
     """

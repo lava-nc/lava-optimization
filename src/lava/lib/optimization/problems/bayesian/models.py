@@ -60,7 +60,6 @@ class PyNonLinearTestFunctionModel(PyLoihiProcessModel):
 
     def run_spk(self) -> None:
         """tick the model forward by one time-step"""
-
         x = self.x_in.recv()
         y = math.cos(x) * math.sin(x) + (x * x / 25)
 

@@ -19,7 +19,6 @@ from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
 from lava.lib.optimization.problems.bayesian.models import (
     DualContInputFunction,
-    SingleInputLinearFunction,
     SingleInputNonLinearFunction
 )
 
@@ -110,30 +109,6 @@ class TestModels(unittest.TestCase):
         self.assertEqual(result[0][0], valid_spike[0])
         self.assertEqual(result[1][0], valid_spike[1])
         self.assertAlmostEqual(result[2][0], valid_spike[2])
-
-        output_probe.stop()
-
-    def test_model_single_input_linear_func(self) -> None:
-        """test behavior of the SingleInputLinearFunction process"""
-        
-        input_spike = np.array([5])
-        valid_spike = np.array([5, 49])
-
-        input_probe = InputParamVecProcess(num_params=1, spike=input_spike)
-        bb_process = SingleInputLinearFunction()
-        output_probe = OutputPerfVecProcess(num_params=1, num_objectives=1)
-
-        input_probe.x_out.connect(bb_process.x_in)
-        bb_process.y_out.connect(output_probe.y_in)
-
-        output_probe.run(
-            condition=RunSteps(num_steps=1),
-            run_cfg=Loihi1SimCfg()
-        )
-
-        result: np.ndarray = output_probe.recv_data.get()
-        self.assertEqual(result[0][0], valid_spike[0])
-        self.assertEqual(result[1][0], valid_spike[1])
 
         output_probe.stop()
 

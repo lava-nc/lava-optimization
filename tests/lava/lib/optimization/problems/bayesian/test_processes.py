@@ -6,7 +6,6 @@ import unittest
 
 from lava.lib.optimization.problems.bayesian.processes import (
     BaseObjectiveFunction,
-    SingleInputLinearFunction,
     SingleInputNonLinearFunction,
     DualContInputFunction,
 )
@@ -29,44 +28,6 @@ class TestProcesses(unittest.TestCase):
             num_params=num_params,
             num_objectives=num_objectives
         )
-
-        # checking shape of input and output ports
-        self.assertEqual(
-            process.x_in.shape,
-            (num_params, 1)
-        )
-        self.assertEqual(
-            process.y_out.shape,
-            (num_params + num_objectives, 1)
-        )
-
-        # checking shape of internal variables
-        self.assertEqual(
-            process.vars.num_params.shape,
-            (1,)
-        )
-        self.assertEqual(
-            process.vars.num_objectives.shape,
-            (1,)
-        )
-
-        # checking values of internal variables
-        self.assertEqual(
-            process.vars.num_params.get(),
-            num_params
-        )
-        self.assertEqual(
-            process.vars.num_objectives.get(),
-            num_objectives
-        )
-
-    def test_process_single_input_linear_func(self) -> None:
-        """test initialization of the SingleInputLinearFunction process"""
-
-        num_params: int = 1
-        num_objectives: int = 1
-        
-        process = SingleInputLinearFunction()
 
         # checking shape of input and output ports
         self.assertEqual(

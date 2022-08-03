@@ -1,7 +1,3 @@
-from itertools import product
-import numpy as np
-import random
-import sys
 import unittest
 
 from lava.lib.optimization.problems.bayesian.processes import (
@@ -12,9 +8,9 @@ from lava.lib.optimization.problems.bayesian.processes import (
 )
 
 class TestProcesses(unittest.TestCase):
-    """Initialization Tests of all processes of the Bayesian solver
+    """Initialization Tests of all processes of the Bayesian problems
     
-    All tests check if the vars are properly assigned in the process abd if
+    All tests check if the vars are properly assigned in the process and if
     the ports are shaped properly. Refer to Bayesian models.py to understand
     behaviors.
     """
@@ -40,7 +36,7 @@ class TestProcesses(unittest.TestCase):
             (num_params + num_objectives, 1)
         )
 
-        # checking shape of input variables
+        # checking shape of internal variables
         self.assertEqual(
             process.vars.num_params.shape,
             (1,)
@@ -50,7 +46,7 @@ class TestProcesses(unittest.TestCase):
             (1,)
         )
 
-        # checking values of input_variables
+        # checking values of internal variables
         self.assertEqual(
             process.vars.num_params.get(),
             num_params
@@ -78,7 +74,7 @@ class TestProcesses(unittest.TestCase):
             (num_params + num_objectives, 1)
         )
 
-        # checking shape of input variables
+        # checking shape of internal variables
         self.assertEqual(
             process.vars.num_params.shape,
             (1,)
@@ -88,7 +84,7 @@ class TestProcesses(unittest.TestCase):
             (1,)
         )
 
-        # checking values of input_variables
+        # checking values of internal variables
         self.assertEqual(
             process.vars.num_params.get(),
             num_params
@@ -116,7 +112,7 @@ class TestProcesses(unittest.TestCase):
             (num_params + num_objectives, 1)
         )
 
-        # checking shape of input variables
+        # checking shape of internal variables
         self.assertEqual(
             process.vars.num_params.shape,
             (1,)
@@ -126,7 +122,7 @@ class TestProcesses(unittest.TestCase):
             (1,)
         )
 
-        # checking values of input_variables
+        # checking values of internal variables
         self.assertEqual(
             process.vars.num_params.get(),
             num_params
@@ -154,7 +150,7 @@ class TestProcesses(unittest.TestCase):
             (num_params + num_objectives, 1)
         )
 
-        # checking shape of input variables
+        # checking shape of internal variables
         self.assertEqual(
             process.vars.num_params.shape,
             (1,)
@@ -164,7 +160,7 @@ class TestProcesses(unittest.TestCase):
             (1,)
         )
 
-        # checking values of input_variables
+        # checking values of internal variables
         self.assertEqual(
             process.vars.num_params.get(),
             num_params

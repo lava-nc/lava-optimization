@@ -11,7 +11,7 @@ from lava.lib.optimization.solvers.bayesian.processes import (
 class TestProcesses(unittest.TestCase):
     """Initialization Tests of all processes of the Bayesian solver
     
-    All tests check if the vars are properly assigned in the process abd if
+    All tests check if the vars are properly assigned in the process and if
     the ports are shaped properly. Refer to Bayesian models.py to understand
     behaviors.
     """
@@ -83,7 +83,6 @@ class TestProcesses(unittest.TestCase):
                 num_objectives: int = 1
                 log_dir: str = "."
                 seed: int = random.randint(-sys.maxsize, sys.maxsize)
-
 
                 # initialize the optimizer with the given config permutation
                 opt = BayesianOptimizer(

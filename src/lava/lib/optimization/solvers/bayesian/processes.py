@@ -8,6 +8,7 @@ from lava.magma.core.process.ports.ports import InPort, OutPort
 from lava.magma.core.process.process import AbstractProcess
 from lava.magma.core.process.variable import Var
 
+
 class BayesianOptimizer(AbstractProcess):
     """
     An abstract process defining the internal state and input/output
@@ -15,9 +16,10 @@ class BayesianOptimizer(AbstractProcess):
     """
 
     def __init__(self, acq_func_config: dict, acq_opt_config: dict,
-            search_space: np.ndarray, enable_plotting: bool, est_config: str,
-            ip_gen_config: dict, num_ips: int, num_objectives: int,
-            log_dir: str, seed: int, **kwargs) -> None:
+                 search_space: np.ndarray, enable_plotting: bool,
+                 est_config: str, ip_gen_config: dict, num_ips: int,
+                 num_objectives: int, log_dir: str, seed: int,
+                 **kwargs) -> None:
         """initialize the BayesianOptimizer process
 
         Parameters
@@ -47,7 +49,7 @@ class BayesianOptimizer(AbstractProcess):
 
             search_space: list = np.ndarray([
                 [-1000, 256, np.inf],
-                [0, <num_categories>, 1], 
+                [0, <num_categories>, 1],
             ])
         enable_plotting : bool
             a boolean specifying whether or not to generate plots of the
@@ -111,7 +113,7 @@ class BayesianOptimizer(AbstractProcess):
             shape=sorted_config.shape,
             init=sorted_config
         )
-        
+
         self.search_space = Var(search_space.shape, init=search_space)
         self.enable_plotting = Var((1,), init=np.array([enable_plotting]))
         self.log_dir = Var((1,), init=np.array([log_dir]))

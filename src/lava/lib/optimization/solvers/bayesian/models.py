@@ -182,8 +182,8 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
                 )
             else:
                 raise ValueError(
-                    f"parameter type [{p_type}] is not in valid " +
-                    f"parameter types: {valid_param_types}"
+                    f"parameter type [{p_type}] is not in valid "
+                    + f"parameter types: {valid_param_types}"
                 )
 
             search_space.append(dimension)

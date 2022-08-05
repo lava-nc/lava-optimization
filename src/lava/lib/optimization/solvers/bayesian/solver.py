@@ -13,6 +13,7 @@ from lava.magma.core.run_configs import Loihi1SimCfg
 
 from lava.lib.optimization.solvers.bayesian.models import BayesianOptimizer
 
+
 class BayesianSolver:
     """
     The BayesianSolver is a class-based interface to abstract the details
@@ -89,15 +90,18 @@ class BayesianSolver:
             specify the number of objectives to optimize over; currently
             limited to single objective
         """
-        # validate input argument specifying the acquisition function config
-        valid_acq_funcs: list[str] = ["LCB", "EI", "PI", "gp_hedge", "EIps", "PIps"]
+        # validate input argument specifying the acquisition function
+        # config
+        valid_acq_funcs: list[str] = [
+            "LCB", "EI", "PI", "gp_hedge", "EIps", "PIps"
+        ]
         self.acquisition_function_config: dict = Schema({
             "type": And(
                 lambda x: x in valid_acq_funcs,
                 error=f"acq_func not in valid options: {valid_acq_funcs}"
             )
         }).validate(acq_func_config)
-   
+
         # validate input argument specifying the acquisition optimizer config
         valid_acq_opts: list[str] = ["sampling", "lbfgs", "auto"]
         self.acquisition_optimizer_config: dict = Schema({
@@ -123,8 +127,9 @@ class BayesianSolver:
         }).validate(est_config)
 
         # validate the argued initial point generator
-        valid_ip_gens: list[str] = ["random", "sobol", "halton", "hammersly",
-            "lhs", "grid"]
+        valid_ip_gens: list[str] = [
+            "random", "sobol", "halton", "hammersly", "lhs", "grid"
+        ]
         self.ip_gen_config: str = Schema({
             "type": And(
                 lambda x: x in valid_ip_gens,
@@ -155,9 +160,9 @@ class BayesianSolver:
             lambda x: type(x) == int,
             error="random_state should be an integer"
         ).validate(seed)
-    
+
     def solve(self, name: str, num_iter: int, problem: AbstractProcess,
-        search_space: np.ndarray) -> None:
+            search_space: np.ndarray) -> None:
         """conduct hyperparameter optimization for the argued problem
 
         Parameters
@@ -194,16 +199,16 @@ class BayesianSolver:
             And(
                 And(
                     lambda x: issubclass(type(x), AbstractProcess),
-                    error=f'problem should extend the AbstractProcess class'
+                    error='problem should extend the AbstractProcess class'
                 ),
                 And(
-                    lambda x: x.in_ports.x_in.shape[0] == \
+                    lambda x: x.in_ports.x_in.shape[0] ==
                         len(search_space),
                     error=f'problem\'s ip_port shape should match search ' + \
                         'space length'
                 ),
                 And(
-                    lambda x: x.out_ports.y_out.shape[0] == \
+                    lambda x: x.out_ports.y_out.shape[0] ==
                         (len(search_space) + self.num_objectives),
                     error='problem\'s ip_port shape should match search ' + \
                         'space length plus the number of objectives'

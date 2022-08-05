@@ -261,9 +261,9 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
             if len(frame_paths) > 0:
                 first_frame = cv2.imread(frame_paths[0])
                 height, width = first_frame.shape[:2]
-                path: str = os.path.join(self.log_dir[0], f'{frame_type}.mp4')
+                path: str = os.path.join(self.log_dir[0], f'{frame_type}.avi')
 
-                fourcc = cv2.VideoWriter_fourcc(*"avc1")
+                fourcc = cv2.VideoWriter_fourcc(*"DVIX")
                 writer = cv2.VideoWriter(path, fourcc, fps, (width, height))
 
                 for path in frame_paths:

@@ -202,16 +202,16 @@ class BayesianSolver:
                     error='problem should extend the AbstractProcess class'
                 ),
                 And(
-                    lambda x: x.in_ports.x_in.shape[0] == \
-                        len(search_space),
-                    error='problem\'s ip_port shape should match search ' +
-                        'space length'
+                    lambda x: x.in_ports.x_in.shape[0] ==
+                              len(search_space),
+                    error='problem\'s ip_port shape should match search'
+                          + ' space length'
                 ),
                 And(
-                    lambda x: x.out_ports.y_out.shape[0] == \
-                        (len(search_space) + self.num_objectives),
-                    error='problem\'s ip_port shape should match search ' +
-                        'space length plus the number of objectives'
+                    lambda x: x.out_ports.y_out.shape[0] ==
+                              (len(search_space) + self.num_objectives),
+                    error='problem\'s ip_port shape should match search'
+                          + ' space length plus the number of objectives'
                 )
             )
         ).validate(problem)
@@ -244,8 +244,8 @@ class BayesianSolver:
                 ).validate(dim)
             elif dim[0] == "categorical":
                 Schema(
-                    lambda x: isinstance(x[3], (np.ndarray, list)) and
-                        len(x[3]) > 0,
+                    lambda x: isinstance(x[3], (np.ndarray, list))
+                              and len(x[3]) > 0,
                     error="the choices should be a non-empty ndarray or list"
                 ).validate(dim)
             else:
@@ -255,9 +255,9 @@ class BayesianSolver:
         # with the given number of iterations
         if num_iter <= self.num_initial_points:
             print(
-                "WARNING: the number of iterations is less than the " +
-                "number of initial points; the regressor will never start " +
-                "to converge on learned information!!!"
+                "WARNING: the number of iterations is less than the "
+                + "number of initial points; the regressor will never start "
+                + "to converge on learned information!!!"
             )
 
         solution_log_dir: str = os.path.join(self.log_dir, name)

@@ -48,7 +48,7 @@ class TeatSolvers(unittest.TestCase):
         ], dtype=object)
         self.valid_categorical_dimension = np.array([
             "categorical", 0, 0, [x / 4 for x in range(10)], "cat_var0"
-        ], dtype=object) 
+        ], dtype=object)
         self.valid_ss = np.array([
             self.valid_continuous_dimension,
             self.valid_integer_dimension,
@@ -432,7 +432,7 @@ class TeatSolvers(unittest.TestCase):
 
             # should catch error where the identifier isn't a string
             search_space: np.ndarray = np.array([
-                ["categorical", np.nan, np.nan, [x / 4 for x in range(10)], int],
+                ["categorical", np.nan, np.nan, [x for x in range(10)], int],
             ], dtype=object)
             solver.solve(
                 name="testing",

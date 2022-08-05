@@ -244,9 +244,16 @@ class BayesianSolver:
                 ).validate(dim)
             elif dim[0] == "categorical":
                 Schema(
-                    lambda x: isinstance(x[3], (np.ndarray, list))
-                              and len(x[3]) > 0,
-                    error="the choices should be a non-empty ndarray or list"
+                    And(
+                        And(
+                            lambda x: isinstance(x[3], (np.ndarray, list)),
+                            error="choices should be a np.ndarray or list"
+                        ),
+                        And(
+                            lambda x: len(x[3]) > 0,
+                            error="choices are empty"
+                        )
+                    )
                 ).validate(dim)
             else:
                 raise SchemaError(f"search dimension {dim} is not valid")

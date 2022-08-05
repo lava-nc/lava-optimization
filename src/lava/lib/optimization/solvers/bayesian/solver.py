@@ -21,9 +21,9 @@ class BayesianSolver:
     the user's specific black-box function
     """
     def __init__(self, acq_func_config: dict, acq_opt_config: dict,
-            enable_plotting: bool, ip_gen_config: dict, log_dir: str,
-            num_ips: int, seed: int, est_config: dict = {"type": "GP"},
-            num_objectives: int = 1) -> None:
+                 enable_plotting: bool, ip_gen_config: dict, log_dir: str,
+                 num_ips: int, seed: int, est_config: dict = {"type": "GP"},
+                 num_objectives: int = 1) -> None:
         """initialize the BayesianSolver interface
 
         Parameters
@@ -162,7 +162,7 @@ class BayesianSolver:
         ).validate(seed)
 
     def solve(self, name: str, num_iter: int, problem: AbstractProcess,
-            search_space: np.ndarray) -> None:
+              search_space: np.ndarray) -> None:
         """conduct hyperparameter optimization for the argued problem
 
         Parameters
@@ -202,15 +202,15 @@ class BayesianSolver:
                     error='problem should extend the AbstractProcess class'
                 ),
                 And(
-                    lambda x: x.in_ports.x_in.shape[0] ==
+                    lambda x: x.in_ports.x_in.shape[0] == \
                         len(search_space),
-                    error=f'problem\'s ip_port shape should match search ' + \
+                    error='problem\'s ip_port shape should match search ' +
                         'space length'
                 ),
                 And(
-                    lambda x: x.out_ports.y_out.shape[0] ==
+                    lambda x: x.out_ports.y_out.shape[0] == \
                         (len(search_space) + self.num_objectives),
-                    error='problem\'s ip_port shape should match search ' + \
+                    error='problem\'s ip_port shape should match search ' +
                         'space length plus the number of objectives'
                 )
             )
@@ -244,18 +244,19 @@ class BayesianSolver:
                 ).validate(dim)
             elif dim[0] == "categorical":
                 Schema(
-                    lambda x: isinstance(x[3], (np.ndarray, list)) and len(x[3]) > 0,
+                    lambda x: isinstance(x[3], (np.ndarray, list)) and
+                        len(x[3]) > 0,
                     error="the choices should be a non-empty ndarray or list"
                 ).validate(dim)
             else:
                 raise SchemaError(f"search dimension {dim} is not valid")
-        
+
         # warn the user if the regressor will never start to optimize
         # with the given number of iterations
         if num_iter <= self.num_initial_points:
             print(
-                "WARNING: the number of iterations is less than the " + \
-                "number of initial points; the regressor will never start " + \
+                "WARNING: the number of iterations is less than the " +
+                "number of initial points; the regressor will never start " +
                 "to converge on learned information!!!"
             )
 
@@ -282,4 +283,4 @@ class BayesianSolver:
             run_cfg=Loihi1SimCfg()
         )
 
-        optimizer.stop()    
+        optimizer.stop()

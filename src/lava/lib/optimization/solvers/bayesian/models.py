@@ -263,7 +263,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
                 height, width = first_frame.shape[:2]
                 path: str = os.path.join(self.log_dir[0], f'{frame_type}.avi')
 
-                fourcc = cv2.VideoWriter_fourcc(*"DVIX")
+                fourcc = cv2.VideoWriter_fourcc(*"XVID")
                 writer = cv2.VideoWriter(path, fourcc, fps, (width, height))
 
                 for path in frame_paths:

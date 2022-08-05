@@ -12,9 +12,10 @@ from lava.lib.optimization.solvers.bayesian.processes import (
     BayesianOptimizer
 )
 
+
 class TestProcesses(unittest.TestCase):
     """Initialization Tests of all processes of the Bayesian solver
-    
+
     All tests check if the vars are properly assigned in the process and if
     the ports are shaped properly. Refer to Bayesian models.py to understand
     behaviors.
@@ -48,8 +49,8 @@ class TestProcesses(unittest.TestCase):
             "integer", -10, 10, 0, "discrete_var0"
         ], dtype=object)
         self.valid_categorical_dimension = np.array([
-            "categorical", 0, 0, [x/4 for x in range(10)], "categorical_var0"
-        ], dtype=object) 
+            "categorical", 0, 0, [x / 4 for x in range(10)], "categorical_var0"
+        ], dtype=object)
         self.valid_ss = np.array([
             self.valid_continuous_dimension,
             self.valid_integer_dimension,
@@ -72,7 +73,7 @@ class TestProcesses(unittest.TestCase):
 
     def test_process_bayesian_optimizer(self) -> None:
         """test initialization of the BayesianOptimizer process"""
-        
+
         all_perms: list[tuple] = product(
             self.valid_acq_func_configs,
             self.valid_acq_opt_configs,
@@ -103,7 +104,7 @@ class TestProcesses(unittest.TestCase):
                 )
 
                 # validate the shape of the input/output ports
-                self.assertEqual(opt.results_in.shape, (4,1))
+                self.assertEqual(opt.results_in.shape, (4, 1))
                 self.assertEqual(opt.next_point_out.shape, (3, 1))
 
                 # check internal var containing the acquisition optimizer's
@@ -166,9 +167,11 @@ class TestProcesses(unittest.TestCase):
                 self.assertEqual(
                     opt.vars.search_space.shape, self.valid_ss.shape
                 )
-                
-                for dim_idx in range(opt.vars.search_space.get().shape[0]):
-                    for param_idx in range(opt.vars.search_space.get().shape[1]):
+
+                num_dims: int = opt.vars.search_space.get().shape[0]
+                num_params: int = opt.vars.search_space.get().shape[1]
+                for dim_idx in range(num_dims):
+                    for param_idx in range(num_params):
                         if param_idx == 3:
                             continue
 
@@ -219,3 +222,4 @@ class TestProcesses(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+    

@@ -196,8 +196,8 @@ class TestModels(unittest.TestCase):
 
         # verify that all of the valid plots and videos have been created
         valid_files: list[str] = [
-            "convergence.mp4", "evaluations.mp4",
-            "gaussian_process.mp4", "objective.mp4"
+            "convergence.avi", "evaluations.avi",
+            "gaussian_process.avi", "objective.avi"
         ]
 
         for i in range(2):

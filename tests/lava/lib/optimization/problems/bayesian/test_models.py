@@ -27,7 +27,7 @@ class InputParamVecProcess(AbstractProcess):
     def __init__(self, num_params: int, spike: np.ndarray, **kwargs) -> None:
         """Process to set an input parameter vector to evaluate black-box
         function accuracy
-        
+
         num_params : int
             the number of parameters to send to the test function
         spike : np.ndarray
@@ -35,16 +35,16 @@ class InputParamVecProcess(AbstractProcess):
         """
         super().__init__(**kwargs)
 
-        self.x_out = OutPort(shape=(num_params,1))
-        self.data = Var(shape=(num_params,1), init=spike)
+        self.x_out = OutPort(shape=(num_params, 1))
+        self.data = Var(shape=(num_params, 1), init=spike)
 
 
 class OutputPerfVecProcess(AbstractProcess):
     def __init__(self, num_params: int, num_objectives: int,
-            **kwargs) -> None:
+                 **kwargs) -> None:
         """Process to validate the resulting performance vector from the
         black-box function
-        
+
         num_params : int
             the number of parameters within each performance vector
         num_objectives : int
@@ -55,8 +55,8 @@ class OutputPerfVecProcess(AbstractProcess):
         super().__init__(**kwargs)
 
         perf_vec_length: int = num_params + num_objectives
-        self.y_in = InPort(shape=(perf_vec_length,1))
-        self.recv_data = Var(shape=(perf_vec_length,1))
+        self.y_in = InPort(shape=(perf_vec_length, 1))
+        self.recv_data = Var(shape=(perf_vec_length, 1))
 
 
 @implements(proc=InputParamVecProcess, protocol=LoihiProtocol)
@@ -90,12 +90,12 @@ class TestModels(unittest.TestCase):
     def test_model_dual_cont_input_func(self) -> None:
         """test behavior of the DualContInputFunction process"""
 
-        input_spike = np.ndarray((2,1), buffer=np.array([0.1, 0.1]))
+        input_spike = np.ndarray((2, 1), buffer=np.array([0.1, 0.1]))
         valid_spike = np.array([0.1, 0.1, 1.00540399861])
 
         input_probe = InputParamVecProcess(num_params=2, spike=input_spike)
         bb_process = DualContInputFunction()
-        output_probe = OutputPerfVecProcess(num_params=2,num_objectives=1)
+        output_probe = OutputPerfVecProcess(num_params=2, num_objectives=1)
 
         input_probe.x_out.connect(bb_process.x_in)
         bb_process.y_out.connect(output_probe.y_in)

@@ -17,7 +17,8 @@ from lava.lib.optimization.problems.bayesian.processes import (
     SingleInputNonLinearFunction
 )
 
-@implements(proc = SingleInputNonLinearFunction, protocol = LoihiProtocol)
+
+@implements(proc=SingleInputNonLinearFunction, protocol=LoihiProtocol)
 @requires(CPU)
 @tag('floating_pt')
 class PyNonLinearTestFunctionModel(PyLoihiProcessModel):
@@ -46,7 +47,7 @@ class PyNonLinearTestFunctionModel(PyLoihiProcessModel):
         self.y_out.send(output)
 
 
-@implements(proc = DualContInputFunction, protocol = LoihiProtocol)
+@implements(proc=DualContInputFunction, protocol=LoihiProtocol)
 @requires(CPU)
 @tag('floating_pt')
 class PyDualContInputFunctionModel(PyLoihiProcessModel):

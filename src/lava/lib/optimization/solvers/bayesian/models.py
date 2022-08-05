@@ -23,7 +23,8 @@ from lava.lib.optimization.solvers.bayesian.processes import (
     BayesianOptimizer
 )
 
-@implements(proc = BayesianOptimizer, protocol = LoihiProtocol)
+
+@implements(proc=BayesianOptimizer, protocol=LoihiProtocol)
 @requires(CPU)
 @tag('floating_pt')
 class PyBayesianOptimizerModel(PyLoihiProcessModel):
@@ -48,7 +49,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
     initialized = LavaPyType(bool, bool)
     num_iterations = LavaPyType(int, int)
     frame_log = LavaPyType(np.ndarray, np.ndarray)
-    
+
     def run_spk(self) -> None:
         """tick the model forward by one time-step"""
 
@@ -56,9 +57,11 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
             # receive a result vector from the black-box function
             result_vec: np.ndarray = self.results_in.recv()
 
-            self.opt_result: OptimizeResult = self.process_result_vector(result_vec)
+            self.opt_result: OptimizeResult = self.process_result_vector(
+                result_vec
+            )
 
-            if self.enable_plotting[0] == True:
+            if self.enable_plotting[0]:
                 self.plot_results(self.opt_result)
         else:
             # initialize the search space from the standard Bayesian
@@ -86,7 +89,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
         next_point: list = self.optimizer.ask()
         next_point: np.ndarray = np.ndarray(
             shape=(len(self.search_space), 1),
-            buffer = np.array(next_point)
+            buffer=np.array(next_point)
         )
 
         self.next_point_out.send(next_point)
@@ -159,7 +162,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
             maximum: Union[int, float] = self.search_space[i, 2]
             choices: list = self.search_space[i, 3]
             name: str = self.search_space[i, 4]
-            
+
             if p_type == valid_param_types[0]:
                 dimension = Real(
                     low=minimum,
@@ -179,14 +182,14 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
                 )
             else:
                 raise ValueError(
-                    f"parameter type [{p_type}] is not in valid " + \
-                    f"parameter types: {valid_param_types}"
+                    f"parameter type [{p_type}] is not in valid "
+                    + f"parameter types: {valid_param_types}"
                 )
 
             search_space.append(dimension)
 
         if not len(search_space) > 0:
-            raise ValueError("search space is empty") 
+            raise ValueError("search space is empty")
 
         return search_space
 
@@ -214,7 +217,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
                 plt.savefig(save_path, dpi=dpi, bbox_inches='tight')
                 plt.close()
                 self.frame_log[0]['gaussian_process'].append(save_path)
-            
+
             save_path: str = os.path.join(
                 self.log_dir[0],
                 f"obj_iter{self.num_iterations}.png"
@@ -244,7 +247,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
 
     def create_videos(self, fps: int = 4) -> None:
         """compile videos of plot progression throughout modeling process
-        
+
         Parameters
         ----------
         fps : int
@@ -258,9 +261,9 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
             if len(frame_paths) > 0:
                 first_frame = cv2.imread(frame_paths[0])
                 height, width = first_frame.shape[:2]
-                path: str = os.path.join(self.log_dir[0], f'{frame_type}.mp4')
+                path: str = os.path.join(self.log_dir[0], f'{frame_type}.avi')
 
-                fourcc = cv2.VideoWriter_fourcc(*"avc1")
+                fourcc = cv2.VideoWriter_fourcc(*"XVID")
                 writer = cv2.VideoWriter(path, fourcc, fps, (width, height))
 
                 for path in frame_paths:
@@ -271,7 +274,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
 
     def process_result_vector(self, vec: np.ndarray) -> None:
         """parse vec into params/objectives before informing optimizer
-        
+
         Parameters
         ----------
         vec : np.ndarray
@@ -283,7 +286,5 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
 
         evaluated_point: list = vec[:-self.num_objectives]
         performance: list = vec[-self.num_objectives:]
-        
+
         return self.optimizer.tell(evaluated_point, performance[0])
-
-

@@ -6,6 +6,7 @@ from lava.magma.core.process.ports.ports import InPort, OutPort
 from lava.magma.core.process.process import AbstractProcess
 from lava.magma.core.process.variable import Var
 
+
 class BaseObjectiveFunction(AbstractProcess):
     """
     A base objective function process that shall be used as the basis of
@@ -13,7 +14,7 @@ class BaseObjectiveFunction(AbstractProcess):
     """
 
     def __init__(self, num_params: int, num_objectives: int,
-            **kwargs) -> None:
+                 **kwargs) -> None:
         """initialize the BaseObjectiveFunction
 
         Parameters
@@ -44,8 +45,8 @@ class SingleInputNonLinearFunction(BaseObjectiveFunction):
 
     def __init__(self, **kwargs) -> None:
         """Initialize the process with the associated parameters"""
-        super().__init__(num_params = 1, num_objectives = 1, **kwargs)
-        
+        super().__init__(num_params=1, num_objectives=1, **kwargs)
+
 
 class DualContInputFunction(BaseObjectiveFunction):
     """
@@ -55,4 +56,4 @@ class DualContInputFunction(BaseObjectiveFunction):
 
     def __init__(self, **kwargs) -> None:
         """Initialize the process with the associated parameters"""
-        super().__init__(num_params = 2, num_objectives = 1, **kwargs)
+        super().__init__(num_params=2, num_objectives=1, **kwargs)

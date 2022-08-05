@@ -7,12 +7,15 @@ import random
 from schema import SchemaError
 import unittest
 
-from lava.lib.optimization.problems.bayesian.models import SingleInputNonLinearFunction
+from lava.lib.optimization.problems.bayesian.models import (
+    SingleInputNonLinearFunction
+)
 from lava.lib.optimization.solvers.bayesian.solver import BayesianSolver
+
 
 class TeatSolvers(unittest.TestCase):
     """Test initialization and runtime of the BayesianSolver class
-    
+
     Refer to Bayesian solver.py for more information
     """
 
@@ -44,8 +47,8 @@ class TeatSolvers(unittest.TestCase):
             "integer", -10, 10, 0, "discrete_var0"
         ], dtype=object)
         self.valid_categorical_dimension = np.array([
-            "categorical", 0, 0, [x/4 for x in range(10)], "categorical_var0"
-        ], dtype=object) 
+            "categorical", 0, 0, [x / 4 for x in range(10)], "cat_var0"
+        ], dtype=object)
         self.valid_ss = np.array([
             self.valid_continuous_dimension,
             self.valid_integer_dimension,
@@ -122,7 +125,7 @@ class TeatSolvers(unittest.TestCase):
             )
             self.assertEqual(opt.enable_plotting, flag)
             del opt
-        
+
         # test all valid initial point generator configs
         for config in self.valid_ip_configs:
             opt = BayesianSolver(
@@ -337,117 +340,117 @@ class TeatSolvers(unittest.TestCase):
         """test the solving method with valid arguments"""
 
         search_space: np.ndarray = np.array([
-            ["categorical", np.nan, np.nan, [x/4 for x in range(10)], "x1"],
+            ["categorical", np.nan, np.nan, [x / 4 for x in range(10)], "x1"],
         ], dtype=object)
 
         problem = SingleInputNonLinearFunction()
 
         solver = BayesianSolver(
-            acq_func_config = {"type": "gp_hedge"},
-            acq_opt_config = {"type": "auto"},
-            enable_plotting = False,
-            ip_gen_config = {"type": "random"},
-            log_dir = ".",
-            num_ips = 1,
-            seed = 1
+            acq_func_config={"type": "gp_hedge"},
+            acq_opt_config={"type": "auto"},
+            enable_plotting=False,
+            ip_gen_config={"type": "random"},
+            log_dir=".",
+            num_ips=1,
+            seed=1
         )
 
         solver.solve(
-            name = "testing",
-            num_iter = 2,
-            problem = problem,
-            search_space = search_space,
+            name="testing",
+            num_iter=2,
+            problem=problem,
+            search_space=search_space,
         )
 
-    def test_valid_solve(self) -> None:
+    def test_invalid_solve(self) -> None:
         """test the solving method with invalid arguments"""
 
         search_space: np.ndarray = np.array([
-            ["categorical", np.nan, np.nan, [x/4 for x in range(10)], "x1"],
+            ["categorical", np.nan, np.nan, [x / 4 for x in range(10)], "x1"],
         ], dtype=object)
 
         problem = SingleInputNonLinearFunction()
 
         solver = BayesianSolver(
-            acq_func_config = {"type": "gp_hedge"},
-            acq_opt_config = {"type": "auto"},
-            enable_plotting = False,
-            ip_gen_config = {"type": "random"},
-            log_dir = ".",
-            num_ips = 1,
-            seed = 1
+            acq_func_config={"type": "gp_hedge"},
+            acq_opt_config={"type": "auto"},
+            enable_plotting=False,
+            ip_gen_config={"type": "random"},
+            log_dir=".",
+            num_ips=1,
+            seed=1
         )
 
         with self.assertRaises(SchemaError):
             # should catch problem that doesn't extend the base problem
             solver.solve(
-                name = "testing",
-                num_iter = 2,
-                problem = int,
-                search_space = search_space,
+                name="testing",
+                num_iter=2,
+                problem=int,
+                search_space=search_space,
             )
 
             # should catch number of iterations less than 1
             solver.solve(
-                name = "testing",
-                num_iter = 0,
-                problem = problem,
-                search_space = search_space,
+                name="testing",
+                num_iter=0,
+                problem=problem,
+                search_space=search_space,
             )
 
             # should catch an experiment name that isn't a string
             solver.solve(
-                name = float,
-                num_iter = 2,
-                problem = problem,
-                search_space = search_space,
+                name=float,
+                num_iter=2,
+                problem=problem,
+                search_space=search_space,
             )
 
             # should catch the invalid search space type
             search_space: np.ndarray = np.array([
-                ["dsdsds", np.nan, np.nan, [x/4 for x in range(10)], "x1"],
+                ["dsdsds", np.nan, np.nan, [x / 4 for x in range(10)], "x1"],
             ], dtype=object)
             solver.solve(
-                name = "testing",
-                num_iter = 2,
-                problem = problem,
-                search_space = search_space,
+                name="testing",
+                num_iter=2,
+                problem=problem,
+                search_space=search_space,
             )
 
             # should catch error where search space size doesn't match the
             # problem
             search_space: np.ndarray = np.array([
-                ["categorical", np.nan, np.nan, [x/4 for x in range(10)], "x1"],
-                ["categorical", np.nan, np.nan, [x/4 for x in range(10)], "x1"]
+                ["categorical", np.nan, np.nan, [x for x in range(10)], "x1"],
+                ["categorical", np.nan, np.nan, [x for x in range(10)], "x1"]
             ], dtype=object)
             solver.solve(
-                name = "testing",
-                num_iter = 2,
-                problem = problem,
-                search_space = search_space,
+                name="testing",
+                num_iter=2,
+                problem=problem,
+                search_space=search_space,
             )
 
             # should catch error where the identifier isn't a string
             search_space: np.ndarray = np.array([
-                ["categorical", np.nan, np.nan, [x/4 for x in range(10)], int],
+                ["categorical", np.nan, np.nan, [x for x in range(10)], int],
             ], dtype=object)
             solver.solve(
-                name = "testing",
-                num_iter = 2,
-                problem = problem,
-                search_space = search_space,
+                name="testing",
+                num_iter=2,
+                problem=problem,
+                search_space=search_space,
             )
 
             # should catch error where each dimension doesn't contain all
             # fields
             search_space: np.ndarray = np.array([
-                ["categorical", np.nan, np.nan, [x/4 for x in range(10)]],
+                ["categorical", np.nan, np.nan, [x / 4 for x in range(10)]],
             ], dtype=object)
             solver.solve(
-                name = "testing",
-                num_iter = 2,
-                problem = problem,
-                search_space = search_space,
+                name="testing",
+                num_iter=2,
+                problem=problem,
+                search_space=search_space,
             )
 
             # should catch error where categories are empty
@@ -455,10 +458,10 @@ class TeatSolvers(unittest.TestCase):
                 ["categorical", np.nan, np.nan, int, "id"],
             ], dtype=object)
             solver.solve(
-                name = "testing",
-                num_iter = 2,
-                problem = problem,
-                search_space = search_space,
+                name="testing",
+                num_iter=2,
+                problem=problem,
+                search_space=search_space,
             )
 
             # should catch error where min and max are not floats
@@ -466,21 +469,21 @@ class TeatSolvers(unittest.TestCase):
                 ["int", 0, 10, np.nan, "id"],
             ], dtype=object)
             solver.solve(
-                name = "testing",
-                num_iter = 2,
-                problem = problem,
-                search_space = search_space,
+                name="testing",
+                num_iter=2,
+                problem=problem,
+                search_space=search_space,
             )
             search_space: np.ndarray = np.array([
                 ["float", 0, 10, np.nan, "id"],
             ], dtype=object)
             solver.solve(
-                name = "testing",
-                num_iter = 2,
-                problem = problem,
-                search_space = search_space,
+                name="testing",
+                num_iter=2,
+                problem=problem,
+                search_space=search_space,
             )
 
-            
+
 if __name__ == "__main__":
     unittest.main()

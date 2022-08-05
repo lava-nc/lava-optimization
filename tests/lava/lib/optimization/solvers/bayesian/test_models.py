@@ -32,7 +32,7 @@ class InputParamVecProcess(AbstractProcess):
     def __init__(self, num_params: int, spike: np.ndarray, **kwargs) -> None:
         """Process to set an input parameter vector to evaluate black-box
         function accuracy
-        
+
         num_params : int
             the number of parameters to send to the test function
         spike : np.ndarray
@@ -40,16 +40,16 @@ class InputParamVecProcess(AbstractProcess):
         """
         super().__init__(**kwargs)
 
-        self.x_out = OutPort(shape=(num_params,1))
-        self.data = Var(shape=(num_params,1), init=spike)
+        self.x_out = OutPort(shape=(num_params, 1))
+        self.data = Var(shape=(num_params, 1), init=spike)
 
 
 class OutputPerfVecProcess(AbstractProcess):
     def __init__(self, num_params: int, num_objectives: int,
-            **kwargs) -> None:
+                 **kwargs) -> None:
         """Process to validate the resulting performance vector from the
         black-box function
-        
+
         num_params : int
             the number of parameters within each performance vector
         num_objectives : int
@@ -60,8 +60,8 @@ class OutputPerfVecProcess(AbstractProcess):
         super().__init__(**kwargs)
 
         perf_vec_length: int = num_params + num_objectives
-        self.y_in = InPort(shape=(perf_vec_length,1))
-        self.recv_data = Var(shape=(perf_vec_length,1))
+        self.y_in = InPort(shape=(perf_vec_length, 1))
+        self.recv_data = Var(shape=(perf_vec_length, 1))
 
 
 @implements(proc=InputParamVecProcess, protocol=LoihiProtocol)
@@ -120,8 +120,8 @@ class TestModels(unittest.TestCase):
             "integer", -10, 10, 0, "discrete_var0"
         ], dtype=object)
         self.valid_categorical_dimension = np.array([
-            "categorical", 0, 0, [x/4 for x in range(10)], "categorical_var0"
-        ], dtype=object) 
+            "categorical", 0, 0, [x / 4 for x in range(10)], "cat_var0"
+        ], dtype=object)
         self.valid_ss = np.array([
             self.valid_continuous_dimension,
             self.valid_integer_dimension,
@@ -146,7 +146,7 @@ class TestModels(unittest.TestCase):
         """test behavior of the BayesianOptimizer process"""
 
         search_space: np.ndarray = np.array([
-            ["categorical", np.nan, np.nan, [x/4 for x in range(10)], "x1"],
+            ["categorical", np.nan, np.nan, [x / 4 for x in range(10)], "x1"],
         ], dtype=object)
 
         log_dir = os.path.join(".", "tests", "temp")
@@ -196,8 +196,8 @@ class TestModels(unittest.TestCase):
 
         # verify that all of the valid plots and videos have been created
         valid_files: list[str] = [
-            "convergence.mp4", "evaluations.mp4",
-            "gaussian_process.mp4", "objective.mp4"
+            "convergence.avi", "evaluations.avi",
+            "gaussian_process.avi", "objective.avi"
         ]
 
         for i in range(2):

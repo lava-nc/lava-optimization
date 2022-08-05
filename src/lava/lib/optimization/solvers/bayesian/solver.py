@@ -13,6 +13,7 @@ from lava.magma.core.run_configs import Loihi1SimCfg
 
 from lava.lib.optimization.solvers.bayesian.models import BayesianOptimizer
 
+
 class BayesianSolver:
     """
     The BayesianSolver is a class-based interface to abstract the details
@@ -20,9 +21,9 @@ class BayesianSolver:
     the user's specific black-box function
     """
     def __init__(self, acq_func_config: dict, acq_opt_config: dict,
-            enable_plotting: bool, ip_gen_config: dict, log_dir: str,
-            num_ips: int, seed: int, est_config: dict = {"type": "GP"},
-            num_objectives: int = 1) -> None:
+                 enable_plotting: bool, ip_gen_config: dict, log_dir: str,
+                 num_ips: int, seed: int, est_config: dict = {"type": "GP"},
+                 num_objectives: int = 1) -> None:
         """initialize the BayesianSolver interface
 
         Parameters
@@ -89,15 +90,18 @@ class BayesianSolver:
             specify the number of objectives to optimize over; currently
             limited to single objective
         """
-        # validate input argument specifying the acquisition function config
-        valid_acq_funcs: list[str] = ["LCB", "EI", "PI", "gp_hedge", "EIps", "PIps"]
+        # validate input argument specifying the acquisition function
+        # config
+        valid_acq_funcs: list[str] = [
+            "LCB", "EI", "PI", "gp_hedge", "EIps", "PIps"
+        ]
         self.acquisition_function_config: dict = Schema({
             "type": And(
                 lambda x: x in valid_acq_funcs,
                 error=f"acq_func not in valid options: {valid_acq_funcs}"
             )
         }).validate(acq_func_config)
-   
+
         # validate input argument specifying the acquisition optimizer config
         valid_acq_opts: list[str] = ["sampling", "lbfgs", "auto"]
         self.acquisition_optimizer_config: dict = Schema({
@@ -123,8 +127,9 @@ class BayesianSolver:
         }).validate(est_config)
 
         # validate the argued initial point generator
-        valid_ip_gens: list[str] = ["random", "sobol", "halton", "hammersly",
-            "lhs", "grid"]
+        valid_ip_gens: list[str] = [
+            "random", "sobol", "halton", "hammersly", "lhs", "grid"
+        ]
         self.ip_gen_config: str = Schema({
             "type": And(
                 lambda x: x in valid_ip_gens,
@@ -155,9 +160,9 @@ class BayesianSolver:
             lambda x: type(x) == int,
             error="random_state should be an integer"
         ).validate(seed)
-    
+
     def solve(self, name: str, num_iter: int, problem: AbstractProcess,
-        search_space: np.ndarray) -> None:
+              search_space: np.ndarray) -> None:
         """conduct hyperparameter optimization for the argued problem
 
         Parameters
@@ -190,23 +195,23 @@ class BayesianSolver:
         ).validate(num_iter)
 
         # validate the input argument specifying the problem
+        outport_len: int = len(search_space) + self.num_objectives
+        ss_len: int = len(search_space)
         Schema(
             And(
                 And(
                     lambda x: issubclass(type(x), AbstractProcess),
-                    error=f'problem should extend the AbstractProcess class'
+                    error='problem should extend AbstractProcess class'
                 ),
                 And(
-                    lambda x: x.in_ports.x_in.shape[0] == \
-                        len(search_space),
-                    error=f'problem\'s ip_port shape should match search ' + \
-                        'space length'
+                    lambda x: x.in_ports.x_in.shape[0] == ss_len,
+                    error='problem\'s ip_port shape should match search'
+                          + ' space length'
                 ),
                 And(
-                    lambda x: x.out_ports.y_out.shape[0] == \
-                        (len(search_space) + self.num_objectives),
-                    error='problem\'s ip_port shape should match search ' + \
-                        'space length plus the number of objectives'
+                    lambda x: x.out_ports.y_out.shape[0] == outport_len,
+                    error='problem\'s ip_port shape should match search'
+                          + ' space length plus the number of objectives'
                 )
             )
         ).validate(problem)
@@ -239,19 +244,27 @@ class BayesianSolver:
                 ).validate(dim)
             elif dim[0] == "categorical":
                 Schema(
-                    lambda x: isinstance(x[3], (np.ndarray, list)) and len(x[3]) > 0,
-                    error="the choices should be a non-empty ndarray or list"
+                    And(
+                        And(
+                            lambda x: isinstance(x[3], (np.ndarray, list)),
+                            error="choices should be a np.ndarray or list"
+                        ),
+                        And(
+                            lambda x: len(x[3]) > 0,
+                            error="choices are empty"
+                        )
+                    )
                 ).validate(dim)
             else:
                 raise SchemaError(f"search dimension {dim} is not valid")
-        
+
         # warn the user if the regressor will never start to optimize
         # with the given number of iterations
         if num_iter <= self.num_initial_points:
             print(
-                "WARNING: the number of iterations is less than the " + \
-                "number of initial points; the regressor will never start " + \
-                "to converge on learned information!!!"
+                "WARNING: the number of iterations is less than the "
+                + "number of initial points; the regressor will never start "
+                + "to converge on learned information!!!"
             )
 
         solution_log_dir: str = os.path.join(self.log_dir, name)
@@ -277,4 +290,4 @@ class BayesianSolver:
             run_cfg=Loihi1SimCfg()
         )
 
-        optimizer.stop()    
+        optimizer.stop()

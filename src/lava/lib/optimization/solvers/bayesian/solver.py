@@ -195,21 +195,21 @@ class BayesianSolver:
         ).validate(num_iter)
 
         # validate the input argument specifying the problem
+        outport_len: int = len(search_space) + self.num_objectives
+        ss_len: int = len(search_space)
         Schema(
             And(
                 And(
                     lambda x: issubclass(type(x), AbstractProcess),
-                    error='problem should extend the AbstractProcess class'
+                    error='problem should extend AbstractProcess class'
                 ),
                 And(
-                    lambda x: x.in_ports.x_in.shape[0] ==
-                              len(search_space),
+                    lambda x: x.in_ports.x_in.shape[0] == ss_len,
                     error='problem\'s ip_port shape should match search'
                           + ' space length'
                 ),
                 And(
-                    lambda x: x.out_ports.y_out.shape[0] ==
-                              (len(search_space) + self.num_objectives),
+                    lambda x: x.out_ports.y_out.shape[0] == outport_len
                     error='problem\'s ip_port shape should match search'
                           + ' space length plus the number of objectives'
                 )

@@ -10,9 +10,10 @@ from lava.lib.optimization.problems.bayesian.processes import (
     DualContInputFunction,
 )
 
+
 class TestProcesses(unittest.TestCase):
     """Initialization Tests of all processes of the Bayesian problems
-    
+
     All tests check if the vars are properly assigned in the process and if
     the ports are shaped properly. Refer to Bayesian models.py to understand
     behaviors.
@@ -20,10 +21,10 @@ class TestProcesses(unittest.TestCase):
 
     def test_process_base_objective_func(self) -> None:
         """test initialization of the BaseObjectiveFunction process"""
-        
+
         num_params: int = 5
         num_objectives: int = 2
-        
+
         process = BaseObjectiveFunction(
             num_params=num_params,
             num_objectives=num_objectives
@@ -64,7 +65,7 @@ class TestProcesses(unittest.TestCase):
 
         num_params: int = 1
         num_objectives: int = 1
-        
+
         process = SingleInputNonLinearFunction()
 
         # checking shape of input and output ports
@@ -102,7 +103,7 @@ class TestProcesses(unittest.TestCase):
 
         num_params: int = 2
         num_objectives: int = 1
-        
+
         process = DualContInputFunction()
 
         # checking shape of input and output ports

@@ -356,10 +356,10 @@ class TeatSolvers(unittest.TestCase):
         )
 
         solver.solve(
-            name = "testing",
-            num_iter = 2,
-            problem = problem,
-            search_space = search_space,
+            name="testing",
+            num_iter=2,
+            problem=problem,
+            search_space=search_space,
         )
 
     def test_invalid_solve(self) -> None:
@@ -420,8 +420,8 @@ class TeatSolvers(unittest.TestCase):
             # should catch error where search space size doesn't match the
             # problem
             search_space: np.ndarray = np.array([
-                ["categorical", np.nan, np.nan, [x / 4 for x in range(10)], "x1"],
-                ["categorical", np.nan, np.nan, [x / 4 for x in range(10)], "x1"]
+                ["categorical", np.nan, np.nan, [x for x in range(10)], "x1"],
+                ["categorical", np.nan, np.nan, [x for x in range(10)], "x1"]
             ], dtype=object)
             solver.solve(
                 name="testing",

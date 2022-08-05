@@ -209,7 +209,7 @@ class BayesianSolver:
                           + ' space length'
                 ),
                 And(
-                    lambda x: x.out_ports.y_out.shape[0] == outport_len
+                    lambda x: x.out_ports.y_out.shape[0] == outport_len,
                     error='problem\'s ip_port shape should match search'
                           + ' space length plus the number of objectives'
                 )

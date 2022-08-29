@@ -110,6 +110,13 @@ class DiscreteVariablesProcess(AbstractProcess):
 
 
 @dataclass()
+class VariablesProcesses:
+    """Processes implementing the variables."""
+    continuous: ContinuousVariablesProcess = None
+    discrete: DiscreteVariablesProcess = None
+
+
+@dataclass()
 class Variables:
     """Processes implementing the variables."""
     continuous: ContinuousVariablesProcess

@@ -149,3 +149,25 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             solution = self.ref_port.read()
             self.solution[:] = solution
             self._req_pause = True
+
+
+@implements(proc=CostConvergenceChecker, protocol=LoihiProtocol)
+@requires(CPU)
+class CostConvergenceCheckerModel(AbstractSubProcessModel):
+    def __init__(self, proc):
+        # Instantiate child processes
+        # The input shape is a 2D vector (shape of the weight matrix).
+        shape = proc.proc_params.get("shape", (1,))
+        weights = proc.proc_params.get("weights", np.ones((1, shape[0])))
+        self.dense = Dense(weights=weights, num_message_bits=24)
+        self.cost_integrator = CostIntegrator(shape=(1,))
+        self.dense.out_ports.a_out.connect(
+            self.cost_integrator.in_ports.cost_components)
+
+        # Connect the parent InPort to the InPort of the Dense child-Process.
+        proc.in_ports.s_in.connect(self.dense.in_ports.s_in)
+
+        # Connect the OutPort of the LIF child-Process to the OutPort of the
+        # parent Process.
+        self.cost_integrator.out_ports.cost_out.connect(proc.out_ports.s_out)
+        proc.vars.cost.alias(self.cost_integrator.vars.min_cost)

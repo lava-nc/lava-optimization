@@ -118,7 +118,6 @@ class TestStochasticIntegrateAndFire(unittest.TestCase):
         expected = np.tile(np.arange(0, 501, 100),
                            self.steps // 4)[1:self.steps + 1][None].T
         expected = np.where(expected == 0, 1, 0)
-        print(expected.T, spike_vector.T)
         self.assertTrue((spike_vector == expected).all())
 
     def test_noisy_state_progression(self):

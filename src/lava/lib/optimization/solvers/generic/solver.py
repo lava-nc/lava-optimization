@@ -1,7 +1,7 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
-from lava.magma.core.run_conditions import RunSteps
+from lava.magma.core.run_conditions import RunSteps, RunContinuous
 from lava.magma.core.run_configs import Loihi1SimCfg
 
 from lava.lib.optimization.problems.problems import OptimizationProblem
@@ -47,7 +47,9 @@ class OptimizationSolver:
         Parameters
         ----------
         problem: Optimization problem to be solved.
-        timeout: Maximum number of iterations/timesteps to be run.
+        timeout: Maximum number of iterations/timesteps to be run, if set to
+        -1 then the solver will run continuously in non-blocking mode until a
+         solution is found.
         profiling: Whether to profile the run. This will measure or estimate
         energy and time depending on the backend.
 
@@ -60,13 +62,17 @@ class OptimizationSolver:
         self.solver_process = self._process_builder.solver_process
         if profiling:
             profiler = LavaProfiler()
-            solver_process = profiler.profile(self.solver_process)
-        else:
-            solver_process = self.solver_process
-        solver_process.run(condition=RunSteps(num_steps=timeout),
-                           run_cfg=Loihi1SimCfg(select_sub_proc_model=True))
-        solution = self.solver_process.variable_assignment.get()
-        self.solver_process.stop()
+            solver_process = profiler.profile(solver_process)
+        pdict = {solver_process: solver_model}
+        solver_process.run(condition=RunContinuous() if timeout==-1 else
+        RunSteps(num_steps=timeout),
+                           run_cfg=Loihi1SimCfg(#select_sub_proc_model=True,
+                                                exception_proc_model_map=pdict)
+                           )
+        if timeout == -1:
+            solver_process.wait()
+        solution = solver_process.variable_assignment.aliased_var.get()
+        solver_process.stop()
         return solution
 
     @classmethod

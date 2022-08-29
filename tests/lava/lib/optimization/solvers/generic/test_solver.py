@@ -80,6 +80,14 @@ class TestOptimizationSolver(unittest.TestCase):
                      -q_no_diag).all()
         self.assertTrue(condition)
 
+    def test_qubo_cost_defines_biases(self):
+        self.solver.solve(self.problem, timeout=1)
+        pm = self.solver._solver_process.model_class(
+            self.solver._solver_process)
+        condition = (pm.variables.discrete.importances ==
+                     -self.problem.cost.get_coefficient(2).diagonal()).all()
+        self.assertTrue(condition)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -60,6 +60,16 @@ class TestOptimizationSolver(unittest.TestCase):
             self.solver._solver_process.variable_assignment.aliased_var.process,
             mr.solution_readout)
 
+    def test_cost_checker_is_connected_to_variables_population(self):
+        self.assertIsNone(self.solver._solver_process)
+        self.solver.solve(self.problem, timeout=1)
+        pm = self.solver._solver_process.model_class(
+            self.solver._solver_process)
+        mr = pm.macrostate_reader
+        self.assertIs(
+            mr.cost_convergence_check.s_in.in_connections[0].process,
+            pm.variables.discrete)
+
 
 if __name__ == '__main__':
     unittest.main()

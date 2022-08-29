@@ -136,6 +136,49 @@ class VariablesProcesses:
     discrete: DiscreteVariablesProcess = None
 
 
+class StochasticIntegrateAndFire(AbstractProcess):
+    def __init__(self, *, shape: ty.Tuple[int, ...] = (1,),
+                 initial_value: ty.Union[int, list, np.ndarray] = 0,
+                 increment: ty.Union[int, list, np.ndarray] = 100,
+                 noise_amplitude: ty.Union[int, list, np.ndarray] = 0,
+                 input_duration: ty.Union[int, list, np.ndarray] = 6,
+                 min_state: ty.Union[int, list, np.ndarray] = 1000,
+                 min_integration: ty.Union[int, list, np.ndarray] = -1000,
+                 steps_to_fire: ty.Union[int, list, np.ndarray] = 10,
+                 refractory_period: ty.Union[int, list, np.ndarray] = 1,
+                 name: ty.Optional[str] = None,
+                 log_config: ty.Optional[LogConfig] = None) -> None:
+        super().__init__(shape=shape,
+                         initial_state=initial_value,
+                         noise_amplitude=noise_amplitude,
+                         input_duration=input_duration,
+                         min_state=min_state,
+                         min_integration=min_integration,
+                         steps_to_fire=steps_to_fire,
+                         refractory_period=refractory_period,
+                         name=name,
+                         log_config=log_config)
+        self.added_input = InPort(shape=shape)
+        self.replace_assignment = InPort(shape=shape)
+        self.messages = OutPort(shape=shape)
+        self.satisfiability = OutPort(shape=shape)
+
+        self.integration = Var(shape=shape, init=0)
+        self.increment = Var(shape=shape, init=increment)
+        self.state = Var(shape=shape, init=initial_value)
+        self.noise_amplitude = Var(shape=shape, init=noise_amplitude)
+        self.input_duration = Var(shape=shape, init=input_duration)
+        self.min_state = Var(shape=shape, init=min_state)
+        self.min_integration = Var(shape=shape, init=min_integration)
+        self.steps_to_fire = Var(shape=shape, init=steps_to_fire)
+        self.refractory_period = Var(shape=shape, init=refractory_period)
+        self.prev_firing = Var(shape=shape, init=False)
+        self.assignment = Var(shape=shape, init=False)
+        self.satisfiability_var = Var(shape=shape, init=False)
+        self.assignemnt_buffer = Var(shape=shape, init=False)
+        self.min_cost = Var(shape=shape, init=False)
+
+
 @dataclass()
 class Variables:
     """Processes implementing the variables."""

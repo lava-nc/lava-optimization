@@ -58,8 +58,8 @@ class OptimizationSolver:
         solution: candidate solution to the input optimization problem.
 
         """
-        self._process_builder.create_constructor(problem)
-        self.solver_process = self._process_builder.solver_process
+        solver_process = self._create_solver_process(problem)
+        solver_model = self._create_solver_model(solver_process)
         if profiling:
             profiler = LavaProfiler()
             solver_process = profiler.profile(solver_process)
@@ -75,6 +75,17 @@ class OptimizationSolver:
         solver_process.stop()
         return solution
 
+    def _create_solver_process(self, problem):
+        self._process_builder.create_constructor(problem)
+        self._solver_process = self._process_builder.solver_process
+        return self._solver_process
+
+    def _create_solver_model(self, solver_process):
+        pass
+
     @classmethod
     def get_process(cls, spec=None):
+        return
+
+    def verify_solution(self, solution):
         pass

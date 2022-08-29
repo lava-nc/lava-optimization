@@ -124,3 +124,28 @@ class ReadGatePyModel(PyLoihiProcessModel):
         self.solved[:] = data[0]
         if self.solved[0]:
             print('Cost', data)
+
+
+@implements(SolutionReadout, protocol=LoihiProtocol)
+@requires(CPU)
+class SolutionReadoutPyModel(PyLoihiProcessModel):
+    solution: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
+    in_port: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
+    ref_port: PyRefPort = LavaPyType(PyRefPort.VEC_DENSE, np.int32,
+                                     precision=32)
+    solved = False
+
+    def post_guard(self):
+        return True
+
+    def run_spk(self):
+        data = self.in_port.recv()
+        if data[0]:
+            self.solved = True
+
+    def run_post_mgmt(self):
+        if self.solved:
+            print('Reading solution')
+            solution = self.ref_port.read()
+            self.solution[:] = solution
+            self._req_pause = True

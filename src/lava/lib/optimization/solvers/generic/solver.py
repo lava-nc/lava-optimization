@@ -6,6 +6,7 @@ from lava.magma.core.run_configs import Loihi1SimCfg
 
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.processes import SolverProcessBuilder
+from lava.lib.optimization.solvers.generic.models import SolverModelBuilder
 
 
 # from lava.utils.profiler import LavaProfiler
@@ -66,10 +67,10 @@ class OptimizationSolver:
             profiler = LavaProfiler()
             solver_process = profiler.profile(solver_process)
         pdict = {solver_process: solver_model}
-        solver_process.run(condition=RunContinuous() if timeout==-1 else
+        solver_process.run(condition=RunContinuous() if timeout == -1 else
         RunSteps(num_steps=timeout),
-                           run_cfg=Loihi1SimCfg(#select_sub_proc_model=True,
-                                                exception_proc_model_map=pdict)
+                           run_cfg=Loihi1SimCfg(  # select_sub_proc_model=True,
+                               exception_proc_model_map=pdict)
                            )
         if timeout == -1:
             solver_process.wait()
@@ -83,7 +84,10 @@ class OptimizationSolver:
         return self._solver_process
 
     def _create_solver_model(self, solver_process):
-        pass
+        model_builder = SolverModelBuilder(solver_process)
+        model_builder.create_constructor()
+        self._solver_model = model_builder.solver_model
+        return self._solver_model
 
     @classmethod
     def get_process(cls, spec=None):

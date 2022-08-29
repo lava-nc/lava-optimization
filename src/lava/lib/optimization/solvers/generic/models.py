@@ -103,3 +103,19 @@ class SolverModelBuilder:
         setattr(SolverModel, 'required_resources', super_res + [CPU])
         setattr(SolverModel, 'implements_protocol', LoihiProtocol)
         return SolverModel
+
+
+@implements(ReadGate, protocol=LoihiProtocol)
+@requires(CPU)
+class ReadGatePyModel(PyLoihiProcessModel):
+    solved: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
+    in_port: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
+    out_port: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32,
+                                     precision=32)
+
+    def run_spk(self):
+        data = self.in_port.recv()
+        self.out_port.send(data)
+        self.solved[:] = data[0]
+        if self.solved[0]:
+            print('Cost', data)

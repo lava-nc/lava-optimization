@@ -8,7 +8,7 @@ import numpy as np
 from lava.magma.core.decorator import implements
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.process.interfaces import AbstractProcessMember
-from lava.magma.core.process.ports.ports import InPort
+from lava.magma.core.process.ports.ports import InPort, OutPort
 from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
@@ -104,9 +104,28 @@ class DiscreteVariablesProcess(AbstractProcess):
     """Process implementing discrete variables as a set of winner-takes-all
     populations."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        raise NotImplementedError
+    def __init__(self, shape,
+                 importances: ty.Optional[
+                     ty.Union[int, list, np.ndarray]] = None,
+                 name: ty.Optional[str] = None,
+                 log_config: ty.Optional[LogConfig] = None) -> None:
+        super().__init__(shape=shape,
+                         name=name,
+                         log_config=log_config)
+        self.num_variables = shape[0]
+        self.a_in = InPort(shape=shape)
+        self.s_out = OutPort(shape=shape)
+        self.variable_assignment = Var(shape=shape)
+        self._importances = importances
+        self.satisfiability = OutPort(shape=shape)
+
+    @property
+    def importances(self):
+        return self._importances
+
+    @importances.setter
+    def importances(self, value):
+        self._importances = value
 
 
 @dataclass()

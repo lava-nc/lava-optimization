@@ -128,6 +128,7 @@ class DiscreteVariablesProcess(AbstractProcess):
         super().__init__(shape=shape, name=name, log_config=log_config)
         self.num_variables = shape[0]
         self.a_in = InPort(shape=shape)
+        # self.update_buffer = InPort(shape=shape)
         self.s_out = OutPort(shape=shape)
         self.variable_assignment = Var(shape=shape)
         self._importances = importances
@@ -241,6 +242,7 @@ class SatConvergenceChecker(AbstractProcess):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.satisfaction = None
         raise NotImplementedError
 
 

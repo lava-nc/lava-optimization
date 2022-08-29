@@ -26,6 +26,10 @@ class TestOptimizationSolver(unittest.TestCase):
     def test_create_obj(self):
         self.assertIsInstance(self.solver, OptimizationSolver)
 
+    def test_solution_has_expected_shape(self):
+        solution = self.solver.solve(self.problem, timeout=3000)
+        self.assertEqual(solution.shape, self.solution.shape)
+
     def test_solver_creates_optimization_solver_process(self):
         solver_process = self.solver._create_solver_process(self.problem)
         class_name = type(solver_process).__name__

@@ -13,9 +13,7 @@ from lava.lib.optimization.problems.constraints import (
     ArithmeticConstraints,
     Constraints,
 )
-from lava.lib.optimization.problems.coefficients import (
-    CoefficientTensorsMixin,
-)
+from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 
 
 class TestDiscreteConstraint(unittest.TestCase):
@@ -92,9 +90,7 @@ class TestDiscreteConstraint(unittest.TestCase):
             (0, 1, np.eye(5)),
         ]
         self.dconstraint.set_relations_var_subsets(new_constraints)
-        for n, relation in enumerate(
-            [np.logical_not(np.eye(5, 4)), np.eye(5)]
-        ):
+        for n, relation in enumerate([np.logical_not(np.eye(5, 4)), np.eye(5)]):
             with self.subTest(msg=f"Relation index {n}"):
                 self.assertTrue(
                     (self.dconstraint._relations[n] == relation).all()

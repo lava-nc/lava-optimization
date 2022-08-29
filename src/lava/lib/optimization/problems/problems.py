@@ -17,7 +17,8 @@ from lava.lib.optimization.problems.cost import Cost
 from lava.lib.optimization.problems.variables import (
     Variables,
     ContinuousVariables,
-    DiscreteVariables)
+    DiscreteVariables,
+)
 
 
 class OptimizationProblem(ABC):
@@ -194,21 +195,21 @@ class QP(OptimizationProblem):
     """
 
     def __init__(
-            self,
-            hessian: npt.ArrayLike,
-            linear_offset: ty.Optional[np.ndarray] = None,
-            constraint_hyperplanes: ty.Optional[np.ndarray] = None,
-            constraint_biases: ty.Optional[np.ndarray] = None,
-            constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
-            constraint_biases_eq: ty.Optional[np.ndarray] = None, ):
+        self,
+        hessian: npt.ArrayLike,
+        linear_offset: ty.Optional[np.ndarray] = None,
+        constraint_hyperplanes: ty.Optional[np.ndarray] = None,
+        constraint_biases: ty.Optional[np.ndarray] = None,
+        constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
+        constraint_biases_eq: ty.Optional[np.ndarray] = None,
+    ):
         super().__init__()
         self.c_variables = ContinuousVariables(hessian.shape[0])
         self.q_cost = Cost(linear_offset, hessian)
         self._constraints.arithmetic = ArithmeticConstraints(
-            ineq=[constraint_biases,
-                  constraint_hyperplanes],
-            eq=[constraint_biases_eq,
-                constraint_hyperplanes_eq])
+            ineq=[constraint_biases, constraint_hyperplanes],
+            eq=[constraint_biases_eq, constraint_hyperplanes_eq],
+        )
 
     @property
     def variables(self):
@@ -244,8 +245,16 @@ class QP(OptimizationProblem):
 
 
 class LP(OptimizationProblem):
-    def __init__(self, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-                 bounds=None, x0=None):
+    def __init__(
+        self,
+        c,
+        A_ub=None,
+        b_ub=None,
+        A_eq=None,
+        b_eq=None,
+        bounds=None,
+        x0=None,
+    ):
         """Example adopting the interface from scipy.optimize.linprog.
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
 
@@ -258,8 +267,9 @@ class LP(OptimizationProblem):
         super().__init__()
         self.c_variables = ContinuousVariables(bounds=bounds)
         self.l_cost = Cost(c)
-        self.a_constraints = ArithmeticConstraints(ineq=[b_ub, A_ub],
-                                                   eq=[b_eq, A_eq])
+        self.a_constraints = ArithmeticConstraints(
+            ineq=[b_ub, A_ub], eq=[b_eq, A_eq]
+        )
 
     @property
     def variables(self):

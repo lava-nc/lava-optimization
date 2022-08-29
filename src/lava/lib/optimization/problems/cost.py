@@ -5,9 +5,7 @@
 import typing as ty
 
 import numpy.typing as npt
-from lava.lib.optimization.problems.coefficients import (
-    CoefficientTensorsMixin,
-)
+from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 
 CTType = ty.Union[ty.List, npt.ArrayLike]
 

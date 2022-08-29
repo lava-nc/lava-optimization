@@ -41,10 +41,12 @@ class OptimizationSolver:
     def run_cfg(self, value):
         self._run_cfg = value
 
-    def solve(self,
-              problem: OptimizationProblem,
-              timeout: int,
-              profiling: bool = False):
+    def solve(
+        self,
+        problem: OptimizationProblem,
+        timeout: int,
+        profiling: bool = False,
+    ):
         """Create solver from problem specs and run until solution or timeout.
 
         Parameters
@@ -67,11 +69,14 @@ class OptimizationSolver:
             profiler = LavaProfiler()
             solver_process = profiler.profile(solver_process)
         pdict = {solver_process: solver_model}
-        solver_process.run(condition=RunContinuous() if timeout == -1 else
-        RunSteps(num_steps=timeout),
-                           run_cfg=Loihi1SimCfg(  # select_sub_proc_model=True,
-                               exception_proc_model_map=pdict)
-                           )
+        solver_process.run(
+            condition=RunContinuous()
+            if timeout == -1
+            else RunSteps(num_steps=timeout),
+            run_cfg=Loihi1SimCfg(  # select_sub_proc_model=True,
+                exception_proc_model_map=pdict
+            ),
+        )
         if timeout == -1:
             solver_process.wait()
         solution = solver_process.variable_assignment.aliased_var.get()

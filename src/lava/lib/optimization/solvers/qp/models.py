@@ -167,8 +167,7 @@ class SubGDModel(AbstractSubProcessModel):
     s_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64)
     hessian: np.ndarray = LavaPyType(np.ndarray, np.float64)
     constraint_matrix_T: np.ndarray = LavaPyType(
-        np.ndarray,
-        np.float64,
+        np.ndarray, np.float64,
     )
     grad_bias: np.ndarray = LavaPyType(np.ndarray, np.float64)
     qp_neuron_state: np.ndarray = LavaPyType(np.ndarray, np.float64)

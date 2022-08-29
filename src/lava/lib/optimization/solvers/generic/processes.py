@@ -35,7 +35,7 @@ def _vars_from_coefficients(coefficients: CoefficientTensorsMixin) -> \
                               init=linear_component)
             init = -quadratic_component
         vars[rank] = Var(shape=coeff.shape, init=init)
-
+    return vars
 
 def _in_ports_from_coefficients(coefficients: CoefficientTensorsMixin) -> \
         ty.List[AbstractProcessMember]:

@@ -18,7 +18,7 @@ from lava.proc.dense.process import Dense
 from lava.lib.optimization.solvers.generic.processes \
     import CostConvergenceChecker, ReadGate, SolutionReadout, \
     SatConvergenceChecker, VariablesProcesses, DiscreteVariablesProcess, \
-    ContinuousVariablesProcess, CostIntegrator
+    ContinuousVariablesProcess, CostIntegrator, StochasticIntegrateAndFire
 
 
 @dataclass
@@ -149,6 +149,41 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             solution = self.ref_port.read()
             self.solution[:] = solution
             self._req_pause = True
+
+
+@implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
+@requires(CPU)
+class DiscreteVariablesModel(AbstractSubProcessModel):
+
+    def __init__(self, proc):
+        # Instantiate child processes
+        # The input shape is a 2D vector (shape of the weight matrix).
+        wta_weight = -2
+        shape = proc.proc_params.get("shape", (1,))
+        weights = proc.proc_params.get("weights",
+                                       wta_weight * np.logical_not(np.eye(
+                                           shape[1] if len(shape) == 2 else 0)))
+        noise_amplitude = proc.proc_params.get("noise_amplitude", 1)
+        steps_to_fire = proc.proc_params.get("steps_to_fire", 10)
+        importances = proc.proc_params.get("importances", 10)
+        self.s_bit = StochasticIntegrateAndFire(shape=shape,
+                                                increment=importances,
+                                                noise_amplitude=noise_amplitude,
+                                                steps_to_fire=steps_to_fire)
+
+        if weights.shape != (0, 0):
+            self.dense = Dense(weights=weights)
+            self.s_bit.out_ports.messages.connect(self.dense.in_ports.s_in)
+            self.dense.out_ports.a_out.connect(self.s_bit.in_ports.added_input)
+
+        # Connect the parent InPort to the InPort of the Dense child-Process.
+        proc.in_ports.a_in.connect(self.s_bit.in_ports.added_input)
+        # Connect the OutPort of the LIF child-Process to the OutPort of the
+        # parent Process.
+        self.s_bit.out_ports.messages.connect(proc.out_ports.s_out)
+        self.s_bit.out_ports.satisfiability.connect(
+            proc.out_ports.satisfiability)
+        proc.vars.variable_assignment.alias(self.s_bit.assignment)
 
 
 @implements(proc=CostConvergenceChecker, protocol=LoihiProtocol)

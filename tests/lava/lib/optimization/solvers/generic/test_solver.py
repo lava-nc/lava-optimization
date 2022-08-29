@@ -7,6 +7,8 @@ import unittest
 import numpy as np
 
 from lava.lib.optimization.problems.problems import QUBO
+from lava.lib.optimization.solvers.generic.processes \
+    import ReadGate, SolutionReadout, CostConvergenceChecker
 from lava.lib.optimization.solvers.generic.solver import \
     OptimizationSolver
 
@@ -28,6 +30,17 @@ class TestOptimizationSolver(unittest.TestCase):
         class_name = type(solver_process).__name__
         self.assertIs(solver_process, self.solver._solver_process)
         self.assertEqual(class_name, 'OptimizationSolverProcess')
+
+    def test_solves_creates_macrostate_reader_processes(self):
+        self.assertIsNone(self.solver._solver_process)
+        self.solver.solve(self.problem, timeout=1)
+        mr = self.solver._solver_process.model_class(
+            self.solver._solver_process).macrostate_reader
+        self.assertIsInstance(mr.read_gate, ReadGate)
+        self.assertIsInstance(mr.solution_readout, SolutionReadout)
+        self.assertEqual(mr.solution_readout.solution.shape,
+                         (self.problem.variables.num_variables,))
+        self.assertIsInstance(mr.cost_convergence_check, CostConvergenceChecker)
 
 
 if __name__ == '__main__':

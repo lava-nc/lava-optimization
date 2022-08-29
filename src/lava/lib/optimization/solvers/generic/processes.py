@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import typing as ty
-from dataclasses import dataclass
 
 import numpy as np
 from lava.magma.core.process.interfaces import AbstractProcessMember
@@ -126,13 +125,6 @@ class DiscreteVariablesProcess(AbstractProcess):
         self._importances = value
 
 
-@dataclass()
-class VariablesProcesses:
-    """Processes implementing the variables."""
-    continuous: ContinuousVariablesProcess = None
-    discrete: DiscreteVariablesProcess = None
-
-
 class StochasticIntegrateAndFire(AbstractProcess):
     def __init__(self, *, shape: ty.Tuple[int, ...] = (1,),
                  initial_value: ty.Union[int, list, np.ndarray] = 0,
@@ -227,27 +219,12 @@ class SatConvergenceChecker(AbstractProcess):
         raise NotImplementedError
 
 
-@dataclass
-class MacroStateReader:
-    """Processes for checking convergence and reading network state encoding
-    the solution ."""
-    cost_convergence_check: CostConvergenceChecker
-    sat_convergence_check: SatConvergenceChecker
-    read_gate: ReadGate
-    solution_readout: SolutionReadout
-
-
 class AugmentedTermsProcess(AbstractProcess):
     """Process implementing cost coefficients as synapses."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         raise NotImplementedError
-
-
-@dataclass
-class ProximalGradientMinimizer:
-    augmented_terms: AugmentedTermsProcess
 
 
 class ContinuousConstraintsProcess(AbstractProcess):
@@ -272,14 +249,6 @@ class MixedConstraintsProcess(AbstractProcess):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         raise NotImplementedError
-
-
-@dataclass
-class ConstraintEnforcing:
-    """Processes implementing the constraints and their enforcing."""
-    continuous: ContinuousConstraintsProcess
-    discrete: DiscreteConstraintsProcess
-    mixed: MixedConstraintsProcess
 
 
 class AdjacencyMatrixFactory:

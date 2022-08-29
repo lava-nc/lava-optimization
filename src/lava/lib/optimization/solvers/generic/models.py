@@ -3,8 +3,6 @@
 # See: https://spdx.org/licenses/
 
 
-from dataclasses import dataclass
-
 import numpy as np
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
@@ -15,26 +13,12 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.process import Dense
 
+from lava.lib.optimization.solvers.generic.dataclasses import CostMinimizer, \
+    VariablesProcesses, MacroStateReader
 from lava.lib.optimization.solvers.generic.processes \
     import CostConvergenceChecker, ReadGate, SolutionReadout, \
-    SatConvergenceChecker, VariablesProcesses, DiscreteVariablesProcess, \
+    SatConvergenceChecker, DiscreteVariablesProcess, \
     ContinuousVariablesProcess, CostIntegrator, StochasticIntegrateAndFire
-
-
-@dataclass
-class CostMinimizer:
-    """Processes implementing the cost function"""
-    coefficients_2nd_order: Dense
-
-
-@dataclass
-class MacroStateReader:
-    """Processes for checking convergence and reading network state encoding
-    the solution ."""
-    read_gate: ReadGate
-    solution_readout: SolutionReadout
-    cost_convergence_check: CostConvergenceChecker = None
-    sat_convergence_check: SatConvergenceChecker = None
 
 
 class SolverModelBuilder:

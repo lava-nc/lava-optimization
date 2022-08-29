@@ -403,7 +403,7 @@ class TestOptimizationSolver(unittest.TestCase):
 
     def test_solver_stops_when_solution_found(self):
         t_start = time()
-        solution = self.solver.solve(self.problem, timeout=-1)
+        self.solver.solve(self.problem, timeout=-1)
         t_end = time()
         self.assertTrue(t_start - t_end < 1)
 

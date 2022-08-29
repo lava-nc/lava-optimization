@@ -220,9 +220,14 @@ class SatConvergenceChecker(AbstractProcess):
 class ReadGate(AbstractProcess):
     """Process that triggers solution readout when problem is solved."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        raise NotImplementedError
+    def __init__(self,
+                 name: ty.Optional[str] = None,
+                 log_config: ty.Optional[LogConfig] = None) -> None:
+        super().__init__(name=name,
+                         log_config=log_config)
+        self.solved = Var(shape=(1,))
+        self.in_port = InPort(shape=(1,))
+        self.out_port = OutPort(shape=(1,))
 
 
 class SolutionReadout(AbstractProcess):

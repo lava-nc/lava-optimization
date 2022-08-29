@@ -236,7 +236,11 @@ class AdjacencyMatrixFactory:
         raise NotImplementedError
 
 
-@implements(proc='OptimizationSolverProcess', protocol=LoihiProtocol)
+class OptimizationSolverProcess(AbstractProcess):
+    pass
+
+
+@implements(proc=OptimizationSolverProcess, protocol=LoihiProtocol)
 class OptimizationSolverModel(AbstractSubProcessModel):
     """Implements OptimizationSolver from processes implemented elsewhere."""
 

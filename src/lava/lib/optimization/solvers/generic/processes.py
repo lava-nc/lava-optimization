@@ -176,13 +176,6 @@ class StochasticIntegrateAndFire(AbstractProcess):
         self.min_cost = Var(shape=shape, init=False)
 
 
-@dataclass()
-class Variables:
-    """Processes implementing the variables."""
-    continuous: ContinuousVariablesProcess
-    discrete: DiscreteVariablesProcess
-
-
 class ReadGate(AbstractProcess):
     """Process that triggers solution readout when problem is solved."""
 

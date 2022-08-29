@@ -132,7 +132,7 @@ class DiscreteVariablesProcess(AbstractProcess):
         self.s_out = OutPort(shape=shape)
         self.variable_assignment = Var(shape=shape)
         self._importances = importances
-        self.satisfiability = OutPort(shape=shape)
+        self.local_cost = OutPort(shape=shape)
 
     @property
     def importances(self):
@@ -174,7 +174,7 @@ class StochasticIntegrateAndFire(AbstractProcess):
         self.added_input = InPort(shape=shape)
         self.replace_assignment = InPort(shape=shape)
         self.messages = OutPort(shape=shape)
-        self.satisfiability = OutPort(shape=shape)
+        self.local_cost = OutPort(shape=shape)
 
         self.integration = Var(shape=shape, init=0)
         self.increment = Var(shape=shape, init=increment)
@@ -232,9 +232,9 @@ class CostConvergenceChecker(AbstractProcess):
     ) -> None:
         super().__init__(shape=shape, name=name, log_config=log_config)
         self.shape = shape
-        self.cost = Var(shape=(1,))
-        self.s_in = InPort(shape=shape)
-        self.s_out = OutPort(shape=(1,))
+        self.min_cost = Var(shape=(1,))
+        self.cost_components = InPort(shape=shape)
+        self.update_buffer = OutPort(shape=(1,))
 
 
 class SatConvergenceChecker(AbstractProcess):
@@ -294,7 +294,7 @@ class CostIntegrator(AbstractProcess):
         log_config: ty.Optional[LogConfig] = None
     ) -> None:
         super().__init__(shape=shape, name=name, log_config=log_config)
-        self.cost_components = InPort(shape=shape)
-        self.cost_out = OutPort(shape=shape)
+        self.cost_in = InPort(shape=shape)
+        self.update_buffer = OutPort(shape=shape)
 
         self.min_cost = Var(shape=shape, init=2 ** 32)

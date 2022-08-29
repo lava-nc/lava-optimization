@@ -214,6 +214,7 @@ class TestStochasticIntegrateAndFire(unittest.TestCase):
         )
         self.assertTrue((state_progression.T == expected).all())
 
+    @unittest.skip("Not necessary for QUBO")
     def test_noiseless_satisfiability_with_input(self):
         self.data = set_up(
             self,

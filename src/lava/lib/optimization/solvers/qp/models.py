@@ -134,8 +134,8 @@ class SubCCModel(AbstractSubProcessModel):
 
     def __init__(self, proc):
         """Builds sub Process structure of the Process."""
-        constraint_matrix = proc.init_args.get("constraint_matrix", 0)
-        constraint_bias = proc.init_args.get("constraint_bias", 0)
+        constraint_matrix = proc.proc_params.get("constraint_matrix", 0)
+        constraint_bias = proc.proc_params.get("constraint_bias", 0)
 
         # Initialize subprocesses
         self.constraintDirections = ConstraintDirections(
@@ -180,19 +180,19 @@ class SubGDModel(AbstractSubProcessModel):
 
     def __init__(self, proc):
         """Builds sub Process structure of the Process."""
-        hessian = proc.init_args.get("hessian", 0)
+        hessian = proc.proc_params.get("hessian", 0)
         shape_hess = hessian.shape
         shape_sol = (shape_hess[0], 1)
-        constraint_matrix_T = proc.init_args.get("constraint_matrix_T", 0)
+        constraint_matrix_T = proc.proc_params.get("constraint_matrix_T", 0)
         shape_constraint_matrix_T = constraint_matrix_T.shape
-        grad_bias = proc.init_args.get("grad_bias", np.zeros(shape_sol))
-        qp_neuron_i = proc.init_args.get(
+        grad_bias = proc.proc_params.get("grad_bias", np.zeros(shape_sol))
+        qp_neuron_i = proc.proc_params.get(
             "qp_neurons_init", np.zeros(shape_sol)
         )
-        alpha = proc.init_args.get("alpha", np.ones(shape_sol))
-        beta = proc.init_args.get("beta", np.ones(shape_sol))
-        a_d = proc.init_args.get("alpha_decay_schedule", 10000)
-        b_g = proc.init_args.get("beta_decay_schedule", 10000)
+        alpha = proc.proc_params.get("alpha", np.ones(shape_sol))
+        beta = proc.proc_params.get("beta", np.ones(shape_sol))
+        a_d = proc.proc_params.get("alpha_decay_schedule", 10000)
+        b_g = proc.proc_params.get("beta_decay_schedule", 10000)
 
         # Initialize subprocesses
         self.qC = QuadraticConnectivity(shape=shape_hess, hessian=hessian)

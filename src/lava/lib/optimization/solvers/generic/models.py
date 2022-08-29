@@ -276,7 +276,6 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
         self.integration[:] += added_input.astype(int)
         state[:] = state * (1 - state_decay) + self.integration + \
                    self.increment + noise
-        print("STATE", state)
         return state
 
     def do_fire(self, state):

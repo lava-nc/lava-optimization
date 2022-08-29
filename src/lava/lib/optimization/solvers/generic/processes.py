@@ -37,6 +37,7 @@ def _vars_from_coefficients(coefficients: CoefficientTensorsMixin) -> \
         vars[rank] = Var(shape=coeff.shape, init=init)
     return vars
 
+
 def _in_ports_from_coefficients(coefficients: CoefficientTensorsMixin) -> \
         ty.List[AbstractProcessMember]:
     in_ports = [InPort(shape=coeff.shape) for coeff in
@@ -204,9 +205,17 @@ class ConstraintEnforcing:
 class CostConvergenceChecker(AbstractProcess):
     """Process that continuously monitors cost convergence."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        raise NotImplementedError
+    def __init__(self,
+                 shape,
+                 name: ty.Optional[str] = None,
+                 log_config: ty.Optional[LogConfig] = None) -> None:
+        super().__init__(shape=shape,
+                         name=name,
+                         log_config=log_config)
+        self.shape = shape
+        self.cost = Var(shape=(1,))
+        self.s_in = InPort(shape=shape)
+        self.s_out = OutPort(shape=(1,))
 
 
 class SatConvergenceChecker(AbstractProcess):

@@ -23,6 +23,12 @@ class TestOptimizationSolver(unittest.TestCase):
     def test_create_obj(self):
         self.assertIsInstance(self.solver, OptimizationSolver)
 
+    def test_solver_creates_optimization_solver_process(self):
+        solver_process = self.solver._create_solver_process(self.problem)
+        class_name = type(solver_process).__name__
+        self.assertIs(solver_process, self.solver._solver_process)
+        self.assertEqual(class_name, 'OptimizationSolverProcess')
+
 
 if __name__ == '__main__':
     unittest.main()

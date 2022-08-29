@@ -37,13 +37,13 @@ class SolverModelBuilder:
 
     def create_constructor(self):
         def constructor(self, proc):
-            self.variables = VariablesProcesses()
+            variables = VariablesProcesses()
             if hasattr(proc, "discrete_variables"):
-                self.variables.discrete = DiscreteVariablesProcess(
+                variables.discrete = DiscreteVariablesProcess(
                     shape=proc.discrete_variables.shape
                 )
             if hasattr(proc, "continuous_variables"):
-                self.variables.continuous = ContinuousVariablesProcess(
+                variables.continuous = ContinuousVariablesProcess(
                     shape=proc.continuous_variables.shape
                 )
 
@@ -57,18 +57,17 @@ class SolverModelBuilder:
                 )
                 proc.vars.feasibility.alias(macrostate_reader.satisfaction)
             if hasattr(proc, "cost_coefficients"):
-                self.cost_minimizer = CostMinimizer(
+                cost_minimizer = CostMinimizer(
                     Dense(
                         # todo just using the last coefficient for now
                         weights=proc.cost_coefficients[2].init
                     )
                 )
-                self.variables.importances = proc.cost_coefficients[1].init
-                macrostate_reader.cost_convergence_check = \
-                    CostConvergenceChecker(
+                variables.importances = proc.cost_coefficients[1].init
+                macrostate_reader.cost_convergence_check = CostConvergenceChecker(
                     shape=proc.variable_assignment.shape
                 )
-                self.variables.cost.connect(macrostate_reader.cost_in)
+                variables.cost.connect(macrostate_reader.cost_in)
                 proc.vars.optimality.alias(macrostate_reader.cost)
 
             # Variable aliasing
@@ -78,16 +77,18 @@ class SolverModelBuilder:
                 macrostate_reader.read_gate_in_port
             )
             # macrostate_reader.cost_convergence_check.s_out.connect(
-            #     self.variables.discrete.)
+            #     variables.discrete.)
             macrostate_reader.read_gate.out_port.connect(
                 macrostate_reader.solution_readout.in_port
             )
             macrostate_reader.ref_port.connect_var(
-                self.variables.variables_assignment
+                variables.variables_assignment
             )
-            self.cost_minimizer.gradient_out.connect(self.variables.gradient_in)
-            self.variables.state_out.connect(self.cost_minimizer.state_in)
+            cost_minimizer.gradient_out.connect(variables.gradient_in)
+            variables.state_out.connect(cost_minimizer.state_in)
             self.macrostate_reader = macrostate_reader
+            self.variables = variables
+            self.cost_minimizer = cost_minimizer
 
         self.constructor = constructor
 

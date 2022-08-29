@@ -88,6 +88,15 @@ class TestOptimizationSolver(unittest.TestCase):
                      -self.problem.cost.get_coefficient(2).diagonal()).all()
         self.assertTrue(condition)
 
+    def test_qubo_cost_defines_num_vars_in_discrete_variables_process(self):
+        self.solver.solve(self.problem, timeout=1)
+        pm = self.solver._solver_process.model_class(
+            self.solver._solver_process)
+        self.assertEqual(pm.variables.discrete.num_variables,
+                         self.problem.variables.num_variables)
+        self.assertEqual(self.solver._solver_process.variable_assignment.size,
+                         self.problem.variables.num_variables)
+
 
 if __name__ == '__main__':
     unittest.main()

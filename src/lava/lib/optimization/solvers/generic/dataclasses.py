@@ -34,7 +34,6 @@ class CostMinimizer:
         return self.coefficients_2nd_order.a_out
 
 
-
 @dataclass
 class ConstraintEnforcing:
     """Processes implementing the constraints and their enforcing."""
@@ -61,7 +60,7 @@ class VariablesProcesses:
 
     @property
     def importances(self):
-        return  self.discrete.importances
+        return self.discrete.importances
 
     @importances.setter
     def importances(self, value):
@@ -78,6 +77,7 @@ class VariablesProcesses:
     @property
     def variables_assignment(self):
         return self.discrete.variable_assignment
+
 
 @dataclass
 class ProximalGradientMinimizer:

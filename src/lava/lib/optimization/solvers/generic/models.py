@@ -55,9 +55,7 @@ class SolverModelBuilder:
                 macrostate_reader.sat_convergence_check = SatConvergenceChecker(
                     shape=proc.variable_assignment.shape
                 )
-                proc.vars.feasibility.alias(
-                    macrostate_reader.satisfaction
-                )
+                proc.vars.feasibility.alias(macrostate_reader.satisfaction)
             if hasattr(proc, "cost_coefficients"):
                 self.cost_minimizer = CostMinimizer(
                     Dense(
@@ -65,23 +63,15 @@ class SolverModelBuilder:
                         weights=proc.cost_coefficients[2].init
                     )
                 )
-                self.variables.importances = proc.cost_coefficients[
-                    1
-                ].init
+                self.variables.importances = proc.cost_coefficients[1].init
                 macrostate_reader.cost_convergence_check = CostConvergenceChecker(
                     shape=proc.variable_assignment.shape
                 )
-                self.variables.cost.connect(
-                    macrostate_reader.cost_in
-                )
-                proc.vars.optimality.alias(
-                    macrostate_reader.cost
-                )
+                self.variables.cost.connect(macrostate_reader.cost_in)
+                proc.vars.optimality.alias(macrostate_reader.cost)
 
             # Variable aliasing
-            proc.vars.variable_assignment.alias(
-                macrostate_reader.solution
-            )
+            proc.vars.variable_assignment.alias(macrostate_reader.solution)
             # Connect processes
             macrostate_reader.update_buffer.connect(
                 macrostate_reader.read_gate_in_port
@@ -94,12 +84,8 @@ class SolverModelBuilder:
             macrostate_reader.ref_port.connect_var(
                 self.variables.variables_assignment
             )
-            self.cost_minimizer.gradient_out.connect(
-                self.variables.gradient_in
-            )
-            self.variables.state_out.connect(
-                self.cost_minimizer.state_in
-            )
+            self.cost_minimizer.gradient_out.connect(self.variables.gradient_in)
+            self.variables.state_out.connect(self.cost_minimizer.state_in)
             self.macrostate_reader = macrostate_reader
 
         self.constructor = constructor
@@ -296,10 +282,10 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
         self.integration[:] = self.integration * (1 - integration_decay)
         self.integration[:] += added_input.astype(int)
         state[:] = (
-                state * (1 - state_decay)
-                + self.integration
-                + self.increment
-                + noise
+            state * (1 - state_decay)
+            + self.integration
+            + self.increment
+            + noise
         )
         return state
 

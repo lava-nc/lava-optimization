@@ -8,7 +8,7 @@ import numpy as np
 from lava.magma.core.decorator import implements
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.process.interfaces import AbstractProcessMember
-from lava.magma.core.process.ports.ports import InPort, OutPort
+from lava.magma.core.process.ports.ports import InPort, OutPort, RefPort
 from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
@@ -233,9 +233,15 @@ class ReadGate(AbstractProcess):
 class SolutionReadout(AbstractProcess):
     """Process to readout solution from SNN and make it available on host."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        raise NotImplementedError
+    def __init__(self, shape,
+                 name: ty.Optional[str] = None,
+                 log_config: ty.Optional[LogConfig] = None) -> None:
+        super().__init__(shape=shape,
+                         name=name,
+                         log_config=log_config)
+        self.solution = Var(shape=shape, init=-1)
+        self.in_port = InPort(shape=(1,))
+        self.ref_port = RefPort(shape=shape)
 
 
 @dataclass

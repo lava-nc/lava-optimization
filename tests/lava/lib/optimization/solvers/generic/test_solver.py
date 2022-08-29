@@ -336,7 +336,7 @@ class TestOptimizationSolver(unittest.TestCase):
             self.solver._solver_process
         ).macrostate_reader
         self.assertIs(
-            mr.cost_convergence_check.s_out.out_connections[0].process,
+            mr.cost_convergence_check.update_buffer.out_connections[0].process,
             mr.read_gate,
         )
         self.assertIs(
@@ -360,7 +360,7 @@ class TestOptimizationSolver(unittest.TestCase):
         )
         mr = pm.macrostate_reader
         self.assertIs(
-            mr.cost_convergence_check.s_in.in_connections[0].process,
+            mr.cost_convergence_check.cost_components.in_connections[0].process,
             pm.variables.discrete,
         )
 

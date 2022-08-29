@@ -71,8 +71,8 @@ class VariablesProcesses:
     #     return self.discrete.update_buffer
 
     @property
-    def cost(self):
-        return self.discrete.satisfiability
+    def local_cost(self):
+        return self.discrete.local_cost
 
     @property
     def variables_assignment(self):
@@ -96,11 +96,11 @@ class MacroStateReader:
 
     @property
     def cost_in(self):
-        return self.cost_convergence_check.s_in
+        return self.cost_convergence_check.cost_components
 
     @property
     def update_buffer(self):
-        return self.cost_convergence_check.s_out
+        return self.cost_convergence_check.update_buffer
 
     @property
     def ref_port(self):
@@ -108,7 +108,7 @@ class MacroStateReader:
 
     @property
     def cost(self):
-        return self.cost_convergence_check.cost
+        return self.cost_convergence_check.min_cost
 
     @property
     def satisfaction(self):

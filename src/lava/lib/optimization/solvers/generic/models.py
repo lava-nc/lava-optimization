@@ -67,7 +67,7 @@ class SolverModelBuilder:
                 macrostate_reader.cost_convergence_check = CostConvergenceChecker(
                     shape=proc.variable_assignment.shape
                 )
-                variables.cost.connect(macrostate_reader.cost_in)
+                variables.local_cost.connect(macrostate_reader.cost_in)
                 proc.vars.optimality.alias(macrostate_reader.cost)
 
             # Variable aliasing
@@ -186,8 +186,8 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         # Connect the OutPort of the LIF child-Process to the OutPort of the
         # parent Process.
         self.s_bit.out_ports.messages.connect(proc.out_ports.s_out)
-        self.s_bit.out_ports.satisfiability.connect(
-            proc.out_ports.satisfiability
+        self.s_bit.out_ports.local_cost.connect(
+            proc.out_ports.local_cost
         )
         proc.vars.variable_assignment.alias(self.s_bit.assignment)
 
@@ -203,31 +203,32 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
         self.dense = Dense(weights=weights, num_message_bits=24)
         self.cost_integrator = CostIntegrator(shape=(1,))
         self.dense.out_ports.a_out.connect(
-            self.cost_integrator.in_ports.cost_components
+            self.cost_integrator.in_ports.cost_in
         )
 
         # Connect the parent InPort to the InPort of the Dense child-Process.
-        proc.in_ports.s_in.connect(self.dense.in_ports.s_in)
+        proc.in_ports.cost_components.connect(self.dense.in_ports.s_in)
 
         # Connect the OutPort of the LIF child-Process to the OutPort of the
         # parent Process.
-        self.cost_integrator.out_ports.cost_out.connect(proc.out_ports.s_out)
-        proc.vars.cost.alias(self.cost_integrator.vars.min_cost)
+        self.cost_integrator.out_ports.update_buffer.connect(
+            proc.out_ports.update_buffer)
+        proc.vars.min_cost.alias(self.cost_integrator.vars.min_cost)
 
 
 @implements(proc=CostIntegrator, protocol=LoihiProtocol)
 @requires(CPU)
 class CostIntegratorModel(PyLoihiProcessModel):
-    cost_components: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
-    cost_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
+    cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
+    update_buffer: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
 
     min_cost: np.ndarray = LavaPyType(np.ndarray, int, 32)
 
     def run_spk(self):
-        cost = self.cost_components.recv()
+        cost = self.cost_in.recv()
         if cost < self.min_cost:
             self.min_cost[:] = cost
-        self.cost_out.send(cost)
+        self.update_buffer.send(cost)
 
 
 @implements(proc=StochasticIntegrateAndFire, protocol=LoihiProtocol)
@@ -236,7 +237,7 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
     added_input: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
     replace_assignment: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
     messages: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
-    satisfiability: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
+    local_cost: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
 
     integration: np.ndarray = LavaPyType(np.ndarray, int, 32)
     increment: np.ndarray = LavaPyType(np.ndarray, int, 32)
@@ -271,7 +272,7 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
         self.reset_state(firing_vector=firing)
         self.messages.send(firing)
         # self.satisfiability.send(added_input)
-        self.satisfiability.send(self.satisfiability_var[:])
+        self.local_cost.send(self.satisfiability_var[:])
         self.prev_firing[:] = firing
         self.assignment[:] = self.satisfiability_var
 

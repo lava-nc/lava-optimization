@@ -28,6 +28,8 @@ class OptimizationSolver:
     def __init__(self, run_cfg=None):
         self._run_cfg = run_cfg
         self._process_builder = SolverProcessBuilder()
+        self._solver_process = None
+        self._solver_model = None
 
     @property
     def run_cfg(self):

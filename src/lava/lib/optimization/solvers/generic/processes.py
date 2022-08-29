@@ -12,11 +12,14 @@ from lava.magma.core.process.variable import Var
 from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.problems.variables import (
-    DiscreteVariables, ContinuousVariables)
+    DiscreteVariables,
+    ContinuousVariables,
+)
 
 
-def _vars_from_coefficients(coefficients: CoefficientTensorsMixin) -> \
-        ty.Dict[int, AbstractProcessMember]:
+def _vars_from_coefficients(
+    coefficients: CoefficientTensorsMixin,
+) -> ty.Dict[int, AbstractProcessMember]:
     vars = dict()
     for rank, coeff in coefficients.items():
         if rank == 1:
@@ -27,17 +30,20 @@ def _vars_from_coefficients(coefficients: CoefficientTensorsMixin) -> \
             if 1 in vars.keys():
                 vars[1].init = vars[1].init + linear_component
             else:
-                vars[1] = Var(shape=linear_component.shape,
-                              init=linear_component)
+                vars[1] = Var(
+                    shape=linear_component.shape, init=linear_component
+                )
             init = -quadratic_component
         vars[rank] = Var(shape=coeff.shape, init=init)
     return vars
 
 
-def _in_ports_from_coefficients(coefficients: CoefficientTensorsMixin) -> \
-        ty.List[AbstractProcessMember]:
-    in_ports = [InPort(shape=coeff.shape) for coeff in
-                coefficients.coefficients]
+def _in_ports_from_coefficients(
+    coefficients: CoefficientTensorsMixin,
+) -> ty.List[AbstractProcessMember]:
+    in_ports = [
+        InPort(shape=coeff.shape) for coeff in coefficients.coefficients
+    ]
     return in_ports
 
 
@@ -49,31 +55,40 @@ class SolverProcessBuilder:
         """Create constructor for dynamically created
         OptimizationSolverProcess class."""
 
-        def constructor(self,
-                        name: ty.Optional[str] = None,
-                        log_config: ty.Optional[LogConfig] = None) -> None:
-            super(type(self), self).__init__(name=name,
-                                             log_config=log_config)
+        def constructor(
+            self,
+            name: ty.Optional[str] = None,
+            log_config: ty.Optional[LogConfig] = None,
+        ) -> None:
+            super(type(self), self).__init__(name=name, log_config=log_config)
             self.problem = problem
-            if not hasattr(problem, 'variables'):
-                raise Exception("An optimization problem must contain "
-                                "variables.")
-            if hasattr(problem.variables, 'continuous') or isinstance(
-                    problem.variables, ContinuousVariables):
+            if not hasattr(problem, "variables"):
+                raise Exception(
+                    "An optimization problem must contain " "variables."
+                )
+            if hasattr(problem.variables, "continuous") or isinstance(
+                problem.variables, ContinuousVariables
+            ):
                 self.continuous_variables = Var(
-                    shape=(problem.variables.continuous.num_vars, 2))
-            if hasattr(problem.variables, 'discrete') or isinstance(
-                    problem.variables, DiscreteVariables):
+                    shape=(problem.variables.continuous.num_vars, 2)
+                )
+            if hasattr(problem.variables, "discrete") or isinstance(
+                problem.variables, DiscreteVariables
+            ):
                 self.discrete_variables = Var(
-                    shape=(problem.variables.num_variables,
-                           # problem.variables.domain_sizes[0]
-                           ))
-            if hasattr(problem, 'cost'):
+                    shape=(
+                        problem.variables.num_variables,
+                        # problem.variables.domain_sizes[0]
+                    )
+                )
+            if hasattr(problem, "cost"):
                 self.cost_coefficients = _vars_from_coefficients(
-                    problem.cost.coefficients)
+                    problem.cost.coefficients
+                )
 
             self.variable_assignment = Var(
-                shape=(problem.variables.num_variables,))
+                shape=(problem.variables.num_variables,)
+            )
             self.optimality = Var(shape=(1,))
             self.feasibility = Var(shape=(1,))
 
@@ -82,9 +97,11 @@ class SolverProcessBuilder:
     @property
     def solver_process(self) -> AbstractProcess:
         """Hierarchical process implementing an optimization solver."""
-        SolverProcess = type('OptimizationSolverProcess',
-                             (AbstractProcess,),
-                             {'__init__': self._constructor})
+        SolverProcess = type(
+            "OptimizationSolverProcess",
+            (AbstractProcess,),
+            {"__init__": self._constructor},
+        )
         return SolverProcess()
 
 
@@ -101,14 +118,14 @@ class DiscreteVariablesProcess(AbstractProcess):
     """Process implementing discrete variables as a set of winner-takes-all
     populations."""
 
-    def __init__(self, shape,
-                 importances: ty.Optional[
-                     ty.Union[int, list, np.ndarray]] = None,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None) -> None:
-        super().__init__(shape=shape,
-                         name=name,
-                         log_config=log_config)
+    def __init__(
+        self,
+        shape,
+        importances: ty.Optional[ty.Union[int, list, np.ndarray]] = None,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(shape=shape, name=name, log_config=log_config)
         self.num_variables = shape[0]
         self.a_in = InPort(shape=shape)
         self.s_out = OutPort(shape=shape)
@@ -126,27 +143,33 @@ class DiscreteVariablesProcess(AbstractProcess):
 
 
 class StochasticIntegrateAndFire(AbstractProcess):
-    def __init__(self, *, shape: ty.Tuple[int, ...] = (1,),
-                 initial_value: ty.Union[int, list, np.ndarray] = 0,
-                 increment: ty.Union[int, list, np.ndarray] = 100,
-                 noise_amplitude: ty.Union[int, list, np.ndarray] = 0,
-                 input_duration: ty.Union[int, list, np.ndarray] = 6,
-                 min_state: ty.Union[int, list, np.ndarray] = 1000,
-                 min_integration: ty.Union[int, list, np.ndarray] = -1000,
-                 steps_to_fire: ty.Union[int, list, np.ndarray] = 10,
-                 refractory_period: ty.Union[int, list, np.ndarray] = 1,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None) -> None:
-        super().__init__(shape=shape,
-                         initial_state=initial_value,
-                         noise_amplitude=noise_amplitude,
-                         input_duration=input_duration,
-                         min_state=min_state,
-                         min_integration=min_integration,
-                         steps_to_fire=steps_to_fire,
-                         refractory_period=refractory_period,
-                         name=name,
-                         log_config=log_config)
+    def __init__(
+        self,
+        *,
+        shape: ty.Tuple[int, ...] = (1,),
+        initial_value: ty.Union[int, list, np.ndarray] = 0,
+        increment: ty.Union[int, list, np.ndarray] = 100,
+        noise_amplitude: ty.Union[int, list, np.ndarray] = 0,
+        input_duration: ty.Union[int, list, np.ndarray] = 6,
+        min_state: ty.Union[int, list, np.ndarray] = 1000,
+        min_integration: ty.Union[int, list, np.ndarray] = -1000,
+        steps_to_fire: ty.Union[int, list, np.ndarray] = 10,
+        refractory_period: ty.Union[int, list, np.ndarray] = 1,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None
+    ) -> None:
+        super().__init__(
+            shape=shape,
+            initial_state=initial_value,
+            noise_amplitude=noise_amplitude,
+            input_duration=input_duration,
+            min_state=min_state,
+            min_integration=min_integration,
+            steps_to_fire=steps_to_fire,
+            refractory_period=refractory_period,
+            name=name,
+            log_config=log_config,
+        )
         self.added_input = InPort(shape=shape)
         self.replace_assignment = InPort(shape=shape)
         self.messages = OutPort(shape=shape)
@@ -171,11 +194,12 @@ class StochasticIntegrateAndFire(AbstractProcess):
 class ReadGate(AbstractProcess):
     """Process that triggers solution readout when problem is solved."""
 
-    def __init__(self,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None) -> None:
-        super().__init__(name=name,
-                         log_config=log_config)
+    def __init__(
+        self,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(name=name, log_config=log_config)
         self.solved = Var(shape=(1,))
         self.in_port = InPort(shape=(1,))
         self.out_port = OutPort(shape=(1,))
@@ -184,12 +208,13 @@ class ReadGate(AbstractProcess):
 class SolutionReadout(AbstractProcess):
     """Process to readout solution from SNN and make it available on host."""
 
-    def __init__(self, shape,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None) -> None:
-        super().__init__(shape=shape,
-                         name=name,
-                         log_config=log_config)
+    def __init__(
+        self,
+        shape,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(shape=shape, name=name, log_config=log_config)
         self.solution = Var(shape=shape, init=-1)
         self.in_port = InPort(shape=(1,))
         self.ref_port = RefPort(shape=shape)
@@ -198,13 +223,13 @@ class SolutionReadout(AbstractProcess):
 class CostConvergenceChecker(AbstractProcess):
     """Process that continuously monitors cost convergence."""
 
-    def __init__(self,
-                 shape,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None) -> None:
-        super().__init__(shape=shape,
-                         name=name,
-                         log_config=log_config)
+    def __init__(
+        self,
+        shape,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(shape=shape, name=name, log_config=log_config)
         self.shape = shape
         self.cost = Var(shape=(1,))
         self.s_in = InPort(shape=shape)
@@ -259,12 +284,14 @@ class AdjacencyMatrixFactory:
 
 
 class CostIntegrator(AbstractProcess):
-    def __init__(self, *, shape: ty.Tuple[int, ...] = (1,),
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None) -> None:
-        super().__init__(shape=shape,
-                         name=name,
-                         log_config=log_config)
+    def __init__(
+        self,
+        *,
+        shape: ty.Tuple[int, ...] = (1,),
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None
+    ) -> None:
+        super().__init__(shape=shape, name=name, log_config=log_config)
         self.cost_components = InPort(shape=shape)
         self.cost_out = OutPort(shape=shape)
 

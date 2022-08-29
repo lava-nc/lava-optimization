@@ -13,12 +13,21 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.process import Dense
 
-from lava.lib.optimization.solvers.generic.dataclasses import CostMinimizer, \
-    VariablesProcesses, MacroStateReader
-from lava.lib.optimization.solvers.generic.processes \
-    import CostConvergenceChecker, ReadGate, SolutionReadout, \
-    SatConvergenceChecker, DiscreteVariablesProcess, \
-    ContinuousVariablesProcess, CostIntegrator, StochasticIntegrateAndFire
+from lava.lib.optimization.solvers.generic.dataclasses import (
+    CostMinimizer,
+    VariablesProcesses,
+    MacroStateReader,
+)
+from lava.lib.optimization.solvers.generic.processes import (
+    CostConvergenceChecker,
+    ReadGate,
+    SolutionReadout,
+    SatConvergenceChecker,
+    DiscreteVariablesProcess,
+    ContinuousVariablesProcess,
+    CostIntegrator,
+    StochasticIntegrateAndFire,
+)
 
 
 class SolverModelBuilder:
@@ -29,68 +38,87 @@ class SolverModelBuilder:
     def create_constructor(self):
         def constructor(self, proc):
             self.variables = VariablesProcesses()
-            if hasattr(proc, 'discrete_variables'):
+            if hasattr(proc, "discrete_variables"):
                 self.variables.discrete = DiscreteVariablesProcess(
-                    shape=proc.discrete_variables.shape)
-            if hasattr(proc, 'continuous_variables'):
+                    shape=proc.discrete_variables.shape
+                )
+            if hasattr(proc, "continuous_variables"):
                 self.variables.continuous = ContinuousVariablesProcess(
-                    shape=proc.continuous_variables.shape)
+                    shape=proc.continuous_variables.shape
+                )
 
-            macrostate_reader = MacroStateReader(ReadGate(),
-                                                 SolutionReadout(
-                                                     shape=proc.variable_assignment.shape))
+            macrostate_reader = MacroStateReader(
+                ReadGate(),
+                SolutionReadout(shape=proc.variable_assignment.shape),
+            )
             if proc.problem.constraints:
-                macrostate_reader.sat_convergence_check = \
-                    SatConvergenceChecker(shape=proc.variable_assignment.shape)
+                macrostate_reader.sat_convergence_check = SatConvergenceChecker(
+                    shape=proc.variable_assignment.shape
+                )
                 proc.vars.feasibility.alias(
-                    macrostate_reader.sat_convergence_check.satisfaction)
-            if hasattr(proc, 'cost_coefficients'):
-                self.cost_minimizer = CostMinimizer(Dense(
-                    # todo just using the last coefficient for now
-                    weights=proc.cost_coefficients[2].init))
+                    macrostate_reader.sat_convergence_check.satisfaction
+                )
+            if hasattr(proc, "cost_coefficients"):
+                self.cost_minimizer = CostMinimizer(
+                    Dense(
+                        # todo just using the last coefficient for now
+                        weights=proc.cost_coefficients[2].init
+                    )
+                )
                 self.variables.discrete.importances = proc.cost_coefficients[
-                    1].init
-                macrostate_reader.cost_convergence_check = \
-                    CostConvergenceChecker(shape=proc.variable_assignment.shape)
+                    1
+                ].init
+                macrostate_reader.cost_convergence_check = CostConvergenceChecker(
+                    shape=proc.variable_assignment.shape
+                )
                 self.variables.discrete.satisfiability.connect(
-                    macrostate_reader.cost_convergence_check.s_in)
+                    macrostate_reader.cost_convergence_check.s_in
+                )
                 proc.vars.optimality.alias(
-                    macrostate_reader.cost_convergence_check.cost)
+                    macrostate_reader.cost_convergence_check.cost
+                )
 
             # Variable aliasing
             proc.vars.variable_assignment.alias(
-                macrostate_reader.solution_readout.solution)
+                macrostate_reader.solution_readout.solution
+            )
             # Connect processes
             macrostate_reader.cost_convergence_check.s_out.connect(
-                macrostate_reader.read_gate.in_port)
+                macrostate_reader.read_gate.in_port
+            )
             # macrostate_reader.cost_convergence_check.s_out.connect(
             #     self.variables.discrete.)
             macrostate_reader.read_gate.out_port.connect(
-                macrostate_reader.solution_readout.in_port)
+                macrostate_reader.solution_readout.in_port
+            )
             macrostate_reader.solution_readout.ref_port.connect_var(
-                self.variables.discrete.variable_assignment)
+                self.variables.discrete.variable_assignment
+            )
             self.cost_minimizer.coefficients_2nd_order.a_out.connect(
-                self.variables.discrete.a_in)
+                self.variables.discrete.a_in
+            )
             self.variables.discrete.s_out.connect(
-                self.cost_minimizer.coefficients_2nd_order.s_in)
+                self.cost_minimizer.coefficients_2nd_order.s_in
+            )
             self.macrostate_reader = macrostate_reader
 
         self.constructor = constructor
 
     @property
     def solver_model(self):
-        SolverModel = type('OptimizationSolverModel',
-                           (AbstractSubProcessModel,),
-                           {'__init__': self.constructor}
-                           )
-        setattr(SolverModel, 'implements_process', self.solver_process)
+        SolverModel = type(
+            "OptimizationSolverModel",
+            (AbstractSubProcessModel,),
+            {"__init__": self.constructor},
+        )
+        setattr(SolverModel, "implements_process", self.solver_process)
         # setattr(SolverModel, 'implements_protocol', protocol)
         # Get requirements of parent class
         super_res = SolverModel.required_resources.copy()
         # Set new requirements on this cls to not overwrite parent class
         # requirements
-        setattr(SolverModel, 'required_resources', super_res + [CPU])
-        setattr(SolverModel, 'implements_protocol', LoihiProtocol)
+        setattr(SolverModel, "required_resources", super_res + [CPU])
+        setattr(SolverModel, "implements_protocol", LoihiProtocol)
         return SolverModel
 
 
@@ -99,15 +127,16 @@ class SolverModelBuilder:
 class ReadGatePyModel(PyLoihiProcessModel):
     solved: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     in_port: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
-    out_port: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32,
-                                     precision=32)
+    out_port: PyOutPort = LavaPyType(
+        PyOutPort.VEC_DENSE, np.int32, precision=32
+    )
 
     def run_spk(self):
         data = self.in_port.recv()
         self.out_port.send(data)
         self.solved[:] = data[0]
         if self.solved[0]:
-            print('Cost', data)
+            print("Cost", data)
 
 
 @implements(SolutionReadout, protocol=LoihiProtocol)
@@ -115,8 +144,9 @@ class ReadGatePyModel(PyLoihiProcessModel):
 class SolutionReadoutPyModel(PyLoihiProcessModel):
     solution: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     in_port: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
-    ref_port: PyRefPort = LavaPyType(PyRefPort.VEC_DENSE, np.int32,
-                                     precision=32)
+    ref_port: PyRefPort = LavaPyType(
+        PyRefPort.VEC_DENSE, np.int32, precision=32
+    )
     solved = False
 
     def post_guard(self):
@@ -129,7 +159,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 
     def run_post_mgmt(self):
         if self.solved:
-            print('Reading solution')
+            print("Reading solution")
             solution = self.ref_port.read()
             self.solution[:] = solution
             self._req_pause = True
@@ -138,22 +168,25 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
 @requires(CPU)
 class DiscreteVariablesModel(AbstractSubProcessModel):
-
     def __init__(self, proc):
         # Instantiate child processes
         # The input shape is a 2D vector (shape of the weight matrix).
         wta_weight = -2
         shape = proc.proc_params.get("shape", (1,))
-        weights = proc.proc_params.get("weights",
-                                       wta_weight * np.logical_not(np.eye(
-                                           shape[1] if len(shape) == 2 else 0)))
+        weights = proc.proc_params.get(
+            "weights",
+            wta_weight
+            * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
+        )
         noise_amplitude = proc.proc_params.get("noise_amplitude", 1)
         steps_to_fire = proc.proc_params.get("steps_to_fire", 10)
         importances = proc.proc_params.get("importances", 10)
-        self.s_bit = StochasticIntegrateAndFire(shape=shape,
-                                                increment=importances,
-                                                noise_amplitude=noise_amplitude,
-                                                steps_to_fire=steps_to_fire)
+        self.s_bit = StochasticIntegrateAndFire(
+            shape=shape,
+            increment=importances,
+            noise_amplitude=noise_amplitude,
+            steps_to_fire=steps_to_fire,
+        )
 
         if weights.shape != (0, 0):
             self.dense = Dense(weights=weights)
@@ -166,7 +199,8 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         # parent Process.
         self.s_bit.out_ports.messages.connect(proc.out_ports.s_out)
         self.s_bit.out_ports.satisfiability.connect(
-            proc.out_ports.satisfiability)
+            proc.out_ports.satisfiability
+        )
         proc.vars.variable_assignment.alias(self.s_bit.assignment)
 
 
@@ -181,7 +215,8 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
         self.dense = Dense(weights=weights, num_message_bits=24)
         self.cost_integrator = CostIntegrator(shape=(1,))
         self.dense.out_ports.a_out.connect(
-            self.cost_integrator.in_ports.cost_components)
+            self.cost_integrator.in_ports.cost_components
+        )
 
         # Connect the parent InPort to the InPort of the Dense child-Process.
         proc.in_ports.s_in.connect(self.dense.in_ports.s_in)
@@ -241,8 +276,9 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
         added_input = self.added_input.recv()
         self.state = self.iterative_dynamics(added_input, self.state)
         firing = self.do_fire(self.state)
-        self.satisfiability_var[:] = self.is_satisfied(self.prev_firing,
-                                                       self.integration)
+        self.satisfiability_var[:] = self.is_satisfied(
+            self.prev_firing, self.integration
+        )
 
         self.reset_state(firing_vector=firing)
         self.messages.send(firing)
@@ -254,12 +290,17 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
     def iterative_dynamics(self, added_input: np.ndarray, state: np.ndarray):
         integration_decay = 1
         state_decay = 0
-        noise = self.noise_amplitude * np.random.randint(0, 1000,
-                                                         self.integration.shape)
+        noise = self.noise_amplitude * np.random.randint(
+            0, 1000, self.integration.shape
+        )
         self.integration[:] = self.integration * (1 - integration_decay)
         self.integration[:] += added_input.astype(int)
-        state[:] = state * (1 - state_decay) + self.integration + \
-                   self.increment + noise
+        state[:] = (
+            state * (1 - state_decay)
+            + self.integration
+            + self.increment
+            + noise
+        )
         return state
 
     def do_fire(self, state):

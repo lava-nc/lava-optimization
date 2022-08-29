@@ -5,22 +5,31 @@ from dataclasses import dataclass
 
 from lava.proc.dense.process import Dense
 
-from lava.lib.optimization.solvers.generic.processes import \
-    ContinuousConstraintsProcess, DiscreteConstraintsProcess, \
-    MixedConstraintsProcess, CostConvergenceChecker, SatConvergenceChecker, \
-    ReadGate, SolutionReadout, ContinuousVariablesProcess, \
-    DiscreteVariablesProcess, AugmentedTermsProcess
+from lava.lib.optimization.solvers.generic.processes import (
+    ContinuousConstraintsProcess,
+    DiscreteConstraintsProcess,
+    MixedConstraintsProcess,
+    CostConvergenceChecker,
+    SatConvergenceChecker,
+    ReadGate,
+    SolutionReadout,
+    ContinuousVariablesProcess,
+    DiscreteVariablesProcess,
+    AugmentedTermsProcess,
+)
 
 
 @dataclass
 class CostMinimizer:
     """Processes implementing the cost function"""
+
     coefficients_2nd_order: Dense
 
 
 @dataclass
 class ConstraintEnforcing:
     """Processes implementing the constraints and their enforcing."""
+
     continuous: ContinuousConstraintsProcess
     discrete: DiscreteConstraintsProcess
     mixed: MixedConstraintsProcess
@@ -29,6 +38,7 @@ class ConstraintEnforcing:
 @dataclass()
 class VariablesProcesses:
     """Processes implementing the variables."""
+
     continuous: ContinuousVariablesProcess = None
     discrete: DiscreteVariablesProcess = None
 
@@ -42,6 +52,7 @@ class ProximalGradientMinimizer:
 class MacroStateReader:
     """Processes for checking convergence and reading network state encoding
     the solution ."""
+
     read_gate: ReadGate
     solution_readout: SolutionReadout
     cost_convergence_check: CostConvergenceChecker = None

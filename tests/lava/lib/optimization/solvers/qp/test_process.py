@@ -80,12 +80,8 @@ class TestProcessesFloatingPoint(unittest.TestCase):
         )
         self.assertEqual(process.vars.decay_counter.get() == 0, True)
         self.assertEqual(process.vars.growth_counter.get() == 0, True)
-        self.assertEqual(
-            np.all(process.s_in_qc.shape == (p.shape[0], 1)), True
-        )
-        self.assertEqual(
-            np.all(process.s_in_cn.shape == (p.shape[0], 1)), True
-        )
+        self.assertEqual(np.all(process.s_in_qc.shape == (p.shape[0], 1)), True)
+        self.assertEqual(np.all(process.s_in_cn.shape == (p.shape[0], 1)), True)
         self.assertEqual(
             np.all(process.a_out_qc.shape == (p.shape[0], 1)), True
         )

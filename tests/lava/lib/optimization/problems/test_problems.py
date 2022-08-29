@@ -52,9 +52,7 @@ class TestOptimizationProblem(unittest.TestCase):
             OptimizationProblem()
 
     def test_compliant_sublcass(self):
-        self.assertIsInstance(
-            self.compliant_instantiation, OptimizationProblem
-        )
+        self.assertIsInstance(self.compliant_instantiation, OptimizationProblem)
 
     def test_not_compliant_sublcass(self):
         with self.assertRaises(TypeError):

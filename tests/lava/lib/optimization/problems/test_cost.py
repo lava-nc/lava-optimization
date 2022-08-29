@@ -6,9 +6,7 @@
 import unittest
 
 import numpy as np
-from lava.lib.optimization.problems.coefficients import (
-    CoefficientTensorsMixin,
-)
+from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 from lava.lib.optimization.problems.cost import Cost
 
 

@@ -331,3 +331,16 @@ class OptimizationSolverModel(AbstractSubProcessModel):
 
     def _var_to_proc(self, var):
         raise NotImplementedError
+
+
+class CostIntegrator(AbstractProcess):
+    def __init__(self, *, shape: ty.Tuple[int, ...] = (1,),
+                 name: ty.Optional[str] = None,
+                 log_config: ty.Optional[LogConfig] = None) -> None:
+        super().__init__(shape=shape,
+                         name=name,
+                         log_config=log_config)
+        self.cost_components = InPort(shape=shape)
+        self.cost_out = OutPort(shape=shape)
+
+        self.min_cost = Var(shape=shape, init=2 ** 32)

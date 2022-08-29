@@ -18,7 +18,7 @@ from lava.proc.dense.process import Dense
 from lava.lib.optimization.solvers.generic.processes \
     import CostConvergenceChecker, ReadGate, SolutionReadout, \
     SatConvergenceChecker, VariablesProcesses, DiscreteVariablesProcess, \
-    ContinuousVariablesProcess
+    ContinuousVariablesProcess, CostIntegrator
 
 
 @dataclass

@@ -30,6 +30,12 @@ class TestOptimizationSolver(unittest.TestCase):
         solution = self.solver.solve(self.problem, timeout=3000)
         self.assertEqual(solution.shape, self.solution.shape)
 
+    def test_solve_method(self):
+        np.random.seed(2)
+        solution = self.solver.solve(self.problem, timeout=20)
+        print(solution)
+        self.assertTrue((solution == self.solution).all())
+
     def test_solver_creates_optimization_solver_process(self):
         solver_process = self.solver._create_solver_process(self.problem)
         class_name = type(solver_process).__name__

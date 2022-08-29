@@ -221,3 +221,66 @@ class CostIntegratorModel(PyLoihiProcessModel):
         if cost < self.min_cost:
             self.min_cost[:] = cost
         self.cost_out.send(cost)
+
+
+@implements(proc=StochasticIntegrateAndFire, protocol=LoihiProtocol)
+@requires(CPU)
+class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
+    added_input: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
+    replace_assignment: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
+    messages: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
+    satisfiability: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
+
+    integration: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    increment: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    state: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    noise_amplitude: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    input_duration: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    min_state: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    min_integration: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    steps_to_fire: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    refractory_period: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    prev_firing: np.ndarray = LavaPyType(np.ndarray, bool)
+    assignment: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    satisfiability_var: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    assignemnt_buffer: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    min_cost: np.ndarray = LavaPyType(np.ndarray, int, 32)
+
+    def reset_state(self, firing_vector: np.ndarray):
+        self.state[firing_vector] = 0
+
+    def run_spk(self):
+        cost = self.replace_assignment.recv()
+        if cost[0] > self.min_cost[0]:
+            self.assignemnt_buffer[:] = self.assignment
+            self.min_cost[:] = cost
+        added_input = self.added_input.recv()
+        self.state = self.iterative_dynamics(added_input, self.state)
+        firing = self.do_fire(self.state)
+        self.satisfiability_var[:] = self.is_satisfied(self.prev_firing,
+                                                       self.integration)
+
+        self.reset_state(firing_vector=firing)
+        self.messages.send(firing)
+        # self.satisfiability.send(added_input)
+        self.satisfiability.send(self.satisfiability_var[:])
+        self.prev_firing[:] = firing
+        self.assignment[:] = self.satisfiability_var
+
+    def iterative_dynamics(self, added_input: np.ndarray, state: np.ndarray):
+        integration_decay = 1
+        state_decay = 0
+        noise = self.noise_amplitude * np.random.randint(0, 1000,
+                                                         self.integration.shape)
+        self.integration[:] = self.integration * (1 - integration_decay)
+        self.integration[:] += added_input.astype(int)
+        state[:] = state * (1 - state_decay) + self.integration + \
+                   self.increment + noise
+        print("STATE", state)
+        return state
+
+    def do_fire(self, state):
+        return state > self.increment * self.steps_to_fire
+
+    def is_satisfied(self, prev_assignment, integration):
+        return np.logical_and(prev_assignment, np.logical_not(integration))

@@ -42,6 +42,24 @@ class TestOptimizationSolver(unittest.TestCase):
                          (self.problem.variables.num_variables,))
         self.assertIsInstance(mr.cost_convergence_check, CostConvergenceChecker)
 
+    def test_macrostate_reader_processes_connections(self):
+        self.assertIsNone(self.solver._solver_process)
+        self.solver.solve(self.problem, timeout=1)
+        mr = self.solver._solver_process.model_class(
+            self.solver._solver_process).macrostate_reader
+        self.assertIs(
+            mr.cost_convergence_check.s_out.out_connections[0].process,
+            mr.read_gate)
+        self.assertIs(
+            mr.read_gate.out_port.out_connections[0].process,
+            mr.solution_readout)
+        self.assertIs(
+            self.solver._solver_process.variable_assignment.aliased_var,
+            mr.solution_readout.solution)
+        self.assertIs(
+            self.solver._solver_process.variable_assignment.aliased_var.process,
+            mr.solution_readout)
+
 
 if __name__ == '__main__':
     unittest.main()

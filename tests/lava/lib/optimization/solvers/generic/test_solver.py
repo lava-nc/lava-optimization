@@ -3,6 +3,7 @@
 # See: https://spdx.org/licenses/
 
 import unittest
+from time import time
 
 import numpy as np
 
@@ -96,6 +97,12 @@ class TestOptimizationSolver(unittest.TestCase):
                          self.problem.variables.num_variables)
         self.assertEqual(self.solver._solver_process.variable_assignment.size,
                          self.problem.variables.num_variables)
+
+    def test_solver_stops_when_solution_found(self):
+        t_start = time()
+        solution = self.solver.solve(self.problem, timeout=-1)
+        t_end = time()
+        self.assertTrue(t_start - t_end < 1)
 
 
 if __name__ == '__main__':

@@ -70,6 +70,16 @@ class TestOptimizationSolver(unittest.TestCase):
             mr.cost_convergence_check.s_in.in_connections[0].process,
             pm.variables.discrete)
 
+    def test_qubo_cost_defines_weights(self):
+        self.solver.solve(self.problem, timeout=1)
+        pm = self.solver._solver_process.model_class(
+            self.solver._solver_process)
+        q_no_diag = np.copy(self.problem.cost.get_coefficient(2))
+        np.fill_diagonal(q_no_diag, 0)
+        condition = (pm.cost_minimizer.coefficients_2nd_order.weights.init ==
+                     -q_no_diag).all()
+        self.assertTrue(condition)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from lava.magma.core.decorator import implements
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.process.interfaces import AbstractProcessMember
-from lava.magma.core.process.ports.ports import InPort, OutPort
-from lava.magma.core.process.process import AbstractProcess
+from lava.magma.core.process.ports.ports import InPort, OutPort, RefPort
+from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
@@ -31,32 +31,33 @@ class SolverProcessBuilder:
         """Create constructor for dynamically created
         OptimizationSolverProcess class."""
 
-        def constructor(self):
-            self.continuous_variables = InPort(
-                shape=(problem.variables.continuous.num_vars, 2))
-            self.discrete_variables = InPort(
-                shape=(problem.variables.discrete.num_vars,))
-            self.cost_coefficients = _in_ports_from_coefficients(
-                problem.cost.coefficients)
-            self.cost_augmented_terms = _in_ports_from_coefficients(
-                problem.cost.augmented_terms)
-            self.ineq_constraints = _in_ports_from_coefficients(
-                problem.constraints.inequality.coefficients)
-            self.eq_constraints = _in_ports_from_coefficients(
-                problem.constraints.equality.coefficients)
-            if problem.discrete.constraints is not None:
-                d_constraints = problem.constraints.discrete
-                num_dconstraints = len(d_constraints.var_subsets)
-                max_arity = len(d_constraints.var_subsets[0])
-                self.discrete_constraints_relations = InPort(
-                    shape=(len(d_constraints.relations), max_arity))
-                subsets_shape = (num_dconstraints,) + (
-                    problem.variables.discrete.num_vars,) * max_arity
-                self.discrete_constraints_subsets = InPort(shape=subsets_shape)
-            self.variable_assignment = Var(shape=(problem.num_vars,))
+        def constructor(self,
+                        name: ty.Optional[str] = None,
+                        log_config: ty.Optional[LogConfig] = None) -> None:
+            super(type(self), self).__init__(name=name,
+                                             log_config=log_config)
+            self.problem = problem
+            if not hasattr(problem, 'variables'):
+                raise Exception("An optimization problem must contain "
+                                "variables.")
+            if hasattr(problem.variables, 'continuous') or isinstance(
+                    problem.variables, ContinuousVariables):
+                self.continuous_variables = Var(
+                    shape=(problem.variables.continuous.num_vars, 2))
+            if hasattr(problem.variables, 'discrete') or isinstance(
+                    problem.variables, DiscreteVariables):
+                self.discrete_variables = Var(
+                    shape=(problem.variables.num_variables,
+                           # problem.variables.domain_sizes[0]
+                           ))
+            if hasattr(problem, 'cost'):
+                self.cost_coefficients = _vars_from_coefficients(
+                    problem.cost.coefficients)
+
+            self.variable_assignment = Var(
+                shape=(problem.variables.num_variables,))
             self.optimality = Var(shape=(1,))
             self.feasibility = Var(shape=(1,))
-            self.solution = OutPort(shape=(problem.num_vars,))
 
         self._constructor = constructor
 

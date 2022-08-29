@@ -171,3 +171,18 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
         # parent Process.
         self.cost_integrator.out_ports.cost_out.connect(proc.out_ports.s_out)
         proc.vars.cost.alias(self.cost_integrator.vars.min_cost)
+
+
+@implements(proc=CostIntegrator, protocol=LoihiProtocol)
+@requires(CPU)
+class CostIntegratorModel(PyLoihiProcessModel):
+    cost_components: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
+    cost_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
+
+    min_cost: np.ndarray = LavaPyType(np.ndarray, int, 32)
+
+    def run_spk(self):
+        cost = self.cost_components.recv()
+        if cost < self.min_cost:
+            self.min_cost[:] = cost
+        self.cost_out.send(cost)

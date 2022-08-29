@@ -36,6 +36,33 @@ class TestOptimizationSolver(unittest.TestCase):
         print(solution)
         self.assertTrue((solution == self.solution).all())
 
+    @unittest.skip("WIP")
+    def test_solve_map_coloring(self):
+        # np.random.seed(2)/
+        q = np.asarray(
+            [[-4., 4., 4., 2., 0., 0., 0., 0., 0., 0., 0., 0., 2., 0., 0.],
+             [4., -4., 4., 0., 2., 0., 0., 0., 0., 0., 0., 0., 0., 2., 0.],
+             [4., 4., -4., 0., 0., 2., 0., 0., 0., 0., 0., 0., 0., 0., 2.],
+             [2., 0., 0., -4., 4., 4., 2., 0., 0., 2., 0., 0., 2., 0., 0.],
+             [0., 2., 0., 4., -4., 4., 0., 2., 0., 0., 2., 0., 0., 2., 0.],
+             [0., 0., 2., 4., 4., -4., 0., 0., 2., 0., 0., 2., 0., 0., 2.],
+             [0., 0., 0., 2., 0., 0., -4., 4., 4., 2., 0., 0., 0., 0., 0.],
+             [0., 0., 0., 0., 2., 0., 4., -4., 4., 0., 2., 0., 0., 0., 0.],
+             [0., 0., 0., 0., 0., 2., 4., 4., -4., 0., 0., 2., 0., 0., 0.],
+             [0., 0., 0., 2., 0., 0., 2., 0., 0., -4., 4., 4., 2., 0., 0.],
+             [0., 0., 0., 0., 2., 0., 0., 2., 0., 4., -4., 4., 0., 2., 0.],
+             [0., 0., 0., 0., 0., 2., 0., 0., 2., 4., 4., -4., 0., 0., 2.],
+             [2., 0., 0., 2., 0., 0., 0., 0., 0., 2., 0., 0., -4., 4., 4.],
+             [0., 2., 0., 0., 2., 0., 0., 0., 0., 0., 2., 0., 4., -4., 4.],
+             [0., 0., 2., 0., 0., 2., 0., 0., 0., 0., 0., 2., 4., 4., -4.], ])
+        self.problem = QUBO(q)
+        solution = self.solver.solve(self.problem, timeout=100000)
+        cost = solution @ q @ solution
+        reference_solution = np.zeros(15)
+        np.put(reference_solution, [1, 3, 8, 10, 14], 1)
+        expected_cost = reference_solution @ q @ reference_solution
+        self.assertEqual(cost, expected_cost)
+
     def test_solver_creates_optimization_solver_process(self):
         solver_process = self.solver._create_solver_process(self.problem)
         class_name = type(solver_process).__name__

@@ -132,14 +132,14 @@ class ReadGatePyModel(PyLoihiProcessModel):
         self.do_readout.send(data)
         self.solved[:] = data[0]
         if data[0]:
-            print(self.solved)
+            print("Found a solution with cost:", self.solved)
             self.min_cost = data[0]
 
     def run_post_mgmt(self):
         if self.min_cost:
-            print("Cost", self.min_cost, end = "\r")
             if self.target_cost:
                 if self.min_cost <= self.target_cost:
+                    print("Best cost found:", self.min_cost)
                     self._req_pause = True
 
 

@@ -295,7 +295,7 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
     def iterate_dynamics(self, added_input: np.ndarray, state: np.ndarray):
         integration_decay = 1
         state_decay = 0
-        noise = self.noise_amplitude * np.random.randint(0, 1000,
+        noise = self.noise_amplitude * np.random.randint(0, 2*self.increment,
                                                          self.integration.shape)
         self.integration[:] = self.integration * (1 - integration_decay)
         self.integration[:] += added_input.astype(int)

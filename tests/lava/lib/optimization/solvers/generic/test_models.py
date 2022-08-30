@@ -135,7 +135,7 @@ class TestStochasticIntegrateAndFire(unittest.TestCase):
 
     def test_noisy_state_progression(self):
         np.random.seed(1)
-        expected = np.cumsum(np.random.randint(0, 1000, (self.steps,)))
+        expected = np.cumsum(np.random.randint(0, 200, (self.steps,)))
         expected += np.arange(100, (self.steps + 1) * 100, 100)
 
         self.kwargs.update(
@@ -147,34 +147,8 @@ class TestStochasticIntegrateAndFire(unittest.TestCase):
         self.assertTrue((state.T == expected).all())
 
     def test_noisy_firing(self):
-        expected = np.asarray(
-            [
-                [
-                    0.0,
-                    0.0,
-                    1.0,
-                    0.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    0.0,
-                    0.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    0.0,
-                    1.0,
-                    0.0,
-                    1.0,
-                    0.0,
-                    1.0,
-                ]
-            ]
-        )
+        expected = np.array([[0., 0., 1., 0., 0., 1., 0., 1., 0., 0., 1., 0.,
+                              0., 1., 0., 0., 1., 0., 1., 0., 0., 1.]])
         self.kwargs.update(dict(noise_amplitude=1, name="Process_2"))
         np.random.seed(1)
         self.data = set_up(self, var="messages", **self.kwargs)

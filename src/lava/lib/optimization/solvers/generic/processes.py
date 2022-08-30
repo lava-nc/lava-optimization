@@ -127,7 +127,7 @@ class DiscreteVariablesProcess(AbstractProcess):
                  name: ty.Optional[str] = None,
                  log_config: ty.Optional[LogConfig] = None) -> None:
         super().__init__(shape=shape,
-                         cost_contributions=cost_diagonal,
+                         cost_diagonal=cost_diagonal,
                          name=name, log_config=log_config)
         self.num_variables = shape[0]
         self.a_in = InPort(shape=shape)

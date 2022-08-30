@@ -35,21 +35,22 @@ class SolverModelBuilder:
         self.constructor = None
         self.solver_process = solver_process
 
-    def create_constructor(self):
+    def create_constructor(self, target_cost):
         def constructor(self, proc):
             variables = VariablesProcesses()
             if hasattr(proc, "discrete_variables"):
                 variables.discrete = DiscreteVariablesProcess(
-                    shape=proc.discrete_variables.shape
-                )
+                    shape=proc.discrete_variables.shape,
+                    cost_diagonal=proc.cost_diagonal)
             if hasattr(proc, "continuous_variables"):
                 variables.continuous = ContinuousVariablesProcess(
                     shape=proc.continuous_variables.shape
                 )
 
             macrostate_reader = MacroStateReader(
-                ReadGate(),
-                SolutionReadout(shape=proc.variable_assignment.shape),
+                ReadGate(target_cost=target_cost),
+                SolutionReadout(shape=proc.variable_assignment.shape,
+                                target_cost=target_cost),
             )
             if proc.problem.constraints:
                 macrostate_reader.sat_convergence_check = SatConvergenceChecker(
@@ -68,7 +69,7 @@ class SolverModelBuilder:
                     shape=proc.variable_assignment.shape
                 )
                 variables.local_cost.connect(macrostate_reader.cost_in)
-                proc.vars.optimality.alias(macrostate_reader.cost)
+                proc.vars.optimality.alias(macrostate_reader.min_cost)
 
             # Variable aliasing
             proc.vars.variable_assignment.alias(macrostate_reader.solution)
@@ -78,11 +79,12 @@ class SolverModelBuilder:
             )
             # macrostate_reader.cost_convergence_check.s_out.connect(
             #     variables.discrete.)
-            macrostate_reader.read_gate.out_port.connect(
-                macrostate_reader.solution_readout.in_port
+            macrostate_reader.read_gate_do_readout.connect(
+                macrostate_reader.solution_readout.read_solution
             )
             macrostate_reader.ref_port.connect_var(
                 variables.variables_assignment
+
             )
             cost_minimizer.gradient_out.connect(variables.gradient_in)
             variables.state_out.connect(cost_minimizer.state_in)
@@ -114,43 +116,61 @@ class SolverModelBuilder:
 @requires(CPU)
 class ReadGatePyModel(PyLoihiProcessModel):
     solved: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
-    in_port: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
-    out_port: PyOutPort = LavaPyType(
+    new_solution: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
+                                        precision=32)
+    do_readout: PyOutPort = LavaPyType(
         PyOutPort.VEC_DENSE, np.int32, precision=32
     )
+    target_cost: int = LavaPyType(int, np.int32, 32)
+    min_cost: int = None
+
+    def post_guard(self):
+        return True
 
     def run_spk(self):
-        data = self.in_port.recv()
-        self.out_port.send(data)
+        data = self.new_solution.recv()
+        self.do_readout.send(data)
         self.solved[:] = data[0]
-        if self.solved[0]:
-            print("Cost", data)
+        if data[0]:
+            print(self.solved)
+            self.min_cost = data[0]
+
+    def run_post_mgmt(self):
+        if self.min_cost:
+            print("Cost", self.min_cost, end = "\r")
+            if self.target_cost:
+                if self.min_cost <= self.target_cost:
+                    self._req_pause = True
 
 
 @implements(SolutionReadout, protocol=LoihiProtocol)
 @requires(CPU)
 class SolutionReadoutPyModel(PyLoihiProcessModel):
     solution: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
-    in_port: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
-    ref_port: PyRefPort = LavaPyType(
-        PyRefPort.VEC_DENSE, np.int32, precision=32
-    )
-    solved = False
+    read_solution: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
+                                         precision=32)
+    ref_port: PyRefPort = LavaPyType(PyRefPort.VEC_DENSE, np.int32,
+                                     precision=32)
+    target_cost: int = LavaPyType(int, np.int32, 32)
+    min_cost: int = None
 
     def post_guard(self):
         return True
 
     def run_spk(self):
-        data = self.in_port.recv()
+        self.min_cost = None
+        data = self.read_solution.recv()
         if data[0]:
-            self.solved = True
+            self.min_cost = data[0]
 
     def run_post_mgmt(self):
-        if self.solved:
-            print("Reading solution")
+        if self.min_cost:
             solution = self.ref_port.read()
             self.solution[:] = solution
-            self._req_pause = True
+            print(f"Read solution: {self.solution}")
+            # if self.target_cost:
+            #     if self.min_cost <= self.target_cost:
+            #         self._req_pause = True
 
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
@@ -161,6 +181,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         # The input shape is a 2D vector (shape of the weight matrix).
         wta_weight = -2
         shape = proc.proc_params.get("shape", (1,))
+        diagonal = proc.proc_params.get("cost_diagonal")
         weights = proc.proc_params.get(
             "weights",
             wta_weight
@@ -169,13 +190,11 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         noise_amplitude = proc.proc_params.get("noise_amplitude", 1)
         steps_to_fire = proc.proc_params.get("steps_to_fire", 10)
         importances = proc.proc_params.get("importances", 10)
-        self.s_bit = StochasticIntegrateAndFire(
-            shape=shape,
-            increment=importances,
-            noise_amplitude=noise_amplitude,
-            steps_to_fire=steps_to_fire,
-        )
-
+        self.s_bit = StochasticIntegrateAndFire(shape=shape,
+                                                increment=importances,
+                                                noise_amplitude=noise_amplitude,
+                                                steps_to_fire=steps_to_fire,
+                                                cost_diagonal=diagonal)
         if weights.shape != (0, 0):
             self.dense = Dense(weights=weights)
             self.s_bit.out_ports.messages.connect(self.dense.in_ports.s_in)
@@ -189,7 +208,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         self.s_bit.out_ports.local_cost.connect(
             proc.out_ports.local_cost
         )
-        proc.vars.variable_assignment.alias(self.s_bit.assignment)
+        proc.vars.variable_assignment.alias(self.s_bit.prev_assignment)
 
 
 @implements(proc=CostConvergenceChecker, protocol=LoihiProtocol)
@@ -221,14 +240,15 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
 class CostIntegratorModel(PyLoihiProcessModel):
     cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
     update_buffer: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
-
     min_cost: np.ndarray = LavaPyType(np.ndarray, int, 32)
 
     def run_spk(self):
         cost = self.cost_in.recv()
         if cost < self.min_cost:
             self.min_cost[:] = cost
-        self.update_buffer.send(cost)
+            self.update_buffer.send(cost)
+        else:
+            self.update_buffer.send(np.asarray([0]))
 
 
 @implements(proc=StochasticIntegrateAndFire, protocol=LoihiProtocol)
@@ -248,52 +268,48 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
     min_integration: np.ndarray = LavaPyType(np.ndarray, int, 32)
     steps_to_fire: np.ndarray = LavaPyType(np.ndarray, int, 32)
     refractory_period: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    prev_firing: np.ndarray = LavaPyType(np.ndarray, bool)
+    firing: np.ndarray = LavaPyType(np.ndarray, bool)
+    prev_assignment: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    cost_diagonal: np.ndarray = LavaPyType(np.ndarray, int, 32)
     assignment: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    satisfiability_var: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    assignemnt_buffer: np.ndarray = LavaPyType(np.ndarray, int, 32)
     min_cost: np.ndarray = LavaPyType(np.ndarray, int, 32)
 
     def reset_state(self, firing_vector: np.ndarray):
         self.state[firing_vector] = 0
 
+    def _update_buffers(self):
+        self.prev_assignment[:] = self.assignment[:]
+        self.assignment[:] = self.firing[:]
+
     def run_spk(self):
-        cost = self.replace_assignment.recv()
-        if cost[0] > self.min_cost[0]:
-            self.assignemnt_buffer[:] = self.assignment
-            self.min_cost[:] = cost
+        self._update_buffers()
         added_input = self.added_input.recv()
-        self.state = self.iterative_dynamics(added_input, self.state)
-        firing = self.do_fire(self.state)
-        self.satisfiability_var[:] = self.is_satisfied(
-            self.prev_firing, self.integration
-        )
+        self.state = self.iterate_dynamics(added_input, self.state)
+        local_cost = self.firing * (added_input + self.cost_diagonal
+                                    * self.firing)
+        self.firing[:] = self.do_fire(self.state)
+        self.reset_state(firing_vector=self.firing[:])
+        self.messages.send(self.firing[:])
+        self.local_cost.send(-local_cost)
 
-        self.reset_state(firing_vector=firing)
-        self.messages.send(firing)
-        # self.satisfiability.send(added_input)
-        self.local_cost.send(self.satisfiability_var[:])
-        self.prev_firing[:] = firing
-        self.assignment[:] = self.satisfiability_var
-
-    def iterative_dynamics(self, added_input: np.ndarray, state: np.ndarray):
+    def iterate_dynamics(self, added_input: np.ndarray, state: np.ndarray):
         integration_decay = 1
         state_decay = 0
-        noise = self.noise_amplitude * np.random.randint(
-            0, 1000, self.integration.shape
-        )
+        noise = self.noise_amplitude * np.random.randint(0, 1000,
+                                                         self.integration.shape)
         self.integration[:] = self.integration * (1 - integration_decay)
         self.integration[:] += added_input.astype(int)
         state[:] = (
-            state * (1 - state_decay)
-            + self.integration
-            + self.increment
-            + noise
+                state * (1 - state_decay)
+                + self.integration
+                + self.increment
+                + noise
         )
         return state
 
     def do_fire(self, state):
-        return state > self.increment * self.steps_to_fire
+        threshold = self.increment * self.steps_to_fire
+        return state > threshold
 
     def is_satisfied(self, prev_assignment, integration):
         return np.logical_and(prev_assignment, np.logical_not(integration))

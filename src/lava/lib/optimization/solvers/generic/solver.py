@@ -45,6 +45,7 @@ class OptimizationSolver:
         self,
         problem: OptimizationProblem,
         timeout: int,
+        target_cost: int = None,
         profiling: bool = False,
     ):
         """Create solver from problem specs and run until solution or timeout.
@@ -64,7 +65,7 @@ class OptimizationSolver:
 
         """
         solver_process = self._create_solver_process(problem)
-        solver_model = self._create_solver_model(solver_process)
+        solver_model = self._create_solver_model(solver_process, target_cost)
         if profiling:
             profiler = LavaProfiler()
             solver_process = profiler.profile(solver_process)
@@ -88,9 +89,9 @@ class OptimizationSolver:
         self._solver_process = self._process_builder.solver_process
         return self._solver_process
 
-    def _create_solver_model(self, solver_process):
+    def _create_solver_model(self, solver_process, target_cost):
         model_builder = SolverModelBuilder(solver_process)
-        model_builder.create_constructor()
+        model_builder.create_constructor(target_cost)
         self._solver_model = model_builder.solver_model
         return self._solver_model
 

@@ -20,10 +20,10 @@ class TestOptimizationSolver(unittest.TestCase):
     def setUp(self) -> None:
         self.solver = OptimizationSolver()
         self.problem = QUBO(
-            np.asarray(
-                [[-5, 2, 4, 0], [2, -3, 1, 0], [4, 1, -8, 5], [0, 0, 5, -6]]
-            )
-        )
+            np.asarray([[-5, 2, 4, 0],
+                        [2, -3, 1, 0],
+                        [4, 1, -8, 5],
+                        [0, 0, 5, -6]]))
         self.solution = np.asarray([1, 0, 0, 1]).astype(int)
 
     def test_create_obj(self):
@@ -35,7 +35,7 @@ class TestOptimizationSolver(unittest.TestCase):
 
     def test_solve_method(self):
         np.random.seed(2)
-        solution = self.solver.solve(self.problem, timeout=20)
+        solution = self.solver.solve(self.problem, timeout=200, target_cost=-11)
         print(solution)
         self.assertTrue((solution == self.solution).all())
 
@@ -340,7 +340,7 @@ class TestOptimizationSolver(unittest.TestCase):
             mr.read_gate,
         )
         self.assertIs(
-            mr.read_gate.out_port.out_connections[0].process,
+            mr.read_gate.do_readout.out_connections[0].process,
             mr.solution_readout,
         )
         self.assertIs(
@@ -372,7 +372,7 @@ class TestOptimizationSolver(unittest.TestCase):
         q_no_diag = np.copy(self.problem.cost.get_coefficient(2))
         np.fill_diagonal(q_no_diag, 0)
         condition = (
-            pm.cost_minimizer.coefficients_2nd_order.weights.init == -q_no_diag
+                pm.cost_minimizer.coefficients_2nd_order.weights.init == -q_no_diag
         ).all()
         self.assertTrue(condition)
 
@@ -382,8 +382,8 @@ class TestOptimizationSolver(unittest.TestCase):
             self.solver._solver_process
         )
         condition = (
-            pm.variables.discrete.importances
-            == -self.problem.cost.get_coefficient(2).diagonal()
+                pm.variables.discrete.importances
+                == -self.problem.cost.get_coefficient(2).diagonal()
         ).all()
         self.assertTrue(condition)
 
@@ -403,8 +403,9 @@ class TestOptimizationSolver(unittest.TestCase):
 
     def test_solver_stops_when_solution_found(self):
         t_start = time()
-        self.solver.solve(self.problem, timeout=-1)
+        solution = self.solver.solve(self.problem, timeout=-1, target_cost=-11)
         t_end = time()
+        print(solution)
         self.assertTrue(t_start - t_end < 1)
 
 

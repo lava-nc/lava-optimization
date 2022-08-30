@@ -81,11 +81,13 @@ class SolverProcessBuilder:
                         # problem.variables.domain_sizes[0]
                     )
                 )
+            self.cost_diagonal = None
             if hasattr(problem, "cost"):
                 self.cost_coefficients = _vars_from_coefficients(
                     problem.cost.coefficients
                 )
-
+                self.cost_diagonal = -problem.cost.coefficients[
+                    2].diagonal()
             self.variable_assignment = Var(
                 shape=(problem.variables.num_variables,)
             )
@@ -118,14 +120,15 @@ class DiscreteVariablesProcess(AbstractProcess):
     """Process implementing discrete variables as a set of winner-takes-all
     populations."""
 
-    def __init__(
-        self,
-        shape,
-        importances: ty.Optional[ty.Union[int, list, np.ndarray]] = None,
-        name: ty.Optional[str] = None,
-        log_config: ty.Optional[LogConfig] = None,
-    ) -> None:
-        super().__init__(shape=shape, name=name, log_config=log_config)
+    def __init__(self, shape, importances: ty.Optional[
+        ty.Union[int, list, np.ndarray]] = None,
+                 cost_diagonal: ty.Optional[ty.Union[int, list,
+                                                     np.ndarray]]=None,
+                 name: ty.Optional[str] = None,
+                 log_config: ty.Optional[LogConfig] = None) -> None:
+        super().__init__(shape=shape,
+                         cost_contributions=cost_diagonal,
+                         name=name, log_config=log_config)
         self.num_variables = shape[0]
         self.a_in = InPort(shape=shape)
         # self.update_buffer = InPort(shape=shape)
@@ -144,21 +147,18 @@ class DiscreteVariablesProcess(AbstractProcess):
 
 
 class StochasticIntegrateAndFire(AbstractProcess):
-    def __init__(
-        self,
-        *,
-        shape: ty.Tuple[int, ...] = (1,),
-        initial_value: ty.Union[int, list, np.ndarray] = 0,
-        increment: ty.Union[int, list, np.ndarray] = 100,
-        noise_amplitude: ty.Union[int, list, np.ndarray] = 0,
-        input_duration: ty.Union[int, list, np.ndarray] = 6,
-        min_state: ty.Union[int, list, np.ndarray] = 1000,
-        min_integration: ty.Union[int, list, np.ndarray] = -1000,
-        steps_to_fire: ty.Union[int, list, np.ndarray] = 10,
-        refractory_period: ty.Union[int, list, np.ndarray] = 1,
-        name: ty.Optional[str] = None,
-        log_config: ty.Optional[LogConfig] = None
-    ) -> None:
+    def __init__(self, *, shape: ty.Tuple[int, ...] = (1,),
+                 initial_value: ty.Union[int, list, np.ndarray] = 0,
+                 increment: ty.Union[int, list, np.ndarray] = 100,
+                 noise_amplitude: ty.Union[int, list, np.ndarray] = 0,
+                 input_duration: ty.Union[int, list, np.ndarray] = 6,
+                 min_state: ty.Union[int, list, np.ndarray] = 1000,
+                 min_integration: ty.Union[int, list, np.ndarray] = -1000,
+                 steps_to_fire: ty.Union[int, list, np.ndarray] = 10,
+                 refractory_period: ty.Union[int, list, np.ndarray] = 1,
+                 cost_diagonal: ty.Union[int, list, np.ndarray] = 0,
+                 name: ty.Optional[str] = None,
+                 log_config: ty.Optional[LogConfig] = None) -> None:
         super().__init__(
             shape=shape,
             initial_state=initial_value,
@@ -185,10 +185,10 @@ class StochasticIntegrateAndFire(AbstractProcess):
         self.min_integration = Var(shape=shape, init=min_integration)
         self.steps_to_fire = Var(shape=shape, init=steps_to_fire)
         self.refractory_period = Var(shape=shape, init=refractory_period)
-        self.prev_firing = Var(shape=shape, init=False)
+        self.firing = Var(shape=shape, init=False)
+        self.prev_assignment = Var(shape=shape, init=False)
+        self.cost_diagonal = Var(shape=shape, init=cost_diagonal)
         self.assignment = Var(shape=shape, init=False)
-        self.satisfiability_var = Var(shape=shape, init=False)
-        self.assignemnt_buffer = Var(shape=shape, init=False)
         self.min_cost = Var(shape=shape, init=False)
 
 
@@ -196,14 +196,17 @@ class ReadGate(AbstractProcess):
     """Process that triggers solution readout when problem is solved."""
 
     def __init__(
-        self,
-        name: ty.Optional[str] = None,
-        log_config: ty.Optional[LogConfig] = None,
+            self,
+            target_cost=None,
+            name: ty.Optional[str] = None,
+            log_config: ty.Optional[LogConfig] = None,
     ) -> None:
-        super().__init__(name=name, log_config=log_config)
+        super().__init__(target_cost=target_cost, name=name, \
+                                                         log_config=log_config)
         self.solved = Var(shape=(1,))
-        self.in_port = InPort(shape=(1,))
-        self.out_port = OutPort(shape=(1,))
+        self.target_cost = Var(shape=(1,), init=target_cost)
+        self.new_solution = InPort(shape=(1,))
+        self.do_readout = OutPort(shape=(1,))
 
 
 class SolutionReadout(AbstractProcess):
@@ -212,13 +215,16 @@ class SolutionReadout(AbstractProcess):
     def __init__(
         self,
         shape,
+        target_cost=None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
-        super().__init__(shape=shape, name=name, log_config=log_config)
+        super().__init__(shape=shape, target_cost=target_cost, name=name, \
+                                                        log_config=log_config)
         self.solution = Var(shape=shape, init=-1)
-        self.in_port = InPort(shape=(1,))
+        self.read_solution = InPort(shape=(1,))
         self.ref_port = RefPort(shape=shape)
+        self.target_cost = Var(shape=(1,), init=target_cost)
 
 
 class CostConvergenceChecker(AbstractProcess):

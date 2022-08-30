@@ -66,9 +66,9 @@ class VariablesProcesses:
     def importances(self, value):
         self.discrete.importances = value
 
-    # @property
-    # def update_buffer(self):
-    #     return self.discrete.update_buffer
+    @property
+    def replace_assignment(self):
+        return self.discrete.replace_assignment
 
     @property
     def local_cost(self):
@@ -107,7 +107,7 @@ class MacroStateReader:
         return self.solution_readout.ref_port
 
     @property
-    def cost(self):
+    def min_cost(self):
         return self.cost_convergence_check.min_cost
 
     @property
@@ -120,4 +120,8 @@ class MacroStateReader:
 
     @property
     def read_gate_in_port(self):
-        return self.read_gate.in_port
+        return self.read_gate.new_solution
+
+    @property
+    def read_gate_do_readout(self):
+        return self.read_gate.do_readout

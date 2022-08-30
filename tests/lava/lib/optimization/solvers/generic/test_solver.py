@@ -39,9 +39,7 @@ class TestOptimizationSolver(unittest.TestCase):
         print(solution)
         self.assertTrue((solution == self.solution).all())
 
-    @unittest.skip("WIP")
     def test_solve_map_coloring(self):
-        # np.random.seed(2)/
         q = np.asarray(
             [
                 [
@@ -301,12 +299,14 @@ class TestOptimizationSolver(unittest.TestCase):
                 ],
             ]
         )
-        self.problem = QUBO(q)
-        solution = self.solver.solve(self.problem, timeout=100000)
-        cost = solution @ q @ solution
         reference_solution = np.zeros(15)
         np.put(reference_solution, [1, 3, 8, 10, 14], 1)
         expected_cost = reference_solution @ q @ reference_solution
+        self.problem = QUBO(q)
+        np.random.seed(2)
+        solution = self.solver.solve(self.problem, timeout=-1,
+                                     target_cost=expected_cost)
+        cost = solution @ q @ solution
         self.assertEqual(cost, expected_cost)
 
     def test_solver_creates_optimization_solver_process(self):

@@ -83,7 +83,6 @@ class TestProcesses(unittest.TestCase):
 
         for idx, perm in enumerate(all_perms):
             with self.subTest(line=f"BO config perm {idx}: {perm}"):
-                enable_plotting = bool(random.randint(0, 1))
                 num_ips: int = random.randint(1, sys.maxsize)
                 num_objectives: int = 1
                 log_dir: str = "."
@@ -94,7 +93,6 @@ class TestProcesses(unittest.TestCase):
                     acq_func_config=perm[0],
                     acq_opt_config=perm[1],
                     search_space=self.valid_ss,
-                    enable_plotting=enable_plotting,
                     est_config=perm[2],
                     ip_gen_config=perm[3],
                     num_ips=num_ips,
@@ -180,12 +178,6 @@ class TestProcesses(unittest.TestCase):
                             self.valid_ss[dim_idx][param_idx]
                         )
 
-                # check internal var containing enable plotting
-                self.assertEqual(opt.vars.enable_plotting.shape, (1,))
-                self.assertEqual(
-                    opt.vars.enable_plotting.get()[0], enable_plotting
-                )
-
                 # check internal var containing log directory
                 self.assertEqual(opt.vars.log_dir.shape, (1,))
                 self.assertEqual(opt.vars.log_dir.get()[0], log_dir)
@@ -204,11 +196,11 @@ class TestProcesses(unittest.TestCase):
                 self.assertEqual(opt.vars.seed.shape, (1,))
                 self.assertEqual(opt.vars.seed.get(), seed)
 
-                # check the internal var containing the frame-log
-                self.assertEqual(opt.vars.frame_log.shape, (1,))
+                # check the internal var containing the results_log
+                self.assertEqual(opt.vars.results_log.shape, (1,))
                 self.assertIsInstance(
-                    opt.vars.frame_log.get()[0],
-                    dict
+                    opt.vars.results_log.get()[0],
+                    np.ndarray
                 )
 
                 # check the internal var containing the number of iterations

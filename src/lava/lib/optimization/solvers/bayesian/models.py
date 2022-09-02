@@ -2,13 +2,9 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 # See: https://spdx.org/licenses/
 
-import cv2
-import matplotlib.pylab as plt
 import numpy as np
-import os
 from scipy.optimize import OptimizeResult
 from skopt import Optimizer, Space
-import skopt.plots as skplots
 from skopt.space import Categorical, Integer, Real
 from typing import Union
 
@@ -38,7 +34,6 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
     acq_func_config = LavaPyType(np.ndarray, np.ndarray)
     acq_opt_config = LavaPyType(np.ndarray, np.ndarray)
     search_space = LavaPyType(np.ndarray, np.ndarray)
-    enable_plotting = LavaPyType(np.ndarray, np.ndarray)
     est_config = LavaPyType(np.ndarray, np.ndarray)
     ip_gen_config = LavaPyType(np.ndarray, np.ndarray)
     log_dir = LavaPyType(np.ndarray, np.ndarray)
@@ -48,7 +43,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
 
     initialized = LavaPyType(bool, bool)
     num_iterations = LavaPyType(int, int)
-    frame_log = LavaPyType(np.ndarray, np.ndarray)
+    results_log = LavaPyType(np.ndarray, np.ndarray)
 
     def run_spk(self) -> None:
         """tick the model forward by one time-step"""
@@ -57,12 +52,10 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
             # receive a result vector from the black-box function
             result_vec: np.ndarray = self.results_in.recv()
 
-            self.opt_result: OptimizeResult = self.process_result_vector(
+            opt_result: OptimizeResult = self.process_result_vector(
                 result_vec
             )
-
-            if self.enable_plotting[0]:
-                self.plot_results(self.opt_result)
+            self.results_log[0].append(opt_result)
         else:
             # initialize the search space from the standard Bayesian
             # optimization search space schema; for more information,
@@ -77,12 +70,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
                 acq_optimizer=self.acq_opt_config[0],
                 random_state=self.seed
             )
-            self.frame_log[0]: dict = {
-                'convergence': [],
-                'evaluations': [],
-                'gaussian_process': [],
-                'objective': []
-            }
+            self.results_log[0]: list[OptimizeResult] = []
             self.initialized: bool = True
             self.num_iterations: int = -1
 
@@ -97,44 +85,9 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
 
     def __del__(self) -> None:
         """finalize the optimization processing upon runtime conclusion"""
-        for _, frame_paths in self.frame_log[0].items():
-            # calculate the maximum height and width of all images
-            max_height, max_width = 0, 0
-            for path in frame_paths:
-                image = cv2.imread(path)
-                height, width = image.shape[:2]
-                max_height = max(max_height, height)
-                max_width = max(max_width, width)
 
-            # resize all images to the maximum size
-            for path in frame_paths:
-                image = cv2.imread(path)
-                current_height, current_width = image.shape[:2]
-
-                vertical_diff: int = max_height - current_height
-                padding_top: int = vertical_diff // 2
-                padding_bottom: int = vertical_diff - padding_top
-
-                horizontal_diff: int = max_width - current_width
-                padding_left: int = horizontal_diff // 2
-                padding_right: int = horizontal_diff - padding_left
-
-                padded_image = cv2.copyMakeBorder(
-                    image,
-                    padding_top,
-                    padding_bottom,
-                    padding_left,
-                    padding_right,
-                    cv2.BORDER_CONSTANT,
-                    value=[255, 255, 255]
-                )
-
-                cv2.imwrite(path, padded_image)
-
-        self.create_videos()
-
-        if hasattr(self, "opt_result"):
-            print(self.opt_result)
+        if hasattr(self, "results_log") and len(self.results_log) > 0:
+            print(self.results_log[-1])
 
     def init_search_space(self) -> list[Space]:
         """initialize the search space from the standard schema
@@ -192,85 +145,6 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
             raise ValueError("search space is empty")
 
         return search_space
-
-    def plot_results(self, results: OptimizeResult, dpi: int = 1000) -> None:
-        """plot results from the latest surrogate model fitting
-
-        Parameters
-        ----------
-        results : OptimizeResult
-            information regarding the surrogate model's adaptation to the
-            latest posterior information
-        dpi : int; default = 1000
-            specify the resolution of the plots
-        """
-        os.makedirs(self.log_dir[0], exist_ok=True)
-
-        if len(results.models) > 0:
-            # plot 1D Gaussian uncertainty for 1D optimization problems
-            if len(self.search_space) == 1 and len(results.models) > 0:
-                save_path: str = os.path.join(
-                    self.log_dir[0],
-                    f"gp_iter{self.num_iterations}.png"
-                )
-                skplots.plot_gaussian_process(results)
-                plt.savefig(save_path, dpi=dpi, bbox_inches='tight')
-                plt.close()
-                self.frame_log[0]['gaussian_process'].append(save_path)
-
-            save_path: str = os.path.join(
-                self.log_dir[0],
-                f"obj_iter{self.num_iterations}.png"
-            )
-            skplots.plot_objective(results)
-            plt.savefig(save_path, dpi=dpi, bbox_inches='tight')
-            plt.close()
-            self.frame_log[0]['objective'].append(save_path)
-
-        save_path: str = os.path.join(
-            self.log_dir[0],
-            f"eval_iter{self.num_iterations}.png"
-        )
-        skplots.plot_evaluations(results)
-        plt.savefig(save_path, dpi=dpi, bbox_inches='tight')
-        plt.close()
-        self.frame_log[0]['evaluations'].append(save_path)
-
-        save_path: str = os.path.join(
-            self.log_dir[0],
-            f"convergence_iter{self.num_iterations}.png"
-        )
-        skplots.plot_convergence(results)
-        plt.savefig(save_path, dpi=dpi, bbox_inches='tight')
-        plt.close()
-        self.frame_log[0]['convergence'].append(save_path)
-
-    def create_videos(self, fps: int = 4) -> None:
-        """compile videos of plot progression throughout modeling process
-
-        Parameters
-        ----------
-        fps : int
-            specify the frame rate of the compiled videos showing plot
-            progression
-        """
-
-        # compile videos presenting the progression of various frames
-        # throughout the optimization process
-        for frame_type, frame_paths in self.frame_log[0].items():
-            if len(frame_paths) > 0:
-                first_frame = cv2.imread(frame_paths[0])
-                height, width = first_frame.shape[:2]
-                path: str = os.path.join(self.log_dir[0], f'{frame_type}.avi')
-
-                fourcc = cv2.VideoWriter_fourcc(*"XVID")
-                writer = cv2.VideoWriter(path, fourcc, fps, (width, height))
-
-                for path in frame_paths:
-                    frame = cv2.imread(path)
-                    writer.write(frame)
-
-                writer.release()
 
     def process_result_vector(self, vec: np.ndarray) -> None:
         """parse vec into params/objectives before informing optimizer

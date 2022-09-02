@@ -5,7 +5,6 @@
 import numpy as np
 import os
 import random
-import shutil
 import unittest
 
 from lava.magma.core.decorator import implements, requires
@@ -175,7 +174,7 @@ class TestModels(unittest.TestCase):
         self.assertEqual(initial_ss.shape, search_space.shape)
         self.assertEqual(optimizer.initialized.get(), False)
         self.assertEqual(optimizer.num_iterations.get(), -1)
-        self.assertEqual(len(optimizer.frame_log.get()[0]), 0)
+        self.assertEqual(len(optimizer.results_log.get()[0]), 1)
 
         # run the initial step which serves to initialize the optimizer and
         # the associated data attributes
@@ -190,29 +189,6 @@ class TestModels(unittest.TestCase):
         self.assertEqual(optimizer.num_iterations.get(), 2)
 
         optimizer.stop()
-
-        del problem
-        del optimizer
-
-        # verify that all of the valid plots and videos have been created
-        valid_files: list[str] = [
-            "convergence.avi", "evaluations.avi",
-            "gaussian_process.avi", "objective.avi"
-        ]
-
-        for i in range(2):
-            valid_files.append(f"convergence_iter{i}.png")
-            valid_files.append(f"eval_iter{i}.png")
-            valid_files.append(f"gp_iter{i}.png")
-            valid_files.append(f"obj_iter{i}.png")
-
-        found_files: list[str] = os.listdir(log_dir)
-
-        self.assertEqual(len(found_files), len(valid_files))
-        for f in found_files:
-            self.assertIn(f, valid_files)
-
-        shutil.rmtree(log_dir)
 
 
 if __name__ == "__main__":

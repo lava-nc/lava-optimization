@@ -16,9 +16,8 @@ class BayesianOptimizer(AbstractProcess):
     """
 
     def __init__(self, acq_func_config: dict, acq_opt_config: dict,
-                 search_space: np.ndarray, enable_plotting: bool,
-                 est_config: str, ip_gen_config: dict, num_ips: int,
-                 num_objectives: int, log_dir: str, seed: int,
+                 search_space: np.ndarray, est_config: str, ip_gen_config: dict,
+                 num_ips: int, num_objectives: int, log_dir: str, seed: int,
                  **kwargs) -> None:
         """initialize the BayesianOptimizer process
 
@@ -51,9 +50,6 @@ class BayesianOptimizer(AbstractProcess):
                 [-1000, 256, np.inf],
                 [0, <num_categories>, 1],
             ])
-        enable_plotting : bool
-            a boolean specifying whether or not to generate plots of the
-            regressors current state at the end of every iteration
         est_config : dict
             a series of key-value pairs specifying the runtime configuration
             of the surrogate function estimator
@@ -115,12 +111,11 @@ class BayesianOptimizer(AbstractProcess):
         )
 
         self.search_space = Var(search_space.shape, init=search_space)
-        self.enable_plotting = Var((1,), init=np.array([enable_plotting]))
         self.log_dir = Var((1,), init=np.array([log_dir]))
         self.num_ips = Var((1,), init=num_ips)
         self.num_objectives = Var((1,), init=num_objectives)
         self.seed = Var((1,), init=seed)
 
-        self.frame_log = Var((1,), init=np.array([{}]))
+        self.results_log = Var((1,), init=np.array([[None]]))
         self.num_iterations = Var((1,), init=-1)
         self.initialized = Var((1,), init=False)

@@ -107,7 +107,6 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
             the entirety of the problem search space
         """
         search_space: list[Union[Real, Integer]] = []
-        valid_param_types: list[str] = ["continuous", "integer", "categorical"]
 
         for i in range(self.search_space.shape[0]):
             p_type: str = self.search_space[i, 0]
@@ -116,29 +115,20 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
             choices: list = self.search_space[i, 3]
             name: str = self.search_space[i, 4]
 
-            if p_type == valid_param_types[0]:
-                dimension = Real(
-                    low=minimum,
-                    high=maximum,
-                    name=name
-                )
-            elif p_type == valid_param_types[1]:
-                dimension = Integer(
-                    low=minimum,
-                    high=maximum,
-                    name=name
-                )
-            elif p_type == valid_param_types[2]:
-                dimension = Categorical(
-                    categories=choices,
-                    name=name
-                )
-            else:
+            factory_function: dict = {
+                "continuous": (lambda: Real(minimum, maximum, name=name)),
+                "integer": (lambda: Integer(minimum, maximum, name=name)),
+                "categorical": (lambda: Categorical(choices, name=name))
+            }
+
+            if p_type not in factory_function.keys():
                 raise ValueError(
                     f"parameter type [{p_type}] is not in valid "
-                    + f"parameter types: {valid_param_types}"
+                    + f"parameter types: {factory_function.keys()}"
                 )
 
+            dimension_lambda = factory_function[p_type]
+            dimension = dimension_lambda()
             search_space.append(dimension)
 
         if not len(search_space) > 0:

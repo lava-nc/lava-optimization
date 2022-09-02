@@ -3,8 +3,6 @@
 # See: https://spdx.org/licenses/
 
 import numpy as np
-import os
-
 from schema import And, Schema, SchemaError
 
 from lava.magma.core.process.process import AbstractProcess

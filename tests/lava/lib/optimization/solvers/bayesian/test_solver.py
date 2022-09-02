@@ -208,7 +208,6 @@ class TeatSolvers(unittest.TestCase):
                 num_objectives=1
             )
 
-
         # test initialization with invalid initial point generator config
         with self.assertRaises(SchemaError):
             BayesianSolver(

@@ -85,7 +85,6 @@ class TestProcesses(unittest.TestCase):
             with self.subTest(line=f"BO config perm {idx}: {perm}"):
                 num_ips: int = random.randint(1, sys.maxsize)
                 num_objectives: int = 1
-                log_dir: str = "."
                 seed: int = random.randint(-sys.maxsize, sys.maxsize)
 
                 # initialize the optimizer with the given config permutation
@@ -97,7 +96,6 @@ class TestProcesses(unittest.TestCase):
                     ip_gen_config=perm[3],
                     num_ips=num_ips,
                     num_objectives=num_objectives,
-                    log_dir=log_dir,
                     seed=seed
                 )
 
@@ -177,10 +175,6 @@ class TestProcesses(unittest.TestCase):
                             opt.vars.search_space.get()[dim_idx][param_idx],
                             self.valid_ss[dim_idx][param_idx]
                         )
-
-                # check internal var containing log directory
-                self.assertEqual(opt.vars.log_dir.shape, (1,))
-                self.assertEqual(opt.vars.log_dir.get()[0], log_dir)
 
                 # check internal var containing the number of initial points
                 self.assertEqual(opt.vars.num_ips.shape, (1,))

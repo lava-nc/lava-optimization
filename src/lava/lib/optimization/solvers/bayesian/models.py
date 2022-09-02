@@ -36,7 +36,6 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
     search_space = LavaPyType(np.ndarray, np.ndarray)
     est_config = LavaPyType(np.ndarray, np.ndarray)
     ip_gen_config = LavaPyType(np.ndarray, np.ndarray)
-    log_dir = LavaPyType(np.ndarray, np.ndarray)
     num_ips = LavaPyType(int, int)
     num_objectives = LavaPyType(int, int)
     seed = LavaPyType(int, int)

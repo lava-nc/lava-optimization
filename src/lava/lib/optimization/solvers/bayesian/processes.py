@@ -17,7 +17,7 @@ class BayesianOptimizer(AbstractProcess):
 
     def __init__(self, acq_func_config: dict, acq_opt_config: dict,
                  search_space: np.ndarray, est_config: str, ip_gen_config: dict,
-                 num_ips: int, num_objectives: int, log_dir: str, seed: int,
+                 num_ips: int, num_objectives: int, seed: int,
                  **kwargs) -> None:
         """initialize the BayesianOptimizer process
 
@@ -63,9 +63,6 @@ class BayesianOptimizer(AbstractProcess):
         num_objectives : int
             an integer specifying the number of qualitative attributes used
             to measure the black-box function
-        log_dir : str
-            a string specifying the directory where all runtime logs shall
-            be saved
         seed : int
             an integer specifying the random state of all random number
             generators
@@ -111,7 +108,6 @@ class BayesianOptimizer(AbstractProcess):
         )
 
         self.search_space = Var(search_space.shape, init=search_space)
-        self.log_dir = Var((1,), init=np.array([log_dir]))
         self.num_ips = Var((1,), init=num_ips)
         self.num_objectives = Var((1,), init=num_objectives)
         self.seed = Var((1,), init=seed)

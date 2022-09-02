@@ -3,7 +3,6 @@
 # See: https://spdx.org/licenses/
 
 import numpy as np
-import os
 import random
 import unittest
 
@@ -148,18 +147,14 @@ class TestModels(unittest.TestCase):
             ["categorical", np.nan, np.nan, [x / 4 for x in range(10)], "x1"],
         ], dtype=object)
 
-        log_dir = os.path.join(".", "tests", "temp")
-
         problem = SingleInputNonLinearFunction()
 
         optimizer = BayesianOptimizer(
             acq_func_config=self.valid_acq_func_configs[0],
             acq_opt_config=self.valid_acq_opt_configs[0],
-            enable_plotting=True,
             search_space=search_space,
             est_config=self.valid_est_configs[0],
             ip_gen_config=self.valid_ip_configs[0],
-            log_dir=log_dir,
             num_ips=1,
             num_objectives=1,
             seed=0

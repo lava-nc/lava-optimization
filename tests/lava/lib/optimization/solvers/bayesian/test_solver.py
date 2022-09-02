@@ -77,9 +77,7 @@ class TeatSolvers(unittest.TestCase):
             opt = BayesianSolver(
                 acq_func_config=config,
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=10,
                 seed=10,
                 est_config=self.valid_est_configs[0],
@@ -96,9 +94,7 @@ class TeatSolvers(unittest.TestCase):
             opt = BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config=config,
-                enable_plotting=True,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=10,
                 seed=10,
                 est_config=self.valid_est_configs[0],
@@ -115,15 +111,12 @@ class TeatSolvers(unittest.TestCase):
             opt = BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=flag,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=10,
                 seed=10,
                 est_config=self.valid_est_configs[0],
                 num_objectives=1
             )
-            self.assertEqual(opt.enable_plotting, flag)
             del opt
 
         # test all valid initial point generator configs
@@ -131,9 +124,7 @@ class TeatSolvers(unittest.TestCase):
             opt = BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
                 ip_gen_config=config,
-                log_dir=".",
                 num_ips=10,
                 seed=10,
                 est_config=self.valid_est_configs[0],
@@ -147,15 +138,12 @@ class TeatSolvers(unittest.TestCase):
         opt = BayesianSolver(
             acq_func_config=self.valid_acq_func_configs[0],
             acq_opt_config=self.valid_acq_opt_configs[0],
-            enable_plotting=True,
             ip_gen_config=config,
-            log_dir=".",
             num_ips=10,
             seed=10,
             est_config=self.valid_est_configs[0],
             num_objectives=1
         )
-        self.assertEqual(opt.log_dir, ".")
         self.assertEqual(opt.num_initial_points, 10)
         self.assertEqual(opt.seed, 10)
         self.assertEqual(opt.num_objectives, 1)
@@ -166,9 +154,7 @@ class TeatSolvers(unittest.TestCase):
             opt = BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=10,
                 seed=10,
                 est_config=config,
@@ -185,9 +171,7 @@ class TeatSolvers(unittest.TestCase):
             BayesianSolver(
                 acq_func_config={"type": "neuro"},
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=10,
                 seed=10,
                 est_config=self.valid_est_configs[0],
@@ -196,9 +180,7 @@ class TeatSolvers(unittest.TestCase):
             BayesianSolver(
                 acq_func_config=int,
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=10,
                 seed=10,
                 est_config=self.valid_est_configs[0],
@@ -210,9 +192,7 @@ class TeatSolvers(unittest.TestCase):
             BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config={"type": "neuro"},
-                enable_plotting=True,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=10,
                 seed=10,
                 est_config=self.valid_est_configs[0],
@@ -221,37 +201,20 @@ class TeatSolvers(unittest.TestCase):
             BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config=float,
-                enable_plotting=True,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=10,
                 seed=10,
                 est_config=self.valid_est_configs[0],
                 num_objectives=1
             )
 
-        # test initialization with invalid enable plotting flag
-        with self.assertRaises(SchemaError):
-            BayesianSolver(
-                acq_func_config=self.valid_acq_func_configs[0],
-                acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=dict,
-                ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
-                num_ips=10,
-                seed=10,
-                est_config=self.valid_est_configs[0],
-                num_objectives=1
-            )
 
         # test initialization with invalid initial point generator config
         with self.assertRaises(SchemaError):
             BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
                 ip_gen_config={"type": 0},
-                log_dir=".",
                 num_ips=10,
                 seed=10,
                 est_config=self.valid_est_configs[0],
@@ -260,23 +223,7 @@ class TeatSolvers(unittest.TestCase):
             BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
                 ip_gen_config=str,
-                log_dir=".",
-                num_ips=10,
-                seed=10,
-                est_config=self.valid_est_configs[0],
-                num_objectives=1
-            )
-
-        # test initialization with invalid log directory
-        with self.assertRaises(SchemaError):
-            BayesianSolver(
-                acq_func_config=self.valid_acq_func_configs[0],
-                acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
-                ip_gen_config=self.valid_ip_configs[0],
-                log_dir="./dhskfhksfhksf/",
                 num_ips=10,
                 seed=10,
                 est_config=self.valid_est_configs[0],
@@ -288,9 +235,7 @@ class TeatSolvers(unittest.TestCase):
             BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=0,
                 seed=10,
                 est_config=self.valid_est_configs[0],
@@ -299,9 +244,7 @@ class TeatSolvers(unittest.TestCase):
             BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=dict,
                 seed=10,
                 est_config=self.valid_est_configs[0],
@@ -313,9 +256,7 @@ class TeatSolvers(unittest.TestCase):
             BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=10,
                 seed=10,
                 est_config=self.valid_est_configs[0],
@@ -327,9 +268,7 @@ class TeatSolvers(unittest.TestCase):
             BayesianSolver(
                 acq_func_config=self.valid_acq_func_configs[0],
                 acq_opt_config=self.valid_acq_opt_configs[0],
-                enable_plotting=True,
                 ip_gen_config=self.valid_ip_configs[0],
-                log_dir=".",
                 num_ips=10,
                 seed=dict,
                 est_config=self.valid_est_configs[0],
@@ -348,9 +287,7 @@ class TeatSolvers(unittest.TestCase):
         solver = BayesianSolver(
             acq_func_config={"type": "gp_hedge"},
             acq_opt_config={"type": "auto"},
-            enable_plotting=False,
             ip_gen_config={"type": "random"},
-            log_dir=".",
             num_ips=1,
             seed=1
         )
@@ -374,9 +311,7 @@ class TeatSolvers(unittest.TestCase):
         solver = BayesianSolver(
             acq_func_config={"type": "gp_hedge"},
             acq_opt_config={"type": "auto"},
-            enable_plotting=False,
             ip_gen_config={"type": "random"},
-            log_dir=".",
             num_ips=1,
             seed=1
         )

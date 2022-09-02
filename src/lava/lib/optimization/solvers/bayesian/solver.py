@@ -21,9 +21,9 @@ class BayesianSolver:
     the user's specific black-box function
     """
     def __init__(self, acq_func_config: dict, acq_opt_config: dict,
-                 enable_plotting: bool, ip_gen_config: dict, log_dir: str,
-                 num_ips: int, seed: int, est_config: dict = {"type": "GP"},
-                 num_objectives: int = 1) -> None:
+                 ip_gen_config: dict, num_ips: int, seed: int,
+                 est_config: dict = {"type": "GP"}, num_objectives: int = 1
+                 ) -> None:
         """initialize the BayesianSolver interface
 
         Parameters
@@ -54,10 +54,6 @@ class BayesianSolver:
                         "auto" = automatically configure based on the search
                             space
             }
-
-        enable_plotting : bool
-            configure if the optimizer should plot the results after every
-            Bayesian iteration
         ip_gen_config : dict
             {
                 "type": str
@@ -70,9 +66,6 @@ class BayesianSolver:
                         "lhs" = latin hypercube sequence
                         "grid" = uniform grid sequence
             }
-        log_dir : str
-            a path to an existing directory where all log files and plots
-            will be saved
         num_ips : int
             the number of points to explore with the initial point generator
             before using the regressor
@@ -90,76 +83,24 @@ class BayesianSolver:
             specify the number of objectives to optimize over; currently
             limited to single objective
         """
-        # validate input argument specifying the acquisition function
-        # config
-        valid_acq_funcs: list[str] = [
-            "LCB", "EI", "PI", "gp_hedge", "EIps", "PIps"
-        ]
-        self.acquisition_function_config: dict = Schema({
-            "type": And(
-                lambda x: x in valid_acq_funcs,
-                error=f"acq_func not in valid options: {valid_acq_funcs}"
-            )
-        }).validate(acq_func_config)
 
-        # validate input argument specifying the acquisition optimizer config
-        valid_acq_opts: list[str] = ["sampling", "lbfgs", "auto"]
-        self.acquisition_optimizer_config: dict = Schema({
-            "type": And(
-                lambda x: x in valid_acq_opts,
-                error=f"acq_opt not in valid options: {valid_acq_opts}"
-            )
-        }).validate(acq_opt_config)
+        self.val_init_args(
+            acq_func_config=acq_func_config,
+            acq_opt_config=acq_opt_config,
+            ip_gen_config=ip_gen_config,
+            num_ips=num_ips,
+            seed=seed,
+            est_config=est_config,
+            num_objectives=num_objectives
+        )
 
-        # validate input argument specifying whether or not to plot results
-        self.enable_plotting: bool = Schema(
-            lambda x: type(x) == bool,
-            error="enable_plotting should be a boolean"
-        ).validate(enable_plotting)
-
-        # validate the type of specified surrogate regressor
-        valid_estimators: list[str] = ["GP"]
-        self.est_config: dict = Schema({
-            "type": And(
-                lambda x: x in valid_estimators,
-                error=f"estimator is not in valid options: {valid_estimators}"
-            ),
-        }).validate(est_config)
-
-        # validate the argued initial point generator
-        valid_ip_gens: list[str] = [
-            "random", "sobol", "halton", "hammersly", "lhs", "grid"
-        ]
-        self.ip_gen_config: str = Schema({
-            "type": And(
-                lambda x: x in valid_ip_gens,
-                error=f"ip generator is not in valid options: {valid_ip_gens}"
-            )
-        }).validate(ip_gen_config)
-
-        # validate the argued log directory
-        self.log_dir: str = Schema(
-            lambda x: os.path.isdir(x),
-            error=f"log_dir [{log_dir}] is not a directory"
-        ).validate(log_dir)
-
-        # validate the argued number of initial points
-        self.num_initial_points: int = Schema(
-            lambda x: type(x) == int and x > 0,
-            error="the number of initial points should be an int > 0"
-        ).validate(num_ips)
-
-        # validate the argued number of objectives
-        self.num_objectives: int = Schema(
-            lambda x: type(x) == int and x == 1,
-            error="num_objectives should be an int = 1"
-        ).validate(num_objectives)
-
-        # validate the argued seed
-        self.seed: int = Schema(
-            lambda x: type(x) == int,
-            error="random_state should be an integer"
-        ).validate(seed)
+        self.acquisition_function_config: dict = acq_func_config
+        self.acquisition_optimizer_config: dict = acq_opt_config
+        self.est_config: dict = est_config
+        self.ip_gen_config: str = ip_gen_config
+        self.num_initial_points: int = num_ips
+        self.num_objectives: int = num_objectives
+        self.seed: int = seed
 
     def solve(self, name: str, num_iter: int, problem: AbstractProcess,
               search_space: np.ndarray) -> None:
@@ -182,6 +123,188 @@ class BayesianSolver:
                 3) ("categorical", np.nan, np.nan, <choices>, <name>)
         """
 
+        self.val_solve_args(
+            name=name,
+            num_iter=num_iter,
+            problem=problem,
+            search_space=search_space,
+            num_ips=self.num_initial_points,
+            num_objectives=self.num_objectives
+        )
+
+        optimizer = BayesianOptimizer(
+            acq_func_config=self.acquisition_function_config,
+            acq_opt_config=self.acquisition_optimizer_config,
+            search_space=search_space,
+            est_config=self.est_config,
+            ip_gen_config=self.ip_gen_config,
+            num_ips=self.num_initial_points,
+            num_objectives=self.num_objectives,
+            seed=self.seed
+        )
+
+        optimizer.next_point_out.connect(problem.x_in)
+        problem.y_out.connect(optimizer.results_in)
+
+        optimizer.run(
+            condition=RunSteps(num_steps=num_iter),
+            run_cfg=Loihi1SimCfg()
+        )
+
+        optimizer.stop()
+
+    @staticmethod
+    def val_init_args(acq_func_config: dict, acq_opt_config: dict,
+                      ip_gen_config: dict, num_ips: int, seed: int,
+                      est_config: dict = {"type": "GP"},
+                      num_objectives: int = 1) -> None:
+        """initialize the BayesianSolver interface
+
+        Parameters
+        ----------
+        acq_func_config : dict
+            {
+                "type": str
+                    specify the function to minimize over the posterior
+                    distribution:
+                        "LCB" = lower confidence bound
+                        "EI" = negative expected improvement
+                        "PI" = negative probability of improvement
+                        "gp_hedge" = probabilistically determine which of the
+                            aforementioned functions to use at every iteration
+                        "EIps" = negative expected improved with consideration
+                            of the total function runtime
+                        "PIps" = negative probability of improvement
+                            while taking into account the total function
+                            runtime
+            }
+        acq_opt_config: dict
+            {
+                "type" : str
+                    specify the method to minimize the acquisition function:
+                        "sampling" = random selection from the acquisition
+                            function
+                        "lbfgs" = inverse Hessian matrix estimation
+                        "auto" = automatically configure based on the search
+                            space
+            }
+        ip_gen_config : dict
+            {
+                "type": str
+                    specify the method to explore the search space before the
+                    Gaussian regressor starts to converge:
+                        "random" = uniform distribution of random numbers
+                        "sobol" = Sobol sequence
+                        "halton" = Halton sequence
+                        "hammersly" = Hammersly sequence
+                        "lhs" = latin hypercube sequence
+                        "grid" = uniform grid sequence
+            }
+        num_ips : int
+            the number of points to explore with the initial point generator
+            before using the regressor
+        seed : int
+            An integer seed that sets the random state increases consistency
+            in subsequent runs
+        est_config : dict
+            {
+                "type": str
+                    specify the type of surrogate regressor to learn the search
+                    space:
+                        "GP" - gaussian process regressor
+            }
+        num_objectives : int
+            specify the number of objectives to optimize over; currently
+            limited to single objective
+        """
+        # validate input argument specifying the acquisition function
+        # config
+        valid_acq_funcs: list[str] = [
+            "LCB", "EI", "PI", "gp_hedge", "EIps", "PIps"
+        ]
+        Schema({
+            "type": And(
+                lambda x: x in valid_acq_funcs,
+                error=f"acq_func not in valid options: {valid_acq_funcs}"
+            )
+        }).validate(acq_func_config)
+
+        # validate input argument specifying the acquisition optimizer config
+        valid_acq_opts: list[str] = ["sampling", "lbfgs", "auto"]
+        Schema({
+            "type": And(
+                lambda x: x in valid_acq_opts,
+                error=f"acq_opt not in valid options: {valid_acq_opts}"
+            )
+        }).validate(acq_opt_config)
+
+        # validate the type of specified surrogate regressor
+        valid_estimators: list[str] = ["GP"]
+        Schema({
+            "type": And(
+                lambda x: x in valid_estimators,
+                error=f"estimator is not in valid options: {valid_estimators}"
+            ),
+        }).validate(est_config)
+
+        # validate the argued initial point generator
+        valid_ip_gens: list[str] = [
+            "random", "sobol", "halton", "hammersly", "lhs", "grid"
+        ]
+        Schema({
+            "type": And(
+                lambda x: x in valid_ip_gens,
+                error=f"ip generator is not in valid options: {valid_ip_gens}"
+            )
+        }).validate(ip_gen_config)
+
+        # validate the argued number of initial points
+        Schema(
+            lambda x: type(x) == int and x > 0,
+            error="the number of initial points should be an int > 0"
+        ).validate(num_ips)
+
+        # validate the argued number of objectives
+        Schema(
+            lambda x: type(x) == int and x == 1,
+            error="num_objectives should be an int = 1"
+        ).validate(num_objectives)
+
+        # validate the argued seed
+        Schema(
+            lambda x: type(x) == int,
+            error="random_state should be an integer"
+        ).validate(seed)
+
+    @staticmethod
+    def val_solve_args(name: str, num_iter: int, problem: AbstractProcess,
+                       search_space: np.ndarray, num_ips: int,
+                       num_objectives: int) -> None:
+        """validate the arguments associated with the solve method
+
+        Parameters
+        ----------
+        name : str
+            a unique identifier for the given experiment
+        num_iter : int
+            the number of Bayesian iterations to conduct
+        problem : AbstractProcess
+            the black-box function whose parameters are represented by the
+            Bayesian optimizer's search space
+        search_space : np.ndarray
+            At every index, your search space should consist of three types
+            of parameters:
+                1) ("continuous", <min_value>, <max_value>, np.nan, <name>)
+                2) ("integer", <min_value>, <max_value>, np.nan, <name>)
+                3) ("categorical", np.nan, np.nan, <choices>, <name>)
+        num_ips : int
+            the number of points to explore with the initial point generator
+            before using the regressor
+        num_objectives : int
+            specify the number of objectives to optimize over; currently
+            limited to single objective
+        """
+
         # validate the input argument specifying the name
         Schema(
             lambda x: type(x) == str,
@@ -195,7 +318,7 @@ class BayesianSolver:
         ).validate(num_iter)
 
         # validate the input argument specifying the problem
-        outport_len: int = len(search_space) + self.num_objectives
+        outport_len: int = len(search_space) + num_objectives
         ss_len: int = len(search_space)
         Schema(
             And(
@@ -260,34 +383,9 @@ class BayesianSolver:
 
         # warn the user if the regressor will never start to optimize
         # with the given number of iterations
-        if num_iter <= self.num_initial_points:
+        if num_iter <= num_ips:
             print(
                 "WARNING: the number of iterations is less than the "
                 + "number of initial points; the regressor will never start "
                 + "to converge on learned information!!!"
             )
-
-        solution_log_dir: str = os.path.join(self.log_dir, name)
-
-        optimizer = BayesianOptimizer(
-            acq_func_config=self.acquisition_function_config,
-            acq_opt_config=self.acquisition_optimizer_config,
-            enable_plotting=self.enable_plotting,
-            search_space=search_space,
-            est_config=self.est_config,
-            ip_gen_config=self.ip_gen_config,
-            log_dir=solution_log_dir,
-            num_ips=self.num_initial_points,
-            num_objectives=self.num_objectives,
-            seed=self.seed
-        )
-
-        optimizer.next_point_out.connect(problem.x_in)
-        problem.y_out.connect(optimizer.results_in)
-
-        optimizer.run(
-            condition=RunSteps(num_steps=num_iter),
-            run_cfg=Loihi1SimCfg()
-        )
-
-        optimizer.stop()

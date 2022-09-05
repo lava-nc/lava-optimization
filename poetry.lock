@@ -756,7 +756,7 @@ develop = true
 
 [package.dependencies]
 matplotlib = "^3.5.1"
-nbconvert = "^6.5.1"
+nbconvert = "^6.5.0"
 nbformat = "^5.3.0"
 networkx = "<=2.8"
 numpy = "^1.22.2"
@@ -768,8 +768,8 @@ unittest2 = "^1.1.0"
 [package.source]
 type = "git"
 url = "https://github.com/lava-nc/lava.git"
-reference = "main"
-resolved_reference = "780ee5a0ffece86a1980287618ca730fde90820d"
+reference = "v0.4.0"
+resolved_reference = "19132bbe6170374fa816332eb4512ff78a2b0b56"
 
 [[package]]
 name = "linecache2"
@@ -1622,7 +1622,7 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8, <3.11"
-content-hash = "2afe53e52a8e66b9ce5c2fbdb67623d030fe5bd7250e64f190e7b13a4bf8fbf2"
+content-hash = "b97a51d384458eb38c47680cdbd85b2379feea9c04a97c2a1f55a515599feb75"
 
 [metadata.files]
 argparse = [

@@ -46,7 +46,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.8, <3.11"
 
-lava-nc = { git = "https://github.com/lava-nc/lava.git", branch = "main", develop = true}
+lava-nc = { git = "https://github.com/lava-nc/lava.git", branch = "main", develop = true, tag = "v0.4.0" }
 
 [tool.poetry.dev-dependencies]
 bandit = "1.7.2"

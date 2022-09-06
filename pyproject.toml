@@ -51,6 +51,13 @@ lava-nc = { git = "https://github.com/lava-nc/lava.git", branch = "main", develo
 numpy = "^1.23.1"
 pytest = "^7.1.2"
 unittest2 = "^1.1.0"
+Pyomo = "^6.4.2"
+networkx = "<=2.8"
+dsolve = "^0.0.5"
+dwave-qbsolv = "^0.3.4"
+schema = "^0.7.5"
+scikit-optimize = "^0.9.0"
+scipy = "^1.9.1"
 
 [tool.poetry.dev-dependencies]
 bandit = "1.7.2"

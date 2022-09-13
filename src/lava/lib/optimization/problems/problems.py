@@ -2,8 +2,157 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
-import numpy as np
 import typing as ty
+from abc import ABC, abstractmethod
+
+import numpy as np
+import numpy.typing as npt
+from lava.lib.optimization.problems.constraints import (
+    Constraints,
+    DiscreteConstraints,
+)
+from lava.lib.optimization.problems.cost import Cost
+from lava.lib.optimization.problems.variables import (
+    Variables,
+    DiscreteVariables,
+)
+
+
+class OptimizationProblem(ABC):
+    """Interface for any concrete optimization problem.
+
+    Any optimization problem can be defined by a set of variables, cost and
+    constraints.  Although for some problems some of these elements may be
+    absent, the user still has to specify them, e.g., defining constraints as
+    None.
+    """
+
+    def __init__(self):
+        self._variables = Variables()
+        self._constraints = Constraints()
+
+    @property
+    @abstractmethod
+    def variables(self):
+        """Variables over which the optimization problem is defined."""
+        pass
+
+    @property
+    @abstractmethod
+    def cost(self):
+        """Function to be optimized and defined over the problem variables."""
+        pass
+
+    @property
+    @abstractmethod
+    def constraints(self):
+        """Constrains to be satisfied by mutual assignments to variables."""
+        pass
+
+
+class QUBO(OptimizationProblem):
+    def __init__(self, q: npt.ArrayLike):
+        r"""A Quadratic Unconstrained Binary Optimization (QUBO) problem.
+
+        The cost to be minimized is of the form $x^T \cdot Q \cdot x$.
+        the problem is unconstrained by definition, thus, constraints are set to
+        None. Variables are binary and their number must match the dimension of
+        the Q matrix.
+
+        Parameters
+        ----------
+        q: squared Q matrix defining the QUBO problem over a binary
+        vector x as: minimize x^T*Q*x.
+        """
+        super().__init__()
+        self.validate_input(q)
+        self._q_cost = Cost(q)
+        self._b_variables = DiscreteVariables(domains=[2] * q.shape[0])
+
+    @property
+    def variables(self):
+        """Binary variables of the QUBO problem."""
+        return self._b_variables
+
+    @property
+    def cost(self):
+        """Quadratic cost to be minimized."""
+        return self._q_cost
+
+    @cost.setter
+    def cost(self, value):
+        """Quadratic cost setter, binary variables are updated accordingly."""
+        self.validate_input(value)
+        q = Cost(value)
+        if list(q.coefficients.keys()) != [2]:
+            raise ValueError("Cost must be a quadratic " "matrix.")
+        self._b_variables = DiscreteVariables(domains=[2] * value.shape[0])
+        self._q_cost = q
+
+    @property
+    def constraints(self):
+        """As an unconstrained problem, QUBO constraints are None."""
+        return None
+
+    def validate_input(self, q):
+        """Validate the cost coefficient is a square matrix.
+
+        Parameters
+        ----------
+        q: Quadratic coefficient of the cost function.
+        """
+        m, n = q.shape
+        if m != n:
+            raise ValueError("q matrix is not a square matrix.")
+
+
+DType = ty.Union[ty.List[int], ty.List[ty.Tuple[ty.Any]]]
+CType = ty.List[ty.Tuple[int, int, npt.ArrayLike]]
+
+
+class CSP(OptimizationProblem):
+    """A constraint satisfaction problem.
+
+     The CSP is in usually represented by the tuple (variables, domains,
+     constraints). However, because every variable must have a domain, the
+     user only provides the domains and constraints.
+
+    Parameters
+    ----------
+    domains: either a list of tuples with values that each variable can take or
+    a list of integers specifying the domain size for each variable.
+
+    constraints: Discrete constraints defining mutually allowed values
+    between variables. Has to be a list of n-tuples where the first n-1 elements
+    are the variables related by the n-th element of the tuple. The n-th element
+    is a tensor indicating what values of the variables are simultaneously
+    allowed.
+    """
+
+    def __init__(self, domains: DType = None, constraints: CType = None):
+        super().__init__()
+        self._variables.discrete = DiscreteVariables(domains)
+        self._constant_cost = Cost(0)
+        self._constraints.discrete = DiscreteConstraints(constraints)
+
+    @property
+    def variables(self):
+        """Discrete variables over which the problem is specified."""
+        return self._variables.discrete
+
+    @property
+    def cost(self):
+        """Constant cost function, CSPs require feasibility not minimization."""
+        return self._constant_cost
+
+    @property
+    def constraints(self):
+        """Specification of mutually allowed values between variables."""
+        return self._constraints.discrete
+
+    @constraints.setter
+    def constraints(self, value):
+        self._constraints.discrete = DiscreteConstraints(value)
 
 
 class QP:

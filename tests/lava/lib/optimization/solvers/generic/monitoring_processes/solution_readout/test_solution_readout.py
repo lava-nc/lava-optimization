@@ -16,12 +16,11 @@ from lava.proc.spiker.ncmodels import SpikerNcModel
 from lava.proc.spiker.process import Spiker
 
 
-@unittest.skip("Waiting for hanging issue to be sovled.")
 class TestSolutionReadout(unittest.TestCase):
     def setUp(self) -> None:
         # Create processes.
-        spiker = Spiker(shape=(4,), rate=3, payload=7)
-        integrator = Spiker(shape=(1,), rate=7, payload=4)
+        spiker = Spiker(shape=(4,), period=3, payload=7)
+        integrator = Spiker(shape=(1,), period=7, payload=4)
         readgate = ReadGate(shape=(4,), target_cost=5)
         self.readout = SolutionReadout(shape=(4,), target_cost=5)
 

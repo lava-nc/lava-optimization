@@ -9,11 +9,10 @@ from lava.magma.core.run_configs import Loihi2HwCfg
 
 from lava.proc.read_gate.ncmodels import \
     ReadGateCModel
-from lava.lib.optimization.solvers.generic.monitoring_processes.read_gate.process import \
-    ReadGate
-from lava.lib.optimization.solvers.generic.monitoring_processes import SolutionReadout
-from lava.proc.spiker.ncmodels import \
-    SpikerNcModel
+from lava.proc.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.monitoring_processes\
+    .solution_readout.process import SolutionReadout
+from lava.proc.spiker.ncmodels import SpikerNcModel
 from lava.proc.spiker.process import Spiker
 
 

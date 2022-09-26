@@ -9,11 +9,12 @@ import numpy as np
 
 from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.processes import (
-    ReadGate,
-    SolutionReadout,
     CostConvergenceChecker,
 )
 from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
+from lava.proc.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.monitoring_processes \
+    .solution_readout.process import SolutionReadout
 
 
 class TestOptimizationSolver(unittest.TestCase):
@@ -235,6 +236,7 @@ class TestWorkloads(unittest.TestCase):
         np.put(reference_solution, [1, 3, 8, 10, 14], 1)
         solution, cost, expected_cost = solve_workload(q, reference_solution)
         self.assertEqual(cost, expected_cost)
+
 
 if __name__ == "__main__":
     unittest.main()

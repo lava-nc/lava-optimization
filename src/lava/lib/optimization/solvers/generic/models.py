@@ -20,14 +20,16 @@ from lava.lib.optimization.solvers.generic.dataclasses import (
 )
 from lava.lib.optimization.solvers.generic.processes import (
     CostConvergenceChecker,
-    ReadGate,
-    SolutionReadout,
     SatConvergenceChecker,
     DiscreteVariablesProcess,
     ContinuousVariablesProcess,
-    CostIntegrator,
-    StochasticIntegrateAndFire,
 )
+from lava.proc.read_gate.process import ReadGate
+from lava.proc.cost_integrator.process import CostIntegrator
+from lava.lib.optimization.solvers.generic.hierarchical_processes import \
+    StochasticIntegrateAndFire
+from lava.lib.optimization.solvers.generic.monitoring_processes \
+    .solution_readout.process import SolutionReadout
 
 
 class SolverModelBuilder:
@@ -295,7 +297,7 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
     def iterate_dynamics(self, added_input: np.ndarray, state: np.ndarray):
         integration_decay = 1
         state_decay = 0
-        noise = self.noise_amplitude * np.random.randint(0, 2*self.increment,
+        noise = self.noise_amplitude * np.random.randint(0, 2 * self.increment,
                                                          self.integration.shape)
         self.integration[:] = self.integration * (1 - integration_decay)
         self.integration[:] += added_input.astype(int)

@@ -15,11 +15,22 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     StochasticIntegrateAndFire)
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
+from magma.core.model.py.model import PyLoihiProcessModel
+from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.cost_integrator.process import CostIntegrator
 from lava.proc.dense.process import Dense
 from lava.magma.core.resources import Loihi2NeuroCore
+import numpy as np
+from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
+from lava.magma.core.model.py.ports import PyInPort, PyOutPort
+from lava.magma.core.model.py.type import LavaPyType
+from lava.magma.core.resources import CPU
+from lava.magma.core.decorator import implements, requires, tag
+from lava.magma.core.model.py.model import PyLoihiProcessModel
+from lava.proc.lif.process import LIF, TernaryLIF
+
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
 @requires(CPU)

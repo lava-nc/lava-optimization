@@ -8,8 +8,8 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     ContinuousVariablesProcess, CostConvergenceChecker,
     DiscreteConstraintsProcess, DiscreteVariablesProcess,
     MixedConstraintsProcess, SatConvergenceChecker)
-from lava.lib.optimization.solvers.generic.monitoring_processes import \
-    SolutionReadout
+from lava.lib.optimization.solvers.generic.monitoring_processes\
+    .solution_readout.process import SolutionReadout
 from lava.proc.dense.process import Dense
 from lava.proc.read_gate.process import ReadGate
 

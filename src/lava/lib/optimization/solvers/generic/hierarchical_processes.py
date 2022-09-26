@@ -20,39 +20,39 @@ class ContinuousVariablesProcess(AbstractProcess):
 
 
 class DiscreteVariablesProcess(AbstractProcess):
-    """Process which implementation holds the evolution of discrete variables
+    r"""Process which implementation holds the evolution of discrete variables
     on the solver of an optimization problem.
 
     Parameters
     ----------
     shape: a tuple of the form (number of variables, domain size).
     step_size: The coefficient of the variables indicating their relative
-    linear contribution to the cost function. Usually corresponds to the linear
-    term or the diagonal of the quadratic term on the cost function.
+        linear contribution to the cost function. Usually corresponds to the
+        linear term or the diagonal of the quadratic term on the cost function.
     cost_diagonal: The diagonal of the coefficient of the quadratic term on the
-    cost function.
+        cost function.
     name: Name of the Process. Default is 'Process_ID', where ID is an
-    integer value that is determined automatically.
+        integer value that is determined automatically.
     log_config: Configuration options for logging.z
 
     InPorts
     -------
     a_in: The addition of all inputs (per dynamical system) at this timestep
-    will be received by this port.
+        will be received by this port.
 
     OutPorts
     --------
     s_out: The payload to be exchanged between the underlying dynamical systems
-    when these fire.
+        when these fire.
     local_cost: the cost components per dynamical system underlying these
-    variables, i.e., c_i = sum_j{Q_{ij} \cdot x_i}  will be sent through this
-    port. The cost integrator will then complete the cost computation  by
-    adding all contributions, i.e., x^T \cdot Q \cdot x = sum_i{c_i}.
+        variables, i.e., c_i = sum_j{Q_{ij} \cdot x_i}  will be sent through
+        this port. The cost integrator will then complete the cost computation
+         by adding all contributions, i.e., x^T \cdot Q \cdot x = sum_i{c_i}.
 
     Vars
     ----
     variable_assignment: Holds the current value assigned to the variables by
-    the solver network.
+        the solver network.
     """
 
     def __init__(self, shape: ty.Tuple[int, ...],
@@ -155,7 +155,7 @@ class MixedConstraintsProcess(AbstractProcess):
 
 
 class StochasticIntegrateAndFire(AbstractProcess):
-    """Event-driven stochastic discrete dynamical system with two outputs.
+    r"""Event-driven stochastic discrete dynamical system with two outputs.
 
     The main output is intended as input to other dynamical systems on
     the network, whilst the second output is to transfer local information to be

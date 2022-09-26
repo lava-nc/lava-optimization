@@ -16,7 +16,7 @@ from lava.proc.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.monitoring_processes\
     .solution_readout.process import SolutionReadout
 
-@unittest.skip("Waiting for hanging issue to be sovled.")
+
 class TestOptimizationSolver(unittest.TestCase):
     def setUp(self) -> None:
         self.problem = QUBO(
@@ -24,8 +24,8 @@ class TestOptimizationSolver(unittest.TestCase):
                         [2, -3, 1, 0],
                         [4, 1, -8, 5],
                         [0, 0, 5, -6]]))
-        self.solver = OptimizationSolver(self.problem)
         self.solution = np.asarray([1, 0, 0, 1]).astype(int)
+        self.solver = OptimizationSolver(problem=self.problem)
 
     def test_create_obj(self):
         self.assertIsInstance(self.solver, OptimizationSolver)
@@ -34,19 +34,18 @@ class TestOptimizationSolver(unittest.TestCase):
         solution = self.solver.solve(timeout=20, backend="Loihi2")
         self.assertEqual(solution.shape, self.solution.shape)
 
-    # @unittest.skip("WIP")
+    @unittest.skip("Have to handle the negative messages issue.")
     def test_solve_method(self):
         np.random.seed(2)
-        solution = self.solver.solve(timeout=20, target_cost=12, #-11,
+        solution = self.solver.solve(timeout=20, target_cost=-11,
                                      backend="Loihi2")
         print(solution)
         self.assertTrue((solution == self.solution).all())
 
-    def test_solver_creates_optimization_solver_process(self):
-        self.solver._create_solver_process(self.problem, backend="CPU")
-        solver_process = self.solver.solver_process
-        class_name = type(solver_process).__name__
-        self.assertIs(solver_process, self.solver.solver_process)
+    def test_solver_creates_optimizationsolver_process(self):
+        self.solver._create_solver_process(self.problem,
+                                                            backend="Loihi2")
+        class_name = type(self.solver.solver_process).__name__
         self.assertEqual(class_name, "OptimizationSolverProcess")
 
     def test_solves_creates_macrostate_reader_processes(self):
@@ -116,7 +115,7 @@ class TestOptimizationSolver(unittest.TestCase):
             self.solver.solver_process
         )
         condition = (
-                pm.variables.discrete.step_size
+                pm.variables.discrete.cost_diagonal
                 == -self.problem.cost.get_coefficient(2).diagonal()
         ).all()
         self.assertTrue(condition)
@@ -135,7 +134,7 @@ class TestOptimizationSolver(unittest.TestCase):
             self.problem.variables.num_variables,
         )
 
-    @unittest.skip("WIP")
+    @unittest.skip("Have to handle the negative messages issue.")
     def test_solver_stops_when_solution_found(self):
         t_start = time()
         solution = self.solver.solve(timeout=-1, target_cost=-11,
@@ -150,21 +149,22 @@ def solve_workload(q, reference_solution, backend="Loihi2"):
     problem = QUBO(q)
     np.random.seed(2)
     solver = OptimizationSolver(problem)
-    solution = solver.solve(timeout=-1,
-                            target_cost=expected_cost,
+    solution = solver.solve(timeout=100,
+                            target_cost=int(expected_cost),
                             backend=backend)
     cost = solution @ q @ solution
     return solution, cost, expected_cost
 
 
-@unittest.skip("WIP")
+@unittest.skip("Have to handle the negative messages issue.")
 class TestWorkloadsLoihi2(unittest.TestCase):
+
     def test_solve_polynomial_minimization(self):
         """Polynomial minimization with y=-5x_1 -3x_2 -8x_3 -6x_4 + 4x_1x_2+8x_1x_3+2x_2x_3+10x_3x_4"""
         q = np.asarray([[-5, 2, 4, 0],
                         [2, -3, 1, 0],
                         [4, 1, -8, 5],
-                        [0, 0, 5, -6]])
+                        [0, 0, 5, -6]]).astype(int)
         reference_solution = np.asarray([1, 0, 0, 1]).astype(int)
         solution, cost, expected_cost = solve_workload(q, reference_solution)
         self.assertEqual(cost, expected_cost)
@@ -173,7 +173,7 @@ class TestWorkloadsLoihi2(unittest.TestCase):
         q = -np.asarray([[1, -3, -3, -3],
                          [-3, 1, 0, 0],
                          [-3, 0, 1, -3],
-                         [-3, 0, -3, 1]])
+                         [-3, 0, -3, 1]]).astype(int)
 
         reference_solution = np.zeros(4)
         np.put(reference_solution, [1, 2], 1)
@@ -186,7 +186,7 @@ class TestWorkloadsLoihi2(unittest.TestCase):
                          [-1, 2, 0, -1, 0],
                          [-1, 0, 3, -1, -1],
                          [0, -1, -1, 3, -1],
-                         [0, 0, -1, -1, 2]])
+                         [0, 0, -1, -1, 2]]).astype(int)
         reference_solution = np.zeros(5)
         np.put(reference_solution, [1, 2], 1)
         solution, cost, expected_cost = solve_workload(q, reference_solution)
@@ -198,13 +198,13 @@ class TestWorkloadsLoihi2(unittest.TestCase):
                         [10., 10., -29., 10., 20., 20.],
                         [10., 10., 10., -19., 10., 10.],
                         [0., 10., 20., 10., -17., 10.],
-                        [20., 20., 20., 10., 10., -28.]])
+                        [20., 20., 20., 10., 10., -28.]]).astype(int)
         reference_solution = np.zeros(6)
         np.put(reference_solution, [0, 4], 1)
         solution, cost, expected_cost = solve_workload(q, reference_solution)
         self.assertEqual(cost, expected_cost)
 
-    def test_solve_map_coloring(self):
+    def  test_solve_map_coloring(self):
         q = np.array([[-4., 4., 4., 2., 0., 0., 0., 0., 0., 0., 0.,
                        0., 2.,
                        0., 0.],
@@ -235,7 +235,7 @@ class TestWorkloadsLoihi2(unittest.TestCase):
                       [0., 2., 0., 0., 2., 0., 0., 0., 0., 0., 2., 0., 4.,
                        -4., 4.],
                       [0., 0., 2., 0., 0., 2., 0., 0., 0., 0., 0., 2., 4.,
-                       4., -4.]])
+                       4., -4.]]).astype(np.int32)
         reference_solution = np.zeros(15)
         np.put(reference_solution, [1, 3, 8, 10, 14], 1)
         solution, cost, expected_cost = solve_workload(q, reference_solution)

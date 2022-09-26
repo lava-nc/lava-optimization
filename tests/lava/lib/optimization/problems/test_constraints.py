@@ -39,7 +39,7 @@ class TestDiscreteConstraint(unittest.TestCase):
                     (self.dconstraint.relations[n] == relation).all()
                 )
 
-    def test__input_validation_relation_matches_var_subset_dimension(self):
+    def test_input_validation_relation_matches_var_subset_dimension(self):
         constraints = [
             (0, 1, 2, np.logical_not(np.eye(5))),
             (1, 2, np.eye(5, 4)),
@@ -84,7 +84,7 @@ class TestDiscreteConstraint(unittest.TestCase):
         self.dconstraint.set_relations_var_subsets(new_constraints)
         self.assertEqual(self.dconstraint._var_subset, [(1, 2), (0, 1)])
 
-    def test__relations_from_function_set_relations_var_subsets(self):
+    def test_relations_from_function_set_relations_var_subsets(self):
         new_constraints = [
             (1, 2, np.logical_not(np.eye(5, 4))),
             (0, 1, np.eye(5)),
@@ -193,7 +193,7 @@ class TestConstraints(unittest.TestCase):
         self.constraints.discrete = DiscreteConstraints(new_constraints)
         self.assertIsInstance(self.constraints.discrete, DiscreteConstraints)
 
-    def teest_set_arithmetic_constraint(self):
+    def test_set_arithmetic_constraint(self):
         new_constraint = ArithmeticConstraints()
         self.constraints.arithmetic = new_constraint
         self.assertIs(self.constraints.arithmetic, new_constraint)

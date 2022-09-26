@@ -135,16 +135,18 @@ class OptimizationSolver:
                      Dense: PyDenseModelFloat,
                      StochasticIntegrateAndFire: StochasticIntegrateAndFireModel
                      }
-            run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict)
+            run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
+                                   select_sub_proc_model=True)
         elif backend in NEUROCORES:
             pdict = {self.solver_process: self.solver_model,
                      ReadGate: ReadGateCModel,
                      Dense: NcModelDense,
                      StochasticIntegrateAndFire:
                          StochasticIntegrateAndFireModelSCIF,
-                     QuboScif: NcModelQuboScif
+                     QuboScif: NcModelQuboScif,
                      }
-            run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict)
+            run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
+                                  select_sub_proc_model=True)
         else:
             raise NotImplementedError(str(backend) + backend_msg)
         self.solver_process._log_config.level = 20

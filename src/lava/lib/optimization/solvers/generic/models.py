@@ -19,11 +19,12 @@ from lava.lib.optimization.solvers.generic.dataclasses import (
     MacroStateReader,
 )
 from lava.lib.optimization.solvers.generic.processes import (
-    CostConvergenceChecker,
     SatConvergenceChecker,
     DiscreteVariablesProcess,
     ContinuousVariablesProcess,
 )
+from lava.lib.optimization.solvers.generic.hierarchical_processes import \
+    CostConvergenceChecker
 from lava.proc.read_gate.process import ReadGate
 from lava.proc.cost_integrator.process import CostIntegrator
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \

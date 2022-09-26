@@ -70,6 +70,7 @@ class DiscreteVariablesProcess(AbstractProcess):
         self.a_in = InPort(shape=shape)
         self.s_out = OutPort(shape=shape)
         self.variable_assignment = Var(shape=shape)
+        self.cost_diagonal = cost_diagonal
         self.local_cost = OutPort(shape=shape)
 
 

@@ -227,22 +227,6 @@ class SolutionReadout(AbstractProcess):
         self.target_cost = Var(shape=(1,), init=target_cost)
 
 
-class CostConvergenceChecker(AbstractProcess):
-    """Process that continuously monitors cost convergence."""
-
-    def __init__(
-        self,
-        shape,
-        name: ty.Optional[str] = None,
-        log_config: ty.Optional[LogConfig] = None,
-    ) -> None:
-        super().__init__(shape=shape, name=name, log_config=log_config)
-        self.shape = shape
-        self.min_cost = Var(shape=(1,))
-        self.cost_components = InPort(shape=shape)
-        self.update_buffer = OutPort(shape=(1,))
-
-
 class SatConvergenceChecker(AbstractProcess):
     """Process that continuously monitors satisfiability convergence."""
 

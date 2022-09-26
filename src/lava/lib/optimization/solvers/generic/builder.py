@@ -13,8 +13,8 @@ from lava.lib.optimization.solvers.generic.dataclasses import CostMinimizer, \
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \
     ContinuousVariablesProcess, CostConvergenceChecker, \
     DiscreteVariablesProcess, SatConvergenceChecker
-from lava.lib.optimization.solvers.generic.monitoring_processes import \
-    SolutionReadout
+from lava.lib.optimization.solvers.generic.monitoring_processes \
+    .solution_readout.process import SolutionReadout
 from lava.magma.core.model.model import AbstractProcessModel
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.process.interfaces import AbstractProcessMember

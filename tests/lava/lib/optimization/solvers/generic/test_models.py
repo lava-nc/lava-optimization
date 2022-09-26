@@ -17,7 +17,8 @@ from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi2SimCfg
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.monitor.process import Monitor
-
+from lava.lib.optimization.solvers.generic.sub_process_models import \
+    StochasticIntegrateAndFireModel
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     StochasticIntegrateAndFire,
 )
@@ -94,7 +95,8 @@ def set_up(self, var="state", input_time=None, input_val=2 ** 7, **kwargs):
     self.monitor.probe(getattr(self.bit, var), num_steps=self.steps)
     self.bit.run(
         condition=RunSteps(self.steps),
-        run_cfg=Loihi2SimCfg(exception_proc_model_map={}),
+        run_cfg=Loihi2SimCfg(exception_proc_model_map={
+            StochasticIntegrateAndFire: StochasticIntegrateAndFireModel}),
     )
 
     data = self.monitor.get_data()
@@ -107,7 +109,8 @@ class TestStochasticIntegrateAndFire(unittest.TestCase):
         self.kwargs = dict(
             shape=(1,),
             steps_to_fire=5,
-            initial_value=0,
+            step_size=100,
+            init_value=0,
             noise_amplitude=0,
             refractory_period=1,
         )

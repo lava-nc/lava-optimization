@@ -15,7 +15,7 @@ from lava.proc.dense.process import Dense
 
 from lava.lib.optimization.solvers.generic.dataclasses import (
     CostMinimizer,
-    VariablesProcesses,
+    VariablesImplementation,
     MacroStateReader,
 )
 from lava.lib.optimization.solvers.generic.processes import (
@@ -39,7 +39,7 @@ class SolverModelBuilder:
 
     def create_constructor(self, target_cost):
         def constructor(self, proc):
-            variables = VariablesProcesses()
+            variables = VariablesImplementation()
             if hasattr(proc, "discrete_variables"):
                 variables.discrete = DiscreteVariablesProcess(
                     shape=proc.discrete_variables.shape,

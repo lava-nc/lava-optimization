@@ -13,7 +13,7 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
 )
 from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
 from lava.proc.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.monitoring_processes\
+from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import SolutionReadout
 
 
@@ -24,27 +24,27 @@ class TestOptimizationSolver(unittest.TestCase):
                         [2, -3, 1, 0],
                         [4, 1, -8, 5],
                         [0, 0, 5, -6]]))
-        self.solver = OptimizationSolver(self.problem)
         self.solution = np.asarray([1, 0, 0, 1]).astype(int)
+        self.solver = OptimizationSolver(problem=self.problem)
 
     def test_create_obj(self):
         self.assertIsInstance(self.solver, OptimizationSolver)
 
     def test_solution_has_expected_shape(self):
-        solution = self.solver.solve(timeout=3000)
+        solution = self.solver.solve(timeout=3000, backend="CPU")
         self.assertEqual(solution.shape, self.solution.shape)
 
     def test_solve_method(self):
         np.random.seed(2)
-        solution = self.solver.solve(timeout=200, target_cost=-11)
+        solution = self.solver.solve(timeout=200, target_cost=-11,
+                                     backend="CPU")
         print(solution)
         self.assertTrue((solution == self.solution).all())
 
-    def test_solver_creates_optimization_solver_process(self):
-        self.solver._create_solver_process(self.problem, backend="CPU")
-        solver_process = self.solver.solver_process
-        class_name = type(solver_process).__name__
-        self.assertIs(solver_process, self.solver.solver_process)
+    def test_solver_creates_optimizationsolver_process(self):
+        self.solver._create_solver_process(self.problem,
+                                                            backend="CPU")
+        class_name = type(self.solver.solver_process).__name__
         self.assertEqual(class_name, "OptimizationSolverProcess")
 
     def test_solves_creates_macrostate_reader_processes(self):
@@ -114,7 +114,7 @@ class TestOptimizationSolver(unittest.TestCase):
             self.solver.solver_process
         )
         condition = (
-                pm.variables.discrete.step_size
+                pm.variables.discrete.cost_diagonal
                 == -self.problem.cost.get_coefficient(2).diagonal()
         ).all()
         self.assertTrue(condition)
@@ -141,19 +141,19 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertTrue(t_start - t_end < 1)
 
 
-def solve_workload(q, reference_solution, backend="CPU"):
+def solve_workload(q, reference_solution):
     expected_cost = reference_solution @ q @ reference_solution
     problem = QUBO(q)
     np.random.seed(2)
     solver = OptimizationSolver(problem)
     solution = solver.solve(timeout=-1,
-                            target_cost=expected_cost,
-                            backend=backend)
+                            target_cost=expected_cost
+                            )
     cost = solution @ q @ solution
     return solution, cost, expected_cost
 
 
-class TestWorkloadsCPU(unittest.TestCase):
+class TestWorkloads(unittest.TestCase):
 
     def test_solve_polynomial_minimization(self):
         """Polynomial minimization with y=-5x_1 -3x_2 -8x_3 -6x_4 + 4x_1x_2+8x_1x_3+2x_2x_3+10x_3x_4"""

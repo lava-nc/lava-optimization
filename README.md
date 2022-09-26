@@ -71,15 +71,80 @@ print(solver.time_to_solution[-1], solver.energy_to_solution[-1])
 ```
 
 ## Requirements
-- Working installation of Lava [see Lava installation
+- Working installation of Lava, installed automatically with poetry below. [ For custom installs see Lava installation
 tutorial.](https://github.com/lava-nc/lava/blob/main/tutorials/in_depth/tutorial01_installing_lava.ipynb)
 
-## Setup
-- Clone the lava-optimization repository.
-- Add lava-optimization/src to your PYTHONPATH variable. For example, from
-lava-optimization/src/ run the following on your terminal:
- ```bash
-export PYTHONPATH=$PYTHONPATH:$(pwd)
+## Installation
+
+#### [Linux/MacOS]
+```bash
+cd $HOME
+git clone git@github.com:lava-nc/lava-optimization.git
+cd lava-optimization
+pip install "poetry>=1.1.13"
+poetry config virtualenvs.in-project true
+poetry install
+source .venv/bin/activate
+pytest
 ```
-You should do this only after having added Lava to your PYTHONPATH.
-This order is required for namespaces to be well defined.
+#### [Windows]
+```powershell
+# Commands using PowerShell
+cd $HOME
+git clone git@github.com:lava-nc/lava-optimization.git
+cd lava-optimization
+python3 -m venv .venv
+.venv\Scripts\activate
+pip install -U pip
+pip install "poetry>=1.1.13"
+poetry config virtualenvs.in-project true
+poetry install
+pytest
+```
+You should expect the following output after running the unit tests:
+```
+$ pytest
+============================= test session starts ==============================
+platform linux -- Python 3.8.10, pytest-7.1.2, pluggy-1.0.0
+rootdir: /home/user/src/lava-optimization, configfile: pyproject.toml, testpaths: tests
+plugins: cov-3.0.0
+collected 14 items                                                                                                                                                            
+
+tests/lava/lib/optimization/solvers/qp/test_models.py .......                                                                                                           [ 50%]
+tests/lava/lib/optimization/solvers/qp/test_process.py .......                                                                                                          [100%]
+
+---------- coverage: platform linux, python 3.8.10-final-0 -----------
+Name                                                Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------------
+src/lava/lib/optimization/__init__.py                   0      0   100%
+src/lava/lib/optimization/problems/__init__.py          0      0   100%
+src/lava/lib/optimization/problems/problems.py         43     29    33%   48-107, 111, 115, 119, 123, 127
+src/lava/lib/optimization/solvers/__init__.py           0      0   100%
+src/lava/lib/optimization/solvers/qp/__init__.py        0      0   100%
+src/lava/lib/optimization/solvers/qp/models.py        136      4    97%   97-98, 102-104
+src/lava/lib/optimization/solvers/qp/processes.py      75      0   100%
+src/lava/lib/optimization/solvers/qp/solver.py         26     18    31%   42-45, 62-104
+---------------------------------------------------------------------------------
+TOTAL                                                 280     51    82%
+
+Required test coverage of 45.0% reached. Total coverage: 81.79%
+
+=============== 14 passed in 8.95s ==============================================
+```
+
+### [Alternative] Installing Lava via Conda
+If you use the Conda package manager, you can simply install the Lava package
+via:
+```bash
+conda install lava-optimization -c conda-forge
+```
+
+Alternatively with intel numpy and scipy:
+
+```bash
+conda create -n lava-optimization python=3.9 -c intel
+conda activate lava-optimization
+conda install -n lava-optimization -c intel numpy scipy
+conda install -n lava-optimization -c conda-forge lava-optimization --freeze-installed
+```
+

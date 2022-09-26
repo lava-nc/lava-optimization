@@ -6,6 +6,7 @@
 import unittest
 
 import numpy as np
+
 from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 from lava.lib.optimization.problems.cost import Cost
 
@@ -63,7 +64,8 @@ class TestCost(unittest.TestCase):
             with self.subTest(msg=f"{n}"):
                 self.assertTrue(
                     (
-                        coefficient == self.cost_augmented.augmented_terms[n]
+                            coefficient == self.cost_augmented.augmented_terms[
+                        n]
                     ).all()
                 )
 
@@ -79,7 +81,8 @@ class TestCost(unittest.TestCase):
             with self.subTest(msg=f"{n}"):
                 self.assertTrue(
                     (
-                        coefficient == self.cost_augmented.augmented_terms[n]
+                            coefficient == self.cost_augmented.augmented_terms[
+                        n]
                     ).all()
                 )
 

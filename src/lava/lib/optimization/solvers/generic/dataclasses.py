@@ -3,40 +3,39 @@
 # See: https://spdx.org/licenses/
 from dataclasses import dataclass
 
+from lava.lib.optimization.solvers.generic.hierarchical_processes import (
+    AugmentedTermsProcess, ContinuousConstraintsProcess,
+    ContinuousVariablesProcess, CostConvergenceChecker,
+    DiscreteConstraintsProcess, DiscreteVariablesProcess,
+    MixedConstraintsProcess, SatConvergenceChecker)
+from lava.lib.optimization.solvers.generic.monitoring_processes import \
+    SolutionReadout
 from lava.proc.dense.process import Dense
-
-from lava.lib.optimization.solvers.generic.processes import (
-    ContinuousConstraintsProcess,
-    DiscreteConstraintsProcess,
-    MixedConstraintsProcess,
-    CostConvergenceChecker,
-    SatConvergenceChecker,
-    ReadGate,
-    SolutionReadout,
-    ContinuousVariablesProcess,
-    DiscreteVariablesProcess,
-    AugmentedTermsProcess,
-)
+from lava.proc.read_gate.process import ReadGate
 
 
 @dataclass
 class CostMinimizer:
-    """Processes implementing the cost function"""
+    """Processes implementing an optimization problem's cost function."""
 
     coefficients_2nd_order: Dense
 
     @property
     def state_in(self):
+        """Port receiving input from dynamical systems representing
+        variables."""
         return self.coefficients_2nd_order.s_in
 
     @property
     def gradient_out(self):
+        """Port sending gradient descent components to the dynamical systems."""
         return self.coefficients_2nd_order.a_out
 
 
 @dataclass
 class ConstraintEnforcing:
-    """Processes implementing the constraints and their enforcing."""
+    """Processes implementing an optimization problem's constraints and their
+    enforcing."""
 
     continuous: ContinuousConstraintsProcess
     discrete: DiscreteConstraintsProcess
@@ -44,8 +43,8 @@ class ConstraintEnforcing:
 
 
 @dataclass()
-class VariablesProcesses:
-    """Processes implementing the variables."""
+class VariablesImplementation:
+    """Processes implementing the variables of an optimization problem."""
 
     continuous: ContinuousVariablesProcess = None
     discrete: DiscreteVariablesProcess = None
@@ -60,15 +59,11 @@ class VariablesProcesses:
 
     @property
     def importances(self):
-        return self.discrete.importances
+        return self.discrete.step_size
 
     @importances.setter
     def importances(self, value):
-        self.discrete.importances = value
-
-    @property
-    def replace_assignment(self):
-        return self.discrete.replace_assignment
+        self.discrete.step_size = value
 
     @property
     def local_cost(self):
@@ -104,7 +99,7 @@ class MacroStateReader:
 
     @property
     def ref_port(self):
-        return self.solution_readout.ref_port
+        return self.read_gate.solution_reader
 
     @property
     def min_cost(self):
@@ -120,8 +115,20 @@ class MacroStateReader:
 
     @property
     def read_gate_in_port(self):
-        return self.read_gate.new_solution
+        return self.read_gate.cost_in
 
     @property
-    def read_gate_do_readout(self):
-        return self.read_gate.do_readout
+    def read_gate_cost_out(self):
+        return self.read_gate.cost_out
+
+    @property
+    def read_gate_solution_out(self):
+        return self.read_gate.solution_out
+
+    @property
+    def solution_readout_solution_in(self):
+        return self.solution_readout.read_solution
+
+    @property
+    def solution_readout_cost_in(self):
+        return self.solution_readout.cost_in

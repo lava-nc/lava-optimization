@@ -3,7 +3,7 @@
 # See: https://spdx.org/licenses/
 
 import unittest
-
+import numpy as np
 from lava.magma.core.run_conditions import RunSteps, RunContinuous
 from lava.magma.core.run_configs import Loihi2HwCfg
 

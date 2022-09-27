@@ -26,7 +26,9 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     solution: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     read_solution: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                          precision=32)
-    cost_in: PyRefPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
+    cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
+                                    precision=32)
+    req_stop_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                     precision=32)
     target_cost: int = LavaPyType(int, np.int32, 32)
     min_cost: int = None
@@ -43,12 +45,19 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     def run_spk(self):
         """Execute spiking phase, integrate input, update dynamics and send
         messages out."""
-        cost = self.cost_in.recv()
-        print(f"Host: cost: {cost}, at step {self.time_step}")
-        if cost[0]:
-            self.solution[:] = self.read_solution.recv()
+        raw_cost = self.cost_in.recv()
+        req_stop = self.req_stop_in.recv()
+        if raw_cost[0]:
+            cost = (raw_cost.astype(np.int32) << 8) >> 8
+        if req_stop[0]:
+            self._req_pause = True
+        elif cost[0]:
+            raw_solution = self.read_solution.recv()
+            self.solution[:] = (raw_solution.astype(np.int32) << 16) >> 16
             self.min_cost = cost[0]
-            print(f"Host: received a better solution: {self.solution} at step"
+            print(f"Host: received a better solution: "
+                  f"{self.solution} at "
+                  f"step"
                   f" {self.time_step}")
 
     def run_post_mgmt(self):

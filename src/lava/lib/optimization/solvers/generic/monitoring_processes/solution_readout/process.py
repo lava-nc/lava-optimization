@@ -51,3 +51,4 @@ class SolutionReadout(AbstractProcess):
         self.target_cost = Var(shape=(1,), init=target_cost)
         self.read_solution = InPort(shape=shape)
         self.cost_in = InPort(shape=(1,))
+        self.req_stop_in = InPort(shape=(1,))

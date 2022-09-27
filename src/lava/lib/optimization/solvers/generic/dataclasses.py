@@ -122,6 +122,10 @@ class MacroStateReader:
         return self.read_gate.cost_out
 
     @property
+    def read_gate_req_stop(self):
+        return self.read_gate.send_pause_request
+
+    @property
     def read_gate_solution_out(self):
         return self.read_gate.solution_out
 
@@ -132,3 +136,7 @@ class MacroStateReader:
     @property
     def solution_readout_cost_in(self):
         return self.solution_readout.cost_in
+
+    @property
+    def solution_readout_req_stop_in(self):
+        return self.solution_readout.req_stop_in

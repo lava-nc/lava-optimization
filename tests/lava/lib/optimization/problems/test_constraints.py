@@ -193,7 +193,7 @@ class TestConstraints(unittest.TestCase):
         self.constraints.discrete = DiscreteConstraints(new_constraints)
         self.assertIsInstance(self.constraints.discrete, DiscreteConstraints)
 
-    def teest_set_arithmetic_constraint(self):
+    def test_set_arithmetic_constraint(self):
         new_constraint = ArithmeticConstraints()
         self.constraints.arithmetic = new_constraint
         self.assertIs(self.constraints.arithmetic, new_constraint)

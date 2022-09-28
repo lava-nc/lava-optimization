@@ -42,12 +42,7 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertTrue((solution == self.solution).all())
 
     def test_solver_creates_optimizationsolver_process(self):
-<<<<<<< HEAD
         self.solver._create_solver_process(self.problem, backend="CPU")
-=======
-        self.solver._create_solver_process(self.problem,
-                                                            backend="CPU")
->>>>>>> upstream
         class_name = type(self.solver.solver_process).__name__
         self.assertEqual(class_name, "OptimizationSolverProcess")
 
@@ -107,14 +102,8 @@ class TestOptimizationSolver(unittest.TestCase):
         )
         q_no_diag = np.copy(self.problem.cost.get_coefficient(2))
         np.fill_diagonal(q_no_diag, 0)
-<<<<<<< HEAD
         wgts = pm.cost_minimizer.coefficients_2nd_order.weights
         condition = (wgts.init == -q_no_diag).all()
-=======
-        condition = (
-                pm.cost_minimizer.coefficients_2nd_order.weights.init == -q_no_diag
-        ).all()
->>>>>>> upstream
         self.assertTrue(condition)
 
     def test_qubo_cost_defines_biases(self):
@@ -124,12 +113,7 @@ class TestOptimizationSolver(unittest.TestCase):
         )
         condition = (
                 pm.variables.discrete.cost_diagonal
-<<<<<<< HEAD
                 == -self.problem.cost.get_coefficient(2).diagonal()).all()
-=======
-                == -self.problem.cost.get_coefficient(2).diagonal()
-        ).all()
->>>>>>> upstream
         self.assertTrue(condition)
 
     def test_qubo_cost_defines_num_vars_in_discrete_variables_process(self):

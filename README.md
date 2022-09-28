@@ -34,7 +34,7 @@ respective equality and inequality constraints. The vector $x$ can be
  taxonomy of optimization problems according to thecharacteristics of the 
  variable domain and of $f$, $g$ and $h$:
 
-![image](https://user-images.githubusercontent.com/83413252/192851785-5b9f1903-4bb6-4ba5-ac74-8ce07e8de839.png)
+![image](https://user-images.githubusercontent.com/83413252/192852018-dbc08018-ddda-4571-8494-cd1fbfa8405f.png)
 
 In the long run, lava-optimization aims to offer support to solve all of the problems in the figure with a neuromorphic backend. 
 
@@ -44,7 +44,7 @@ The figure below shows the general architecture of the library.  We harness the 
 
 An API for every problem class can be created by inheriting from OptimizationSolver and compossing particular flavours of Constraints, Variables and Cost. 
 
-![image](https://user-images.githubusercontent.com/83706504/191569091-cfca33f3-be74-42a8-bee5-4ab9f8d2c978.png)
+![image](https://user-images.githubusercontent.com/83413252/192851930-919035a7-122d-4a82-8032-f1acc6da717b.png)
 
 The instance of an Optimization problem is the valid input for instaintiating the generic OptimizationSolver class. In this way, the OptimizationSolver interface is left fixed and the OptimizationProblem allows the greatest flexibility for creating new APIs. Under the hood, the OptimizationSolver understands the compossed structure of the OptimizationProblem and will in turn compose the required solver components and Lava processes. 
 

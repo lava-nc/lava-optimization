@@ -31,12 +31,12 @@ $$
 \displaystyle{\min_{x} \lbrace f(x) | g_i(x)	\leq  b,	h_i(x)	= c.\rbrace}
 $$
 
-Where $f(x)$ is the obective function to be optimized while $g(x)$ and $h(x)$ 
+Where $f(x)$ is the objective function to be optimized while $g(x)$ and $h(x)$ 
 constrain the validity of $f(x)$ to regions in the state space satisfying the 
 respective equality and inequality constraints. The vector $x$ can be
  continuous, discrete or a mixture of both. We can then construct the following 
- taxonomy of optimization problems according to thecharacteristics of the 
- variable domain and of $f$, $g$ and $h$:
+ taxonomy of optimization problems according to  the characteristics of the 
+ variable domain and of $f$, $g$, and $h$:
 
 ![image](https://user-images.githubusercontent.com/83413252/192852018-dbc08018-ddda-4571-8494-cd1fbfa8405f.png)
 
@@ -44,13 +44,13 @@ In the long run, lava-optimization aims to offer support to solve all of the pro
 
 ## OptimizationSolver and OptimizationProblem Classes
 
-The figure below shows the general architecture of the library.  We harness the general definition of constraint optimization problems to create OptimizationProblem instances by compossing Constraints, Variables and Cost classes which describe the characteristics of every subproblem class. Note that while a quadratic problem (QP) will be described by linear equality and inequelity constraints with variables on the continuous domain and a quadratic function, a constraint satisfaction problem (CSP) will be described by discrete constraints, defined by variable subsets and a binary relation describing the mutually allowed values for such discrete variables and will have a costant cost function with the pure goal of satisfying constraints.
+The figure below shows the general architecture of the library.  We harness the general definition of constraint optimization problems to create OptimizationProblem instances by composing  Constraints, Variables, and Cost classes which describe the characteristics of every subproblem class. Note that while a quadratic problem (QP) will be described by linear equality and inequality constraints with variables on the continuous domain and a quadratic function, a constraint satisfaction problem (CSP) will be described by discrete constraints, defined by variable subsets and a binary relation describing the mutually allowed values for such discrete variables and will have a constant cost function with the pure goal of satisfying constraints.
 
-An API for every problem class can be created by inheriting from OptimizationSolver and compossing particular flavours of Constraints, Variables and Cost. 
+An API for every problem class can be created by inheriting from OptimizationSolver and composing particular flavors of Constraints, Variables, and Cost. 
 
 ![image](https://user-images.githubusercontent.com/83413252/192851930-919035a7-122d-4a82-8032-f1acc6da717b.png)
 
-The instance of an Optimization problem is the valid input for instaintiating the generic OptimizationSolver class. In this way, the OptimizationSolver interface is left fixed and the OptimizationProblem allows the greatest flexibility for creating new APIs. Under the hood, the OptimizationSolver understands the compossed structure of the OptimizationProblem and will in turn compose the required solver components and Lava processes. 
+The instance of an Optimization problem is the valid input for instantiating the generic OptimizationSolver class. In this way, the OptimizationSolver interface is left fixed and the OptimizationProblem allows the greatest flexibility for creating new APIs. Under the hood, the OptimizationSolver understands the compossite structure of the OptimizationProblem and will in turn compose the required solver components and Lava processes.  
 
 ## Tutorials
 

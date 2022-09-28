@@ -26,7 +26,11 @@ We currently plan the following development order in such a way that new solvers
 
 ## Taxonomy of Optimization Problems
 More formally, the general form of a constrained optimization problem is:
-$\displaystyle{\min_{x} f(x) s.t.	g_i(x)	\leq  b,	h_i(x)	= c.}$
+
+$$
+\displaystyle{\min_{x} \lbrace f(x) | g_i(x)	\leq  b,	h_i(x)	= c.\rbrace}
+$$
+
 Where $f(x)$ is the obective function to be optimized while $g(x)$ and $h(x)$ 
 constrain the validity of $f(x)$ to regions in the state space satisfying the 
 respective equality and inequality constraints. The vector $x$ can be

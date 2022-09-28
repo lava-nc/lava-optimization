@@ -6,35 +6,54 @@ Constrained optimization searches for the values of input variables that minimiz
 Constrained optimization is a promising application for neuromorphic computing as
 it [naturally aligns with the dynamics of spiking neural networks](https://doi.org/10.1109/JPROC.2021.3067593). When individual neurons represent states of variables, the neuronal connections can directly encode constraints between the variables: in its simplest form, recurrent inhibitory synapses connect neurons that represent mutually exclusive variable states, while recurrent excitatory synapses link neurons representing reinforcing states. Implemented on massively parallel neuromorphic hardware, such a spiking neural network can simultaneously evaluate conflicts and cost functions involving many variables, and update all variables accordingly. This allows a quick convergence towards an optimal state. In addition, the fine-scale timing dynamics of SNNs allow them to readily escape from local minima.
 
-This Lava repository currently provides constraint optimization solvers that leverage the benefits of neuromorphic computing for the following problems:
+This Lava repository currently supports the following constraint optimization problems:
 
 - Quadratic Programming (QP)
+- Quadratic Unconstrained Binary Optimization (QUBO)
 
-In the future, the library will be extended by solvers targeting further constraint optimization problems that are relevant for robotics and operations research.
-The current focus lies on solvers for the following problems:
+As we continue development, the library will support more constraint optimization problems that are relevant for robotics and operations research.
+We currently plan the following development order in such a way that new solvers build on the capabilities of existing ones:
 
 - Constraint Satisfaction Problems (CSP)
-- Quadratic Unconstrained Binary Optimization (QUBO)
 - Integer Linear Programming (ILP)
-- Linear Programming (LP)
 - Mixed-Integer Linear Programming (MILP)
 - Mixed-Integer Quadratic Programming (MIQP)
+- Linear Programming (LP)
 
  ![Overview_Solvers](https://user-images.githubusercontent.com/83413252/135428779-d128aaaa-54ed-4ae1-a5b1-8e0fcc08c96e.png?raw=true "Lava features a growing suite of constraint
 	 optimization solvers")
 
 
+## Taxonomy of Optimization Problems
+More formally, the general form of a constrained optimization problem is:
+$\displaystyle{\min_{x} f(x) s.t.	g_i(x)	\leq  b,	h_i(x)	= c.}$
+Where $f(x)$ is the obective function to be optimized while $g(x)$ and $h(x)$ 
+constrain the validity of $f(x)$ to regions in the state space satisfying the 
+respective equality and inequality constraints. The vector $x$ can be
+ continuous, discrete or a mixture of both. We can then construct the following 
+ taxonomy of optimization problems according to thecharacteristics of the 
+ variable domain and of $f$, $g$ and $h$:
+
+![image](https://user-images.githubusercontent.com/83706504/191568721-324ce4d2-4255-4abc-bd57-8358d0ed241f.png)
+
+In the long run, lava-optimization aims to offer support to solve all of the problems in the figure with a neuromorphic backend. 
+
+## OptimizationSolver and OptimizationProblem Classes
+
+The figure below shows the general architecture of the library.  We harness the general definition of constraint optimization problems to create OptimizationProblem instances by compossing Constraints, Variables and Cost classes which describe the characteristics of every subproblem class. Note that while a quadratic problem (QP) will be described by linear equality and inequelity constraints with variables on the continuous domain and a quadratic function, a constraint satisfaction problem (CSP) will be described by discrete constraints, defined by variable subsets and a binary relation describing the mutually allowed values for such discrete variables and will have a costant cost function with the pure goal of satisfying constraints.
+
+An API for every problem class can be created by inheriting from OptimizationSolver and compossing particular flavours of Constraints, Variables and Cost. 
+
+![image](https://user-images.githubusercontent.com/83706504/191569091-cfca33f3-be74-42a8-bee5-4ab9f8d2c978.png)
+
+The instance of an Optimization problem is the valid input for instaintiating the generic OptimizationSolver class. In this way, the OptimizationSolver interface is left fixed and the OptimizationProblem allows the greatest flexibility for creating new APIs. Under the hood, the OptimizationSolver understands the compossed structure of the OptimizationProblem and will in turn compose the required solver components and Lava processes. 
+
 ## Tutorials
 
-### QP Solver
-
+### QP Tutorial
 - [Solving LASSO.](https://github.com/lava-nc/lava-optimization/tree/main/tutorials/qp/tutorial_01_solving_lasso.ipynb)
 
-
-## Example
-
-### QP Solver
-
+### Solving QP problems (After merging with the OptimizationSolver QPSolver will be deprecated)
 ```python
 import numpy as np
 from lava.lib.optimization.problems.problems import QP
@@ -58,16 +77,44 @@ solver = QPSolver(
 solver.solve(problem, iterations=iterations)
 ```
 
-### Coming up next: CSPSolver
-```python
-from lava.lib.optimization import CspSolver
+### QUBO Tutorial
+- [Solving MIS.](https://github.com/lava-nc/lava-optimization/tree/main/tutorials/qubo/tutorial_01_solving_mis.ipynb)
 
-variables = ['var1', 'var2', 'var3']
-domains = dict(var1 = {0, 1, 2}, var2 = {'a', 'b', 'c'}, var3 = {'red', 'blue', 'green'})
-solver = CspSolver()
-problem = CSP(variables, domains, constraints)
-solution, t_sol = solver.solve(problem, timeout=5000, backend='Loihi2', profile=True)
-print(solver.time_to_solution[-1], solver.energy_to_solution[-1])
+### Solving QUBO using the Generic OptimizationSolver
+```python
+from lava.lib.optimization.solvers.generic.solver import solve, OptimizationSolver
+from lava.lib.optimization.problems.problems import QUBO
+
+q1 = np.asarray([[-5, 2, 4, 0],
+                 [ 2,-3, 1, 0],
+                 [ 4, 1,-8, 5],
+                 [ 0, 0, 5,-6]]))
+
+q2 =-np.asarray([[ 1,-3,-3,-3],
+                 [-3, 1, 0, 0],
+                 [-3, 0, 1,-3],
+                 [-3, 0,-3, 1]]))
+
+# Define problems:
+qubo1=QUBO(q1)
+qubo2=QUBO(q2)
+
+# solve using solve:
+sol_qubo1 = solve(problem = qubo1, timeout=-1, backend=“Loihi2”)
+sol_qubo2 = solve(problem = qubo2, timeout=-1, backend=“Loihi2”)
+
+# Solve using OptimizationSolver:
+solver = OptimizationSolver(problem=qubo1)
+
+solutions = []
+for trial in range(10):
+	solution = solver.solve(timeout=3000, target_cost=-50, backend=“Loihi2”)
+	solutions.append(solution)
+![image](https://user-images.githubusercontent.com/83706504/191646177-bfb429ac-6555-4d37-8d0a-c6074db8e455.png)
+
+# When exposing hyperparameters use more mathematical names than neuron ones.
+
+step_size <- bias
 ```
 
 ## Requirements

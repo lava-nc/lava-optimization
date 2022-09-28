@@ -54,13 +54,15 @@ class SolverProcessBuilder:
         """Assert the solver process has already been created."""
         msg = """Process has not been created yet. Make sure the
         create_solver_process method was already called."""
-        assert self._process is not None, msg
+        if self._process is None:
+            raise Exception(msg)
 
     def verify_model_exists(self):
         """Assert the solver process model has already been created."""
         msg = """Process model has not been created yet. Make sure the
         create_solver_model method was already called."""
-        assert self._model is not None, msg
+        if self._model is None:
+            raise Exception(msg)
 
     def create_solver_process(self,
                               problem: OptimizationProblem,
@@ -219,9 +221,8 @@ class SolverProcessBuilder:
                 )
                 variables.importances = proc.cost_coefficients[1].init
                 macrostate_reader.cost_convergence_check \
-                    =CostConvergenceChecker(
-                    shape=proc.variable_assignment.shape
-                )
+                    = CostConvergenceChecker(
+                    shape=proc.variable_assignment.shape)
                 variables.local_cost.connect(macrostate_reader.cost_in)
                 proc.vars.optimality.alias(macrostate_reader.min_cost)
 

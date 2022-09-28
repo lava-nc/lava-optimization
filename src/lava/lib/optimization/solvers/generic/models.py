@@ -110,4 +110,3 @@ class SolverModelBuilder:
         setattr(SolverModel, "required_resources", super_res + [CPU])
         setattr(SolverModel, "implements_protocol", LoihiProtocol)
         return SolverModel
-

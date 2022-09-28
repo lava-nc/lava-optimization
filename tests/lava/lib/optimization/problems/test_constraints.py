@@ -159,11 +159,8 @@ class TestArithmeticConstraint(unittest.TestCase):
         for n, coefficient in enumerate(new_constraints_ineq):
             with self.subTest(msg=f"{n}"):
                 self.assertTrue(
-                    (
-                            coefficient
-                            == self.constraint.inequality.coefficients[n]
-                    ).all()
-                )
+                    (coefficient== self.constraint.inequality.coefficients[n]
+                     ).all())
 
 
 class TestConstraints(unittest.TestCase):

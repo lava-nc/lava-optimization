@@ -111,9 +111,8 @@ class TestOptimizationSolver(unittest.TestCase):
         pm = self.solver.solver_process.model_class(
             self.solver.solver_process
         )
-        condition = (
-                pm.variables.discrete.cost_diagonal
-                == -self.problem.cost.get_coefficient(2).diagonal()).all()
+        condition = (pm.variables.discrete.cost_diagonal==-self.problem.cost
+                     .get_coefficient(2).diagonal()).all()
         self.assertTrue(condition)
 
     def test_qubo_cost_defines_num_vars_in_discrete_variables_process(self):

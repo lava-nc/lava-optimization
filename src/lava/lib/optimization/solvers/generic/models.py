@@ -26,9 +26,6 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \
     CostConvergenceChecker
 from lava.proc.read_gate.process import ReadGate
-from lava.proc.cost_integrator.process import CostIntegrator
-from lava.lib.optimization.solvers.generic.hierarchical_processes import \
-    StochasticIntegrateAndFire
 from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import SolutionReadout
 

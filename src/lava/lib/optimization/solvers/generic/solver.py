@@ -212,7 +212,7 @@ class OptimizationSolver:
 
 # TODO throw an error if L2 is not present and the user tries to use it.
 backend_msg = f""" was requested as backend. However,
-the solver currently supports only Loihi 2 and CPU backends. 
+the solver currently supports only Loihi 2 and CPU backends.
 These can be specified by calling solve with any of the following:
 
     backend = "CPU"

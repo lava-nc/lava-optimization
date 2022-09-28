@@ -5,12 +5,9 @@
 
 import unittest
 
-from lava.lib.optimization.problems.variables import (
-    Variable,
-    DiscreteVariables,
-    ContinuousVariables,
-    Variables,
-)
+from lava.lib.optimization.problems.variables import (ContinuousVariables,
+                                                      DiscreteVariables,
+                                                      Variable, Variables)
 
 
 class TestVariable(unittest.TestCase):

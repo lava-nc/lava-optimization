@@ -5,20 +5,16 @@
 import unittest
 
 import numpy as np
+
 from lava.lib.optimization.problems.constraints import (
     Constraints,
     DiscreteConstraints,
 )
 from lava.lib.optimization.problems.cost import Cost
-from lava.lib.optimization.problems.problems import (
-    OptimizationProblem,
-    QUBO,
-    CSP,
-)
-from lava.lib.optimization.problems.variables import (
-    Variables,
-    DiscreteVariables,
-)
+from lava.lib.optimization.problems.problems import (CSP, OptimizationProblem,
+                                                     QUBO)
+from lava.lib.optimization.problems.variables import (DiscreteVariables,
+                                                      Variables)
 
 
 class CompliantInterfaceInheritance(OptimizationProblem):
@@ -52,9 +48,7 @@ class TestOptimizationProblem(unittest.TestCase):
             OptimizationProblem()
 
     def test_compliant_sublcass(self):
-        self.assertIsInstance(
-            self.compliant_instantiation, OptimizationProblem
-        )
+        self.assertIsInstance(self.compliant_instantiation, OptimizationProblem)
 
     def test_not_compliant_sublcass(self):
         with self.assertRaises(TypeError):

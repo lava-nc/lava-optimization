@@ -5,6 +5,7 @@
 import unittest
 
 import numpy as np
+
 from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 
 
@@ -19,8 +20,8 @@ class TestCoefficientsTensors(unittest.TestCase):
 
     def test_create_obj(self):
         for coeffs, name in (
-            (self.coefficients_list, "Lists"),
-            (self.coefficients_np, "Numpy"),
+                (self.coefficients_list, "Lists"),
+                (self.coefficients_np, "Numpy"),
         ):
             with self.subTest(msg=f"Test for input as {name}"):
                 self.assertIsInstance(coeffs, CoefficientTensorsMixin)

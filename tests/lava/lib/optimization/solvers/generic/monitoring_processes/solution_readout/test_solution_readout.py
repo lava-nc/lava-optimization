@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 from lava.magma.core.run_conditions import RunSteps, RunContinuous
 from lava.magma.core.run_configs import Loihi2HwCfg
+from tests.lava.test_utils.utils import Utils
 
 from lava.proc.read_gate.ncmodels import \
     ReadGateCModel
@@ -15,7 +16,10 @@ from lava.lib.optimization.solvers.generic.monitoring_processes\
 from lava.proc.spiker.ncmodels import SpikerNcModel
 from lava.proc.spiker.process import Spiker
 
+run_loihi_tests: bool = Utils.get_bool_env_setting("RUN_LOIHI_TESTS")
 
+
+@unittest.skipUnless(run_loihi_tests, "")
 class TestSolutionReadout(unittest.TestCase):
     def setUp(self) -> None:
         # Create processes.
@@ -40,4 +44,4 @@ class TestSolutionReadout(unittest.TestCase):
         self.readout.wait()
         solution = self.readout.solution.get()
         self.readout.stop()
-        self.assertTrue(np.all(solution == 2*np.ones(4)))
+        self.assertTrue(np.all(solution == 2 * np.ones(4)))

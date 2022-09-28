@@ -42,8 +42,7 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertTrue((solution == self.solution).all())
 
     def test_solver_creates_optimizationsolver_process(self):
-        self.solver._create_solver_process(self.problem,
-                                                            backend="CPU")
+        self.solver._create_solver_process(self.problem, backend="CPU")
         class_name = type(self.solver.solver_process).__name__
         self.assertEqual(class_name, "OptimizationSolverProcess")
 
@@ -103,9 +102,8 @@ class TestOptimizationSolver(unittest.TestCase):
         )
         q_no_diag = np.copy(self.problem.cost.get_coefficient(2))
         np.fill_diagonal(q_no_diag, 0)
-        condition = (
-                pm.cost_minimizer.coefficients_2nd_order.weights.init == -q_no_diag
-        ).all()
+        wgts = pm.cost_minimizer.coefficients_2nd_order.weights
+        condition = (wgts.init == -q_no_diag).all()
         self.assertTrue(condition)
 
     def test_qubo_cost_defines_biases(self):
@@ -115,8 +113,7 @@ class TestOptimizationSolver(unittest.TestCase):
         )
         condition = (
                 pm.variables.discrete.cost_diagonal
-                == -self.problem.cost.get_coefficient(2).diagonal()
-        ).all()
+                == -self.problem.cost.get_coefficient(2).diagonal()).all()
         self.assertTrue(condition)
 
     def test_qubo_cost_defines_num_vars_in_discrete_variables_process(self):
@@ -156,7 +153,9 @@ def solve_workload(q, reference_solution):
 class TestWorkloads(unittest.TestCase):
 
     def test_solve_polynomial_minimization(self):
-        """Polynomial minimization with y=-5x_1 -3x_2 -8x_3 -6x_4 + 4x_1x_2+8x_1x_3+2x_2x_3+10x_3x_4"""
+        """Polynomial minimization with y=-5x_1 -3x_2 -8x_3 -6x_4 +
+        4x_1x_2+8x_1x_3+2x_2x_3+10x_3x_4
+        """
         q = np.asarray([[-5, 2, 4, 0],
                         [2, -3, 1, 0],
                         [4, 1, -8, 5],

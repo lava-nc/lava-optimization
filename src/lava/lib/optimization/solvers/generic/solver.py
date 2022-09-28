@@ -166,9 +166,8 @@ class OptimizationSolver:
                                problem: OptimizationProblem,
                                target_cost: ty.Optional[int] = None,
                                backend: BACKENDS = None,
-                               hyperparameters: ty.Dict[str,
-                                                        ty.Union[
-                                                            int, npt.ArrayLike]] = None):
+                               hyperparameters: ty.Dict[
+                                   str, ty.Union[int, npt.ArrayLike]] = None):
         """Create process and model class as solver for the given problem.
 
         Parameters

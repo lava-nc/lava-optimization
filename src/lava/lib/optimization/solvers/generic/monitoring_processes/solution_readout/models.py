@@ -26,10 +26,9 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     solution: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     read_solution: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                          precision=32)
-    cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                    precision=32)
+    cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
     req_stop_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                    precision=32)
+                                       precision=32)
     target_cost: int = LavaPyType(int, np.int32, 32)
     min_cost: int = None
 

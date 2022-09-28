@@ -64,8 +64,8 @@ class SolverProcessBuilder:
 
     def create_solver_process(self,
                               problem: OptimizationProblem,
-                              hyperparameters: ty.Dict[str, ty.Union[int,
-                                                                     npt.ArrayLike]]):
+                              hyperparameters: ty.Dict[
+                                  str, ty.Union[int, npt.ArrayLike]]):
         """Create and set a solver process for the specified optimization
         problem.
 
@@ -163,9 +163,8 @@ class SolverProcessBuilder:
                 )
             self.cost_diagonal = None
             if hasattr(problem, "cost"):
-                self.cost_coefficients = SolverProcessBuilder._map_rank_to_coefficients_vars(
-                    problem.cost.coefficients
-                )
+                mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
+                self.cost_coefficients = mrcv(problem.cost.coefficients)
                 self.cost_diagonal = -problem.cost.coefficients[
                     2].diagonal()
             self.variable_assignment = Var(
@@ -219,7 +218,8 @@ class SolverProcessBuilder:
                     )
                 )
                 variables.importances = proc.cost_coefficients[1].init
-                macrostate_reader.cost_convergence_check = CostConvergenceChecker(
+                macrostate_reader.cost_convergence_check \
+                    =CostConvergenceChecker(
                     shape=proc.variable_assignment.shape
                 )
                 variables.local_cost.connect(macrostate_reader.cost_in)

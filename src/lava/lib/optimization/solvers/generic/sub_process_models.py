@@ -32,6 +32,7 @@ from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.proc.lif.process import LIF, TernaryLIF
 from lava.proc.scif.process import QuboScif
 
+
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
 @requires(CPU)
 class DiscreteVariablesModel(AbstractSubProcessModel):
@@ -41,6 +42,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
     connects them via Dense processes as to represent integer or binary
     variables.
     """
+
     def __init__(self, proc):
         # Instantiate child processes
         # The input shape is a 2D vector (shape of the weight matrix).
@@ -89,6 +91,7 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
     in this way, downstream processes can be directly connected to the
     CostConvergence process.
     """
+
     def __init__(self, proc):
         # Instantiate child processes
         # The input shape is a 2D vector (shape of the weight matrix).
@@ -118,6 +121,7 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
     The process is just a wrapper over the QuboScif process.
     # Todo deprecate in favour of QuboScif.
     """
+
     def __init__(self, proc):
         shape = proc.proc_params.get("shape", (1,))
         step_size = proc.proc_params.get("step_size", (1,))
@@ -193,12 +197,8 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
                                                          self.integration.shape)
         self.integration[:] = self.integration * (1 - integration_decay)
         self.integration[:] += added_input.astype(int)
-        state[:] = (
-                state * (1 - state_decay)
-                + self.integration
-                + self.step_size
-                + noise
-        )
+        state[:] = (state * (1 - state_decay) + self.integration +
+                    self.step_size + noise)
         return state
 
     def do_fire(self, state):

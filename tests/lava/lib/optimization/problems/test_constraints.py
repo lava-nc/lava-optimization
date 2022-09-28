@@ -146,12 +146,8 @@ class TestArithmeticConstraint(unittest.TestCase):
         self.constraint.equality = new_constraints_eq
         for n, coefficient in enumerate(new_constraints_eq):
             with self.subTest(msg=f"{n}"):
-                self.assertTrue(
-                    (
-                            coefficient ==
-                            self.constraint.equality.coefficients[n]
-                    ).all()
-                )
+                coeffs = self.constraint.equality.coefficients
+                self.assertTrue((coefficient == coeffs[n]).all())
 
     def test_set_arithmetic_constraints_inequality(self):
         new_constraints_ineq = (

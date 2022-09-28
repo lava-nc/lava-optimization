@@ -45,4 +45,3 @@ def _in_ports_from_coefficients(
         InPort(shape=coeff.shape) for coeff in coefficients.coefficients
     ]
     return in_ports
-

@@ -18,7 +18,7 @@ from lava.lib.optimization.solvers.generic.dataclasses import (
     VariablesImplementation,
     MacroStateReader,
 )
-from lava.lib.optimization.solvers.generic.processes import (
+from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     SatConvergenceChecker,
     DiscreteVariablesProcess,
     ContinuousVariablesProcess,

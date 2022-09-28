@@ -207,7 +207,7 @@ class StochasticIntegrateAndFire(AbstractProcess):
                  step_size: npt.ArrayLike,
                  shape: ty.Tuple[int, ...] = (1,),
                  init_state: npt.ArrayLike = 0,
-                 noise_amplitude: npt.ArrayLike = 0,
+                 noise_amplitude: npt.ArrayLike = 1,
                  input_duration: npt.ArrayLike = 6,
                  min_state: npt.ArrayLike = 1000,
                  min_integration: npt.ArrayLike = -1000,

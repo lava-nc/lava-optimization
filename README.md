@@ -34,7 +34,7 @@ respective equality and inequality constraints. The vector $x$ can be
  taxonomy of optimization problems according to thecharacteristics of the 
  variable domain and of $f$, $g$ and $h$:
 
-![image](https://user-images.githubusercontent.com/83413252/192850472-1953110f-8c22-4fea-b922-5c3a6941ecf0.png)
+![image](https://user-images.githubusercontent.com/83413252/192851785-5b9f1903-4bb6-4ba5-ac74-8ce07e8de839.png)
 
 In the long run, lava-optimization aims to offer support to solve all of the problems in the figure with a neuromorphic backend. 
 

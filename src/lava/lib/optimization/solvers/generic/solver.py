@@ -9,7 +9,7 @@ from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \
     StochasticIntegrateAndFire
 from lava.lib.optimization.solvers.generic.sub_process_models import \
-    StochasticIntegrateAndFireModel, StochasticIntegrateAndFireModelSCIF
+    StochasticIntegrateAndFireModel
 from lava.magma.core.resources import AbstractComputeResource, CPU, \
     Loihi2NeuroCore, NeuroCore
 from lava.magma.core.run_conditions import RunContinuous, RunSteps
@@ -17,13 +17,9 @@ from lava.magma.core.run_configs import Loihi1SimCfg, Loihi2HwCfg
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
-from lava.proc.dense.ncmodels import NcModelDense
 from lava.proc.dense.process import Dense
 from lava.proc.read_gate.models import ReadGatePyModel
-from lava.proc.read_gate.ncmodels import ReadGateCModel
 from lava.proc.read_gate.process import ReadGate
-from lava.proc.scif.ncmodels import NcModelQuboScif
-from lava.proc.scif.process import QuboScif
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -138,15 +134,11 @@ class OptimizationSolver:
             run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
                                    select_sub_proc_model=True)
         elif backend in NEUROCORES:
-            pdict = {self.solver_process: self.solver_model,
-                     ReadGate: ReadGateCModel,
-                     Dense: NcModelDense,
-                     StochasticIntegrateAndFire:
-                         StochasticIntegrateAndFireModelSCIF,
-                     QuboScif: NcModelQuboScif,
-                     }
-            run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
-                                  select_sub_proc_model=True)
+            raise NotImplementedError("Loihi backend will be supported in an "
+                                      "upcomming release and requires the "
+                                      "lava-on-loihi extension of Lava, "
+                                      "verify you are running the latest "
+                                      "release of this library.")
         else:
             raise NotImplementedError(str(backend) + backend_msg)
         self.solver_process._log_config.level = 20

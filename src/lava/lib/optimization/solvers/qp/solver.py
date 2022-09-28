@@ -59,10 +59,10 @@ class QPSolver:
         sol : 1-D np.array
             Solution to the quadratic program
         """
-        (
-            hessian,
-            linear_offset,
-        ) = (problem.get_hessian, problem.get_linear_offset)
+        (hessian, linear_offset,) = (
+            problem.get_hessian,
+            problem.get_linear_offset,
+        )
         if problem.get_constraint_hyperplanes is not None:
             constraint_hyperplanes, constraint_biases = (
                 problem.get_constraint_hyperplanes,
@@ -70,9 +70,10 @@ class QPSolver:
             )
 
         else:
-            constraint_hyperplanes, constraint_biases = np.zeros(
-                (hessian.shape[0], hessian.shape[1])
-            ), np.zeros((hessian.shape[0], 1))
+            constraint_hyperplanes, constraint_biases = (
+                np.zeros((hessian.shape[0], hessian.shape[1])),
+                np.zeros((hessian.shape[0], 1)),
+            )
 
         init_sol = np.random.rand(hessian.shape[0], 1)
         i_max = iterations

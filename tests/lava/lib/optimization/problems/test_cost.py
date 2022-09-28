@@ -6,9 +6,8 @@
 import unittest
 
 import numpy as np
-from lava.lib.optimization.problems.coefficients import (
-    CoefficientTensorsMixin,
-)
+
+from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 from lava.lib.optimization.problems.cost import Cost
 
 
@@ -27,9 +26,8 @@ class TestCost(unittest.TestCase):
             5 * np.ones((2, 2, 2)),
         )
         self.cost = Cost(*self.raw_coefficients)
-        self.cost_augmented = Cost(
-            *self.raw_coefficients, augmented_terms=self.augmented_terms
-        )
+        self.cost_augmented = Cost(*self.raw_coefficients,
+                                   augmented_terms=self.augmented_terms)
 
     def test_create_obj(self):
         for cost, label in [
@@ -63,11 +61,8 @@ class TestCost(unittest.TestCase):
     def test_augmented_terms(self):
         for n, coefficient in enumerate(self.augmented_terms):
             with self.subTest(msg=f"{n}"):
-                self.assertTrue(
-                    (
-                        coefficient == self.cost_augmented.augmented_terms[n]
-                    ).all()
-                )
+                aug_terms = self.cost_augmented.augmented_terms
+                self.assertTrue((coefficient == aug_terms[n]).all())
 
     def test_reset_augmented_terms(self):
         new_augmented_terms = (
@@ -79,11 +74,8 @@ class TestCost(unittest.TestCase):
         self.cost_augmented.augmented_terms = new_augmented_terms
         for n, coefficient in enumerate(new_augmented_terms):
             with self.subTest(msg=f"{n}"):
-                self.assertTrue(
-                    (
-                        coefficient == self.cost_augmented.augmented_terms[n]
-                    ).all()
-                )
+                aug_terms = self.cost_augmented.augmented_terms
+                self.assertTrue((coefficient == aug_terms[n]).all())
 
     def test_set_augmented_terms(self):
         new_augmented_terms = (

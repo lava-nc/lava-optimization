@@ -111,7 +111,7 @@ class TestOptimizationSolver(unittest.TestCase):
         pm = self.solver.solver_process.model_class(
             self.solver.solver_process
         )
-        condition = (pm.variables.discrete.cost_diagonal==-self.problem.cost
+        condition = (pm.variables.discrete.cost_diagonal == -self.problem.cost
                      .get_coefficient(2).diagonal()).all()
         self.assertTrue(condition)
 

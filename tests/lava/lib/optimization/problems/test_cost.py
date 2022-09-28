@@ -61,8 +61,8 @@ class TestCost(unittest.TestCase):
     def test_augmented_terms(self):
         for n, coefficient in enumerate(self.augmented_terms):
             with self.subTest(msg=f"{n}"):
-                self.assertTrue(
-                    (coefficient==self.cost_augmented.augmented_terms[n]).all())
+                aug_terms = self.cost_augmented.augmented_terms
+                self.assertTrue((coefficient == aug_terms[n]).all())
 
     def test_reset_augmented_terms(self):
         new_augmented_terms = (
@@ -74,8 +74,8 @@ class TestCost(unittest.TestCase):
         self.cost_augmented.augmented_terms = new_augmented_terms
         for n, coefficient in enumerate(new_augmented_terms):
             with self.subTest(msg=f"{n}"):
-                self.assertTrue(
-                    (coefficient==self.cost_augmented.augmented_terms[n]).all())
+                aug_terms = self.cost_augmented.augmented_terms
+                self.assertTrue((coefficient == aug_terms[n]).all())
 
     def test_set_augmented_terms(self):
         new_augmented_terms = (

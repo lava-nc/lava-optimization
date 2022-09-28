@@ -65,9 +65,8 @@ class SolverModelBuilder:
                     )
                 )
                 variables.importances = proc.cost_coefficients[1].init
-                macrostate_reader.cost_convergence_check = CostConvergenceChecker(
-                    shape=proc.variable_assignment.shape
-                )
+                c = CostConvergenceChecker(shape=proc.variable_assignment.shape)
+                macrostate_reader.cost_convergence_check = c
                 variables.local_cost.connect(macrostate_reader.cost_in)
                 proc.vars.optimality.alias(macrostate_reader.min_cost)
 

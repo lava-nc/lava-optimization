@@ -15,7 +15,7 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     StochasticIntegrateAndFire)
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
-from magma.core.model.py.model import PyLoihiProcessModel
+from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol

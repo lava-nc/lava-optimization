@@ -46,18 +46,21 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
         messages out."""
         raw_cost = self.cost_in.recv()
         req_stop = self.req_stop_in.recv()
+        cost = [0]
         if raw_cost[0]:
             cost = (raw_cost.astype(np.int32) << 8) >> 8
-        if req_stop[0]:
-            self._req_pause = True
-        elif cost[0]:
+
+        if cost[0]:
             raw_solution = self.read_solution.recv()
             self.solution[:] = (raw_solution.astype(np.int32) << 16) >> 16
             self.min_cost = cost[0]
-            print(f"Host: received a better solution: "
-                  f"{self.solution} at "
-                  f"step"
-                  f" {self.time_step}")
+            if not req_stop[0]:
+                print(f"Host: received a better solution: "
+                      f"{self.solution} at "
+                      f"step"
+                      f" {self.time_step}")
+        if req_stop[0]:
+            self._req_pause = False
 
     def run_post_mgmt(self):
         """Execute post management phase."""

@@ -55,7 +55,7 @@ The instance of an Optimization problem is the valid input for instantiating the
 ## Tutorials
 
 ### QP Tutorial
-- [Solving LASSO.](https://github.com/lava-nc/lava-optimization/tree/main/tutorials/qp/tutorial_01_solving_lasso.ipynb)
+- [Solving LASSO.](https://github.com/lava-nc/lava-optimization/blob/release/v0.2.0/tutorials/tutorial_01_solving_lasso.ipynb)
 
 ### Solving QP problems (After merging with the OptimizationSolver QPSolver will be deprecated)
 ```python
@@ -82,7 +82,7 @@ solver.solve(problem, iterations=iterations)
 ```
 
 ### QUBO Tutorial
-- [Solving MIS.](https://github.com/lava-nc/lava-optimization/tree/main/tutorials/qubo/tutorial_01_solving_mis.ipynb)
+- [Solving MIS.](https://github.com/lava-nc/lava-optimization/blob/release/v0.2.0/tutorials/tutorial_02_solving_qubos.ipynb)
 
 ### Solving QUBO using the Generic OptimizationSolver
 ```python
@@ -114,11 +114,6 @@ solutions = []
 for trial in range(10):
 	solution = solver.solve(timeout=3000, target_cost=-50, backend=“Loihi2”)
 	solutions.append(solution)
-![image](https://user-images.githubusercontent.com/83706504/191646177-bfb429ac-6555-4d37-8d0a-c6074db8e455.png)
-
-# When exposing hyperparameters use more mathematical names than neuron ones.
-
-step_size <- bias
 ```
 
 ## Requirements

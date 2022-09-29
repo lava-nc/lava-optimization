@@ -35,36 +35,39 @@ class DiscreteVariablesProcess(AbstractProcess):
         integer value that is determined automatically.
     log_config: Configuration options for logging.z
 
-    InPorts
-    -------
-    a_in: The addition of all inputs (per dynamical system) at this timestep
-        will be received by this port.
 
-    OutPorts
-    --------
-    s_out: The payload to be exchanged between the underlying dynamical systems
+    Attributes
+    ----------
+    a_in: InPort
+        The addition of all inputs (per dynamical system) at this timestep
+        will be received by this port.
+    s_out: OutPort
+        The payload to be exchanged between the underlying dynamical systems
         when these fire.
-    local_cost: the cost components per dynamical system underlying these
+    local_cost: OutPort
+        The cost components per dynamical system underlying these
         variables, i.e., c_i = sum_j{Q_{ij} \cdot x_i}  will be sent through
         this port. The cost integrator will then complete the cost computation
-         by adding all contributions, i.e., x^T \cdot Q \cdot x = sum_i{c_i}.
-
-    Vars
-    ----
-    variable_assignment: Holds the current value assigned to the variables by
+        by adding all contributions, i.e., x^T \cdot Q \cdot x = sum_i{c_i}.
+    variable_assignment: Var
+        Holds the current value assigned to the variables by
         the solver network.
     """
 
-    def __init__(self, shape: ty.Tuple[int, ...],
-                 cost_diagonal: npt.ArrayLike = None,
-                 hyperparameters: ty.Dict[str, ty.Union[int,
-                                                        npt.ArrayLike]] = None,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None) -> None:
-        super().__init__(shape=shape,
-                         cost_diagonal=cost_diagonal,
-                         name=name,
-                         log_config=log_config)
+    def __init__(
+        self,
+        shape: ty.Tuple[int, ...],
+        cost_diagonal: npt.ArrayLike = None,
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(
+            shape=shape,
+            cost_diagonal=cost_diagonal,
+            name=name,
+            log_config=log_config,
+        )
         self.num_variables = np.prod(shape)
         self.hyperparameters = hyperparameters
         self.a_in = InPort(shape=shape)
@@ -85,28 +88,24 @@ class CostConvergenceChecker(AbstractProcess):
     log_config: Configuration options for logging.
 
 
-    InPorts
-    -------
-    cost_components: Additive contributions to the total cost.
-
-    OutPorts
-    --------
-    update_buffer: OutPort which notifies the next process about the
-    detection of a better cost.
-
-    Vars
-    ----
-    min_cost: Current minimum cost, i.e., the lowest reported cost so far.
+    Attributes
+    ----------
+    cost_components: InPort
+        Additive contributions to the total cost.
+    update_buffer: OutPort
+        Notifies the next process about the detection of a better cost.
+    min_cost: Var
+        Current minimum cost, i.e., the lowest reported cost so far.
 
     """
 
-    def __init__(self,
-                 shape: ty.Tuple[int, ...],
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None, ) -> None:
-        super().__init__(shape=shape,
-                         name=name,
-                         log_config=log_config)
+    def __init__(
+        self,
+        shape: ty.Tuple[int, ...],
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(shape=shape, name=name, log_config=log_config)
         self.shape = shape
         self.min_cost = Var(shape=(1,))
         self.cost_components = InPort(shape=shape)
@@ -187,36 +186,40 @@ class StochasticIntegrateAndFire(AbstractProcess):
     integer value that is determined automatically.
     log_config: Configuration options for logging.
 
-    InPorts
-    -------
-    added_input: The addition of all inputs (per dynamical system) at this
-    timestep will be received by this port.
-    replace_assignment: Todo: deprecate
-
-    OutPorts
-    --------
-    messages: The payload to be sent to other dynamical systems when firing.
-    local_cost: the cost component corresponding to this dynamical system, i.e.,
-    c_i = sum_j{Q_{ij} \cdot x_i}  will be sent through this port. The cost
-    integrator will then complete the cost computation  by adding all
-    contributions, i.e., x^T \cdot Q \cdot x = sum_i{c_i}.
+    Attributes
+    ----------
+    added_input: InPort
+        The addition of all inputs (per dynamical system) at this
+        timestep will be received by this port.
+    replace_assignment: InPort
+        Todo: deprecate
+    messages: OutPort
+        The payload to be sent to other dynamical systems when firing.
+    local_cost: OutPort
+        the cost component corresponding to this dynamical system, i.e.,
+        c_i = sum_j{Q_{ij} \cdot x_i}  will be sent through this port. The cost
+        integrator will then complete the cost computation  by adding all
+        contributions, i.e., x^T \cdot Q \cdot x = sum_i{c_i}.
 
     """
 
-    def __init__(self, *,
-                 step_size: npt.ArrayLike,
-                 shape: ty.Tuple[int, ...] = (1,),
-                 init_state: npt.ArrayLike = 0,
-                 noise_amplitude: npt.ArrayLike = 1,
-                 input_duration: npt.ArrayLike = 6,
-                 min_state: npt.ArrayLike = 1000,
-                 min_integration: npt.ArrayLike = -1000,
-                 steps_to_fire: npt.ArrayLike = 10,
-                 refractory_period: npt.ArrayLike = 1,
-                 cost_diagonal: npt.ArrayLike = 0,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None,
-                 init_value: None = 0) -> None:
+    def __init__(
+        self,
+        *,
+        step_size: npt.ArrayLike,
+        shape: ty.Tuple[int, ...] = (1,),
+        init_state: npt.ArrayLike = 0,
+        noise_amplitude: npt.ArrayLike = 1,
+        input_duration: npt.ArrayLike = 6,
+        min_state: npt.ArrayLike = 1000,
+        min_integration: npt.ArrayLike = -1000,
+        steps_to_fire: npt.ArrayLike = 10,
+        refractory_period: npt.ArrayLike = 1,
+        cost_diagonal: npt.ArrayLike = 0,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+        init_value: None = 0,
+    ) -> None:
         super().__init__(
             shape=shape,
             initial_state=init_state,
@@ -230,7 +233,7 @@ class StochasticIntegrateAndFire(AbstractProcess):
             cost_diagonal=cost_diagonal,
             name=name,
             log_config=log_config,
-            init_value=init_value
+            init_value=init_value,
         )
         self.added_input = InPort(shape=shape)
         self.messages = OutPort(shape=shape)

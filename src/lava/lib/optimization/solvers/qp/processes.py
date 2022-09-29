@@ -16,8 +16,8 @@ class ConstraintDirections(AbstractProcess):
 
     Intialize the constraintDirectionsProcess
 
-    Parametrs
-    ---------
+    Parameters
+    ----------
 
     shape : int tuple, optional
         Define the shape of the connections matrix as a tuple. Defaults to
@@ -75,8 +75,8 @@ class QuadraticConnectivity(AbstractProcess):
 
     Initialize the quadraticConnectivity process.
 
-    Parametrs
-    ---------
+    Parameters
+    ----------
 
     shape : int tuple, optional
         A tuple defining the shape of the connections matrix. Defaults to

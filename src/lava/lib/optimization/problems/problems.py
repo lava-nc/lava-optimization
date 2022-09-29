@@ -103,6 +103,7 @@ class QUBO(OptimizationProblem):
         Parameters
         ----------
         q: Quadratic coefficient of the cost function.
+
         """
         m, n = q.shape
         if m != n:
@@ -127,12 +128,12 @@ class CSP(OptimizationProblem):
     ----------
     domains: either a list of tuples with values that each variable can take or
     a list of integers specifying the domain size for each variable.
-
     constraints: Discrete constraints defining mutually allowed values
     between variables. Has to be a list of n-tuples where the first n-1 elements
     are the variables related by the n-th element of the tuple. The n-th element
     is a tensor indicating what values of the variables are simultaneously
     allowed.
+
     """
 
     def __init__(self, domains: DType = None, constraints: CType = None):
@@ -168,30 +169,30 @@ class QP(OptimizationProblem):
     """A Rudimentary interface for the QP solver. Inequality Constraints
     should be of the form Ax<=k. Equality constraints are expressed as
     sandwiched inequality constraints. The cost of the QP is of the form
-    1/2*x^t*Q*x + p^Tx
+    1/2*x^t*Q*x + p^Tx.
 
-        Parameters
-        ----------
-        hessian : 2-D or 1-D np.array
-            Quadratic term of the cost function
-        linear_offset : 1-D np.array, optional
-            Linear term of the cost function, defaults vector of zeros of the
-            size of the number of variables in the QP
-        constraint_hyperplanes : 2-D or 1-D np.array, optional
-            Inequality constrainting hyperplanes, by default None
-        constraint_biases : 1-D np.array, optional
-            Ineqaulity constraints offsets, by default None
-        constraint_hyperplanes_eq : 2-D or 1-D np.array, optional
-            Equality constrainting hyperplanes, by default None
-        constraint_biases_eq : 1-D np.array, optional
-            Eqaulity constraints offsets, by default None
+    Parameters
+    ----------
+    hessian : 2-D or 1-D np.array
+        Quadratic term of the cost function
+    linear_offset : 1-D np.array, optional
+        Linear term of the cost function, defaults vector of zeros of the
+        size of the number of variables in the QP
+        Inequality constrainting hyperplanes, by default None
+    constraint_biases : 1-D np.array, optional
+        Ineqaulity constraints offsets, by default None
+    constraint_hyperplanes_eq : 2-D or 1-D np.array, optional
+        Equality constrainting hyperplanes, by default None
+    constraint_biases_eq : 1-D np.array, optional
+        Eqaulity constraints offsets, by default None
 
-        Raises
-        ------
-        ValueError
-            ValueError exception raised if equality or inequality constraints
-            are not properly defined. Ex: Defining A_eq while not defining k_eq
-            and vice-versa.
+    Raises
+    ------
+    ValueError
+        ValueError exception raised if equality or inequality constraints
+        are not properly defined. Ex: Defining A_eq while not defining k_eq
+        and vice-versa.
+
     """
 
     def __init__(
@@ -289,27 +290,30 @@ class QP:
     should be of the form Ax<=k. Equality constraints are expressed as
     sandwiched inequality constraints. The cost of the QP is of the form
     1/2*x^t*Q*x + p^Tx
-        Parameters
-        ----------
-        hessian : 2-D or 1-D np.array
-            Quadratic term of the cost function
-        linear_offset : 1-D np.array, optional
-            Linear term of the cost function, defaults vector of zeros of the
-            size of the number of variables in the QP
-        constraint_hyperplanes : 2-D or 1-D np.array, optional
-            Inequality constrainting hyperplanes, by default None
-        constraint_biases : 1-D np.array, optional
-            Ineqaulity constraints offsets, by default None
-        constraint_hyperplanes_eq : 2-D or 1-D np.array, optional
-            Equality constrainting hyperplanes, by default None
-        constraint_biases_eq : 1-D np.array, optional
-            Eqaulity constraints offsets, by default None
-        Raises
-        ------
-        ValueError
-            ValueError exception raised if equality or inequality constraints
-            are not properly defined. Ex: Defining A_eq while not defining k_eq
-            and vice-versa.
+
+    Parameters
+    ----------
+    hessian : 2-D or 1-D np.array
+        Quadratic term of the cost function
+    linear_offset : 1-D np.array, optional
+        Linear term of the cost function, defaults vector of zeros of the
+        size of the number of variables in the QP
+    constraint_hyperplanes : 2-D or 1-D np.array, optional
+        Inequality constrainting hyperplanes, by default None
+    constraint_biases : 1-D np.array, optional
+        Ineqaulity constraints offsets, by default None
+    constraint_hyperplanes_eq : 2-D or 1-D np.array, optional
+        Equality constrainting hyperplanes, by default None
+    constraint_biases_eq : 1-D np.array, optional
+        Eqaulity constraints offsets, by default None
+
+    Raises
+    ------
+    ValueError
+        ValueError exception raised if equality or inequality constraints
+        are not properly defined. Ex: Defining A_eq while not defining k_eq
+        and vice-versa.
+
     """
 
     def __init__(

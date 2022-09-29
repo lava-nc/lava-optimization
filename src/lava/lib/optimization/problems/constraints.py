@@ -109,6 +109,7 @@ class EqualityConstraints(CoefficientTensorsMixin):
 
     .. math::
         h(x) = 0
+
     where the terms of :math:`h(x)` have the form:
     .. math::
          g(x)= \sum_{ijk...} \epsilon_{ijk...} \cdot x_i \cdot x_j

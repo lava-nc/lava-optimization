@@ -20,21 +20,17 @@ class SolutionReadout(AbstractProcess):
     integer value that is determined automatically.
     log_config: Configuration options for logging.
 
-    InPorts
-    -------
-    read_solution: A message received on this ports signifies the process
-    should call read on its RefPort.
-
-
-    RefPorts
-    --------
-    ref_port: A reference port to a variable in another process which state
-    will be remotely accessed upon read request. Here, it reads the
-    current variables assignment by a solver to an optimization problem.
-
-    Vars
-    ----
-    target_cost: Cost value at which, once attained by the network.
+    Attributes
+    ----------
+    read_solution: InPort
+        A message received on this ports signifies the process
+        should call read on its RefPort.
+    ref_port: RefPort
+        A reference port to a variable in another process which state
+        will be remotely accessed upon read request. Here, it reads the
+        current variables assignment by a solver to an optimization problem.
+    target_cost: Var
+        Cost value at which, once attained by the network.
 
     """
 

@@ -20,7 +20,7 @@ class ContinuousVariablesProcess(AbstractProcess):
 
 
 class DiscreteVariablesProcess(AbstractProcess):
-    """Process which implementation holds the evolution of discrete variables
+    r"""Process which implementation holds the evolution of discrete variables
     on the solver of an optimization problem.
 
     Parameters
@@ -54,16 +54,20 @@ class DiscreteVariablesProcess(AbstractProcess):
         the solver network.
     """
 
-    def __init__(self, shape: ty.Tuple[int, ...],
-                 cost_diagonal: npt.ArrayLike = None,
-                 hyperparameters: ty.Dict[str, ty.Union[int,
-                                                        npt.ArrayLike]] = None,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None) -> None:
-        super().__init__(shape=shape,
-                         cost_diagonal=cost_diagonal,
-                         name=name,
-                         log_config=log_config)
+    def __init__(
+        self,
+        shape: ty.Tuple[int, ...],
+        cost_diagonal: npt.ArrayLike = None,
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(
+            shape=shape,
+            cost_diagonal=cost_diagonal,
+            name=name,
+            log_config=log_config,
+        )
         self.num_variables = np.prod(shape)
         self.hyperparameters = hyperparameters
         self.a_in = InPort(shape=shape)
@@ -84,24 +88,24 @@ class CostConvergenceChecker(AbstractProcess):
     log_config: Configuration options for logging.
 
 
-    Attributes 
+    Attributes
     ----------
     cost_components: InPort
         Additive contributions to the total cost.
-    update_buffer: OutPort 
+    update_buffer: OutPort
         Notifies the next process about the detection of a better cost.
     min_cost: Var
         Current minimum cost, i.e., the lowest reported cost so far.
 
     """
 
-    def __init__(self,
-                 shape: ty.Tuple[int, ...],
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None, ) -> None:
-        super().__init__(shape=shape,
-                         name=name,
-                         log_config=log_config)
+    def __init__(
+        self,
+        shape: ty.Tuple[int, ...],
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(shape=shape, name=name, log_config=log_config)
         self.shape = shape
         self.min_cost = Var(shape=(1,))
         self.cost_components = InPort(shape=shape)
@@ -199,20 +203,23 @@ class StochasticIntegrateAndFire(AbstractProcess):
 
     """
 
-    def __init__(self, *,
-                 step_size: npt.ArrayLike,
-                 shape: ty.Tuple[int, ...] = (1,),
-                 init_state: npt.ArrayLike = 0,
-                 noise_amplitude: npt.ArrayLike = 1,
-                 input_duration: npt.ArrayLike = 6,
-                 min_state: npt.ArrayLike = 1000,
-                 min_integration: npt.ArrayLike = -1000,
-                 steps_to_fire: npt.ArrayLike = 10,
-                 refractory_period: npt.ArrayLike = 1,
-                 cost_diagonal: npt.ArrayLike = 0,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None,
-                 init_value: None = 0) -> None:
+    def __init__(
+        self,
+        *,
+        step_size: npt.ArrayLike,
+        shape: ty.Tuple[int, ...] = (1,),
+        init_state: npt.ArrayLike = 0,
+        noise_amplitude: npt.ArrayLike = 1,
+        input_duration: npt.ArrayLike = 6,
+        min_state: npt.ArrayLike = 1000,
+        min_integration: npt.ArrayLike = -1000,
+        steps_to_fire: npt.ArrayLike = 10,
+        refractory_period: npt.ArrayLike = 1,
+        cost_diagonal: npt.ArrayLike = 0,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+        init_value: None = 0,
+    ) -> None:
         super().__init__(
             shape=shape,
             initial_state=init_state,
@@ -226,7 +233,7 @@ class StochasticIntegrateAndFire(AbstractProcess):
             cost_diagonal=cost_diagonal,
             name=name,
             log_config=log_config,
-            init_value=init_value
+            init_value=init_value,
         )
         self.added_input = InPort(shape=shape)
         self.messages = OutPort(shape=shape)

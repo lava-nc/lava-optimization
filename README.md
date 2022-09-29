@@ -132,7 +132,7 @@ tutorial.](https://github.com/lava-nc/lava/blob/main/tutorials/in_depth/tutorial
 cd $HOME
 git clone git@github.com:lava-nc/lava-optimization.git
 cd lava-optimization
-pip install "poetry>=1.1.13"
+curl -sSL https://install.python-poetry.org | python3 -
 poetry config virtualenvs.in-project true
 poetry install
 source .venv/bin/activate
@@ -147,7 +147,7 @@ cd lava-optimization
 python3 -m venv .venv
 .venv\Scripts\activate
 pip install -U pip
-pip install "poetry>=1.1.13"
+curl -sSL https://install.python-poetry.org | python3 -
 poetry config virtualenvs.in-project true
 poetry install
 pytest

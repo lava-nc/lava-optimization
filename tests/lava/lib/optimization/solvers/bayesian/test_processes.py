@@ -83,9 +83,9 @@ class TestProcesses(unittest.TestCase):
 
         for idx, perm in enumerate(all_perms):
             with self.subTest(line=f"BO config perm {idx}: {perm}"):
-                num_ips: int = random.randint(1, sys.maxsize)
+                num_ips: int = 5
                 num_objectives: int = 1
-                seed: int = random.randint(-sys.maxsize, sys.maxsize)
+                seed: int = 0
 
                 # initialize the optimizer with the given config permutation
                 opt = BayesianOptimizer(

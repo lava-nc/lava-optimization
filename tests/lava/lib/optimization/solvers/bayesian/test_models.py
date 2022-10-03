@@ -19,7 +19,7 @@ from lava.magma.core.run_configs import Loihi1SimCfg
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
 from lava.lib.optimization.problems.bayesian.models import (
-    SingleInputNonLinearFunction
+    SingleInputFunction
 )
 from lava.lib.optimization.solvers.bayesian.models import (
     BayesianOptimizer
@@ -147,7 +147,7 @@ class TestModels(unittest.TestCase):
             ["categorical", np.nan, np.nan, [x / 4 for x in range(10)], "x1"],
         ], dtype=object)
 
-        problem = SingleInputNonLinearFunction()
+        problem = SingleInputFunction()
 
         optimizer = BayesianOptimizer(
             acq_func_config=self.valid_acq_func_configs[0],

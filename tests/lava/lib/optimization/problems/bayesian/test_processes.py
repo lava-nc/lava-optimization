@@ -6,8 +6,8 @@ import unittest
 
 from lava.lib.optimization.problems.bayesian.processes import (
     BaseObjectiveFunction,
-    SingleInputNonLinearFunction,
-    DualContInputFunction,
+    SingleInputFunction,
+    DualInputFunction,
 )
 
 
@@ -66,7 +66,7 @@ class TestProcesses(unittest.TestCase):
         num_params: int = 1
         num_objectives: int = 1
 
-        process = SingleInputNonLinearFunction()
+        process = SingleInputFunction()
 
         # checking shape of input and output ports
         self.assertEqual(
@@ -104,7 +104,7 @@ class TestProcesses(unittest.TestCase):
         num_params: int = 2
         num_objectives: int = 1
 
-        process = DualContInputFunction()
+        process = DualInputFunction()
 
         # checking shape of input and output ports
         self.assertEqual(

@@ -8,7 +8,7 @@ from schema import SchemaError
 import unittest
 
 from lava.lib.optimization.problems.bayesian.models import (
-    SingleInputNonLinearFunction
+    SingleInputFunction
 )
 from lava.lib.optimization.solvers.bayesian.solver import BayesianSolver
 
@@ -281,7 +281,7 @@ class TeatSolvers(unittest.TestCase):
             ["categorical", np.nan, np.nan, [x / 4 for x in range(10)], "x1"],
         ], dtype=object)
 
-        problem = SingleInputNonLinearFunction()
+        problem = SingleInputFunction()
 
         solver = BayesianSolver(
             acq_func_config={"type": "gp_hedge"},
@@ -305,7 +305,7 @@ class TeatSolvers(unittest.TestCase):
             ["categorical", np.nan, np.nan, [x / 4 for x in range(10)], "x1"],
         ], dtype=object)
 
-        problem = SingleInputNonLinearFunction()
+        problem = SingleInputFunction()
 
         solver = BayesianSolver(
             acq_func_config={"type": "gp_hedge"},

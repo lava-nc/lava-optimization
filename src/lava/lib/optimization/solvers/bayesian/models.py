@@ -88,7 +88,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
         if hasattr(self, "results_log") and len(self.results_log) > 0:
             print(self.results_log[-1])
 
-    def init_search_space(self) -> list[Space]:
+    def init_search_space(self) -> list:
         """initialize the search space from the standard schema
 
         This method is designed to convert the numpy ndarray-based search

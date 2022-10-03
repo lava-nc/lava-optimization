@@ -13,18 +13,18 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
 from lava.lib.optimization.problems.bayesian.processes import (
-    DualContInputFunction,
-    SingleInputNonLinearFunction
+    DualInputFunction,
+    SingleInputFunction
 )
 
 
-@implements(proc=SingleInputNonLinearFunction, protocol=LoihiProtocol)
+@implements(proc=SingleInputFunction, protocol=LoihiProtocol)
 @requires(CPU)
 @tag('floating_pt')
-class PyNonLinearTestFunctionModel(PyLoihiProcessModel):
+class PySingleInputFunctionModel(PyLoihiProcessModel):
     """
-    A Python-based implementation of the SingleInputNonLinear process
-    that represents a single input/output non-linear objective function.
+    A Python-based implementation of the SingleInput process that represents a
+    single input/output non-linear objective function.
     """
 
     x_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64)
@@ -47,14 +47,14 @@ class PyNonLinearTestFunctionModel(PyLoihiProcessModel):
         self.y_out.send(output)
 
 
-@implements(proc=DualContInputFunction, protocol=LoihiProtocol)
+@implements(proc=DualInputFunction, protocol=LoihiProtocol)
 @requires(CPU)
 @tag('floating_pt')
-class PyDualContInputFunctionModel(PyLoihiProcessModel):
+class PyDualInputFunctionModel(PyLoihiProcessModel):
     """
-    A Python-based implementation of the DualContInputFunction process
-    that represents a dual continuous input, single output, non-linear
-    objective function.
+    A Python-based implementation of the DualInputFunction process that
+    represents a dual continuous input, single output, non-linear objective
+    function.
     """
 
     x_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64)

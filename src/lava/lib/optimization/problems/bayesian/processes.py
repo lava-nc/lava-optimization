@@ -37,10 +37,9 @@ class BaseObjectiveFunction(AbstractProcess):
         self.y_out = OutPort(((num_params + num_objectives), 1))
 
 
-class SingleInputNonLinearFunction(BaseObjectiveFunction):
+class SingleInputFunction(BaseObjectiveFunction):
     """
-    An abstract process representing a single input/output non-linear
-    test function.
+    An abstract process representing a single input/output test function.
     """
 
     def __init__(self, **kwargs) -> None:
@@ -48,7 +47,7 @@ class SingleInputNonLinearFunction(BaseObjectiveFunction):
         super().__init__(num_params=1, num_objectives=1, **kwargs)
 
 
-class DualContInputFunction(BaseObjectiveFunction):
+class DualInputFunction(BaseObjectiveFunction):
     """
     An abstract process representing a dual input, single output
     test function.

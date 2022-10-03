@@ -18,8 +18,8 @@ from lava.magma.core.run_configs import Loihi1SimCfg
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
 from lava.lib.optimization.problems.bayesian.models import (
-    DualContInputFunction,
-    SingleInputNonLinearFunction
+    DualInputFunction,
+    SingleInputFunction
 )
 
 
@@ -88,13 +88,13 @@ class TestModels(unittest.TestCase):
     """
 
     def test_model_dual_cont_input_func(self) -> None:
-        """test behavior of the DualContInputFunction process"""
+        """test behavior of the DualInputFunction process"""
 
         input_spike = np.ndarray((2, 1), buffer=np.array([0.1, 0.1]))
         valid_spike = np.array([0.1, 0.1, 1.00540399861])
 
         input_probe = InputParamVecProcess(num_params=2, spike=input_spike)
-        bb_process = DualContInputFunction()
+        bb_process = DualInputFunction()
         output_probe = OutputPerfVecProcess(num_params=2, num_objectives=1)
 
         input_probe.x_out.connect(bb_process.x_in)
@@ -113,13 +113,13 @@ class TestModels(unittest.TestCase):
         output_probe.stop()
 
     def test_model_single_input_nonlinear_func(self) -> None:
-        """test behavior of the SingleInputNonLinearFunction process"""
+        """test behavior of the SingleInputFunction process"""
 
         input_spike = np.array([5])
         valid_spike = np.array([5, 0.727989444555])
 
         input_probe = InputParamVecProcess(num_params=1, spike=input_spike)
-        bb_process = SingleInputNonLinearFunction()
+        bb_process = SingleInputFunction()
         output_probe = OutputPerfVecProcess(num_params=1, num_objectives=1)
 
         input_probe.x_out.connect(bb_process.x_in)

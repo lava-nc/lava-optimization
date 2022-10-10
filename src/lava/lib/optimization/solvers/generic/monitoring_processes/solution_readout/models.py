@@ -6,7 +6,7 @@ from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import SolutionReadout
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
-from lava.magma.core.model.py.ports import PyInPort, PyRefPort
+from lava.magma.core.model.py.ports import PyInPort, PyOutPort, PyRefPort
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
@@ -30,6 +30,8 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     req_stop_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                        precision=32)
     target_cost: int = LavaPyType(int, np.int32, 32)
+    acknowledgemet: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32,
+                                           precision=32)
     min_cost: int = None
 
     def post_guard(self):
@@ -45,11 +47,12 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
         """Execute spiking phase, integrate input, update dynamics and send
         messages out."""
         raw_cost = self.cost_in.recv()
+        self.acknowledgemet.send(np.asarray([1]))
         req_stop = self.req_stop_in.recv()
+        self.acknowledgemet.send(np.asarray([1]))
         cost = [0]
         if raw_cost[0]:
             cost = (raw_cost.astype(np.int32) << 8) >> 8
-
         if cost[0]:
             raw_solution = self.read_solution.recv()
             self.solution[:] = (raw_solution.astype(np.int32) << 16) >> 16
@@ -60,7 +63,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
                       f"step"
                       f" {self.time_step}")
         if req_stop[0]:
-            self._req_pause = False
+            self._req_pause = True
 
     def run_post_mgmt(self):
         """Execute post management phase."""

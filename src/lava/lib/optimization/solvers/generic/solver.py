@@ -153,7 +153,7 @@ class OptimizationSolver:
         self.solver_process.run(
             condition=RunContinuous()
             if timeout == -1
-            else RunSteps(num_steps=timeout),
+            else RunSteps(num_steps=timeout + 1),
             run_cfg=run_cfg,
         )
         if timeout == -1:

@@ -3,7 +3,7 @@
 # See: https://spdx.org/licenses/
 import typing as ty
 
-from lava.magma.core.process.ports.ports import InPort
+from lava.magma.core.process.ports.ports import InPort, OutPort
 from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
 
@@ -48,3 +48,4 @@ class SolutionReadout(AbstractProcess):
         self.read_solution = InPort(shape=shape)
         self.cost_in = InPort(shape=(1,))
         self.req_stop_in = InPort(shape=(1,))
+        self.acknowledgemet = OutPort(shape=(1,))

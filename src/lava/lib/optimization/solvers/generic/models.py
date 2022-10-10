@@ -81,10 +81,10 @@ class SolverModelBuilder:
             macrostate_reader.read_gate_do_readout.connect(
                 macrostate_reader.solution_readout.read_solution
             )
+            macrostate_reader.solution_readout.acknowledgemet.connect(
+                macrostate_reader.read_gate.acknowledgemet)
             macrostate_reader.ref_port.connect_var(
-                variables.variables_assignment
-
-            )
+                variables.variables_assignment)
             cost_minimizer.gradient_out.connect(variables.gradient_in)
             variables.state_out.connect(cost_minimizer.state_in)
             self.macrostate_reader = macrostate_reader

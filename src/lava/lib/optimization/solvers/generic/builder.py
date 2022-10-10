@@ -245,7 +245,8 @@ class SolverProcessBuilder:
             )
             macrostate_reader.read_gate_solution_out.connect(
                 macrostate_reader.solution_readout_solution_in)
-
+            macrostate_reader.solution_readout.acknowledgemet.connect(
+                macrostate_reader.read_gate.acknowledgemet)
             cost_minimizer.gradient_out.connect(variables.gradient_in)
             variables.state_out.connect(cost_minimizer.state_in)
             self.macrostate_reader = macrostate_reader

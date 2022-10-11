@@ -132,7 +132,7 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
                              step_size=step_size,
                              theta=theta,
                              cost_diag=cost_diagonal,
-                             neg_tau_ref=0,
+                             neg_tau_ref=1,
                              noise_amplitude=noise_amplitude)
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)

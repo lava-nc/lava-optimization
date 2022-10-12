@@ -47,7 +47,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.8, <3.11"
 
-lava-nc = { git = "https://github.com/lava-nc/lava.git", branch = "release/v0.5.0"}
+lava-nc = { git = "https://github.com/lava-nc/lava.git", branch = "main"}
 
 numpy = "^1.23.1"
 networkx = "<=2.8"

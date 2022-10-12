@@ -954,8 +954,8 @@ scipy = "^1.8.0"
 [package.source]
 type = "git"
 url = "https://github.com/lava-nc/lava.git"
-reference = "release/v0.5.0"
-resolved_reference = "c2cdc01850edd3ce34e170625ac0286266e63f72"
+reference = "main"
+resolved_reference = "41f56f0e9f30624a4ee151195adf64e4a8e6d29a"
 
 [[package]]
 name = "linecache2"
@@ -1937,7 +1937,7 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8, <3.11"
-content-hash = "27c4564a9c653ea76875da0fbfff123da8aadb468471f4fb639da8f53645d9a6"
+content-hash = "386dee2a6b0bd045168fcc6e650378d25f73a390d30cc22869c5d1a23cab8803"
 
 [metadata.files]
 appnope = [

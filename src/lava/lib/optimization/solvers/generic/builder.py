@@ -167,7 +167,7 @@ class SolverProcessBuilder:
             if hasattr(problem, "cost"):
                 mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
                 self.cost_coefficients = mrcv(problem.cost.coefficients)
-                self.cost_diagonal = -problem.cost.coefficients[
+                self.cost_diagonal = problem.cost.coefficients[
                     2].diagonal()
             self.variable_assignment = Var(
                 shape=(problem.variables.num_variables,)
@@ -302,11 +302,11 @@ class SolverProcessBuilder:
 
         """
         if rank == 1:
-            return - coefficient
+            return coefficient
         if rank == 2:
             quadratic_component = coefficient * np.logical_not(
                 np.eye(*coefficient.shape))
-            return - quadratic_component
+            return quadratic_component
 
     @staticmethod
     def _update_linear_component_var(vars: ty.Dict[int, AbstractProcessMember],
@@ -322,7 +322,7 @@ class SolverProcessBuilder:
         the coefficient of the quadratic term on a cost or constraint function.
 
         """
-        linear_component = -quadratic_coefficient.diagonal()
+        linear_component = quadratic_coefficient.diagonal()
         if 1 in vars.keys():
             vars[1].init = vars[1].init + linear_component
         else:

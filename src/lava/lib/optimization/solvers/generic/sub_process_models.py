@@ -138,7 +138,7 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)
 
-        proc.vars.prev_assignment.alias(self.scif.vars.state)
+        proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
         proc.vars.state.alias(self.scif.vars.state)
         proc.vars.cost_diagonal.alias(self.scif.vars.cost_diagonal)
         proc.vars.noise_amplitude.alias(self.scif.vars.noise_ampl)

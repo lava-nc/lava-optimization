@@ -103,7 +103,7 @@ class TestOptimizationSolver(unittest.TestCase):
         q_no_diag = np.copy(self.problem.cost.get_coefficient(2))
         np.fill_diagonal(q_no_diag, 0)
         wgts = pm.cost_minimizer.coefficients_2nd_order.weights
-        condition = (wgts.init == -q_no_diag).all()
+        condition = (wgts.init == q_no_diag).all()
         self.assertTrue(condition)
 
     def test_qubo_cost_defines_biases(self):
@@ -111,7 +111,7 @@ class TestOptimizationSolver(unittest.TestCase):
         pm = self.solver.solver_process.model_class(
             self.solver.solver_process
         )
-        condition = (pm.variables.discrete.cost_diagonal == -self.problem.cost
+        condition = (pm.variables.discrete.cost_diagonal == self.problem.cost
                      .get_coefficient(2).diagonal()).all()
         self.assertTrue(condition)
 

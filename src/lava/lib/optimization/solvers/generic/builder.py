@@ -216,7 +216,8 @@ class SolverProcessBuilder:
                 cost_minimizer = CostMinimizer(
                     Dense(
                         # todo just using the last coefficient for now
-                        weights=proc.cost_coefficients[2].init
+                        weights=proc.cost_coefficients[2].init,
+                        num_message_bits=24
                     )
                 )
                 variables.importances = proc.cost_coefficients[1].init

@@ -188,7 +188,7 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
         self.firing[:] = self.do_fire(self.state)
         self.reset_state(firing_vector=self.firing[:])
         self.messages.send(self.firing[:])
-        self.local_cost.send(-local_cost)
+        self.local_cost.send(local_cost)
 
     def iterate_dynamics(self, added_input: np.ndarray, state: np.ndarray):
         integration_decay = 1

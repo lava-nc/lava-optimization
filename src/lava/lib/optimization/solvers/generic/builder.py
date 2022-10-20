@@ -8,7 +8,7 @@ from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.problems.variables import ContinuousVariables, \
     DiscreteVariables
-from lava.lib.optimization.solvers.generic.dataclasses import CostMinimizer, \
+from lava.lib.optimization.solvers.generic.dataclasses_lava import CostMinimizer, \
     MacroStateReader, VariablesImplementation
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \
     ContinuousVariablesProcess, CostConvergenceChecker, \

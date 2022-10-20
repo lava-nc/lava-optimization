@@ -13,7 +13,7 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.process import Dense
 
-from lava.lib.optimization.solvers.generic.dataclasses import (
+from lava.lib.optimization.solvers.generic.dataclasses_lava import (
     CostMinimizer,
     VariablesImplementation,
     MacroStateReader,

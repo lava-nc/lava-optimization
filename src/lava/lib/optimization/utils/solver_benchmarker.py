@@ -18,14 +18,7 @@
 from lava.utils import loihi2_profiler
 
 
-class ProtytypeOfSolverBenchmarker():
-    """Creates configuration for power and time profiling for a Loihi process.
-
-    1) Create pre and post functions to be used as input for Loihi1HwCfg.
-    2) Offer interface to get measured power and measured time.
-
-    See Loihi1HwCfg at lava.magma.core.run_configs.Loihi1HwCfg
-    """
+class SolverBenchmarker():
 
     def __init__(self):
         self._power_logger = None
@@ -34,10 +27,10 @@ class ProtytypeOfSolverBenchmarker():
     def get_power_measurement_cfg(self, num_steps: int):
         self._power_logger = loihi2_profiler.Loihi2Power(num_steps=num_steps)
         pre_run_fxs = [
-            lambda board: self._power_logger.attach(board),
+            self._power_logger.attach,
         ]
         post_run_fxs = [
-            lambda board: self._power_logger.get_results(),
+            lambda _: self._power_logger.get_results(),
         ]
         return pre_run_fxs, post_run_fxs
 
@@ -45,10 +38,10 @@ class ProtytypeOfSolverBenchmarker():
         self._time_logger = loihi2_profiler.Loihi2ExecutionTime(
             buffer_size=num_steps)
         pre_run_fxs = [
-            lambda board: self._time_logger.attach(board),
+            self._time_logger.attach,
         ]
         post_run_fxs = [
-            lambda board: self._time_logger.get_results(),
+            lambda _: self._time_logger.get_results(),
         ]
         return pre_run_fxs, post_run_fxs
 

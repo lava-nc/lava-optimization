@@ -4,6 +4,8 @@
 
 import unittest
 
+from lava.lib.optimization.utils.solver_benchmarker import ProtytypeOfSolverBenchmarker
+
 
 class TestSolverBenchmarker(unittest.TestCase):
     # 1) test instantiation.
@@ -19,9 +21,26 @@ class TestSolverBenchmarker(unittest.TestCase):
     # 9) test return of measured_power property (can join with prev)
     # 10) test measured_time property exists and can be accessed
     # 11) test return of measured_time property (can join with prev)
-    def test_something(self):
-        self.assertEqual(True, False)
+    
+    def setUp(self) -> None:
+        self.benchmarker = ProtytypeOfSolverBenchmarker()
 
+    def test_create_obj(self):
+        self.assertIsInstance(self.benchmarker, ProtytypeOfSolverBenchmarker)
+
+    def test_power_measurement_cfg(self):
+        num_steps = 5
+        power_cfg = self.benchmarker.get_power_measurement_cfg(num_steps=num_steps)
+        self.assertIsInstance(power_cfg[0], list)
+        self.assertIsInstance(power_cfg[1], list)
+
+    def test_time_measurement_cfg(self):
+        num_steps = 5
+        time_cfg = self.benchmarker.get_time_measurement_cfg(num_steps=num_steps)
+        self.assertIsInstance(time_cfg[0], list)
+        self.assertIsInstance(time_cfg[1], list)
+        
+    
 
 if __name__ == '__main__':
     unittest.main()

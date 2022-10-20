@@ -18,7 +18,7 @@
 from lava.utils import loihi2_profiler
 
 
-class SolverBenchmarker():
+class  ProtytypeOfSolverBenchmarker():
     """Creates configuration for power and time profiling for a Loihi process.
 
     1) Create pre and post functions to be used as input for Loihi1HwCfg.

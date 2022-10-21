@@ -19,12 +19,23 @@ from lava.utils import loihi2_profiler
 
 
 class SolverBenchmarker():
+    '''
+    Utility class to benchmark power consumption and execution time of a solver on Loihi2.
+    '''
 
     def __init__(self):
         self._power_logger = None
         self._time_logger = None
 
     def get_power_measurement_cfg(self, num_steps: int):
+        """
+        Returns the pre- and post- fixtures to be passed to a ``Loihi2HwCfg`` to enable power \
+        consumption monitoring.
+
+        Parameters
+        ----------
+        :param num_steps: Number of timesteps the workload is supposed to run for.
+        """
         self._power_logger = loihi2_profiler.Loihi2Power(num_steps=num_steps)
         pre_run_fxs = [
             self._power_logger.attach,
@@ -35,6 +46,12 @@ class SolverBenchmarker():
         return pre_run_fxs, post_run_fxs
 
     def get_time_measurement_cfg(self, num_steps: int):
+        """
+        Returns the pre- and post- fixtures to be passed to a ``Loihi2HwCfg`` to enable execution \
+        time monitoring.
+
+        :param num_steps: Number of timesteps the workload is supposed to run for.
+        """
         self._time_logger = loihi2_profiler.Loihi2ExecutionTime(
             buffer_size=num_steps)
         pre_run_fxs = [
@@ -47,8 +64,14 @@ class SolverBenchmarker():
 
     @property
     def measured_power(self):
+        """
+        Returns the measured power consumption.
+        """
         return self._power_logger.total_power
 
     @property
     def measured_time(self):
+        """
+        Returns the measured execution time, or an empty array if nothing was measured.
+        """
         return self._time_logger.time_per_step

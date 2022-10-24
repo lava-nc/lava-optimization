@@ -29,22 +29,15 @@ def prepare_problem_and_solver():
 class TestSolverTuner(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.solver_tuner = SolverTuner(step_range=(1, 2),
-                                        noise_range=(4, 5),
-                                        steps_to_fire_range=(8, 9))
+        params_grid = {
+            "step_size": (1, 2),
+            "noise_amplitude": (4, 5),
+            "var_comm_rate": (8, 9)
+        }
+        self.solver_tuner = SolverTuner(params_grid=params_grid)
 
     def test_create_obj(self):
         self.assertIsInstance(self.solver_tuner, SolverTuner)
-
-    def test_problem_type_check(self):
-        constraints = [
-            (0, 1, np.logical_not(np.eye(5))),
-            (1, 2, np.eye(5, 4)),
-        ]
-        problem = CSP(domains=[5, 5, 4], constraints=constraints)
-        solver = OptimizationSolver(problem)
-        args = (solver, {}, 0)
-        self.assertRaises(ValueError, self.solver_tuner.tune, *args)
 
     def test_tune_success(self):
         solver = prepare_problem_and_solver()
@@ -53,14 +46,13 @@ class TestSolverTuner(unittest.TestCase):
                   "target_cost": -11,
                   "backend": "CPU"}
 
-        target_cost = -11
+        stopping_condition = lambda best_cost, best_to_sol: best_cost < -6
 
-        solver, succeeded = self.solver_tuner.tune(solver=solver,
-                                                   solver_parameters=params,
-                                                   target_cost=target_cost)
+        hyperparams, succeeded = self.solver_tuner.tune(solver=solver,
+                                                        solver_parameters=params,
+                                                        stopping_condition=stopping_condition)
 
         self.assertIsInstance(solver, OptimizationSolver)
-        self.assertIsInstance(succeeded, bool)
         self.assertTrue(succeeded)
 
 

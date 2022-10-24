@@ -147,3 +147,10 @@ class MISProblem:
         num_variables = adjacency_matrix.shape[0]
         q = - w_diag * np.eye(num_variables) + w_off / 2 * adjacency_matrix
         return q.astype(int)
+
+
+def find_maximum_clique(undirected_graph: netx.Graph):
+    """Find the maximum clique problem for a given undirected graph."""
+    maximum_clique, weights = netx.max_weight_clique(undirected_graph,
+                                                     weight=None)
+    return maximum_clique

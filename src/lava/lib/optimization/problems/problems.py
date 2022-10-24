@@ -52,6 +52,11 @@ class OptimizationProblem(ABC):
         """Constrains to be satisfied by mutual assignments to variables."""
         pass
 
+    @abstractmethod
+    def evaluate_cost(self, solution):
+        """Evaluate the cost of a candidate solution."""
+        pass
+
 
 class QUBO(OptimizationProblem):
     def __init__(self, q: npt.ArrayLike):
@@ -97,6 +102,9 @@ class QUBO(OptimizationProblem):
         """As an unconstrained problem, QUBO constraints are None."""
         return None
 
+    def evaluate_cost(self, solution: np.ndarray) -> int:
+        return solution.T @ self._q_cost.coefficients[2] @ solution
+
     def validate_input(self, q):
         """Validate the cost coefficient is a square matrix.
 
@@ -111,9 +119,6 @@ class QUBO(OptimizationProblem):
 
     def verify_solution(self, solution):
         raise NotImplementedError
-
-    def compute_cost(self, state_vector: np.ndarray) -> int:
-        return state_vector.T @ self._q_cost.coefficients[2] @ state_vector
 
 
 DType = ty.Union[ty.List[int], ty.List[ty.Tuple]]

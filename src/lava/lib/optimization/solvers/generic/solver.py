@@ -4,6 +4,7 @@
 import typing as ty
 
 import numpy.typing as npt
+import numpy as np
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \
@@ -82,6 +83,12 @@ class OptimizationSolver:
         self._process_builder = SolverProcessBuilder()
         self.solver_process = None
         self.solver_model = None
+        shape = (problem.num_variables,)
+        self._hyperparameters = dict(step_size=10,
+                                     steps_to_fire=10,
+                                     noise_amplitude=1,
+                                     init_value=np.zeros(shape),
+                                     init_state=np.zeros(shape))
 
     @property
     def run_cfg(self):
@@ -91,6 +98,15 @@ class OptimizationSolver:
     @run_cfg.setter
     def run_cfg(self, value):
         self._run_cfg = value
+
+    @property
+    def hyperparameters(self):
+        return self._hyperparameters
+
+    @hyperparameters.setter
+    def hyperparameters(self,
+                        value: ty.Dict[str, ty.Union[int, npt.ArrayLike]]):
+        self._hyperparameters = value
 
     def solve(self,
               timeout: int,
@@ -122,6 +138,8 @@ class OptimizationSolver:
 
         """
         run_cfg = None
+        hyperparameters = hyperparameters or self.hyperparameters
+
         if not self.solver_process:
             self._create_solver_process(self.problem, target_cost, backend,
                                         hyperparameters)

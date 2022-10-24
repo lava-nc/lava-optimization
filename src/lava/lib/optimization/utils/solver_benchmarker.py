@@ -36,7 +36,7 @@ class SolverBenchmarker:
 
         Parameters
         ----------
-        :param num_steps: Number of timesteps the workload is supposed to run for.
+        :param num_steps: Number of timesteps the workload is supposed to run.
         """
         self._power_logger = loihi2_profiler.Loihi2Power(num_steps=num_steps)
         pre_run_fxs = [

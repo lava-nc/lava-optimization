@@ -16,12 +16,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 from lava.utils import loihi2_profiler
+import numpy as np
 
 
-class SolverBenchmarker():
-    '''
-    Utility class to benchmark power consumption and execution time of a solver on Loihi2.
-    '''
+class SolverBenchmarker:
+    """
+    Utility class to benchmark power consumption and execution time of a
+    solver on Loihi2.
+    """
 
     def __init__(self):
         self._power_logger = None
@@ -29,8 +31,8 @@ class SolverBenchmarker():
 
     def get_power_measurement_cfg(self, num_steps: int):
         """
-        Returns the pre- and post- fixtures to be passed to a ``Loihi2HwCfg`` to enable power \
-        consumption monitoring.
+        Returns the pre- and post- fixtures to be passed to a ``Loihi2HwCfg``
+        to enable power consumption monitoring.
 
         Parameters
         ----------
@@ -47,13 +49,14 @@ class SolverBenchmarker():
 
     def get_time_measurement_cfg(self, num_steps: int):
         """
-        Returns the pre- and post- fixtures to be passed to a ``Loihi2HwCfg`` to enable execution \
-        time monitoring.
+        Returns the pre- and post- fixtures to be passed to a ``Loihi2HwCfg``
+        to enable execution time monitoring.
 
-        :param num_steps: Number of timesteps the workload is supposed to run for.
+        :param num_steps: Number of timesteps the workload is supposed to run.
         """
         self._time_logger = loihi2_profiler.Loihi2ExecutionTime(
-            buffer_size=num_steps)
+            buffer_size=num_steps
+        )
         pre_run_fxs = [
             self._time_logger.attach,
         ]
@@ -65,13 +68,23 @@ class SolverBenchmarker():
     @property
     def measured_power(self):
         """
-        Returns the measured power consumption.
+        Returns the measured power consumption, or an empty array if nothing was
+        measured.
         """
-        return self._power_logger.total_power
+        return (
+            self._power_logger.total_power
+            if self._power_logger is not None
+            else np.array([])
+        )
 
     @property
     def measured_time(self):
         """
-        Returns the measured execution time, or an empty array if nothing was measured.
+        Returns the measured execution time, or an empty array if nothing was
+        measured.
         """
-        return self._time_logger.time_per_step
+        return (
+            self._time_logger.time_per_step
+            if self._time_logger is not None
+            else np.array([])
+        )

@@ -87,7 +87,7 @@ class OptimizationSolver:
                                      steps_to_fire=10,
                                      noise_amplitude=1,
                                      init_value=0,
-                                     init_state=0)#np.zeros(shape))
+                                     init_state=0)
 
     @property
     def run_cfg(self):

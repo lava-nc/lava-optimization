@@ -112,6 +112,9 @@ class QUBO(OptimizationProblem):
     def verify_solution(self, solution):
         raise NotImplementedError
 
+    def compute_cost(self, state_vector: np.ndarray) -> int:
+        return state_vector.T @ self._q_cost.coefficients[2] @ state_vector
+
 
 DType = ty.Union[ty.List[int], ty.List[ty.Tuple]]
 CType = ty.List[ty.Tuple[int, int, npt.ArrayLike]]

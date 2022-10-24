@@ -149,8 +149,47 @@ class MISProblem:
         return q.astype(int)
 
 
+def find_maximum_independent_set(mis_problem: MISProblem) -> \
+        npt.ArrayLike:
+    """Find and return the maximum independent set of a graph based on its
+    adjacency matrix.
+
+    Uses Networkx to solve the equivalent maximum clique problem.
+    Get a graph whose maximum clique corresponds to the maximum independent
+    set of that defined by the input connectivity matrix.
+
+    The  maximum independent set for the graph G={V,E} is equivalent to the
+    maximum-clique of the graph H={V,E_c}, where E_c is the complement of E.
+
+    Parameters
+    ----------
+    adjacency_matrix: An array encoding the connectivity of a random
+    graph, a value in the array represents the weight of an edge between
+    two graph vertices given by the row and column indices.
+
+    Returns
+    -------
+    solution:  Array[binary]
+    Vector of length equal to the number of vertices in the graph.
+    The ith entry of the vector determines if the ith vertex is a
+    member of the MIS.
+    """
+    c_graph = mis_problem.get_complement_graph()
+    maximum_clique = find_maximum_clique(undirected_graph=c_graph)
+    mis = indices_to_binary_vector(maximum_clique, mis_problem.num_vertices)
+    return mis
+
+
 def find_maximum_clique(undirected_graph: netx.Graph):
     """Find the maximum clique problem for a given undirected graph."""
     maximum_clique, weights = netx.max_weight_clique(undirected_graph,
                                                      weight=None)
     return maximum_clique
+
+
+def indices_to_binary_vector(indices: npt.ArrayLike, lenght: int):
+    """Transform an array of node indices into a one-hot encoding given by a
+    binary array where values are 1 if value index is present in indices. """
+    bin_vector = np.zeros((lenght,))
+    bin_vector[indices] = 1
+    return bin_vector

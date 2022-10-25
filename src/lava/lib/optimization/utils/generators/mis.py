@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
+
 import numpy as np
 import numpy.typing as npt
 import networkx as netx
+
 from lava.lib.optimization.problems.problems import QUBO
 
 
@@ -77,7 +79,8 @@ class MISProblem:
         np.random.seed(self.seed)
 
         # generate a random binary matrix of size n_vert x n_vert
-        adjacency = (np.random.rand(self.num_vertices, self.num_vertices) <
+        random_matrix = np.random.rand(self.num_vertices, self.num_vertices)
+        adjacency = (random_matrix <
                      self.connection_probability).astype(int)
 
         # delete diagonal elements as nodes have no self-connectivity

@@ -188,8 +188,9 @@ def find_maximum_clique(undirected_graph: netx.Graph):
 
 
 def indices_to_binary_vector(indices: npt.ArrayLike, lenght: int):
-    """Transform an array of node indices into a one-hot encoding given by a
-    binary array where values are 1 if value index is present in indices. """
+    """Given an array of indices outputs a binary array 
+    of the given length, the array is 1 on the positions given by indices
+    0 otherwise. """
     bin_vector = np.zeros((lenght,))
     bin_vector[indices] = 1
     return bin_vector

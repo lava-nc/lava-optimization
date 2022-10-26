@@ -174,6 +174,7 @@ class SolverProcessBuilder:
             )
             self.optimality = Var(shape=(1,))
             self.feasibility = Var(shape=(1,))
+            self.solution_step = Var(shape=(1,))
 
         self._process_constructor = constructor
 
@@ -245,12 +246,14 @@ class SolverProcessBuilder:
             )
             macrostate_reader.read_gate_solution_out.connect(
                 macrostate_reader.solution_readout_solution_in)
-
+            macrostate_reader.solution_readout.acknowledgemet.connect(
+                macrostate_reader.read_gate.acknowledgemet)
             cost_minimizer.gradient_out.connect(variables.gradient_in)
             variables.state_out.connect(cost_minimizer.state_in)
             self.macrostate_reader = macrostate_reader
             self.variables = variables
             self.cost_minimizer = cost_minimizer
+            proc.vars.solution_step.alias(macrostate_reader.solution_step)
             for container in [macrostate_reader, cost_minimizer, variables]:
                 SolverProcessBuilder.update_parent_process(data_class=container,
                                                            parent=proc)

@@ -19,16 +19,18 @@ from lava.proc.spiker.process import Spiker
 class TestSolutionReadout(unittest.TestCase):
     def setUp(self) -> None:
         # Create processes.
-        spiker = Spiker(shape=(4,), period=3, payload=9)
+        spiker = Spiker(shape=(4,), period=3, payload=7)
         integrator = Spiker(shape=(1,), period=7, payload=-4)
         readgate = ReadGate(shape=(4,), target_cost=-3)
         self.readout = SolutionReadout(shape=(4,), target_cost=-3)
 
         # Connect processes.
         integrator.s_out.connect(readgate.cost_in)
-        readgate.solution_reader.connect_var(spiker.counter)
+        readgate.solution_reader.connect_var(spiker.payload)
         readgate.solution_out.connect(self.readout.read_solution)
         readgate.cost_out.connect(self.readout.cost_in)
+        self.readout.acknowledgemet.connect(readgate.acknowledgemet)
+        readgate.send_pause_request.connect(self.readout.req_stop_in)
 
         # Execution configurations.
         pdict = {ReadGate: ReadGatePyModel, Spiker: SpikerModel}
@@ -40,4 +42,4 @@ class TestSolutionReadout(unittest.TestCase):
         self.readout.wait()
         solution = self.readout.solution.get()
         self.readout.stop()
-        self.assertTrue(np.all(solution == np.zeros(4)))  # 2 * np.ones(4)))
+        self.assertTrue(np.all(solution == np.ones(4)))

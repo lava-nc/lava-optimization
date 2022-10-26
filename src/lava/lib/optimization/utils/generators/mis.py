@@ -145,11 +145,11 @@ class MISProblem:
         Find and return the maximum independent set of a graph based on its
         adjacency matrix.
 
-        *Please note that this function addresses the maximum and not just 
-        the maximal independent set. A maximal independent set is an 
-        independent set that is not a subset of any other independent set. 
-        The largest of these sets is the maximum independent set, which is 
-        determined by the present function.*Uses Networkx to solve the 
+        *Please note that this function addresses the maximum and not just
+        the maximal independent set. A maximal independent set is an
+        independent set that is not a subset of any other independent set.
+        The largest of these sets is the maximum independent set, which is
+        determined by the present function.*Uses Networkx to solve the
         equivalent maximum clique problem.
 
         Get a graph whose maximum clique corresponds to the maximum independent

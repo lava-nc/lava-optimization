@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
@@ -108,11 +108,11 @@ class MISProblem:
         The goal of the QUBO is to minimize the cost
             min x^T * Q * x ,
         where the vector x is defined as:
-            x_i = 1 if vertex i is part of the MIs
+            x_i = 1 if vertex i is part of the MIS
             x_i = 0 if vertex i is not part of the MIS,
         and the QUBO matrix is given by
             Q_ii = w_diag
-            Q_ij = w_off (for i~=j) .
+            Q_ij = w_off (for i!=j) .
         """
         q = self._get_qubo_cost_from_adjacency(self._adjacency, w_diag, w_off)
         qubo = QUBO(q)

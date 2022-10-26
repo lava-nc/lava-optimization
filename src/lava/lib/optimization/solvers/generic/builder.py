@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Intel Corporation
+9# Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import typing as ty
@@ -246,7 +246,7 @@ class SolverProcessBuilder:
             )
             macrostate_reader.read_gate_solution_out.connect(
                 macrostate_reader.solution_readout_solution_in)
-            macrostate_reader.solution_readout.acknowledgemet.connect(
+            macrostate_reader.solution_readout.acknowledgement.connect(
                 macrostate_reader.read_gate.acknowledgemet)
             cost_minimizer.gradient_out.connect(variables.gradient_in)
             variables.state_out.connect(cost_minimizer.state_in)

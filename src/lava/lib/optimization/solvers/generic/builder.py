@@ -8,8 +8,8 @@ from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.problems.variables import ContinuousVariables, \
     DiscreteVariables
-from lava.lib.optimization.solvers.generic.dataclasses import CostMinimizer, \
-    MacroStateReader, VariablesImplementation
+from lava.lib.optimization.solvers.generic.dataclasses import \
+    CostMinimizer, MacroStateReader, VariablesImplementation
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \
     ContinuousVariablesProcess, CostConvergenceChecker, \
     DiscreteVariablesProcess, SatConvergenceChecker
@@ -222,7 +222,8 @@ class SolverProcessBuilder:
                     )
                 )
                 variables.importances = proc.cost_coefficients[1].init
-                c = CostConvergenceChecker(shape=proc.variable_assignment.shape)
+                c = CostConvergenceChecker(
+                    shape=proc.variable_assignment.shape)
                 macrostate_reader.cost_convergence_check = c
                 variables.local_cost.connect(macrostate_reader.cost_in)
                 proc.vars.optimality.alias(macrostate_reader.min_cost)

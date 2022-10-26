@@ -103,7 +103,7 @@ class TestOptimizationSolver(unittest.TestCase):
         q_no_diag = np.copy(self.problem.cost.get_coefficient(2))
         np.fill_diagonal(q_no_diag, 0)
         wgts = pm.cost_minimizer.coefficients_2nd_order.weights
-        condition = (wgts.init == -q_no_diag).all()
+        condition = (wgts.init == q_no_diag).all()
         self.assertTrue(condition)
 
     def test_qubo_cost_defines_biases(self):
@@ -111,7 +111,7 @@ class TestOptimizationSolver(unittest.TestCase):
         pm = self.solver.solver_process.model_class(
             self.solver.solver_process
         )
-        condition = (pm.variables.discrete.cost_diagonal == -self.problem.cost
+        condition = (pm.variables.discrete.cost_diagonal == self.problem.cost
                      .get_coefficient(2).diagonal()).all()
         self.assertTrue(condition)
 
@@ -137,13 +137,14 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertTrue(t_start - t_end < 1)
 
 
-def solve_workload(q, reference_solution):
+def solve_workload(q, reference_solution, noise_precision=3):
     expected_cost = reference_solution @ q @ reference_solution
     problem = QUBO(q)
     np.random.seed(2)
     solver = OptimizationSolver(problem)
     solution = solver.solve(timeout=-1,
-                            target_cost=expected_cost
+                            target_cost=expected_cost,
+                            hyperparameters={'noise_precision': noise_precision}
                             )
     cost = solution @ q @ solution
     return solution, cost, expected_cost
@@ -160,7 +161,9 @@ class TestWorkloads(unittest.TestCase):
                         [4, 1, -8, 5],
                         [0, 0, 5, -6]])
         reference_solution = np.asarray([1, 0, 0, 1]).astype(int)
-        solution, cost, expected_cost = solve_workload(q, reference_solution)
+        solution, cost, expected_cost = solve_workload(q, reference_solution,
+                                                       noise_precision=5)
+        print(solution)
         self.assertEqual(cost, expected_cost)
 
     def test_solve_set_packing(self):
@@ -195,7 +198,8 @@ class TestWorkloads(unittest.TestCase):
                         [20., 20., 20., 10., 10., -28.]])
         reference_solution = np.zeros(6)
         np.put(reference_solution, [0, 4], 1)
-        solution, cost, expected_cost = solve_workload(q, reference_solution)
+        solution, cost, expected_cost = solve_workload(q, reference_solution,
+                                                       noise_precision=5)
         self.assertEqual(cost, expected_cost)
 
     def test_solve_map_coloring(self):
@@ -232,7 +236,8 @@ class TestWorkloads(unittest.TestCase):
                        4., -4.]])
         reference_solution = np.zeros(15)
         np.put(reference_solution, [1, 3, 8, 10, 14], 1)
-        solution, cost, expected_cost = solve_workload(q, reference_solution)
+        solution, cost, expected_cost = solve_workload(q, reference_solution,
+                                                       noise_precision=5)
         self.assertEqual(cost, expected_cost)
 
 

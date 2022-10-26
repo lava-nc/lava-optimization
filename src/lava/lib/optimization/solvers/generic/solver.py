@@ -10,7 +10,7 @@ from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \
     StochasticIntegrateAndFire
 from lava.lib.optimization.solvers.generic.sub_process_models import \
-    StochasticIntegrateAndFireModel, StochasticIntegrateAndFireModelSCIF
+    StochasticIntegrateAndFireModelSCIF
 from lava.magma.core.resources import AbstractComputeResource, CPU, \
     Loihi2NeuroCore, NeuroCore
 from lava.magma.core.run_conditions import RunContinuous, RunSteps
@@ -24,6 +24,9 @@ from lava.proc.read_gate.models import ReadGatePyModel
 from lava.proc.read_gate.ncmodels import ReadGateCModel
 from lava.proc.read_gate.process import ReadGate
 from lava.proc.scif.ncmodels import NcModelQuboScif
+from lava.proc.scif.process import QuboScif
+
+from lava.proc.scif.models import PyModelQuboScifFixed
 from lava.proc.scif.process import QuboScif
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
@@ -159,11 +162,32 @@ class OptimizationSolver:
                                         target_cost,
                                         backend,
                                         hyperparameters)
-        run_cfg = self._get_run_config(backend)
-        run_condition = self._get_run_condition(timeout)
+        if backend in CPUS:
+            pdict = {self.solver_process: self.solver_model,
+                     ReadGate: ReadGatePyModel,
+                     Dense: PyDenseModelFloat,
+                     StochasticIntegrateAndFire:
+                         StochasticIntegrateAndFireModelSCIF,
+                     QuboScif: PyModelQuboScifFixed,
+                     }
+            run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
+                                   select_sub_proc_model=True)
+        elif backend in NEUROCORES:
+            pdict = {self.solver_process: self.solver_model,
+                     StochasticIntegrateAndFire:
+                         StochasticIntegrateAndFireModelSCIF,
+                     }
+            run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
+                                  select_sub_proc_model=True)
+        else:
+            raise NotImplementedError(str(backend) + backend_msg)
         self.solver_process._log_config.level = 20
-        self.solver_process.run(condition=run_condition,
-                                run_cfg=run_cfg)
+        self.solver_process.run(
+            condition=RunContinuous()
+            if timeout == -1
+            else RunSteps(num_steps=timeout + 1),
+            run_cfg=run_cfg,
+        )
         if timeout == -1:
             self.solver_process.wait()
         self._update_report(target_cost=target_cost)

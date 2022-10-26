@@ -9,7 +9,7 @@ from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \
     StochasticIntegrateAndFire
 from lava.lib.optimization.solvers.generic.sub_process_models import \
-    StochasticIntegrateAndFireModel, StochasticIntegrateAndFireModelSCIF
+    StochasticIntegrateAndFireModelSCIF
 from lava.magma.core.resources import AbstractComputeResource, CPU, \
     Loihi2NeuroCore, NeuroCore
 from lava.magma.core.run_conditions import RunContinuous, RunSteps
@@ -17,12 +17,9 @@ from lava.magma.core.run_configs import Loihi1SimCfg, Loihi2HwCfg
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
-from lava.proc.dense.ncmodels import NcModelDense
 from lava.proc.dense.process import Dense
 from lava.proc.read_gate.models import ReadGatePyModel
-from lava.proc.read_gate.ncmodels import ReadGateCModel
 from lava.proc.read_gate.process import ReadGate
-from lava.proc.scif.ncmodels import NcModelQuboScif
 
 from lava.proc.scif.models import PyModelQuboScifFixed
 from lava.proc.scif.process import QuboScif
@@ -143,11 +140,8 @@ class OptimizationSolver:
                                    select_sub_proc_model=True)
         elif backend in NEUROCORES:
             pdict = {self.solver_process: self.solver_model,
-                     ReadGate: ReadGateCModel,
-                     Dense: NcModelDense,
                      StochasticIntegrateAndFire:
                          StochasticIntegrateAndFireModelSCIF,
-                     QuboScif: NcModelQuboScif,
                      }
             run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
                                   select_sub_proc_model=True)

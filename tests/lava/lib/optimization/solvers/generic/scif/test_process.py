@@ -15,7 +15,7 @@
 # expressly stated in the License.
 import unittest
 import numpy as np
-from lava.proc.scif.process import CspScif, QuboScif
+from lava.lib.optimization.solvers.generic.scif.process import CspScif, QuboScif
 
 
 class TestCspScifProcess(unittest.TestCase):

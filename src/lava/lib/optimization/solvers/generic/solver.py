@@ -23,6 +23,8 @@ from lava.proc.read_gate.models import ReadGatePyModel
 from lava.proc.read_gate.ncmodels import ReadGateCModel
 from lava.proc.read_gate.process import ReadGate
 from lava.proc.scif.ncmodels import NcModelQuboScif
+
+from lava.proc.scif.models import PyModelQuboScifFixed
 from lava.proc.scif.process import QuboScif
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
@@ -133,7 +135,9 @@ class OptimizationSolver:
             pdict = {self.solver_process: self.solver_model,
                      ReadGate: ReadGatePyModel,
                      Dense: PyDenseModelFloat,
-                     StochasticIntegrateAndFire: StochasticIntegrateAndFireModel
+                     StochasticIntegrateAndFire:
+                         StochasticIntegrateAndFireModelSCIF,
+                     QuboScif: PyModelQuboScifFixed,
                      }
             run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
                                    select_sub_proc_model=True)

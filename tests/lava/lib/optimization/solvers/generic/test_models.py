@@ -18,7 +18,7 @@ from lava.magma.core.run_configs import Loihi2SimCfg
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.monitor.process import Monitor
 from lava.lib.optimization.solvers.generic.sub_process_models import \
-    StochasticIntegrateAndFireModel
+    StochasticIntegrateAndFireModel, StochasticIntegrateAndFireModelSCIF
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     StochasticIntegrateAndFire,
 )
@@ -96,7 +96,7 @@ def set_up(self, var="state", input_time=None, input_val=2 ** 7, **kwargs):
     self.bit.run(
         condition=RunSteps(self.steps),
         run_cfg=Loihi2SimCfg(exception_proc_model_map={
-            StochasticIntegrateAndFire: StochasticIntegrateAndFireModel}),
+            StochasticIntegrateAndFire: StochasticIntegrateAndFireModelSCIF}),
     )
 
     data = self.monitor.get_data()
@@ -122,27 +122,34 @@ class TestStochasticIntegrateAndFire(unittest.TestCase):
     def test_noiseless_state_progression(self):
         self.data = set_up(self, var="state", **self.kwargs)
         state_progression = self.data[self.bit.name]["state"]
-        expected = np.tile(np.arange(0, 501, 100), self.steps // 4)[
-            1 : self.steps + 1
+        expected = np.tile(np.arange(0, 401, 100), self.steps // 4)[
+            1:self.steps + 1
         ][None].T
         self.assertTrue((state_progression == expected).all())
 
     def test_noiseless_firing(self):
         self.data = set_up(self, var="messages", **self.kwargs)
         spike_vector = self.data[self.bit.name]["messages"]
-        expected = np.tile(np.arange(0, 501, 100), self.steps // 4)[
+        expected = np.tile(np.arange(0, 401, 100), self.steps // 4)[
             1 : self.steps + 1
         ][None].T
         expected = np.where(expected == 0, 1, 0)
         self.assertTrue((spike_vector == expected).all())
 
     def test_noisy_state_progression(self):
+        ns_am = 1
+        ns_st = 4
         np.random.seed(1)
-        expected = np.cumsum(np.random.randint(0, 200, (self.steps,)))
+        rand_nums = \
+            np.random.randint(0, (2 ** 16) - 1, size=(self.steps,))
+        # Assign random numbers only to neurons, for which noise is enabled
+        prand = np.right_shift((rand_nums * ns_am).astype(int), 16 - ns_st)
+        expected = np.cumsum(prand)
         expected += np.arange(100, (self.steps + 1) * 100, 100)
 
         self.kwargs.update(
-            dict(noise_amplitude=1, name="Process_2", steps_to_fire=1000)
+            dict(noise_amplitude=ns_am, name="Process_2", steps_to_fire=1000,
+                 noise_precision=ns_st)
         )
         np.random.seed(1)
         self.data = set_up(self, "state", **self.kwargs)
@@ -150,9 +157,10 @@ class TestStochasticIntegrateAndFire(unittest.TestCase):
         self.assertTrue((state.T == expected).all())
 
     def test_noisy_firing(self):
-        expected = np.array([[0., 0., 1., 0., 0., 1., 0., 1., 0., 0., 1., 0.,
-                              0., 1., 0., 0., 1., 0., 1., 0., 0., 1.]])
-        self.kwargs.update(dict(noise_amplitude=1, name="Process_2"))
+        expected = np.array([[1., 0., 1., 0., 1., 1., 1., 0., 1., 0.,
+                              1., 0., 1., 0., 1., 0., 1., 0., 1., 1., 0., 1.]])
+        self.kwargs.update(dict(noise_amplitude=10, name="Process_2",
+                                noise_precision=6))
         np.random.seed(1)
         self.data = set_up(self, var="messages", **self.kwargs)
         spike_vector = self.data[self.bit.name]["messages"]
@@ -168,24 +176,24 @@ class TestStochasticIntegrateAndFire(unittest.TestCase):
                     200.0,
                     300.0,
                     400.0,
-                    500.0,
                     0.0,
                     100.0,
-                    72.0,
-                    300.0,
+                    200.0,
+                    172.0,
                     400.0,
-                    500.0,
                     0.0,
                     100.0,
                     200.0,
                     300.0,
                     400.0,
-                    500.0,
                     0.0,
                     100.0,
                     200.0,
                     300.0,
                     400.0,
+                    0.0,
+                    100.0,
+                    200.0
                 ]
             ]
         )

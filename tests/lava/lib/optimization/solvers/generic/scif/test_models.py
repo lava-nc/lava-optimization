@@ -20,7 +20,7 @@ from typing import Tuple, Dict
 
 from lava.magma.core.run_configs import Loihi2SimCfg
 from lava.magma.core.run_conditions import RunSteps
-from lava.proc.scif.process import CspScif, QuboScif
+from lava.lib.optimization.solvers.generic.scif.process import CspScif, QuboScif
 from lava.proc.lif.process import LIF
 from lava.proc.dense.process import Dense
 from lava.proc.io.source import RingBuffer as SpikeSource

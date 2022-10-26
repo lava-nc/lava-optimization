@@ -9,7 +9,7 @@ from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \
     StochasticIntegrateAndFire
 from lava.lib.optimization.solvers.generic.sub_process_models import \
-    StochasticIntegrateAndFireModel
+    StochasticIntegrateAndFireModelSCIF
 from lava.magma.core.resources import AbstractComputeResource, CPU, \
     Loihi2NeuroCore, NeuroCore
 from lava.magma.core.run_conditions import RunContinuous, RunSteps
@@ -20,6 +20,9 @@ from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
 from lava.proc.read_gate.models import ReadGatePyModel
 from lava.proc.read_gate.process import ReadGate
+
+from lava.proc.scif.models import PyModelQuboScifFixed
+from lava.proc.scif.process import QuboScif
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -129,23 +132,26 @@ class OptimizationSolver:
             pdict = {self.solver_process: self.solver_model,
                      ReadGate: ReadGatePyModel,
                      Dense: PyDenseModelFloat,
-                     StochasticIntegrateAndFire: StochasticIntegrateAndFireModel
+                     StochasticIntegrateAndFire:
+                         StochasticIntegrateAndFireModelSCIF,
+                     QuboScif: PyModelQuboScifFixed,
                      }
             run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
                                    select_sub_proc_model=True)
         elif backend in NEUROCORES:
-            raise NotImplementedError("Loihi backend will be supported in an "
-                                      "upcomming release and requires the "
-                                      "lava-on-loihi extension of Lava, "
-                                      "verify you are running the latest "
-                                      "release of this library.")
+            pdict = {self.solver_process: self.solver_model,
+                     StochasticIntegrateAndFire:
+                         StochasticIntegrateAndFireModelSCIF,
+                     }
+            run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
+                                  select_sub_proc_model=True)
         else:
             raise NotImplementedError(str(backend) + backend_msg)
         self.solver_process._log_config.level = 20
         self.solver_process.run(
             condition=RunContinuous()
             if timeout == -1
-            else RunSteps(num_steps=timeout),
+            else RunSteps(num_steps=timeout + 1),
             run_cfg=run_cfg,
         )
         if timeout == -1:

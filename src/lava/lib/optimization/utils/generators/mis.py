@@ -22,9 +22,14 @@ class MISProblem:
         Instantiate a new random MIS problem, with the given number of
         vertices and connection probability.
 
-        :param num_vertices: Number of vertices of the random graph
-        :param connection_prob: Connection probability
-        :param seed: Seed for numpy random generator
+        Parameters
+        ----------
+        num_vertices: int
+            Number of vertices of the random graph
+        connection_prob: float
+            Connection probability
+        seed: int, optional
+            Seed for numpy random generator
         """
         self._num_vertices = num_vertices
         self._connection_prob = connection_prob
@@ -124,14 +129,12 @@ class MISProblem:
         Creates an undirected graph with random connectivity between nodes
         and returns its adjacency matrix.
         """
-
         np.random.seed(self.seed)
 
         random_matrix = np.random.rand(self.num_vertices, self.num_vertices)
         adjacency = (random_matrix < self.connection_prob).astype(int)
 
         adjacency = np.triu(adjacency)
-        # ensure that the matrix is symmetric
         adjacency += adjacency.T - 2 * np.diag(adjacency.diagonal())
 
         return adjacency

@@ -58,6 +58,5 @@ class TestMISProblem(unittest.TestCase):
         self.assertIsInstance(qubo, QUBO)
 
     def test_find_maximum_independent_set(self):
-        """Tests that find_maximum_independent_set returns the correct type."""
         mis = self.problem.find_maximum_independent_set()
         self.assertIsInstance(mis, np.ndarray)

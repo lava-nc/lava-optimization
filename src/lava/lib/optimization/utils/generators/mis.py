@@ -75,7 +75,6 @@ class MISProblem:
             raise ValueError(
                 "Off-diagonal weights must be > 2 x diagonal weights.")
 
-        # Translate the connectivity matrix to a QUBO matrix
         num_variables = adjacency_matrix.shape[0]
         q = - w_diag * np.eye(num_variables) + w_off / 2 * adjacency_matrix
         return q.astype(int)
@@ -91,13 +90,15 @@ class MISProblem:
 
     def get_complement_graph(self) -> netx.Graph:
         """Returns the complement graph in networkx format."""
-        c_adjacency = self._get_adjacency_of_complement_graph(self._adjacency)
+        c_adjacency = self.get_complement_graph_matrix()
         c_graph = self._get_graph_from_adjacency_matrix(c_adjacency)
         return c_graph
 
     def get_complement_graph_matrix(self) -> np.ndarray:
         """Returns the adjacency matrix of the complement graph."""
-        c_adjacency = self._get_adjacency_of_complement_graph(self._adjacency)
+        c_adjacency = np.logical_not(self._adjacency)
+        c_adjacency = c_adjacency.astype(int)
+        c_adjacency = c_adjacency - np.diag(c_adjacency.diagonal())
         return c_adjacency
 
     def get_as_qubo(self, w_diag: float, w_off: float) -> QUBO:
@@ -135,46 +136,35 @@ class MISProblem:
 
         return adjacency
 
+    def find_maximum_independent_set(self) -> \
+            npt.ArrayLike:
+        """
+        Find and return the maximum independent set of a graph based on its
+        adjacency matrix.
 
-def find_maximum_independent_set(mis_problem: MISProblem) -> \
-        npt.ArrayLike:
-    """
-    Find and return the maximum independent set of a graph based on its
-    adjacency matrix.
+        *Please note that this function addresses the maximum and not just 
+        the maximal independent set. A maximal independent set is an 
+        independent set that is not a subset of any other independent set. 
+        The largest of these sets is the maximum independent set, which is 
+        determined by the present function.*Uses Networkx to solve the 
+        equivalent maximum clique problem.
 
-    Uses Networkx to solve the equivalent maximum clique problem.
-    Get a graph whose maximum clique corresponds to the maximum independent
-    set of that defined by the input connectivity matrix.
+        Get a graph whose maximum clique corresponds to the maximum independent
+        set of that defined by the input connectivity matrix.
+        The  maximum independent set for the graph G={V,E} is equivalent to the
+        maximum-clique of the graph H={V,E_c}, where E_c is the complement of E.
 
-    The  maximum independent set for the graph G={V,E} is equivalent to the
-    maximum-clique of the graph H={V,E_c}, where E_c is the complement of E.
+        Returns
+        -------
+        solution:  Array[binary]
+            Vector of length equal to the number of vertices in the graph.
+            The ith entry of the vector determines if the ith vertex is a
+            member of the MIS.
+        """
+        c_graph = self.get_complement_graph()
+        maximum_clique, weights = netx.max_weight_clique(c_graph, weight=None)
 
-    Returns
-    -------
-    solution:  Array[binary]
-    Vector of length equal to the number of vertices in the graph.
-    The ith entry of the vector determines if the ith vertex is a
-    member of the MIS.
-    """
-    c_graph = mis_problem.get_complement_graph()
-    maximum_clique = find_maximum_clique(undirected_graph=c_graph)
-    mis = indices_to_binary_vector(maximum_clique, mis_problem.num_vertices)
-    return mis
-
-
-def find_maximum_clique(undirected_graph: netx.Graph):
-    """Find the maximum clique problem for a given undirected graph."""
-    maximum_clique, weights = netx.max_weight_clique(undirected_graph,
-                                                     weight=None)
-    return maximum_clique
-
-
-def indices_to_binary_vector(indices: npt.ArrayLike, lenght: int):
-    """
-    Given an array of indices outputs a binary array
-    of the given length, the array is 1 on the positions given by indices
-    0 otherwise.
-    """
-    bin_vector = np.zeros((lenght,))
-    bin_vector[indices] = 1
-    return bin_vector
+        # convert array of indices to binary array
+        mis = np.zeros((self.num_vertices,))
+        mis[maximum_clique] = 1
+        return mis

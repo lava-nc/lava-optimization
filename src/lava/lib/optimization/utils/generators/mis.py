@@ -152,9 +152,9 @@ def find_maximum_independent_set(mis_problem: MISProblem) -> \
     Returns
     -------
     solution:  Array[binary]
-    Vector of length equal to the number of vertices in the graph.
-    The ith entry of the vector determines if the ith vertex is a
-    member of the MIS.
+        Vector of length equal to the number of vertices in the graph.
+        The ith entry of the vector determines if the ith vertex is a
+        member of the MIS.
     """
     c_graph = mis_problem.get_complement_graph()
     maximum_clique = find_maximum_clique(undirected_graph=c_graph)

@@ -53,7 +53,7 @@ class TestMISProblem(unittest.TestCase):
         self.assertEqual(matrix.shape[1], self.num_vertices)
 
     def test_get_as_qubo(self):
-        qubo = self.problem.get_as_qubo(1.0, 4.0)
+        qubo = self.problem.get_as_qubo(w_diag=1.0, w_off=4.0)
         self.assertIsInstance(qubo, QUBO)
 
 

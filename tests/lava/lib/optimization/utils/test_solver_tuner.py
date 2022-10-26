@@ -46,14 +46,15 @@ class TestSolverTuner(unittest.TestCase):
                   "target_cost": -11,
                   "backend": "CPU"}
 
-        stopping_condition = lambda best_cost, best_to_sol: best_cost < -6
+        def stop(best_cost, best_to_sol):
+            return best_cost < -6
 
-        hyperparams, succeeded = self.solver_tuner.tune(solver=solver,
-                                                        solver_parameters=params,
-                                                        stopping_condition=stopping_condition)
+        hyperparams, success = self.solver_tuner.tune(solver=solver,
+                                                      solver_parameters=params,
+                                                      stopping_condition=stop)
 
         self.assertIsInstance(hyperparams, ty.Dict)
-        self.assertTrue(succeeded)
+        self.assertTrue(success)
 
 
 if __name__ == '__main__':

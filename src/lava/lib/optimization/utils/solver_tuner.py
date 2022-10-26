@@ -7,6 +7,7 @@ import typing as ty
 from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
 import random
 
+
 class SolverTuner:
     """Class to find and set hyperparameters for an OptimizationSolver."""
 
@@ -45,7 +46,7 @@ class SolverTuner:
         best_step_to_sol = float("inf")
         problem = solver.problem
         params_names = self._params_grid.keys()
-        params_grid = list(it.product(*map(lambda k: self._params_grid[k], params_names))) 
+        params_grid = list(it.product(*map(lambda k: self._params_grid[k], params_names)))
         random.shuffle(params_grid)
 
         for params in params_grid:

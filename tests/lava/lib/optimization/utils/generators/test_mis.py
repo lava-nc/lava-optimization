@@ -7,8 +7,7 @@ import networkx as netx
 import numpy as np
 
 from lava.lib.optimization.problems.problems import QUBO
-from lava.lib.optimization.utils.generators.mis import MISProblem, \
-    find_maximum_independent_set, indices_to_binary_vector
+from lava.lib.optimization.utils.generators.mis import MISProblem
 
 
 class TestMISProblem(unittest.TestCase):
@@ -53,33 +52,12 @@ class TestMISProblem(unittest.TestCase):
         self.assertEqual(matrix.shape[1], self.num_vertices)
 
     def test_get_as_qubo(self):
-        qubo = self.problem.get_as_qubo(w_diag=1.0, w_off=4.0)
+        w_diag = 1.0
+        w_off = 4.0
+        qubo = self.problem.get_as_qubo(w_diag, w_off)
         self.assertIsInstance(qubo, QUBO)
 
-
-class TestFindMaximumIndependentSet(unittest.TestCase):
-    def setUp(self):
-        self.num_vertices = 5
-        self.connection_prob = 0.75
-        self.seed = 42
-        self.problem = MISProblem(num_vertices=self.num_vertices,
-                                  connection_prob=self.connection_prob,
-                                  seed=self.seed)
-
     def test_find_maximum_independent_set(self):
-        mis = find_maximum_independent_set(self.problem)
+        """Tests that find_maximum_independent_set returns the correct type."""
+        mis = self.problem.find_maximum_independent_set()
         self.assertIsInstance(mis, np.ndarray)
-
-
-class TestIndicestoBinaryVector(unittest.TestCase):
-
-    def test_function(self):
-        indices = [2, 3, 8]
-        lenght = 10
-        result = indices_to_binary_vector(indices, lenght)
-        expected = [0, 0, 1, 1, 0, 0, 0, 0, 1, 0]
-        self.assertTrue(np.all(expected == result))
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -14,8 +14,15 @@
 # expressly stated in the License.
 # See: https://spdx.org/licenses/
 # SPDX-License-Identifier: BSD-3-Clause
+try:
+    from lava.utils.loihi2_profiler import Loihi2Power, Loihi2ExecutionTime
+except ImportError:
+    class Loihi2Power:
+        pass
 
-from lava.utils import loihi2_profiler
+    class Loihi2ExecutionTime:
+        pass
+
 import numpy as np
 
 
@@ -38,7 +45,7 @@ class SolverBenchmarker:
         ----------
         :param num_steps: Number of timesteps the workload is supposed to run.
         """
-        self._power_logger = loihi2_profiler.Loihi2Power(num_steps=num_steps)
+        self._power_logger = Loihi2Power(num_steps=num_steps)
         pre_run_fxs = [
             self._power_logger.attach,
         ]
@@ -54,7 +61,7 @@ class SolverBenchmarker:
 
         :param num_steps: Number of timesteps the workload is supposed to run.
         """
-        self._time_logger = loihi2_profiler.Loihi2ExecutionTime(
+        self._time_logger = Loihi2ExecutionTime(
             buffer_size=num_steps
         )
         pre_run_fxs = [

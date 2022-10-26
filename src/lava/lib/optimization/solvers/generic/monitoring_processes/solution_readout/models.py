@@ -6,7 +6,7 @@ from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import SolutionReadout
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
-from lava.magma.core.model.py.ports import PyInPort, PyRefPort
+from lava.magma.core.model.py.ports import PyInPort, PyOutPort, PyRefPort
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
@@ -30,7 +30,10 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     req_stop_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                        precision=32)
     target_cost: int = LavaPyType(int, np.int32, 32)
+    acknowledgemet: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32,
+                                           precision=32)
     min_cost: int = None
+    sol_found_time: int = 0
 
     def post_guard(self):
         """Decide whether to run post management phase."""
@@ -45,24 +48,32 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
         """Execute spiking phase, integrate input, update dynamics and send
         messages out."""
         raw_cost = self.cost_in.recv()
+        self.acknowledgemet.send(np.asarray([1]))
         req_stop = self.req_stop_in.recv()
+        self.acknowledgemet.send(np.asarray([1]))
         cost = [0]
         if raw_cost[0]:
+            # The following casts cost as a signed 24-bit value (8 = 32 - 24)
             cost = (raw_cost.astype(np.int32) << 8) >> 8
-
         if cost[0]:
             raw_solution = self.read_solution.recv()
-            self.solution[:] = (raw_solution.astype(np.int32) << 16) >> 16
+            # ToDo: The following way of reading out solutions only works
+            #  when the solutions are binary, i.e., QUBO problems. It relies
+            #  on the assumption that `solution' is the spiking history of the
+            #  neurons solving a problem and picks the spiking history from 3
+            #  timesteps ago, when the minimum cost was actually achieved.
+            self.solution[:] = (raw_solution.astype(np.int8) >> 2) & 1
             self.min_cost = cost[0]
-            if not req_stop[0]:
+            if req_stop[0] != 0:
+                self.sol_found_time = req_stop[0]
                 print(f"Host: received a better solution: "
                       f"{self.solution} at "
                       f"step"
-                      f" {self.time_step}")
-        if req_stop[0]:
-            self._req_pause = False
+                      f" {self.sol_found_time}")
+        if req_stop[0] == 0:
+            self._req_pause = True
 
     def run_post_mgmt(self):
         """Execute post management phase."""
-        print("Host: stopping simulation at step:", self.time_step)
+        print("Host: stopping simulation at step:", self.sol_found_time)
         self._req_pause = True

@@ -167,7 +167,7 @@ class SolverProcessBuilder:
             if hasattr(problem, "cost"):
                 mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
                 self.cost_coefficients = mrcv(problem.cost.coefficients)
-                self.cost_diagonal = -problem.cost.coefficients[
+                self.cost_diagonal = problem.cost.coefficients[
                     2].diagonal()
             self.variable_assignment = Var(
                 shape=(problem.variables.num_variables,)
@@ -216,7 +216,8 @@ class SolverProcessBuilder:
                 cost_minimizer = CostMinimizer(
                     Dense(
                         # todo just using the last coefficient for now
-                        weights=proc.cost_coefficients[2].init
+                        weights=proc.cost_coefficients[2].init,
+                        num_message_bits=24
                     )
                 )
                 variables.importances = proc.cost_coefficients[1].init
@@ -245,7 +246,8 @@ class SolverProcessBuilder:
             )
             macrostate_reader.read_gate_solution_out.connect(
                 macrostate_reader.solution_readout_solution_in)
-
+            macrostate_reader.solution_readout.acknowledgemet.connect(
+                macrostate_reader.read_gate.acknowledgemet)
             cost_minimizer.gradient_out.connect(variables.gradient_in)
             variables.state_out.connect(cost_minimizer.state_in)
             self.macrostate_reader = macrostate_reader
@@ -300,11 +302,11 @@ class SolverProcessBuilder:
 
         """
         if rank == 1:
-            return - coefficient
+            return coefficient
         if rank == 2:
             quadratic_component = coefficient * np.logical_not(
                 np.eye(*coefficient.shape))
-            return - quadratic_component
+            return quadratic_component
 
     @staticmethod
     def _update_linear_component_var(vars: ty.Dict[int, AbstractProcessMember],
@@ -320,7 +322,7 @@ class SolverProcessBuilder:
         the coefficient of the quadratic term on a cost or constraint function.
 
         """
-        linear_component = -quadratic_coefficient.diagonal()
+        linear_component = quadratic_coefficient.diagonal()
         if 1 in vars.keys():
             vars[1].init = vars[1].init + linear_component
         else:

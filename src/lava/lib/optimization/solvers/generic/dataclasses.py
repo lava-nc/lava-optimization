@@ -108,7 +108,7 @@ class MacroStateReader:
 
     @property
     def min_cost(self):
-        return self.cost_convergence_check.min_cost
+        return self.solution_readout.min_cost
 
     @property
     def satisfaction(self):

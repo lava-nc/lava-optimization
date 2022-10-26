@@ -9,7 +9,7 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
-from lava.proc.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 
 
 @implements(ReadGate, protocol=LoihiProtocol)

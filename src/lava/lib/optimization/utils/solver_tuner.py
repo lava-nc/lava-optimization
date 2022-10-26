@@ -45,9 +45,10 @@ class SolverTuner:
         best_step_to_sol = float("inf")
         problem = solver.problem
         params_names = self._params_grid.keys()
+        params_grid = list(it.product(*map(lambda k: self._params_grid[k], params_names))) 
+        random.shuffle(params_grid)
 
-        for params in it.product(
-                *map(lambda k: self._params_grid[k], params_names)):
+        for params in params_grid:
             hyperparameters = dict(zip(params_names, params))
             solver_parameters["hyperparameters"] = hyperparameters
             solution = solver.solve(**solver_parameters)

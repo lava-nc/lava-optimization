@@ -89,6 +89,13 @@ class OptimizationSolver:
                                      noise_amplitude=1,
                                      init_value=np.zeros(shape),
                                      init_state=np.zeros(shape))
+        self._report = dict(solved=None,
+                            best_state=None,
+                            cost=None,
+                            target_cost=None,
+                            steps_to_solution=None,
+                            time_to_solution=None,
+                            power_to_solution=None)
 
     @property
     def run_cfg(self):
@@ -107,6 +114,10 @@ class OptimizationSolver:
     def hyperparameters(self,
                         value: ty.Dict[str, ty.Union[int, npt.ArrayLike]]):
         self._hyperparameters = value
+
+    @property
+    def last_run_report(self):
+        return self._report
 
     def solve(self,
               timeout: int,
@@ -168,9 +179,26 @@ class OptimizationSolver:
         )
         if timeout == -1:
             self.solver_process.wait()
-        solution = self.solver_process.variable_assignment.aliased_var.get()
+        self._update_report(target_cost=target_cost)
         self.solver_process.stop()
-        return solution
+        return self._report["best_state"]
+
+    def _update_report(self,
+                       target_cost=None):
+        self._report["target_cost"] = target_cost
+        best_state = self.solver_process.variable_assignment.aliased_var.get()
+        self._report["best_state"] = best_state
+        raw_cost = self.solver_process.optimality.aliased_var.get()
+        cost = (raw_cost.astype(np.int32) << 8) >> 8
+        self._report["cost"] = cost
+        self._report["solved"] = cost == target_cost
+        steps_to_solution = self.solver_process.solution_step.get()
+        self._report["steps_to_solution"] = steps_to_solution
+        time_to_solution = None  # self.benchmarker.measured_time
+        power_to_solution = None  # self.behchmarker.measured_power
+        self._report["time_to_solution"] = time_to_solution
+        self._report["power_to_solution"] = power_to_solution
+        print(self._report)
 
     def _create_solver_process(self,
                                problem: OptimizationProblem,

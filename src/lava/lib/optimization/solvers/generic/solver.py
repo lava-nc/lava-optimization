@@ -87,12 +87,11 @@ class OptimizationSolver:
         self._process_builder = SolverProcessBuilder()
         self.solver_process = None
         self.solver_model = None
-        shape = (problem.num_variables,)
         self._hyperparameters = dict(step_size=10,
                                      steps_to_fire=10,
                                      noise_amplitude=1,
-                                     init_value=np.zeros(shape),
-                                     init_state=np.zeros(shape))
+                                     init_value=0,
+                                     init_state=0)
         self._report = dict(solved=None,
                             best_state=None,
                             cost=None,

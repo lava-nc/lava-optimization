@@ -1,83 +1,71 @@
 # Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
-import numpy as np
+import itertools as it
 import typing as ty
 
-from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
-
+import random
 
 class SolverTuner:
     """Class to find and set hyperparameters for an OptimizationSolver."""
 
     def __init__(self,
-                 step_range: ty.Tuple = (1, 2),
-                 noise_range: ty.Tuple = (4, 5),
-                 steps_to_fire_range: ty.Tuple = (8, 9)
+                 params_grid: ty.Dict
                  ):
-        self._step_range = step_range
-        self._noise_range = noise_range
-        self._steps_to_fire_range = steps_to_fire_range
+        """
+        Instantiate a SolverTuner, defining the admissible search space.
+
+        :param params_grid:
+        """
+        self._params_grid = params_grid
 
     def tune(self,
              solver: OptimizationSolver,
              solver_parameters: ty.Dict,
-             target_cost: int):
+             stopping_condition: ty.Callable[[float, int], bool] = None):
         """Find and set solving hyperparameters for an OptimizationSolver"""
-        hyperparameters = self._perform_grid_search(solver,
-                                                    solver_parameters,
-                                                    target_cost=target_cost)
-        succeeded = hyperparameters is not None
-        if succeeded:
-            solver.hyperparameters = hyperparameters
-        return solver, succeeded
+        # TODO : Check that hyperparameters are arguments for solver
+        best_hyperparameters, best_cost, best_step_to_sol = self._perform_grid_search(
+            solver,
+            solver_parameters,
+            stopping_condition)
+        succeeded = stopping_condition(best_cost, best_step_to_sol)
+        return best_hyperparameters, succeeded
 
     def _perform_grid_search(self,
                              solver: OptimizationSolver,
                              solver_parameters: ty.Dict,
-                             target_cost: int = None,
+                             stopping_condition: ty.Callable[
+                                 [float, int], bool] = None
                              ) -> ty.Union[ty.NoReturn, ty.Dict]:
-        """Explore hyperparameter space until a solution is found.
 
-        # Todo: allow finding best configuration by tracking step to solution.
-        """
-        cost = None
-        if not isinstance(solver.problem, QUBO):
-            raise ValueError("SolverTuner can only be used with QUBO problems.")
-        qubo_problem: QUBO = solver.problem
-        for steps_to_fire in self._step_range:
-            for noise_amplitude in self._noise_range:
-                for step_size in self._steps_to_fire_range:
-                    hyperparameters = dict(steps_to_fire=steps_to_fire,
-                                           noise_amplitude=noise_amplitude,
-                                           step_size=step_size
-                                           )
-                    solver_parameters["hyperparameters"] = hyperparameters
-                    solution = solver.solve(**solver_parameters)
-                    cost = qubo_problem.compute_cost(solution)
-                    self._print_cost_msg(cost, target_cost, solution)
-                    if cost is not None and cost <= target_cost:
-                        self._print_solution_found_msg(hyperparameters)
-                        break
-                else:
-                    continue
+        best_hyperparameters = None
+        best_cost = float("inf")
+        best_step_to_sol = float("inf")
+        problem = solver.problem
+        params_names = self._params_grid.keys()
+        params_grid = list(it.product(*map(lambda k: self._params_grid[k], params_names))) 
+        random.shuffle(params_grid)
+
+        for params in params_grid:
+            hyperparameters = dict(zip(params_names, params))
+            solver_parameters["hyperparameters"] = hyperparameters
+            solution = solver.solve(**solver_parameters)
+            # TODO : Implement logic for CSP problems
+            cost = solver.last_run_report["cost"]
+            step_to_sol = solver.last_run_report["steps_to_solution"]
+            if cost is not None and cost <= best_cost and step_to_sol < best_step_to_sol:
+                best_hyperparameters = hyperparameters
+                best_cost = cost
+                best_step_to_sol = step_to_sol
+                print(f"""Better hyperparameters configuration found!\
+                        \nHyperparameters: {best_hyperparameters}\
+                        \nBest cost: {best_cost}\
+                        \nBest step-to-solution: {best_step_to_sol}""")
+            if stopping_condition is not None and stopping_condition(best_cost,
+                                                                     best_step_to_sol):
                 break
-            else:
-                continue
-            break
+            # TODO : Add internal logging
 
-        if cost is None or cost > target_cost:
-            hyperparameters = None
-        return hyperparameters
-
-    @staticmethod
-    def _print_cost_msg(cost, cost_ref, solution) -> None:
-        print(f"""Solution vector from Loihi {solution} \
-          \nNodes in MIS (index starts at 0): {np.where(solution)[0]} \
-          \nQUBO cost of solution: {cost} (Lava) vs {cost_ref,} (target)\n""")
-
-    @staticmethod
-    def _print_solution_found_msg(hyperparameters: ty.Dict) -> None:
-        print("Solution found!")
-        print(f"{hyperparameters=}")
+        return best_hyperparameters, best_cost, best_step_to_sol

@@ -3,6 +3,7 @@
 # See: https://spdx.org/licenses/
 
 import unittest
+import typing as ty
 
 import numpy as np
 
@@ -31,8 +32,7 @@ class TestSolverTuner(unittest.TestCase):
     def setUp(self) -> None:
         params_grid = {
             "step_size": (1, 2),
-            "noise_amplitude": (4, 5),
-            "var_comm_rate": (8, 9)
+            "noise_amplitude": (3, 4, 5, 6),
         }
         self.solver_tuner = SolverTuner(params_grid=params_grid)
 
@@ -52,7 +52,7 @@ class TestSolverTuner(unittest.TestCase):
                                                         solver_parameters=params,
                                                         stopping_condition=stopping_condition)
 
-        self.assertIsInstance(solver, OptimizationSolver)
+        self.assertIsInstance(hyperparams, ty.Dict)
         self.assertTrue(succeeded)
 
 

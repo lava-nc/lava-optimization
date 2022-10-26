@@ -53,8 +53,8 @@ class SolverTuner:
             solver_parameters["hyperparameters"] = hyperparameters
             solution = solver.solve(**solver_parameters)
             # TODO : Implement logic for CSP problems
-            cost = problem.evaluate_cost(solution)
-            step_to_sol = random.randint(0, 1000) # TODO : check this
+            cost = solver.last_run_report["cost"]
+            step_to_sol = solver.last_run_report["steps_to_solution"]
             if cost is not None and cost <= best_cost and step_to_sol < best_step_to_sol:
                 best_hyperparameters = hyperparameters
                 best_cost = cost

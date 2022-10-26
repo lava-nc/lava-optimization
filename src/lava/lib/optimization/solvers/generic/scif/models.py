@@ -11,7 +11,7 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.decorator import implements, requires, tag
 from lava.magma.core.model.py.model import PyLoihiProcessModel
-from lava.proc.scif.process import CspScif, QuboScif
+from lava.lib.optimization.solvers.generic.scif.process import CspScif, QuboScif
 
 
 class AbstractPyModelScifFixed(PyLoihiProcessModel):
@@ -64,7 +64,6 @@ class AbstractPyModelScifFixed(PyLoihiProcessModel):
         return spk_hist_buffer
 
     def _integration_dynamics(self, intg_idx):
-
         state_to_intg = self.state[intg_idx]  # voltages to be integrated
         cnstr_to_intg = self.cnstr_intg[intg_idx]  # currents to be integrated
         spk_hist_to_intg = self.spk_hist[intg_idx]  # beta to be integrated
@@ -89,7 +88,6 @@ class AbstractPyModelScifFixed(PyLoihiProcessModel):
         return wta_spk_idx
 
     def _refractory_dynamics(self, rfct_idx):
-
         # Split/fork state variables u, v, beta
         state_in_rfct = self.state[rfct_idx]  # voltages in refractory
         cnstr_in_rfct = self.cnstr_intg[rfct_idx]  # currents in refractory

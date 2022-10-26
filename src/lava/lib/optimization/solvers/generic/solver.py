@@ -275,8 +275,8 @@ class OptimizationSolver:
                                      "cannot be -1")
                 if measure_power:
                     pre_run_fxs, post_run_fxs = \
-                        self._benchmarker.get_power_measurement_cfg(num_steps=
-                                                                    timeout + 1)
+                        self._benchmarker.get_power_measurement_cfg(
+                            num_steps=timeout + 1)
                 elif measure_time:
                     pre_run_fxs, post_run_fxs = \
                         self._benchmarker.get_time_measurement_cfg(

@@ -7,23 +7,31 @@ import numpy.typing as npt
 import numpy as np
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
-from lava.lib.optimization.solvers.generic.hierarchical_processes import \
-    StochasticIntegrateAndFire
-from lava.lib.optimization.solvers.generic.sub_process_models import \
-    StochasticIntegrateAndFireModelSCIF
-from lava.magma.core.resources import AbstractComputeResource, CPU, \
-    Loihi2NeuroCore, NeuroCore
+from lava.lib.optimization.solvers.generic.hierarchical_processes import (
+    StochasticIntegrateAndFire,
+)
+from lava.lib.optimization.solvers.generic.sub_process_models import (
+    StochasticIntegrateAndFireModelSCIF,
+)
+from lava.magma.core.resources import (
+    AbstractComputeResource,
+    CPU,
+    Loihi2NeuroCore,
+    NeuroCore,
+)
 from lava.magma.core.run_conditions import RunContinuous, RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg, Loihi2HwCfg
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
-from lava.lib.optimization.solvers.generic.read_gate.models import \
-    ReadGatePyModel
+from lava.lib.optimization.solvers.generic.read_gate.models import (
+    ReadGatePyModel,
+)
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.scif.models import \
-    PyModelQuboScifFixed
+from lava.lib.optimization.solvers.generic.scif.models import (
+    PyModelQuboScifFixed,
+)
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.lib.optimization.utils.solver_benchmarker import SolverBenchmarker
 from requests import post
@@ -33,11 +41,12 @@ CPUS = [CPU, "CPU"]
 NEUROCORES = [Loihi2NeuroCore, NeuroCore, "Loihi2"]
 
 
-def solve(problem: OptimizationProblem,
-          timeout: int,
-          target_cost: int = None,
-          backend: BACKENDS = Loihi2NeuroCore) -> \
-        npt.ArrayLike:
+def solve(
+    problem: OptimizationProblem,
+    timeout: int,
+    target_cost: int = None,
+    backend: BACKENDS = Loihi2NeuroCore,
+) -> npt.ArrayLike:
     """Create solver from problem spec and run until target_cost or timeout.
 
     Parameters
@@ -57,8 +66,9 @@ def solve(problem: OptimizationProblem,
     solution: candidate solution to the input optimization problem.
     """
     solver = OptimizationSolver(problem)
-    solution = solver.solve(timeout=timeout, target_cost=target_cost,
-                            backend=backend)
+    solution = solver.solve(
+        timeout=timeout, target_cost=target_cost, backend=backend
+    )
     return solution
 
 
@@ -81,39 +91,43 @@ class OptimizationSolver:
 
     """
 
-    def __init__(self,
-                 problem: OptimizationProblem,
-                 run_cfg=None):
+    def __init__(self, problem: OptimizationProblem, run_cfg=None):
         self.problem = problem
         self._run_cfg = run_cfg
         self._process_builder = SolverProcessBuilder()
         self.solver_process = None
         self.solver_model = None
         shape = (problem.num_variables,)
-        self._hyperparameters = dict(step_size=10,
-                                     steps_to_fire=10,
-                                     noise_amplitude=1,
-                                     init_value=np.zeros(shape),
-                                     init_state=np.zeros(shape))
-        self._report = dict(solved=None,
-                            best_state=None,
-                            cost=None,
-                            target_cost=None,
-                            steps_to_solution=None,
-                            time_to_solution=None,
-                            power_to_solution=None)
+        self._hyperparameters = dict(
+            step_size=10,
+            steps_to_fire=10,
+            noise_amplitude=1,
+            init_value=np.zeros(shape),
+            init_state=np.zeros(shape),
+        )
+        self._report = dict(
+            solved=None,
+            best_state=None,
+            cost=None,
+            target_cost=None,
+            steps_to_solution=None,
+            time_to_solution=None,
+            power_to_solution=None,
+        )
         self._benchmarker = SolverBenchmarker()
 
     @property
     def measured_time(self):
-        sts = self.last_run_report['steps_to_solution']
+        sts = self.last_run_report["steps_to_solution"]
         print(f"{self._benchmarker.measured_time.sum()=}")
         print(f"{repr(self._benchmarker.measured_time)=}")
         if sts:
-            return self._benchmarker.measured_time[:int(sts)].sum()
+            return self._benchmarker.measured_time[: int(sts)].sum()
         else:
-            print("No solution was found, returning total runtime for total "
-                  "number of steps.")
+            print(
+                "No solution was found, returning total runtime for total "
+                "number of steps."
+            )
             return self._benchmarker.measured_time.sum()
 
     @property
@@ -130,23 +144,24 @@ class OptimizationSolver:
         return self._hyperparameters
 
     @hyperparameters.setter
-    def hyperparameters(self,
-                        value: ty.Dict[str, ty.Union[int, npt.ArrayLike]]):
+    def hyperparameters(
+        self, value: ty.Dict[str, ty.Union[int, npt.ArrayLike]]
+    ):
         self._hyperparameters = value
 
     @property
     def last_run_report(self):
         return self._report
 
-    def measure_solving_time(self,
-                             timeout: int,
-                             target_cost: int = 0,
-                             backend: BACKENDS = CPU,
-                             hyperparameters: ty.Dict[
-                                 str, ty.Union[int, npt.ArrayLike]] = None):
+    def measure_solving_time(
+        self,
+        timeout: int,
+        target_cost: int = 0,
+        backend: BACKENDS = CPU,
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+    ):
         if timeout == -1:
-            raise ValueError("For time measurements timeout "
-                             "cannot be -1")
+            raise ValueError("For time measurements timeout " "cannot be -1")
         # The method does not accept timeout = -1.
         # We want to to run a finit number of steps
         self._update_run_config(backend, timeout=timeout)
@@ -154,15 +169,15 @@ class OptimizationSolver:
         self.solve(timeout, target_cost, backend, hyperparameters)
         return self.measured_time
 
-    def measure_solving_energy(self,
-                               timeout: int,
-                               target_cost: int = 0,
-                               backend: BACKENDS = CPU,
-                               hyperparameters: ty.Dict[
-                                   str, ty.Union[int, npt.ArrayLike]] = None):
+    def measure_solving_energy(
+        self,
+        timeout: int,
+        target_cost: int = 0,
+        backend: BACKENDS = CPU,
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+    ):
         if timeout == -1:  # todo move this check to mesuring methods
-            raise ValueError("For energy measurements timeout "
-                             "cannot be -1")
+            raise ValueError("For energy measurements timeout " "cannot be -1")
         # The method does not accept timeout = -1.
         # We want to to run a finit number of steps
         self._update_run_config(backend, timeout=timeout)
@@ -170,15 +185,15 @@ class OptimizationSolver:
         self.solve(timeout, target_cost, backend, hyperparameters)
         return self.measured_energy
 
-    def solve(self,
-              timeout: int,
-              target_cost: int = 0,
-              backend: BACKENDS = CPU,
-              hyperparameters: ty.Dict[
-                  str, ty.Union[int, npt.ArrayLike]] = None,
-              measure_time: bool = False,
-              measure_power: bool = False) \
-            -> npt.ArrayLike:
+    def solve(
+        self,
+        timeout: int,
+        target_cost: int = 0,
+        backend: BACKENDS = CPU,
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        measure_time: bool = False,
+        measure_power: bool = False,
+    ) -> npt.ArrayLike:
         """Create solver from problem spec and run until target_cost or timeout.
 
         Parameters
@@ -204,30 +219,32 @@ class OptimizationSolver:
         target_cost = self._validated_cost(target_cost)
         hyperparameters = hyperparameters or self.hyperparameters
         if measure_time and measure_power:
-            raise NotImplementedError("For now only one of power or time can "
-                                      "be measured at a time")
+            raise NotImplementedError(
+                "For now only one of power or time can " "be measured at a time"
+            )
         if not self.solver_process:
-            self._create_solver_process(self.problem,
-                                        target_cost,
-                                        backend,
-                                        hyperparameters)
+            self._create_solver_process(
+                self.problem, target_cost, backend, hyperparameters
+            )
         if backend in CPUS:
-            pdict = {self.solver_process: self.solver_model,
-                     ReadGate: ReadGatePyModel,
-                     Dense: PyDenseModelFloat,
-                     StochasticIntegrateAndFire:
-                         StochasticIntegrateAndFireModelSCIF,
-                     QuboScif: PyModelQuboScifFixed,
-                     }
-            run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
-                                   select_sub_proc_model=True)
+            pdict = {
+                self.solver_process: self.solver_model,
+                ReadGate: ReadGatePyModel,
+                Dense: PyDenseModelFloat,
+                StochasticIntegrateAndFire: StochasticIntegrateAndFireModelSCIF,
+                QuboScif: PyModelQuboScifFixed,
+            }
+            run_cfg = Loihi1SimCfg(
+                exception_proc_model_map=pdict, select_sub_proc_model=True
+            )
         elif backend in NEUROCORES:
-            pdict = {self.solver_process: self.solver_model,
-                     StochasticIntegrateAndFire:
-                         StochasticIntegrateAndFireModelSCIF,
-                     }
-            run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
-                                  select_sub_proc_model=True)
+            pdict = {
+                self.solver_process: self.solver_model,
+                StochasticIntegrateAndFire: StochasticIntegrateAndFireModelSCIF,
+            }
+            run_cfg = Loihi2HwCfg(
+                exception_proc_model_map=pdict, select_sub_proc_model=True
+            )
         else:
             raise NotImplementedError(str(backend) + backend_msg)
         self.solver_process._log_config.level = 20
@@ -243,8 +260,7 @@ class OptimizationSolver:
         self.solver_process.stop()
         return self._report["best_state"]
 
-    def _update_report(self,
-                       target_cost=None):
+    def _update_report(self, target_cost=None):
         self._report["target_cost"] = target_cost
         best_state = self.solver_process.variable_assignment.aliased_var.get()
         self._report["best_state"] = best_state
@@ -260,12 +276,13 @@ class OptimizationSolver:
         self._report["power_to_solution"] = power_to_solution
         print(self._report)
 
-    def _create_solver_process(self,
-                               problem: OptimizationProblem,
-                               target_cost: ty.Optional[int] = None,
-                               backend: BACKENDS = None,
-                               hyperparameters: ty.Dict[
-                                   str, ty.Union[int, npt.ArrayLike]] = None):
+    def _create_solver_process(
+        self,
+        problem: OptimizationProblem,
+        target_cost: ty.Optional[int] = None,
+        backend: BACKENDS = None,
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+    ):
         """Create process and model class as solver for the given problem.
 
         Parameters
@@ -279,18 +296,18 @@ class OptimizationSolver:
         deployed.
         """
         requirements, protocol = self._get_requirements_and_protocol(backend)
-        self._process_builder.create_solver_process(problem, hyperparameters
-                                                    or dict())
-        self._process_builder.create_solver_model(target_cost,
-                                                  requirements,
-                                                  protocol)
+        self._process_builder.create_solver_process(
+            problem, hyperparameters or dict()
+        )
+        self._process_builder.create_solver_model(
+            target_cost, requirements, protocol
+        )
         self.solver_process = self._process_builder.solver_process
         self.solver_model = self._process_builder.solver_model
 
-    def _get_requirements_and_protocol(self,
-                                       backend: BACKENDS) -> \
-            ty.Tuple[
-                AbstractComputeResource, AbstractSyncProtocol]:
+    def _get_requirements_and_protocol(
+        self, backend: BACKENDS
+    ) -> ty.Tuple[AbstractComputeResource, AbstractSyncProtocol]:
         """Figure out requirements and protocol for a given backend.
 
         Parameters
@@ -310,20 +327,23 @@ class OptimizationSolver:
     def _get_run_config(self, backend, measure_time, measure_power, timeout):
         do_benchmark = measure_time or measure_power
         if backend in CPUS:
-            pdict = {self.solver_process: self.solver_model,
-                     ReadGate: ReadGatePyModel,
-                     Dense: PyDenseModelFloat,
-                     StochasticIntegrateAndFire: StochasticIntegrateAndFireModel
-                     }
-            run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
-                                   select_sub_proc_model=True)
+            pdict = {
+                self.solver_process: self.solver_model,
+                ReadGate: ReadGatePyModel,
+                Dense: PyDenseModelFloat,
+                StochasticIntegrateAndFire: StochasticIntegrateAndFireModel,
+            }
+            run_cfg = Loihi1SimCfg(
+                exception_proc_model_map=pdict, select_sub_proc_model=True
+            )
         elif backend in NEUROCORES:
-            pdict = {self.solver_process: self.solver_model,
-                     StochasticIntegrateAndFire:
-                         StochasticIntegrateAndFireModelSCIF,
-                     }
-            run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
-                                  select_sub_proc_model=True)
+            pdict = {
+                self.solver_process: self.solver_model,
+                StochasticIntegrateAndFire: StochasticIntegrateAndFireModelSCIF,
+            }
+            run_cfg = Loihi2HwCfg(
+                exception_proc_model_map=pdict, select_sub_proc_model=True
+            )
         else:
             backend_msg = f"""{backend} was requested as backend. However,
             the solver currently supports only Loihi 2 and {CPU} backends.
@@ -343,21 +363,23 @@ class OptimizationSolver:
 
     def _add_energy_to_run_config(self, run_cfg, timeout):
         pre_run_fxs, post_run_fxs = self._benchmarker.get_power_measurement_cfg(
-            num_steps=timeout + 1)
+            num_steps=timeout + 1
+        )
         run_cfg.pre_run_fxs += pre_run_fxs
         run_cfg.post_run_fxs += post_run_fxs
 
     def _add_time_to_run_config(self, run_cfg, timeout):
-        pre_run_fxs, post_run_fxs = \
-            self._benchmarker.get_time_measurement_cfg(
-                num_steps=timeout + 1)
+        pre_run_fxs, post_run_fxs = self._benchmarker.get_time_measurement_cfg(
+            num_steps=timeout + 1
+        )
         run_cfg.pre_run_fxs += pre_run_fxs
         run_cfg.post_run_fxs += post_run_fxs
 
     def _validated_cost(self, target_cost):
         if target_cost != int(target_cost):
-            raise ValueError(f"target_cost has to be an integer, received "
-                             f"{target_cost}")
+            raise ValueError(
+                f"target_cost has to be an integer, received " f"{target_cost}"
+            )
         return int(target_cost)
 
     def _get_run_condition(self, timeout):

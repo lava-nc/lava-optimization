@@ -221,18 +221,18 @@ class QP:
     """
 
     def __init__(
-            self,
-            hessian: np.ndarray,
-            linear_offset: ty.Optional[np.ndarray] = None,
-            constraint_hyperplanes: ty.Optional[np.ndarray] = None,
-            constraint_biases: ty.Optional[np.ndarray] = None,
-            constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
-            constraint_biases_eq: ty.Optional[np.ndarray] = None,
+        self,
+        hessian: np.ndarray,
+        linear_offset: ty.Optional[np.ndarray] = None,
+        constraint_hyperplanes: ty.Optional[np.ndarray] = None,
+        constraint_biases: ty.Optional[np.ndarray] = None,
+        constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
+        constraint_biases_eq: ty.Optional[np.ndarray] = None,
     ):
         if (
-                constraint_hyperplanes is None and constraint_biases is not None
+            constraint_hyperplanes is None and constraint_biases is not None
         ) or (
-                constraint_hyperplanes is not None and constraint_biases is None
+            constraint_hyperplanes is not None and constraint_biases is None
         ):
             raise ValueError(
                 "Please properly define your Inequality constraints. Supply \
@@ -240,11 +240,11 @@ class QP:
             )
 
         if (
-                constraint_hyperplanes_eq is None
-                and constraint_biases_eq is not None
+            constraint_hyperplanes_eq is None
+            and constraint_biases_eq is not None
         ) or (
-                constraint_hyperplanes_eq is not None
-                and constraint_biases_eq is None
+            constraint_hyperplanes_eq is not None
+            and constraint_biases_eq is None
         ):
             raise ValueError(
                 "Please properly define your Equality constraints. Supply \

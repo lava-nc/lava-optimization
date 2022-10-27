@@ -107,9 +107,6 @@ class OptimizationSolver:
         sts = self.last_run_report['steps_to_solution']
         print(f"{self._benchmarker.measured_time.sum()=}")
         print(f"{repr(self._benchmarker.measured_time)=}")
-        import matplotlib.pyplot as plt
-        plt.plot(self._benchmarker.measured_time)
-        plt.show()
         if sts:
             return self._benchmarker.measured_time[:int(sts)].sum()
         else:
@@ -315,7 +312,7 @@ class OptimizationSolver:
         return run_cfg
 
     def _validated_cost(self, target_cost):
-        if target_cost % int(target_cost) != 0:
+        if target_cost != int(target_cost):
             raise ValueError(f"target_cost has to be an integer, received "
                              f"{target_cost}")
         return int(target_cost)

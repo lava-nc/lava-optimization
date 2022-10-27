@@ -25,7 +25,7 @@ from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.scif.models import \
     PyModelQuboScifFixed
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
-
+from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -200,7 +200,7 @@ class OptimizationSolver:
         raw_cost = self.solver_process.optimality.aliased_var.get()
         cost = (raw_cost.astype(np.int32) << 8) >> 8
         self._report["cost"] = cost
-        self._report["solved"] = cost == target_cost
+        self._report["solved"] = cost <= target_cost
         steps_to_solution = self.solver_process.solution_step.get()
         self._report["steps_to_solution"] = steps_to_solution
         time_to_solution = None
@@ -291,6 +291,26 @@ class OptimizationSolver:
             return RunContinuous()
         else:
             return RunSteps(num_steps=timeout + 1)
+
+    def tune(self, params_grid: ty.Dict,
+             timeout: int,
+             target_cost: int = 0,
+             backend: BACKENDS = CPU,
+             stopping_condition: ty.Callable[
+                           [float, int], bool] = None) -> ty.Tuple[ty.Dict, bool]:
+        """
+        Provides an interface to SolverTuner to search hyperparameters on the
+        specififed grid. Returns the optimized hyperparameters.
+        """
+        solver_tuner = SolverTuner(params_grid)
+        solver_parameters = {"timeout": timeout, 
+                             "target_cost": target_cost,
+                             "backend": backend}
+        hyperparameters, success = solver_tuner.tune(self, 
+                                                     solver_parameters, 
+                                                     stopping_condition)
+        if success: self.hyperparameters = hyperparameters
+        return hyperparameters, success
 
 
 # TODO throw an error if L2 is not present and the user tries to use it.

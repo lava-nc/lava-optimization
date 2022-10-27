@@ -26,6 +26,7 @@ from lava.lib.optimization.solvers.generic.scif.models import \
     PyModelQuboScifFixed
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.lib.optimization.utils.solver_benchmarker import SolverBenchmarker
+from requests import post
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -143,9 +144,11 @@ class OptimizationSolver:
                              backend: BACKENDS = CPU,
                              hyperparameters: ty.Dict[
                                  str, ty.Union[int, npt.ArrayLike]] = None):
-        if timeout == -1: # todo move this check to mesuring methods
+        if timeout == -1: 
             raise ValueError("For time measurements timeout "
                                      "cannot be -1")
+        # The method does not accept timeout = -1. 
+        # We want to to run a finit number of steps
         self._update_run_config(backend, timeout=timeout)
         self._add_time_to_run_config(self._run_cfg)
         self.solve(timeout, target_cost, backend, hyperparameters)
@@ -160,6 +163,8 @@ class OptimizationSolver:
         if timeout == -1: # todo move this check to mesuring methods
             raise ValueError("For energy measurements timeout "
                                      "cannot be -1")
+        # The method does not accept timeout = -1. 
+        # We want to to run a finit number of steps
         self._update_run_config(backend, timeout=timeout)
         self._add_energy_to_run_config(self._run_cfg)
         self.solve(timeout, target_cost, backend, hyperparameters)
@@ -320,7 +325,6 @@ class OptimizationSolver:
             run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
                                   select_sub_proc_model=True)
         else:
-            # TODO throw an error if L2 is not present and the user tries to use it.
             backend_msg = f"""{backend} was requested as backend. However,
             the solver currently supports only Loihi 2 and {CPU} backends.
             These can be specified by calling solve with any of the following:
@@ -333,25 +337,23 @@ class OptimizationSolver:
             The explicit resource classes can be imported from 
             lava.magma.core.resources"""
             raise NotImplementedError(str(backend) + backend_msg)
+        if measure_power:
+            self._add_energy_to_run_config(run_cfg)
+            
         return run_cfg
 
-    def  _add_energy_to_run_config(run_cfg):
-        pre_run_fxs, post_run_fxs = [], []  
-        if measure_power:
-            pre_run_fxs= run_cfg.pre_run_fxs
-            post_run_fxs = run_cfg.post_run_fxs
-            pre_run_fxs, post_run_fxs = \
-            self._benchmarker.get_power_measurement_cfg(
+    def  _add_energy_to_run_config(self, run_cfg, timeout):
+        pre_run_fxs, post_run_fxs = self._benchmarker.get_power_measurement_cfg(
                             num_steps=timeout + 1)
+        run_cfg.pre_run_fxs += pre_run_fxs
+        run_cfg.post_run_fxs += post_run_fxs
                     
-    def _add_time_to_run_config(run_cfg):
-        pre_run_fxs, post_run_fxs = [], []  
-        if measure_time:
-            pre_run_fxs= run_cfg.pre_run_fxs
-            post_run_fxs = run_cfg.post_run_fxs
-            pre_run_fxs, post_run_fxs = \
-            self._benchmarker.get_time_measurement_cfg(
-                        num_steps=timeout + 1)                            
+    def _add_time_to_run_config(self, run_cfg, timeout):
+        pre_run_fxs, post_run_fxs = \
+        self._benchmarker.get_time_measurement_cfg(
+                        num_steps=timeout + 1)
+        run_cfg.pre_run_fxs += pre_run_fxs
+        run_cfg.post_run_fxs += post_run_fxs                            
    
     def _validated_cost(self, target_cost):
         if target_cost != int(target_cost):

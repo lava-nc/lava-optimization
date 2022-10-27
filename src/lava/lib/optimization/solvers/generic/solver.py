@@ -296,20 +296,21 @@ class OptimizationSolver:
              timeout: int,
              target_cost: int = 0,
              backend: BACKENDS = CPU,
-             stopping_condition: ty.Callable[
-                           [float, int], bool] = None) -> ty.Tuple[ty.Dict, bool]:
+             stopping_condition: ty.Callable[[float, int], bool] = None) -> \
+            ty.Tuple[ty.Dict, bool]:
         """
         Provides an interface to SolverTuner to search hyperparameters on the
         specififed grid. Returns the optimized hyperparameters.
         """
         solver_tuner = SolverTuner(params_grid)
-        solver_parameters = {"timeout": timeout, 
+        solver_parameters = {"timeout": timeout,
                              "target_cost": target_cost,
                              "backend": backend}
-        hyperparameters, success = solver_tuner.tune(self, 
-                                                     solver_parameters, 
+        hyperparameters, success = solver_tuner.tune(self,
+                                                     solver_parameters,
                                                      stopping_condition)
-        if success: self.hyperparameters = hyperparameters
+        if success:
+            self.hyperparameters = hyperparameters
         return hyperparameters, success
 
 

@@ -151,7 +151,7 @@ class OptimizationSolver:
                                   select_sub_proc_model=True)
         else:
             raise NotImplementedError(str(backend) + backend_msg)
-        self.solver_process._log_config.level = 20
+        self.solver_process._log_config.level = 40
         self.solver_process.run(
             condition=RunContinuous()
             if timeout == -1

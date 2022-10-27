@@ -91,8 +91,8 @@ class OptimizationSolver:
         self._hyperparameters = dict(step_size=10,
                                      steps_to_fire=10,
                                      noise_amplitude=1,
-                                     init_value=0,
-                                     init_state=0)
+                                     init_value=np.zeros(shape),
+                                     init_state=np.zeros(shape))
         self._report = dict(solved=None,
                             best_state=None,
                             cost=None,
@@ -160,32 +160,11 @@ class OptimizationSolver:
                                         target_cost,
                                         backend,
                                         hyperparameters)
-        if backend in CPUS:
-            pdict = {self.solver_process: self.solver_model,
-                     ReadGate: ReadGatePyModel,
-                     Dense: PyDenseModelFloat,
-                     StochasticIntegrateAndFire:
-                         StochasticIntegrateAndFireModelSCIF,
-                     QuboScif: PyModelQuboScifFixed,
-                     }
-            run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
-                                   select_sub_proc_model=True)
-        elif backend in NEUROCORES:
-            pdict = {self.solver_process: self.solver_model,
-                     StochasticIntegrateAndFire:
-                         StochasticIntegrateAndFireModelSCIF,
-                     }
-            run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
-                                  select_sub_proc_model=True)
-        else:
-            raise NotImplementedError(str(backend) + backend_msg)
+        run_cfg = self._get_run_config(backend, timeout)
+        run_condition = self._get_run_condition(timeout)
         self.solver_process._log_config.level = 20
-        self.solver_process.run(
-            condition=RunContinuous()
-            if timeout == -1
-            else RunSteps(num_steps=timeout + 1),
-            run_cfg=run_cfg,
-        )
+        self.solver_process.run(condition=run_condition,
+                                run_cfg=run_cfg)
         if timeout == -1:
             self.solver_process.wait()
         self._update_report(target_cost=target_cost)

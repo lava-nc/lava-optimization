@@ -1,19 +1,7 @@
-# INTEL CORPORATION CONFIDENTIAL AND PROPRIETARY
-#
-# Copyright © 2022 Intel Corporation.
-#
-# This software and the related documents are Intel copyrighted
-# materials, and your use of them is governed by the express
-# license under which they were provided to you (License). Unless
-# the License provides otherwise, you may not use, modify, copy,
-# publish, distribute, disclose or transmit  this software or the
-# related documents without Intel's prior written permission.
-#
-# This software and the related documents are provided as is, with
-# no express or implied warranties, other than those that are
-# expressly stated in the License.
-# See: https://spdx.org/licenses/
+# Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
+# See: https://spdx.org/licenses/
+
 try:
     from lava.utils.loihi2_profiler import Loihi2Power, Loihi2ExecutionTime
 except ImportError:
@@ -43,7 +31,8 @@ class SolverBenchmarker:
 
         Parameters
         ----------
-        :param num_steps: Number of timesteps the workload is supposed to run.
+        num_steps: int
+            Number of timesteps the workload is supposed to run.
         """
         self._power_logger = Loihi2Power(num_steps=num_steps)
         pre_run_fxs = [
@@ -59,7 +48,8 @@ class SolverBenchmarker:
         Returns the pre- and post- fixtures to be passed to a ``Loihi2HwCfg``
         to enable execution time monitoring.
 
-        :param num_steps: Number of timesteps the workload is supposed to run.
+        num_steps: int
+            Number of timesteps the workload is supposed to run.
         """
         self._time_logger = Loihi2ExecutionTime(
             buffer_size=num_steps

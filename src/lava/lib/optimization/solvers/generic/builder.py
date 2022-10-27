@@ -24,7 +24,7 @@ from lava.magma.core.process.variable import Var
 from lava.magma.core.resources import AbstractComputeResource
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.proc.dense.process import Dense
-from lava.proc.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from numpy import typing as npt
 
 

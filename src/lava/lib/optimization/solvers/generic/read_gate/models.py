@@ -9,7 +9,7 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
-from lava.proc.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 
 
 @implements(ReadGate, protocol=LoihiProtocol)
@@ -24,6 +24,8 @@ class ReadGatePyModel(PyLoihiProcessModel):
     target_cost: int = LavaPyType(int, np.int32, 32)
     cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                    precision=32)
+    acknowledgemet: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
+                                          precision=32)
     cost_out: PyOutPort = LavaPyType(
         PyOutPort.VEC_DENSE, np.int32, precision=32
     )
@@ -52,16 +54,21 @@ class ReadGatePyModel(PyLoihiProcessModel):
             self.min_cost = cost[0]
             print("Found a solution with cost: ", self.min_cost)
             self.cost_out.send(np.asarray([0]))
-            self.send_pause_request.send(np.asarray([0]))
+            self.acknowledgemet.recv()
+            self.send_pause_request.send(np.asarray([self.time_step]))
+            self.acknowledgemet.recv()
         elif self.solution is not None:
-            self.solution_out.send(self.solution)
             self.cost_out.send(np.asarray([self.min_cost]))
+            self.solution_out.send(self.solution)
+            self.send_pause_request.send(np.asarray([self.time_step]))
+            self.acknowledgemet.recv()
             self.solution = None
             self.min_cost = None
-            self.send_pause_request.send(np.asarray([0]))
         else:
             self.cost_out.send(np.asarray([0]))
-            self.send_pause_request.send(np.asarray([0]))
+            self.acknowledgemet.recv()
+            self.send_pause_request.send(np.asarray([-1]))
+            self.acknowledgemet.recv()
 
     def run_post_mgmt(self):
         """Execute post management phase."""

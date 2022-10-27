@@ -4,9 +4,7 @@
 import typing as ty
 
 import numpy.typing as npt
-from lava.lib.optimization.problems.coefficients import (
-    CoefficientTensorsMixin,
-)
+from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 
 CTType = ty.Union[ty.List, npt.ArrayLike]
 
@@ -27,9 +25,7 @@ class DiscreteConstraints:
     constraint they define.
     """
 
-    def __init__(
-        self, constraints: ty.List[ty.Tuple[int, int, npt.ArrayLike]]
-    ):
+    def __init__(self, constraints: ty.List[ty.Tuple[int, int, npt.ArrayLike]]):
         self._constraints = constraints
         self.set_relations_var_subsets(self._constraints)
 
@@ -113,6 +109,7 @@ class EqualityConstraints(CoefficientTensorsMixin):
 
     .. math::
         h(x) = 0
+
     where the terms of :math:`h(x)` have the form:
     .. math::
          g(x)= \sum_{ijk...} \epsilon_{ijk...} \cdot x_i \cdot x_j

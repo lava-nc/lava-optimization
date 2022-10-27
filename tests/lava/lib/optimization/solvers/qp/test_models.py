@@ -63,9 +63,7 @@ class OutProbeProcess(AbstractProcess):
 @implements(proc=InSpikeSetProcess, protocol=LoihiProtocol)
 @requires(CPU)
 class PyISSModel(PyLoihiProcessModel):
-    a_out: PyOutPort = LavaPyType(
-        PyOutPort.VEC_DENSE, np.float64, precision=64
-    )
+    a_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64, precision=64)
     spike_inp: np.ndarray = LavaPyType(np.ndarray, np.float64, precision=64)
 
     def run_spk(self):
@@ -171,12 +169,8 @@ class TestModelsFloatingPoint(unittest.TestCase):
         in_spike_qc_process = InSpikeSetProcess(
             in_shape=input_spike_qc.shape, spike_in=input_spike_qc
         )
-        out_spike_cc_process = OutProbeProcess(
-            out_shape=process.a_out_cc.shape
-        )
-        out_spike_qc_process = OutProbeProcess(
-            out_shape=process.a_out_qc.shape
-        )
+        out_spike_cc_process = OutProbeProcess(out_shape=process.a_out_cc.shape)
+        out_spike_qc_process = OutProbeProcess(out_shape=process.a_out_qc.shape)
 
         in_spike_cn_process.a_out.connect(process.s_in_cn)
         in_spike_qc_process.a_out.connect(process.s_in_qc)

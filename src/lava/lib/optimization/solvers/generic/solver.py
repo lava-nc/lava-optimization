@@ -317,29 +317,42 @@ class OptimizationSolver:
                      StochasticIntegrateAndFire:
                          StochasticIntegrateAndFireModelSCIF,
                      }
-            pre_run_fxs, post_run_fxs = [], []
-            if do_benchmark:
-                if timeout == -1:
-                    raise ValueError("For energy or time measurements timeout "
-                                     "cannot be -1")
-                if measure_power:
-                    pre_run_fxs, post_run_fxs = \
-                        self._benchmarker.get_power_measurement_cfg(
-                            num_steps=timeout + 1)
-                elif measure_time:
-                    pre_run_fxs, post_run_fxs = \
-                        self._benchmarker.get_time_measurement_cfg(
-                            num_steps=timeout + 1)
-
             run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
-                                  select_sub_proc_model=True,
-                                  pre_run_fxs=pre_run_fxs,
-                                  post_run_fxs=post_run_fxs
-                                  )
+                                  select_sub_proc_model=True)
         else:
+            # TODO throw an error if L2 is not present and the user tries to use it.
+            backend_msg = f"""{backend} was requested as backend. However,
+            the solver currently supports only Loihi 2 and {CPU} backends.
+            These can be specified by calling solve with any of the following:
+            backend = "CPU"
+            backend = "Loihi2"
+            backend = CPU
+            backend = Loihi2NeuroCore
+            backend = NeuroCore
+
+            The explicit resource classes can be imported from 
+            lava.magma.core.resources"""
             raise NotImplementedError(str(backend) + backend_msg)
         return run_cfg
 
+    def  _add_energy_to_run_config(run_cfg):
+        pre_run_fxs, post_run_fxs = [], []  
+        if measure_power:
+            pre_run_fxs= run_cfg.pre_run_fxs
+            post_run_fxs = run_cfg.post_run_fxs
+            pre_run_fxs, post_run_fxs = \
+            self._benchmarker.get_power_measurement_cfg(
+                            num_steps=timeout + 1)
+                    
+    def _add_time_to_run_config(run_cfg):
+        pre_run_fxs, post_run_fxs = [], []  
+        if measure_time:
+            pre_run_fxs= run_cfg.pre_run_fxs
+            post_run_fxs = run_cfg.post_run_fxs
+            pre_run_fxs, post_run_fxs = \
+            self._benchmarker.get_time_measurement_cfg(
+                        num_steps=timeout + 1)                            
+   
     def _validated_cost(self, target_cost):
         if target_cost != int(target_cost):
             raise ValueError(f"target_cost has to be an integer, received "
@@ -351,19 +364,3 @@ class OptimizationSolver:
             return RunContinuous()
         else:
             return RunSteps(num_steps=timeout + 1)
-
-
-# TODO throw an error if L2 is not present and the user tries to use it.
-backend_msg = f""" was requested as backend. However,
-the solver currently supports only Loihi 2 and CPU backends.
-These can be specified by calling solve with any of the following:
-
-    backend = "CPU"
-    backend = "Loihi2"
-    backend = CPU
-    backend = Loihi2NeuroCore
-    backend = NeuroCore
-
-The explicit resource classes can be imported from
-lava.magma.core.resources
-"""

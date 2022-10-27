@@ -20,11 +20,13 @@ from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
 from lava.lib.optimization.solvers.generic.read_gate.models import \
     ReadGatePyModel
+
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 
 from lava.lib.optimization.solvers.generic.scif.models import \
     PyModelQuboScifFixed
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
+
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]

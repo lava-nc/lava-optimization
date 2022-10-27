@@ -4,7 +4,6 @@
 import itertools as it
 import typing as ty
 
-from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
 import random
 
 
@@ -25,7 +24,7 @@ class SolverTuner:
         self._params_grid = params_grid
 
     def tune(self,
-             solver: OptimizationSolver,
+             solver,
              solver_parameters: ty.Dict,
              stopping_condition: ty.Callable[[float, int], bool] = None):
         """Find and set solving hyperparameters for an OptimizationSolver"""
@@ -38,7 +37,7 @@ class SolverTuner:
         return best_hyperparameters, succeeded
 
     def _random_search(self,
-                       solver: OptimizationSolver,
+                       solver,
                        solver_parameters: ty.Dict,
                        stopping_condition: ty.Callable[
                            [float, int], bool] = None

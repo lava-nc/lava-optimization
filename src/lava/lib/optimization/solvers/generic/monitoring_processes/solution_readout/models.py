@@ -30,8 +30,8 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     req_stop_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                        precision=32)
     target_cost: int = LavaPyType(int, np.int32, 32)
-    acknowledgemet: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32,
-                                           precision=32)
+    acknowledgement: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32,
+                                            precision=32)
     min_cost: int = None
     sol_found_time: int = 0
 
@@ -48,9 +48,9 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
         """Execute spiking phase, integrate input, update dynamics and send
         messages out."""
         raw_cost = self.cost_in.recv()
-        self.acknowledgemet.send(np.asarray([1]))
+        self.acknowledgement.send(np.asarray([1]))
         req_stop = self.req_stop_in.recv()
-        self.acknowledgemet.send(np.asarray([1]))
+        self.acknowledgement.send(np.asarray([1]))
         cost = [0]
         if raw_cost[0]:
             # The following casts cost as a signed 24-bit value (8 = 32 - 24)

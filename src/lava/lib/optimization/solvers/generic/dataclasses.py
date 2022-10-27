@@ -131,7 +131,7 @@ class MacroStateReader:
 
     @property
     def read_gate_ack(self):
-        return self.read_gate.acknowledgemet
+        return self.read_gate.acknowledgement
 
     @property
     def solution_readout_solution_in(self):
@@ -147,4 +147,4 @@ class MacroStateReader:
 
     @property
     def solution_readout_ack(self):
-        return self.solution_readout.acknowledgemet
+        return self.solution_readout.acknowledgement

@@ -26,6 +26,7 @@ def prepare_problem_and_solver():
     solver = OptimizationSolver(qubo_problem)
     return solver
 
+
 @unittest.skip("Debuging")
 class TestSolverTuner(unittest.TestCase):
 

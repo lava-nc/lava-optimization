@@ -19,7 +19,8 @@ from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
-from lava.proc.cost_integrator.process import CostIntegrator
+from lava.lib.optimization.solvers.generic.cost_integrator.process import \
+    CostIntegrator
 from lava.proc.dense.process import Dense
 from lava.magma.core.resources import Loihi2NeuroCore
 import numpy as np
@@ -29,8 +30,8 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.decorator import implements, requires, tag
 from lava.magma.core.model.py.model import PyLoihiProcessModel
-from lava.proc.lif.process import LIF, TernaryLIF
-from lava.proc.scif.process import QuboScif
+
+from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)

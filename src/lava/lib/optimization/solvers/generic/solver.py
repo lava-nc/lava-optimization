@@ -332,8 +332,7 @@ class OptimizationSolver:
             backend = "Loihi2"
             backend = CPU
             backend = Loihi2NeuroCore
-            backend = NeuroCore
-
+            backend = NeuroCoreS
             The explicit resource classes can be imported from 
             lava.magma.core.resources"""
             raise NotImplementedError(str(backend) + backend_msg)

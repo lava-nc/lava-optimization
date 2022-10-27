@@ -280,7 +280,7 @@ class OptimizationSolver:
         return run_cfg
 
     def _validated_cost(self, target_cost):
-        if target_cost % int(target_cost) != 0:
+        if target_cost != int(target_cost):
             raise ValueError(f"target_cost has to be an integer, received "
                              f"{target_cost}")
         return int(target_cost)

@@ -48,4 +48,4 @@ class SolutionReadout(AbstractProcess):
         self.read_solution = InPort(shape=shape)
         self.cost_in = InPort(shape=(1,))
         self.req_stop_in = InPort(shape=(1,))
-        self.acknowledgemet = OutPort(shape=(1,))
+        self.acknowledgement = OutPort(shape=(1,))

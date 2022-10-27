@@ -190,12 +190,12 @@ class TestWorkloads(unittest.TestCase):
         self.assertEqual(cost, expected_cost)
 
     def test_solve_set_partitioning(self):
-        q = np.asarray([[-17., 10., 10., 10., 0., 20.],
-                        [10., -18., 10., 10., 10., 20.],
-                        [10., 10., -29., 10., 20., 20.],
-                        [10., 10., 10., -19., 10., 10.],
-                        [0., 10., 20., 10., -17., 10.],
-                        [20., 20., 20., 10., 10., -28.]])
+        q = np.array([[-17., 10., 10., 10., 0., 20.],
+                      [10., -18., 10., 10., 10., 20.],
+                      [10., 10., -29., 10., 20., 20.],
+                      [10., 10., 10., -19., 10., 10.],
+                      [0., 10., 20., 10., -17., 10.],
+                      [20., 20., 20., 10., 10., -28.]], dtype=np.int)
         reference_solution = np.zeros(6)
         np.put(reference_solution, [0, 4], 1)
         solution, cost, expected_cost = solve_workload(q, reference_solution,
@@ -233,7 +233,7 @@ class TestWorkloads(unittest.TestCase):
                       [0., 2., 0., 0., 2., 0., 0., 0., 0., 0., 2., 0., 4.,
                        -4., 4.],
                       [0., 0., 2., 0., 0., 2., 0., 0., 0., 0., 0., 2., 4.,
-                       4., -4.]])
+                       4., -4.]], dtype=np.int)
         reference_solution = np.zeros(15)
         np.put(reference_solution, [1, 3, 8, 10, 14], 1)
         solution, cost, expected_cost = solve_workload(q, reference_solution,

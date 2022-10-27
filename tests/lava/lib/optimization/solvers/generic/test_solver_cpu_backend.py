@@ -12,7 +12,7 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     CostConvergenceChecker,
 )
 from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
-from lava.proc.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import SolutionReadout
 

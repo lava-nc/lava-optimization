@@ -7,9 +7,9 @@ import numpy as np
 from lava.magma.core.run_conditions import RunSteps, RunContinuous
 from lava.magma.core.run_configs import Loihi2SimCfg
 
-from lava.proc.read_gate.models import \
+from lava.lib.optimization.solvers.generic.read_gate.models import \
     ReadGatePyModel
-from lava.proc.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.monitoring_processes\
     .solution_readout.process import SolutionReadout
 from lava.proc.spiker.models import SpikerModel

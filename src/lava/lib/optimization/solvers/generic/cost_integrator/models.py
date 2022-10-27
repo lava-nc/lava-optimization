@@ -10,7 +10,8 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
-from lava.proc.cost_integrator.process import CostIntegrator
+from lava.lib.optimization.solvers.generic.cost_integrator.process import \
+    CostIntegrator
 
 
 @implements(proc=CostIntegrator, protocol=LoihiProtocol)

@@ -27,7 +27,6 @@ def prepare_problem_and_solver():
     return solver
 
 
-@unittest.skip("Debuging")
 class TestSolverTuner(unittest.TestCase):
 
     def setUp(self) -> None:

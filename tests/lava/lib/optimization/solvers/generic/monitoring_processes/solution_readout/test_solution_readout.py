@@ -29,7 +29,7 @@ class TestSolutionReadout(unittest.TestCase):
         readgate.solution_reader.connect_var(spiker.payload)
         readgate.solution_out.connect(self.readout.read_solution)
         readgate.cost_out.connect(self.readout.cost_in)
-        self.readout.acknowledgemet.connect(readgate.acknowledgemet)
+        self.readout.acknowledgement.connect(readgate.acknowledgement)
         readgate.send_pause_request.connect(self.readout.req_stop_in)
 
         # Execution configurations.

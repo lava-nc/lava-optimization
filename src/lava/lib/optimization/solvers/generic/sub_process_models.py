@@ -19,7 +19,8 @@ from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
-from lava.proc.cost_integrator.process import CostIntegrator
+from lava.lib.optimization.solvers.generic.cost_integrator.process import \
+    CostIntegrator
 from lava.proc.dense.process import Dense
 from lava.magma.core.resources import Loihi2NeuroCore
 import numpy as np
@@ -29,8 +30,8 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.decorator import implements, requires, tag
 from lava.magma.core.model.py.model import PyLoihiProcessModel
-from lava.proc.lif.process import LIF, TernaryLIF
-from lava.proc.scif.process import QuboScif
+
+from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
@@ -56,6 +57,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         )
         step_size = proc.hyperparameters.get("step_size", 10)
         noise_amplitude = proc.hyperparameters.get("noise_amplitude", 1)
+        noise_precision = proc.hyperparameters.get("noise_precision", 8)
         steps_to_fire = proc.hyperparameters.get("steps_to_fire", 10)
         init_value = proc.hyperparameters.get("init_value", np.zeros(shape))
         init_state = proc.hyperparameters.get("init_value", np.zeros(shape))
@@ -63,6 +65,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                                                 init_state=init_state,
                                                 shape=shape,
                                                 noise_amplitude=noise_amplitude,
+                                                noise_precision=noise_precision,
                                                 steps_to_fire=steps_to_fire,
                                                 cost_diagonal=diagonal,
                                                 init_value=init_value)
@@ -128,17 +131,19 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
         theta = proc.proc_params.get("steps_to_fire", (1,)) * step_size
         cost_diagonal = proc.proc_params.get("cost_diagonal", (1,))
         noise_amplitude = proc.proc_params.get("noise_amplitude", (1,))
+        noise_precision = proc.proc_params.get("noise_precision", (1,))
+        noise_shift = 16 - noise_precision
         self.scif = QuboScif(shape=shape,
                              step_size=step_size,
                              theta=theta,
                              cost_diag=cost_diagonal,
-                             neg_tau_ref=0,
-                             noise_amplitude=noise_amplitude)
+                             noise_amplitude=noise_amplitude,
+                             noise_shift=noise_shift)
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)
 
-        proc.vars.prev_assignment.alias(self.scif.vars.state)
+        proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
         proc.vars.state.alias(self.scif.vars.state)
         proc.vars.cost_diagonal.alias(self.scif.vars.cost_diagonal)
         proc.vars.noise_amplitude.alias(self.scif.vars.noise_ampl)
@@ -161,6 +166,7 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
     step_size: np.ndarray = LavaPyType(np.ndarray, int, 32)
     state: np.ndarray = LavaPyType(np.ndarray, int, 32)
     noise_amplitude: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    noise_precision: np.ndarray = LavaPyType(np.ndarray, int, 32)
     input_duration: np.ndarray = LavaPyType(np.ndarray, int, 32)
     min_state: np.ndarray = LavaPyType(np.ndarray, int, 32)
     min_integration: np.ndarray = LavaPyType(np.ndarray, int, 32)
@@ -188,7 +194,7 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
         self.firing[:] = self.do_fire(self.state)
         self.reset_state(firing_vector=self.firing[:])
         self.messages.send(self.firing[:])
-        self.local_cost.send(-local_cost)
+        self.local_cost.send(local_cost)
 
     def iterate_dynamics(self, added_input: np.ndarray, state: np.ndarray):
         integration_decay = 1

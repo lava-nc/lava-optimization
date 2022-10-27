@@ -11,7 +11,7 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
 from lava.lib.optimization.solvers.generic.monitoring_processes\
     .solution_readout.process import SolutionReadout
 from lava.proc.dense.process import Dense
-from lava.proc.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 
 
 @dataclass
@@ -130,6 +130,10 @@ class MacroStateReader:
         return self.read_gate.solution_out
 
     @property
+    def read_gate_ack(self):
+        return self.read_gate.acknowledgemet
+
+    @property
     def solution_readout_solution_in(self):
         return self.solution_readout.read_solution
 
@@ -140,3 +144,7 @@ class MacroStateReader:
     @property
     def solution_readout_req_stop_in(self):
         return self.solution_readout.req_stop_in
+
+    @property
+    def solution_readout_ack(self):
+        return self.solution_readout.acknowledgemet

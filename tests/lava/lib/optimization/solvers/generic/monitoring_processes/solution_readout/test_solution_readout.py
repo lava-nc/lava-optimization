@@ -5,11 +5,11 @@
 import unittest
 import numpy as np
 from lava.magma.core.run_conditions import RunSteps, RunContinuous
-from lava.magma.core.run_configs import Loihi1HwCfg
+from lava.magma.core.run_configs import Loihi2SimCfg
 
-from lava.proc.read_gate.models import \
+from lava.lib.optimization.solvers.generic.read_gate.models import \
     ReadGatePyModel
-from lava.proc.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.monitoring_processes\
     .solution_readout.process import SolutionReadout
 from lava.proc.spiker.models import SpikerModel
@@ -26,13 +26,15 @@ class TestSolutionReadout(unittest.TestCase):
 
         # Connect processes.
         integrator.s_out.connect(readgate.cost_in)
-        readgate.solution_reader.connect_var(spiker.counter)
+        readgate.solution_reader.connect_var(spiker.payload)
         readgate.solution_out.connect(self.readout.read_solution)
         readgate.cost_out.connect(self.readout.cost_in)
+        self.readout.acknowledgemet.connect(readgate.acknowledgemet)
+        readgate.send_pause_request.connect(self.readout.req_stop_in)
 
         # Execution configurations.
         pdict = {ReadGate: ReadGatePyModel, Spiker: SpikerModel}
-        self.run_cfg = Loihi1HwCfg(exception_proc_model_map=pdict)
+        self.run_cfg = Loihi2SimCfg(exception_proc_model_map=pdict)
         self.readout._log_config.level = 20
 
     def test_stops_when_desired_cost_reached(self):
@@ -40,4 +42,4 @@ class TestSolutionReadout(unittest.TestCase):
         self.readout.wait()
         solution = self.readout.solution.get()
         self.readout.stop()
-        self.assertTrue(np.all(solution == 2 * np.ones(4)))
+        self.assertTrue(np.all(solution == np.ones(4)))

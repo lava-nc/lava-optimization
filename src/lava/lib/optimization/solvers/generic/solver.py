@@ -136,6 +136,34 @@ class OptimizationSolver:
     @property
     def last_run_report(self):
         return self._report
+    
+     def measure_solving_time(self,
+                             timeout: int,
+                             target_cost: int = 0,
+                             backend: BACKENDS = CPU,
+                             hyperparameters: ty.Dict[
+                                 str, ty.Union[int, npt.ArrayLike]] = None):
+        if timeout == -1: # todo move this check to mesuring methods
+            raise ValueError("For energy or time measurements timeout "
+                                     "cannot be -1")
+        self._update_run_config(backend, timeout=timeout)
+        self._add_time_to_run_config(self._run_cfg)
+        self.solve(timeout, target_cost, backend, hyperparameters)
+        return self.measured_time
+
+    def measure_solving_energy(self,
+                               timeout: int,
+                               target_cost: int = 0,
+                               backend: BACKENDS = CPU,
+                               hyperparameters: ty.Dict[
+                                   str, ty.Union[int, npt.ArrayLike]] = None):
+        if timeout == -1: # todo move this check to mesuring methods
+            raise ValueError("For energy or time measurements timeout "
+                                     "cannot be -1")
+        self._update_run_config(backend, timeout=timeout)
+        self._add_energy_to_run_config(self._run_cfg)
+        self.solve(timeout, target_cost, backend, hyperparameters)
+        return self.measured_energy
 
     def solve(self,
               timeout: int,

@@ -177,7 +177,7 @@ class OptimizationSolver:
                                     hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 20
+        self.solver_process._log_config.level = 40
         self.solver_process.run(condition=run_condition,
                                 run_cfg=run_cfg)
         if timeout == -1:
@@ -210,7 +210,7 @@ class OptimizationSolver:
                                         hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 20
+        self.solver_process._log_config.level = 40
 
         self._profiler = Profiler.init(run_cfg)
         self._profiler.execution_time_probe()

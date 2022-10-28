@@ -24,6 +24,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     will request the runtime service to pause execution.
     """
     solution: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
+    solution_step: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     read_solution: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                          precision=32)
     cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
@@ -32,7 +33,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     target_cost: int = LavaPyType(int, np.int32, 32)
     acknowledgement: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32,
                                             precision=32)
-    min_cost: int = None
+    min_cost: int = LavaPyType(int, np.int32, 32)
     sol_found_time: int = 0
 
     def post_guard(self):

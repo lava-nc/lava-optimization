@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
@@ -17,18 +17,18 @@ class QPSolver:
     """Solve Full QP by connecting two Lava processes, GradDynamics and
     ConstraintCheck
 
-    Parameters
-    ----------
-    alpha : 1-D np.array
-        The learning rate for gradient descent
-    beta : 1-D np.array
-        The learning rate for constraint correction
-    alpha_decay_schedule : int, default 10000
-        Number of iterations after which one right shift takes place for
-        alpha
-    beta_growth_schedule : int, default 10000
-        Number of iterations after which one left shift takes place for
-        beta
+        Parameters
+        ----------
+        alpha : 1-D np.array
+            The learning rate for gradient descent
+        beta : 1-D np.array
+            The learning rate for constraint correction
+        alpha_decay_schedule : int, default 10000
+            Number of iterations after which one right shift takes place for
+            alpha
+        beta_growth_schedule : int, default 10000
+            Number of iterations after which one left shift takes place for
+            beta
 
     """
 
@@ -59,10 +59,10 @@ class QPSolver:
         sol : 1-D np.array
             Solution to the quadratic program
         """
-        (hessian, linear_offset,) = (
-            problem.get_hessian,
-            problem.get_linear_offset,
-        )
+        (
+            hessian,
+            linear_offset,
+        ) = (problem.get_hessian, problem.get_linear_offset)
         if problem.get_constraint_hyperplanes is not None:
             constraint_hyperplanes, constraint_biases = (
                 problem.get_constraint_hyperplanes,
@@ -70,10 +70,9 @@ class QPSolver:
             )
 
         else:
-            constraint_hyperplanes, constraint_biases = (
-                np.zeros((hessian.shape[0], hessian.shape[1])),
-                np.zeros((hessian.shape[0], 1)),
-            )
+            constraint_hyperplanes, constraint_biases = np.zeros(
+                (hessian.shape[0], hessian.shape[1])
+            ), np.zeros((hessian.shape[0], 1))
 
         init_sol = np.random.rand(hessian.shape[0], 1)
         i_max = iterations
@@ -93,8 +92,8 @@ class QPSolver:
         )
 
         # core solver
-        GradDyn.a_out.connect(ConsCheck.s_in)
-        ConsCheck.a_out.connect(GradDyn.s_in)
+        GradDyn.s_out.connect(ConsCheck.s_in)
+        ConsCheck.s_out.connect(GradDyn.s_in)
 
         GradDyn.run(
             condition=RunSteps(num_steps=i_max),

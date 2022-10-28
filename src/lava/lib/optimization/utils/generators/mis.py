@@ -124,6 +124,24 @@ class MISProblem:
         qubo = QUBO(q)
         return qubo
 
+    def get_qubo_matrix(self, w_diag: float, w_off: float) -> QUBO:
+        """
+        Creates a QUBO whose solution corresponds to the maximum independent
+        set (MIS) of the graph defined by the input adjacency matrix.
+
+        The goal of the QUBO is to minimize the cost
+            min x^T * Q * x ,
+        where the vector x is defined as:
+            x_i = 1 if vertex i is part of the MIS
+            x_i = 0 if vertex i is not part of the MIS,
+        and the QUBO matrix is given by
+            Q_ii = w_diag
+            Q_ij = w_off (for i!=j) .
+        """
+        return self._get_qubo_cost_from_adjacency(self._adjacency,
+                                                  w_diag,
+                                                  w_off)
+
     def _get_random_graph_mtx(self) -> np.ndarray:
         """
         Creates an undirected graph with random connectivity between nodes

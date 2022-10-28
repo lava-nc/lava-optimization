@@ -8,7 +8,7 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     ContinuousVariablesProcess, CostConvergenceChecker,
     DiscreteConstraintsProcess, DiscreteVariablesProcess,
     MixedConstraintsProcess, SatConvergenceChecker)
-from lava.lib.optimization.solvers.generic.monitoring_processes\
+from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import SolutionReadout
 from lava.proc.dense.process import Dense
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
@@ -90,6 +90,10 @@ class MacroStateReader:
     sat_convergence_check: SatConvergenceChecker = None
 
     @property
+    def solution_step(self):
+        return self.solution_readout.solution_step
+
+    @property
     def cost_in(self):
         return self.cost_convergence_check.cost_components
 
@@ -103,7 +107,7 @@ class MacroStateReader:
 
     @property
     def min_cost(self):
-        return self.cost_convergence_check.min_cost
+        return self.solution_readout.min_cost
 
     @property
     def satisfaction(self):

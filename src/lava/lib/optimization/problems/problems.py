@@ -102,6 +102,9 @@ class QUBO(OptimizationProblem):
         """As an unconstrained problem, QUBO constraints are None."""
         return None
 
+    def evaluate_cost(self, solution: np.ndarray) -> int:
+        return solution.T @ self._q_cost.coefficients[2] @ solution
+
     def validate_input(self, q):
         """Validate the cost coefficient is a square matrix.
 

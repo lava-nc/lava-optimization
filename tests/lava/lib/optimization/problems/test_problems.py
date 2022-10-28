@@ -67,7 +67,7 @@ class TestOptimizationProblem(unittest.TestCase):
 
 class TestQUBO(unittest.TestCase):
     def setUp(self) -> None:
-        self.qubo = QUBO(np.eye(10))
+        self.qubo = QUBO(np.eye(10, dtype=int))
 
     def test_create_obj(self):
         self.assertIsInstance(self.qubo, QUBO)
@@ -101,27 +101,27 @@ class TestQUBO(unittest.TestCase):
             self.qubo.constraints = np.eye(10)
 
     def test_set_cost(self):
-        new_cost = np.eye(4)
+        new_cost = np.eye(4, dtype=int)
         self.qubo.cost = new_cost
         self.assertIs(self.qubo.cost.get_coefficient(2), new_cost)
 
     def test_variables_update_after_setting_cost(self):
-        new_cost = np.eye(4)
+        new_cost = np.eye(4, dtype=int)
         self.qubo.cost = new_cost
         self.assertEqual(self.qubo.variables.num_variables, 4)
 
     def test_class_of_setted_cost(self):
-        new_cost = np.eye(10)
+        new_cost = np.eye(10, dtype=int)
         self.qubo.cost = new_cost
         self.assertIsInstance(self.qubo.cost, Cost)
 
     def test_cannot_set_nonquadratic_cost(self):
         with self.assertRaises(ValueError):
-            self.qubo.cost = np.eye(10).reshape(5, 20)
+            self.qubo.cost = np.eye(10, dtype=int).reshape(5, 20)
 
     def test_assertion_raised_if_q_is_not_square(self):
         with self.assertRaises(ValueError):
-            QUBO(np.eye(10).reshape(5, 20))
+            QUBO(np.eye(10, dtype=int).reshape(5, 20))
 
     def test_validate_input_method_fails_assertion(self):
         with self.assertRaises(ValueError):
@@ -129,7 +129,7 @@ class TestQUBO(unittest.TestCase):
 
     def test_validate_input_method_does_not_fail_assertion(self):
         try:
-            self.qubo.validate_input(np.eye(10))
+            self.qubo.validate_input(np.eye(10, dtype=int))
         except AssertionError:
             self.fail("Assertion failed with correct input!")
 

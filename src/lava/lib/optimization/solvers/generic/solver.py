@@ -32,10 +32,22 @@ from lava.lib.optimization.solvers.generic.scif.models import \
     PyModelQuboScifFixed
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.lib.optimization.utils.solver_tuner import SolverTuner
+from lava.lib.optimization.utils.solver_benchmarker import SolverBenchmarker
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
 NEUROCORES = [Loihi2NeuroCore, NeuroCore, "Loihi2"]
+
+BACKEND_MSG = f""" was requested as backend. However,
+the solver currently supports only Loihi 2 and CPU backends.
+These can be specified by calling solve with any of the following:
+backend = "CPU"
+backend = "Loihi2"
+backend = CPU
+backend = Loihi2NeuroCore
+backend = NeuroCoreS
+The explicit resource classes can be imported from
+lava.magma.core.resources"""
 
 
 def solve(
@@ -177,17 +189,12 @@ class OptimizationSolver:
         """
         target_cost = self._validated_cost(target_cost)
         hyperparameters = hyperparameters or self.hyperparameters
-        if measure_time and measure_power:
-            raise NotImplementedError(
-                "For now only one of power or time can " "be measured at a time"
-            )
         if not self.solver_process:
             self._create_solver_process(self.problem,
                                         target_cost,
                                         backend,
                                         hyperparameters)
-        run_cfg = self._get_run_config(backend, timeout, measure_time,
-                                       measure_power)
+        run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
         self.solver_process._log_config.level = 20
         self.solver_process.run(condition=run_condition,
@@ -197,6 +204,22 @@ class OptimizationSolver:
         self._update_report(target_cost=target_cost)
         self.solver_process.stop()
         return self._report["best_state"]
+
+    def measure_solving_time(
+        self,
+        timeout: int,
+        target_cost: int = 0,
+        backend: BACKENDS = CPU,
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+    ):
+        if timeout == -1:
+            raise ValueError("For time measurements timeout " "cannot be -1")
+        # The method does not accept timeout = -1.
+        # We want to to run a finit number of steps
+        self._update_run_config(backend, timeout=timeout)
+        self._add_time_to_run_config(self._run_cfg, timeout)
+        self.solve(timeout, target_cost, backend, hyperparameters)
+        return self.measured_time
 
     def _update_report(self, target_cost=None):
         self._report["target_cost"] = target_cost
@@ -208,10 +231,7 @@ class OptimizationSolver:
         self._report["solved"] = cost == target_cost
         steps_to_solution = self.solver_process.solution_step.get()
         self._report["steps_to_solution"] = steps_to_solution
-        time_to_solution = None  # self.benchmarker.measured_time
-        power_to_solution = None  # self.behchmarker.measured_power
-        self._report["time_to_solution"] = time_to_solution
-        self._report["power_to_solution"] = power_to_solution
+        self._report["time_to_solution"] = self._benchmarker.measured_time
         print(self._report)
 
     def _create_solver_process(self,
@@ -259,9 +279,9 @@ class OptimizationSolver:
         elif backend in NEUROCORES:
             return [Loihi2NeuroCore], protocol
         else:
-            raise NotImplementedError(str(backend) + backend_msg)
+            raise NotImplementedError(str(backend) + BACKEND_MSG)
 
-    def _get_run_config(self, backend, timeout, measure_time, measure_power):
+    def _get_run_config(self, backend):
         if backend in CPUS:
             pdict = {self.solver_process: self.solver_model,
                      ReadGate: ReadGatePyModel,
@@ -284,21 +304,7 @@ class OptimizationSolver:
                                   post_run_fxs=post_run_fxs
                                   )
         else:
-            backend_msg = f"""{backend} was requested as backend. However,
-            the solver currently supports only Loihi 2 and {CPU} backends.
-            These can be specified by calling solve with any of the following:
-            backend = "CPU"
-            backend = "Loihi2"
-            backend = CPU
-            backend = Loihi2NeuroCore
-            backend = NeuroCoreS
-            The explicit resource classes can be imported from
-            lava.magma.core.resources"""
-            raise NotImplementedError(str(backend) + backend_msg)
-        if measure_time:
-            self._add_time_to_run_config(run_cfg, timeout)
-        if measure_power:
-            self._add_energy_to_run_config(run_cfg, timeout)
+            raise NotImplementedError(str(backend) + BACKEND_MSG)
         return run_cfg
 
     def _validated_cost(self, target_cost):
@@ -336,13 +342,6 @@ class OptimizationSolver:
 
     def _add_time_to_run_config(self, run_cfg, timeout):
         pre_run_fxs, post_run_fxs = self._benchmarker.get_time_measurement_cfg(
-            num_steps=timeout + 1
-        )
-        run_cfg.pre_run_fxs += pre_run_fxs
-        run_cfg.post_run_fxs += post_run_fxs
-
-    def _add_energy_to_run_config(self, run_cfg, timeout):
-        pre_run_fxs, post_run_fxs = self._benchmarker.get_power_measurement_cfg(
             num_steps=timeout + 1
         )
         run_cfg.pre_run_fxs += pre_run_fxs

@@ -34,7 +34,7 @@ class SolverBenchmarker:
         num_steps: int
             Number of timesteps the workload is supposed to run.
         """
-        self._power_logger = Loihi2Power(num_steps=num_steps)
+        self._power_logger = Loihi2Power()
         pre_run_fxs = [
             self._power_logger.attach,
         ]
@@ -51,9 +51,7 @@ class SolverBenchmarker:
         num_steps: int
             Number of timesteps the workload is supposed to run.
         """
-        self._time_logger = Loihi2ExecutionTime(
-            buffer_size=num_steps
-        )
+        self._time_logger = Loihi2ExecutionTime()
         pre_run_fxs = [
             self._time_logger.attach,
         ]

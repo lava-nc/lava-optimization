@@ -12,7 +12,7 @@ from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
 from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 
-def prepare_problem():
+def prepare_problem_and_solver():
     # Define the QUBO matrix
     q = np.asarray([[-5, 2, 4, 0],
                     [2, -3, 1, 0],
@@ -22,7 +22,9 @@ def prepare_problem():
     # Instantiate the QUBO problem
     qubo_problem = QUBO(q=q)
 
-    return qubo_problem
+    # Instantiate a constraint optimization solver for this workload
+    solver = OptimizationSolver(qubo_problem)
+    return solver
 
 
 class TestSolverTuner(unittest.TestCase):
@@ -38,7 +40,7 @@ class TestSolverTuner(unittest.TestCase):
         self.assertIsInstance(self.solver_tuner, SolverTuner)
 
     def test_tune_success(self):
-        problem = prepare_problem()
+        solver = prepare_problem_and_solver()
 
         params = {"timeout": 1000,
                   "target_cost": -11,
@@ -47,7 +49,7 @@ class TestSolverTuner(unittest.TestCase):
         def stop(best_cost, best_to_sol):
             return best_cost < -6
 
-        hyperparams, success = self.solver_tuner.tune(problem=problem,
+        hyperparams, success = self.solver_tuner.tune(solver=solver,
                                                       solver_parameters=params,
                                                       stopping_condition=stop)
 

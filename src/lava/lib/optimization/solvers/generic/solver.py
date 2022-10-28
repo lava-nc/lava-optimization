@@ -7,12 +7,18 @@ import numpy.typing as npt
 import numpy as np
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
-from lava.lib.optimization.solvers.generic.hierarchical_processes import \
-    StochasticIntegrateAndFire
-from lava.lib.optimization.solvers.generic.sub_process_models import \
-    StochasticIntegrateAndFireModelSCIF
-from lava.magma.core.resources import AbstractComputeResource, CPU, \
-    Loihi2NeuroCore, NeuroCore
+from lava.lib.optimization.solvers.generic.hierarchical_processes import (
+    StochasticIntegrateAndFire,
+)
+from lava.lib.optimization.solvers.generic.sub_process_models import (
+    StochasticIntegrateAndFireModelSCIF,
+)
+from lava.magma.core.resources import (
+    AbstractComputeResource,
+    CPU,
+    Loihi2NeuroCore,
+    NeuroCore,
+)
 from lava.magma.core.run_conditions import RunContinuous, RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg, Loihi2HwCfg
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
@@ -31,12 +37,24 @@ BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
 NEUROCORES = [Loihi2NeuroCore, NeuroCore, "Loihi2"]
 
+BACKEND_MSG = f""" was requested as backend. However,
+the solver currently supports only Loihi 2 and CPU backends.
+These can be specified by calling solve with any of the following:
+backend = "CPU"
+backend = "Loihi2"
+backend = CPU
+backend = Loihi2NeuroCore
+backend = NeuroCoreS
+The explicit resource classes can be imported from
+lava.magma.core.resources"""
 
-def solve(problem: OptimizationProblem,
-          timeout: int,
-          target_cost: int = None,
-          backend: BACKENDS = Loihi2NeuroCore) -> \
-        npt.ArrayLike:
+
+def solve(
+        problem: OptimizationProblem,
+        timeout: int,
+        target_cost: int = None,
+        backend: BACKENDS = Loihi2NeuroCore,
+) -> npt.ArrayLike:
     """Create solver from problem spec and run until target_cost or timeout.
 
     Parameters
@@ -56,8 +74,9 @@ def solve(problem: OptimizationProblem,
     solution: candidate solution to the input optimization problem.
     """
     solver = OptimizationSolver(problem)
-    solution = solver.solve(timeout=timeout, target_cost=target_cost,
-                            backend=backend)
+    solution = solver.solve(
+        timeout=timeout, target_cost=target_cost, backend=backend
+    )
     return solution
 
 
@@ -80,9 +99,7 @@ class OptimizationSolver:
 
     """
 
-    def __init__(self,
-                 problem: OptimizationProblem,
-                 run_cfg=None):
+    def __init__(self, problem: OptimizationProblem, run_cfg=None):
         self.problem = problem
         self._run_cfg = run_cfg
         self._process_builder = SolverProcessBuilder()
@@ -98,8 +115,8 @@ class OptimizationSolver:
                             cost=None,
                             target_cost=None,
                             steps_to_solution=None,
-                            time_to_solution=None,
-                            power_to_solution=None)
+                            time_to_solution=None)
+        self._profiler = None
 
     @property
     def run_cfg(self):
@@ -154,7 +171,6 @@ class OptimizationSolver:
         """
         target_cost = self._validated_cost(target_cost)
         hyperparameters = hyperparameters or self.hyperparameters
-
         if not self.solver_process:
             self._create_solver_process(self.problem,
                                         target_cost,
@@ -171,21 +187,55 @@ class OptimizationSolver:
         self.solver_process.stop()
         return self._report["best_state"]
 
-    def _update_report(self,
-                       target_cost=None):
+    def measure_solving_time(
+            self,
+            timeout: int,
+            target_cost: int,
+            backend: BACKENDS,
+            hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+    ):
+        if timeout == -1:
+            raise ValueError("For time measurements timeout " "cannot be -1")
+        if backend not in NEUROCORES:
+            raise ValueError(f"Time measurement can only be performed on "
+                             "Loihi2 backend, got {backend}.")
+
+        from lava.utils.profiler import Profiler
+        self._profiler = Loihi2HWProfiler()
+        target_cost = self._validated_cost(target_cost)
+        hyperparameters = hyperparameters or self.hyperparameters
+        if not self.solver_process:
+            self._create_solver_process(self.problem,
+                                        target_cost,
+                                        backend,
+                                        hyperparameters)
+        run_cfg = self._get_run_config(backend)
+        run_condition = self._get_run_condition(timeout)
+        self.solver_process._log_config.level = 20
+
+        self._profiler = Profiler.init(run_cfg)
+        self._profiler.execution_time_probe()
+
+        self.solver_process.run(condition=run_condition,
+                                run_cfg=run_cfg)
+        if timeout == -1:
+            self.solver_process.wait()
+        self._update_report(target_cost=target_cost)
+        self.solver_process.stop()
+        return self._report["best_state"]
+
+    def _update_report(self, target_cost=None):
         self._report["target_cost"] = target_cost
         best_state = self.solver_process.variable_assignment.aliased_var.get()
         self._report["best_state"] = best_state
         raw_cost = self.solver_process.optimality.aliased_var.get()
         cost = (raw_cost.astype(np.int32) << 8) >> 8
         self._report["cost"] = cost
-        self._report["solved"] = cost <= target_cost
+        self._report["solved"] = cost == target_cost
         steps_to_solution = self.solver_process.solution_step.get()
         self._report["steps_to_solution"] = steps_to_solution
-        time_to_solution = None
-        power_to_solution = None
-        self._report["time_to_solution"] = time_to_solution
-        self._report["power_to_solution"] = power_to_solution
+        self._report["time_to_solution"] = None if \
+            self._profiler is None else np.mean(self._profiler.execution_time)
         print(self._report)
 
     def _create_solver_process(self,
@@ -207,18 +257,18 @@ class OptimizationSolver:
         deployed.
         """
         requirements, protocol = self._get_requirements_and_protocol(backend)
-        self._process_builder.create_solver_process(problem, hyperparameters
-                                                    or dict())
-        self._process_builder.create_solver_model(target_cost,
-                                                  requirements,
-                                                  protocol)
+        self._process_builder.create_solver_process(
+            problem, hyperparameters or dict()
+        )
+        self._process_builder.create_solver_model(
+            target_cost, requirements, protocol
+        )
         self.solver_process = self._process_builder.solver_process
         self.solver_model = self._process_builder.solver_model
 
-    def _get_requirements_and_protocol(self,
-                                       backend: BACKENDS) -> \
-            ty.Tuple[
-                AbstractComputeResource, AbstractSyncProtocol]:
+    def _get_requirements_and_protocol(
+            self, backend: BACKENDS
+    ) -> ty.Tuple[AbstractComputeResource, AbstractSyncProtocol]:
         """Figure out requirements and protocol for a given backend.
 
         Parameters
@@ -233,7 +283,7 @@ class OptimizationSolver:
         elif backend in NEUROCORES:
             return [Loihi2NeuroCore], protocol
         else:
-            raise NotImplementedError(str(backend) + backend_msg)
+            raise NotImplementedError(str(backend) + BACKEND_MSG)
 
     def _get_run_config(self, backend):
         if backend in CPUS:
@@ -258,7 +308,7 @@ class OptimizationSolver:
                                   post_run_fxs=post_run_fxs
                                   )
         else:
-            raise NotImplementedError(str(backend) + backend_msg)
+            raise NotImplementedError(str(backend) + BACKEND_MSG)
         return run_cfg
 
     def _validated_cost(self, target_cost):
@@ -294,18 +344,9 @@ class OptimizationSolver:
             self.hyperparameters = hyperparameters
         return hyperparameters, success
 
-
-# TODO throw an error if L2 is not present and the user tries to use it.
-backend_msg = f""" was requested as backend. However,
-the solver currently supports only Loihi 2 and CPU backends.
-These can be specified by calling solve with any of the following:
-
-    backend = "CPU"
-    backend = "Loihi2"
-    backend = CPU
-    backend = Loihi2NeuroCore
-    backend = NeuroCore
-
-The explicit resource classes can be imported from
-lava.magma.core.resources
-"""
+    def _add_time_to_run_config(self, run_cfg, timeout):
+        pre_run_fxs, post_run_fxs = self._benchmarker.get_time_measurement_cfg(
+            num_steps=timeout + 1
+        )
+        run_cfg.pre_run_fxs += pre_run_fxs
+        run_cfg.post_run_fxs += post_run_fxs

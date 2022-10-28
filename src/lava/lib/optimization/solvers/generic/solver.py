@@ -31,7 +31,6 @@ from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.scif.models import \
     PyModelQuboScifFixed
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
-from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -177,7 +176,7 @@ class OptimizationSolver:
                                     hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 20
+        self.solver_process._log_config.level = 40
         self.solver_process.run(condition=run_condition,
                                 run_cfg=run_cfg)
         if timeout == -1:
@@ -210,7 +209,7 @@ class OptimizationSolver:
                                         hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 20
+        self.solver_process._log_config.level = 40
 
         self._profiler = Profiler.init(run_cfg)
         self._profiler.execution_time_probe()
@@ -321,27 +320,6 @@ class OptimizationSolver:
             return RunContinuous()
         else:
             return RunSteps(num_steps=timeout + 1)
-
-    def tune(self, params_grid: ty.Dict,
-             timeout: int,
-             target_cost: int = 0,
-             backend: BACKENDS = CPU,
-             stopping_condition: ty.Callable[[float, int], bool] = None) -> \
-            ty.Tuple[ty.Dict, bool]:
-        """
-        Provides an interface to SolverTuner to search hyperparameters on the
-        specififed grid. Returns the optimized hyperparameters.
-        """
-        solver_tuner = SolverTuner(params_grid)
-        solver_parameters = {"timeout": timeout,
-                             "target_cost": target_cost,
-                             "backend": backend}
-        hyperparameters, success = solver_tuner.tune(self,
-                                                     solver_parameters,
-                                                     stopping_condition)
-        if success:
-            self.hyperparameters = hyperparameters
-        return hyperparameters, success
 
     def _add_time_to_run_config(self, run_cfg, timeout):
         pre_run_fxs, post_run_fxs = self._benchmarker.get_time_measurement_cfg(

@@ -6,6 +6,8 @@ import typing as ty
 
 import random
 
+from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
+
 
 class SolverTuner:
     """Class to find and set hyperparameters for an OptimizationSolver."""
@@ -24,20 +26,20 @@ class SolverTuner:
         self._params_grid = params_grid
 
     def tune(self,
-             solver,
+             problem,
              solver_parameters: ty.Dict,
              stopping_condition: ty.Callable[[float, int], bool] = None):
         """Find and set solving hyperparameters for an OptimizationSolver"""
         # TODO : Check that hyperparameters are arguments for solver
         best_hyperparameters, best_cost, best_step_to_sol = self._random_search(
-            solver,
+            problem,
             solver_parameters,
             stopping_condition)
         succeeded = stopping_condition(best_cost, best_step_to_sol)
         return best_hyperparameters, succeeded
 
     def _random_search(self,
-                       solver,
+                       problem,
                        solver_parameters: ty.Dict,
                        stopping_condition: ty.Callable[
                            [float, int], bool] = None
@@ -46,13 +48,13 @@ class SolverTuner:
         best_hyperparameters = None
         best_cost = float("inf")
         best_step_to_sol = float("inf")
-        problem = solver.problem
         params_names = self._params_grid.keys()
         params_grid = list(
             it.product(*map(lambda k: self._params_grid[k], params_names)))
         random.shuffle(params_grid)
 
         for params in params_grid:
+            solver = OptimizationSolver(problem)
             hyperparameters = dict(zip(params_names, params))
             solver_parameters["hyperparameters"] = hyperparameters
             solution = solver.solve(**solver_parameters)

@@ -55,8 +55,8 @@ jobs:
           source artifact-test/bin/activate
           artifact=$(ls | grep lava-optimization | grep tar)
           pip install --no-input $artifact
-          python -c 'import lava.magma.compiler.subcompilers'
-          python -c 'import lava.magma.core.model'
+          python -c 'import lava.lib.optimization.solvers'
+          python -c 'import lava.lib.optimization.solvers.qp.solver'
           pip uninstall -y lava-optimization
           deactivate
           rm -rf artifact-test
@@ -67,8 +67,8 @@ jobs:
           source artifact-test/bin/activate
           artifact=$(ls | grep lava-optimization | grep whl)
           pip install --no-input $artifact
-          python -c 'import lava.magma.compiler.subcompilers'
-          python -c 'import lava.magma.core.model'
+          python -c 'import lava.lib.optimization.solvers'
+          python -c 'import lava.lib.optimization.solvers.qp.solver'
           pip uninstall -y lava-optimization
           deactivate
           rm -rf artifact-test

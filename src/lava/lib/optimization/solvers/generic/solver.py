@@ -32,7 +32,6 @@ from lava.lib.optimization.solvers.generic.scif.models import \
     PyModelQuboScifFixed
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.lib.optimization.utils.solver_tuner import SolverTuner
-from lava.lib.optimization.utils.solver_benchmarker import SolverBenchmarker
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -116,23 +115,8 @@ class OptimizationSolver:
                             cost=None,
                             target_cost=None,
                             steps_to_solution=None,
-                            time_to_solution=None,
-                            power_to_solution=None)
-        self._benchmarker = SolverBenchmarker()
-
-    @property
-    def measured_time(self):
-        sts = self.last_run_report["steps_to_solution"]
-        print(f"{self._benchmarker.measured_time.sum()=}")
-        print(f"{repr(self._benchmarker.measured_time)=}")
-        if sts:
-            return self._benchmarker.measured_time[: int(sts)].sum()
-        else:
-            print(
-                "No solution was found, returning total runtime for total "
-                "number of steps."
-            )
-            return self._benchmarker.measured_time.sum()
+                            time_to_solution=None)
+        self._profiler = None
 
     @property
     def run_cfg(self):
@@ -161,9 +145,7 @@ class OptimizationSolver:
               target_cost: int = 0,
               backend: BACKENDS = CPU,
               hyperparameters: ty.Dict[
-                  str, ty.Union[int, npt.ArrayLike]] = None,
-              measure_time: bool = False,
-              measure_power: bool = False, ) \
+                  str, ty.Union[int, npt.ArrayLike]] = None) \
             -> npt.ArrayLike:
         """Create solver from problem spec and run until target_cost or timeout.
 
@@ -206,20 +188,41 @@ class OptimizationSolver:
         return self._report["best_state"]
 
     def measure_solving_time(
-        self,
-        timeout: int,
-        target_cost: int = 0,
-        backend: BACKENDS = CPU,
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+            self,
+            timeout: int,
+            target_cost: int,
+            backend: BACKENDS,
+            hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
     ):
         if timeout == -1:
             raise ValueError("For time measurements timeout " "cannot be -1")
-        # The method does not accept timeout = -1.
-        # We want to to run a finit number of steps
-        self._update_run_config(backend, timeout=timeout)
-        self._add_time_to_run_config(self._run_cfg, timeout)
-        self.solve(timeout, target_cost, backend, hyperparameters)
-        return self.measured_time
+        if backend not in NEUROCORES:
+            raise ValueError(f"Time measurement can only be performed on "
+                             "Loihi2 backend, got {backend}.")
+
+        from lava.utils.profiler import Profiler
+        self._profiler = Loihi2HWProfiler()
+        target_cost = self._validated_cost(target_cost)
+        hyperparameters = hyperparameters or self.hyperparameters
+        if not self.solver_process:
+            self._create_solver_process(self.problem,
+                                        target_cost,
+                                        backend,
+                                        hyperparameters)
+        run_cfg = self._get_run_config(backend)
+        run_condition = self._get_run_condition(timeout)
+        self.solver_process._log_config.level = 20
+
+        self._profiler = Profiler.init(run_cfg)
+        self._profiler.execution_time_probe()
+
+        self.solver_process.run(condition=run_condition,
+                                run_cfg=run_cfg)
+        if timeout == -1:
+            self.solver_process.wait()
+        self._update_report(target_cost=target_cost)
+        self.solver_process.stop()
+        return self._report["best_state"]
 
     def _update_report(self, target_cost=None):
         self._report["target_cost"] = target_cost
@@ -231,7 +234,8 @@ class OptimizationSolver:
         self._report["solved"] = cost == target_cost
         steps_to_solution = self.solver_process.solution_step.get()
         self._report["steps_to_solution"] = steps_to_solution
-        self._report["time_to_solution"] = self._benchmarker.measured_time
+        self._report["time_to_solution"] = None if \
+            self._profiler is None else np.mean(self._profiler.execution_time)
         print(self._report)
 
     def _create_solver_process(self,

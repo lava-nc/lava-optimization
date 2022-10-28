@@ -21,15 +21,15 @@ class QPDense(AbstractProcess):
     intialize the constraintDirectionsProcess
 
     Parameters
-    ---------- 
+    ----------
 
     shape : int tuple, optional
         Define the shape of the connections matrix as a tuple. Defaults to
         (1,1)
     weights : (1-D  or 2-D np.array), optional
         Define the weights for the dense connection process
-    """
 
+    """
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1, 1))
@@ -49,7 +49,7 @@ class ConstraintNeurons(AbstractProcess):
 
     Intialize the constraintNeurons Process.
 
-    Parameters 
+    Parameters
     ----------
     shape : int tuple, optional
         Define the shape of the thresholds vector. Defaults to (1,1).
@@ -59,7 +59,6 @@ class ConstraintNeurons(AbstractProcess):
         of the QP. Default value of thresholds is 0.
 
     """
-
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1, 1))
@@ -76,7 +75,7 @@ class SolutionNeurons(AbstractProcess):
 
     Intialize the solutionNeurons process.
 
-    Parameters 
+    Parameters
     ----------
 
     shape : int tuple, optional
@@ -98,9 +97,8 @@ class SolutionNeurons(AbstractProcess):
         The number of iterations after which one left shift operation takes
         place for beta. Default intialization to a very high value of
         10000.
-    
-    """
 
+    """
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1, 1))
@@ -135,7 +133,7 @@ class SolutionNeurons(AbstractProcess):
 
 class ConstraintCheck(AbstractProcess):
     """Check if linear constraints (equality/inequality) are violated for the
-    qp. 
+    qp.
 
     Recieves and sends graded spike from and to the gradientDynamics
     process. House the constraintDirections and constraintNeurons as
@@ -161,15 +159,12 @@ class ConstraintCheck(AbstractProcess):
         initial value of internal sigma neurons
 
     """
-
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         constraint_matrix = kwargs.pop("constraint_matrix", np.zeros((1, 1)))
         shape = constraint_matrix.shape
 
-        constraint_bias = kwargs.pop(
-            "constraint_bias", np.zeros((shape[0], 1))
-        )
+        constraint_bias = kwargs.pop("constraint_bias", np.zeros((shape[0], 1)))
         self.s_in = InPort(shape=(shape[1], 1))
 
         x_int_init = kwargs.pop("x_int_init", np.zeros((shape[0], 1)))
@@ -236,7 +231,6 @@ class GradientDynamics(AbstractProcess):
         10000.
 
     """
-
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         hessian = kwargs.pop("hessian", 0)
@@ -281,15 +275,9 @@ class GradientDynamics(AbstractProcess):
         )
         self.alpha = Var(shape=(shape_hess[0], 1), init=alpha)
         self.beta = Var(shape=(shape_hess[0], 1), init=beta)
-        self.theta_decay_schedule = Var(
-            shape=(1, 1), init=theta_decay_schedule
-        )
-        self.alpha_decay_schedule = Var(
-            shape=(1, 1), init=alpha_decay_schedule
-        )
-        self.beta_growth_schedule = Var(
-            shape=(1, 1), init=beta_growth_schedule
-        )
+        self.theta_decay_schedule = Var(shape=(1, 1), init=theta_decay_schedule)
+        self.alpha_decay_schedule = Var(shape=(1, 1), init=alpha_decay_schedule)
+        self.beta_growth_schedule = Var(shape=(1, 1), init=beta_growth_schedule)
 
         self.s_out = OutPort(shape=(shape_hess[0], 1))
 
@@ -310,7 +298,7 @@ class GradientDynamics(AbstractProcess):
 
 class ProjectedGradientNeuronsPIPGeq(AbstractProcess):
     """The neurons that evolve according to the projected gradient
-    dynamics specified in the PIPG algorithm. 
+    dynamics specified in the PIPG algorithm.
 
     Do NOT use QPDense connection
     process with this solver. Use the standard Lava Dense process.
@@ -318,7 +306,7 @@ class ProjectedGradientNeuronsPIPGeq(AbstractProcess):
     Implements the abstract behaviour
     qp_neuron_state -= alpha*(a_in_qc + grad_bias + a_in_cn)
 
-    Parameters 
+    Parameters
     ----------
 
     shape : int tuple, optional
@@ -373,7 +361,6 @@ class ProjectedGradientNeuronsPIPGeq(AbstractProcess):
         right shifts at particular intervals.
 
     """
-
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1,))
@@ -508,7 +495,6 @@ class ProportionalIntegralNeuronsPIPGeq(AbstractProcess):
         left shifts at particular intervals.
 
     """
-
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1,))
@@ -574,22 +560,21 @@ class ProportionalIntegralNeuronsPIPGeq(AbstractProcess):
 
 class SigmaNeurons(AbstractProcess):
     """Process to accumate spikes into a state variable before being fed to
-    another process.
+     another process.
 
-    Realizes the following abstract behavior:
-    a_out = self.x_internal + s_in
+     Realizes the following abstract behavior:
+     a_out = self.x_internal + s_in
 
-   Parameters
-   ----------
+    Parameters
+    ----------
 
-   shape : int tuple, optional
-       Define the shape of the thresholds vector. Defaults to (1,1).
-   x_sig_init : 1-D np.array, optional
-       initial value of internal sigma neurons. Should be the same as
-       qp_neurons_init. Default value is 0.
+    shape : int tuple, optional
+        Define the shape of the thresholds vector. Defaults to (1,1).
+    x_sig_init : 1-D np.array, optional
+        initial value of internal sigma neurons. Should be the same as
+        qp_neurons_init. Default value is 0.
 
     """
-
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1, 1))
@@ -600,7 +585,7 @@ class SigmaNeurons(AbstractProcess):
 
 
 class DeltaNeurons(AbstractProcess):
-    """Process to simulate Delta coding. 
+    """Process to simulate Delta coding.
 
     A graded spike is sent only if the
     difference delta for a neuron exceeds the spiking threshold, Theta
@@ -632,7 +617,6 @@ class DeltaNeurons(AbstractProcess):
         (right-shifted).
 
     """
-
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1, 1))

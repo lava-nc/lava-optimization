@@ -118,10 +118,10 @@ class EqualityConstraints(CoefficientTensorsMixin):
 
     Parameters
     ----------
-    coefficients: tensor 
+    coefficients: tensor
         coefficients defining the constraints.
-    """
 
+    """
     def __init__(self, *coefficients: CTType):
         super().__init__(*coefficients)
 
@@ -137,16 +137,16 @@ class InequalityConstraints(CoefficientTensorsMixin):
     where the terms of :math:`g(x)` have the form:
 
     .. math::
-         \sum_{ijk...} \epsilon_{ijk...} \cdot x_i \cdot x_j \cdot x_k 
+         \sum_{ijk...} \epsilon_{ijk...} \cdot x_i \cdot x_j \cdot x_k
          \cdot ...
 
     Parameters
     ----------
 
-    coefficients: tensor 
+    coefficients: tensor
         coefficients defining the constraints.
-    """
 
+    """
     def __init__(self, *coefficients: CTType):
         super().__init__(*coefficients)
 

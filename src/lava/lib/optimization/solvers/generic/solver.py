@@ -171,11 +171,10 @@ class OptimizationSolver:
         """
         target_cost = self._validated_cost(target_cost)
         hyperparameters = hyperparameters or self.hyperparameters
-        if not self.solver_process:
-            self._create_solver_process(self.problem,
-                                        target_cost,
-                                        backend,
-                                        hyperparameters)
+        self._create_solver_process(self.problem,
+                                    target_cost,
+                                    backend,
+                                    hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
         self.solver_process._log_config.level = 20

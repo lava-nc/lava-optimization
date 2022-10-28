@@ -10,7 +10,7 @@ from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \
     StochasticIntegrateAndFire
 from lava.lib.optimization.solvers.generic.sub_process_models import \
-    StochasticIntegrateAndFireModel, StochasticIntegrateAndFireModelSCIF
+    StochasticIntegrateAndFireModelSCIF
 from lava.magma.core.resources import AbstractComputeResource, CPU, \
     Loihi2NeuroCore, NeuroCore
 from lava.magma.core.run_conditions import RunContinuous, RunSteps
@@ -88,6 +88,7 @@ class OptimizationSolver:
         self._process_builder = SolverProcessBuilder()
         self.solver_process = None
         self.solver_model = None
+        shape = (problem.num_variables,)
         self._hyperparameters = dict(step_size=10,
                                      steps_to_fire=10,
                                      noise_amplitude=1,
@@ -240,7 +241,9 @@ class OptimizationSolver:
             pdict = {self.solver_process: self.solver_model,
                      ReadGate: ReadGatePyModel,
                      Dense: PyDenseModelFloat,
-                     StochasticIntegrateAndFire: StochasticIntegrateAndFireModel
+                     StochasticIntegrateAndFire:
+                         StochasticIntegrateAndFireModelSCIF,
+                     QuboScif: PyModelQuboScifFixed
                      }
             run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
                                    select_sub_proc_model=True)

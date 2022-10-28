@@ -171,14 +171,13 @@ class OptimizationSolver:
         """
         target_cost = self._validated_cost(target_cost)
         hyperparameters = hyperparameters or self.hyperparameters
-        if not self.solver_process:
-            self._create_solver_process(self.problem,
-                                        target_cost,
-                                        backend,
-                                        hyperparameters)
+        self._create_solver_process(self.problem,
+                                    target_cost,
+                                    backend,
+                                    hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 20
+        self.solver_process._log_config.level = 40
         self.solver_process.run(condition=run_condition,
                                 run_cfg=run_cfg)
         if timeout == -1:
@@ -211,7 +210,7 @@ class OptimizationSolver:
                                         hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 20
+        self.solver_process._log_config.level = 40
 
         self._profiler = Profiler.init(run_cfg)
         self._profiler.execution_time_probe()
@@ -232,7 +231,7 @@ class OptimizationSolver:
         cost = (raw_cost.astype(np.int32) << 8) >> 8
         self._report["cost"] = cost
         self._report["solved"] = cost == target_cost
-        steps_to_solution = self.solver_process.solution_step.get()
+        steps_to_solution = self.solver_process.solution_step.aliased_var.get()
         self._report["steps_to_solution"] = steps_to_solution
         self._report["time_to_solution"] = None if \
             self._profiler is None else np.mean(self._profiler.execution_time)

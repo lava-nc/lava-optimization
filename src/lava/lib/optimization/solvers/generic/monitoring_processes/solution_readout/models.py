@@ -34,7 +34,6 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     acknowledgement: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32,
                                             precision=32)
     min_cost: int = LavaPyType(int, np.int32, 32)
-    sol_found_time: int = 0
 
     def post_guard(self):
         """Decide whether to run post management phase."""
@@ -66,15 +65,15 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             self.solution[:] = (raw_solution.astype(np.int8) >> 2) & 1
             self.min_cost = cost[0]
             if req_stop[0] != 0:
-                self.sol_found_time = req_stop[0]
+                self.solution_step = req_stop[0]
                 print(f"Host: received a better solution: "
                       f"{self.solution} at "
                       f"step"
-                      f" {self.sol_found_time}")
+                      f" {self.solution_step}")
         if req_stop[0] == 0:
             self._req_pause = True
 
     def run_post_mgmt(self):
         """Execute post management phase."""
-        print("Host: stopping simulation at step:", self.sol_found_time)
+        print("Host: stopping simulation at step:", self.solution_step)
         self._req_pause = True

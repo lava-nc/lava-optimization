@@ -52,11 +52,6 @@ class OptimizationProblem(ABC):
         """Constrains to be satisfied by mutual assignments to variables."""
         pass
 
-    @abstractmethod
-    def evaluate_cost(self, solution):
-        """Evaluate the cost of a candidate solution."""
-        pass
-
 
 class QUBO(OptimizationProblem):
     def __init__(self, q: npt.ArrayLike):

@@ -42,15 +42,15 @@ Constrained optimization searches for the values of input variables that minimiz
 Constrained optimization is a promising application for neuromorphic computing as
 it [naturally aligns with the dynamics of spiking neural networks](https://doi.org/10.1109/JPROC.2021.3067593). When individual neurons represent states of variables, the neuronal connections can directly encode constraints between the variables: in its simplest form, recurrent inhibitory synapses connect neurons that represent mutually exclusive variable states, while recurrent excitatory synapses link neurons representing reinforcing states. Implemented on massively parallel neuromorphic hardware, such a spiking neural network can simultaneously evaluate conflicts and cost functions involving many variables, and update all variables accordingly. This allows a quick convergence towards an optimal state. In addition, the fine-scale timing dynamics of SNNs allow them to readily escape from local minima.
 
-This Lava repository currently supports the following constraint optimization problems:
+This Lava repository currently supports the following constrained optimization problems:
 
 - Quadratic Programming (QP)
 - Quadratic Unconstrained Binary Optimization (QUBO)
-- Constraint Satisfaction Problems (CSP)
 
-As we continue development, the library will support more constraint optimization problems that are relevant for robotics and operations research.
+As we continue development, the library will support more constrained optimization problems that are relevant for robotics and operations research.
 We currently plan the following development order in such a way that new solvers build on the capabilities of existing ones:
 
+- Constraint Satisfaction Problems (CSP)
 - Integer Linear Programming (ILP)
 - Mixed-Integer Linear Programming (MILP)
 - Mixed-Integer Quadratic Programming (MIQP)
@@ -79,13 +79,13 @@ In the long run, lava-optimization aims to offer support to solve all of the pro
 
 ### OptimizationSolver and OptimizationProblem Classes
 
-The figure below shows the general architecture of the library.  We harness the general definition of constraint optimization problems to create OptimizationProblem instances by composing  Constraints, Variables, and Cost classes which describe the characteristics of every subproblem class. Note that while a quadratic problem (QP) will be described by linear equality and inequality constraints with variables on the continuous domain and a quadratic function, a constraint satisfaction problem (CSP) will be described by discrete constraints, defined by variable subsets and a binary relation describing the mutually allowed values for such discrete variables and will have a constant cost function with the pure goal of satisfying constraints.
+The figure below shows the general architecture of the library.  We harness the general definition of constraint optimization problems to create ``OptimizationProblem`` instances by composing  ``Constraints``, ``Variables``, and ``Cost`` classes which describe the characteristics of every subproblem class. Note that while a quadratic problem (QP) will be described by linear equality and inequality constraints with variables on the continuous domain and a quadratic function. A constraint satisfaction problem (CSP) will be described by discrete constraints, defined by variable subsets and a binary relation describing the mutually allowed values for such discrete variables and will have a constant cost function with the pure goal of satisfying constraints.
 
-An API for every problem class can be created by inheriting from OptimizationSolver and composing particular flavors of Constraints, Variables, and Cost. 
+An API for every problem class can be created by inheriting from ``OptimizationSolver`` and composing particular flavors of ``Constraints``, ``Variables``, and ``Cost``. 
 
 ![image](https://user-images.githubusercontent.com/83413252/192851930-919035a7-122d-4a82-8032-f1acc6da717b.png)
 
-The instance of an Optimization problem is the valid input for instantiating the generic OptimizationSolver class. In this way, the OptimizationSolver interface is left fixed and the OptimizationProblem allows the greatest flexibility for creating new APIs. Under the hood, the OptimizationSolver understands the compossite structure of the OptimizationProblem and will in turn compose the required solver components and Lava processes.  
+The instance of an ``Optimization problem`` is the valid input for instantiating the generic ``OptimizationSolver`` class. In this way, the ``OptimizationSolver`` interface is left fixed and the ``OptimizationProblem`` allows the greatest flexibility for creating new APIs. Under the hood, the ``OptimizationSolver`` understands the composite structure of the ``OptimizationProblem`` and will in turn compose the required solver components and Lava processes.  
 
 ## Tutorials
 
@@ -98,6 +98,9 @@ The instance of an Optimization problem is the valid input for instantiating the
 ## Examples
 
 ### Solving QP problems 
+
+Currently, QP problems can be solved using the specific ``QPSolver``. In future releases, this will be merged with the generic API of ``OptimizationSolver`` (used in the next example).
+
 ```python
 import numpy as np
 from lava.lib.optimization.problems.problems import QP

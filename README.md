@@ -42,7 +42,7 @@ Constrained optimization searches for the values of input variables that minimiz
 Constrained optimization is a promising application for neuromorphic computing as
 it [naturally aligns with the dynamics of spiking neural networks](https://doi.org/10.1109/JPROC.2021.3067593). When individual neurons represent states of variables, the neuronal connections can directly encode constraints between the variables: in its simplest form, recurrent inhibitory synapses connect neurons that represent mutually exclusive variable states, while recurrent excitatory synapses link neurons representing reinforcing states. Implemented on massively parallel neuromorphic hardware, such a spiking neural network can simultaneously evaluate conflicts and cost functions involving many variables, and update all variables accordingly. This allows a quick convergence towards an optimal state. In addition, the fine-scale timing dynamics of SNNs allow them to readily escape from local minima.
 
-This Lava repository currently supports the following constrained optimization problems:
+This Lava repository currently supports solvers for the following constrained optimization problems:
 
 - Quadratic Programming (QP)
 - Quadratic Unconstrained Binary Optimization (QUBO)
@@ -50,7 +50,7 @@ This Lava repository currently supports the following constrained optimization p
 As we continue development, the library will support more constrained optimization problems that are relevant for robotics and operations research.
 We currently plan the following development order in such a way that new solvers build on the capabilities of existing ones:
 
-- Constraint Satisfaction Problems (CSP)
+- Constraint Satisfaction Problems (CSP) [problem interface already available]
 - Integer Linear Programming (ILP)
 - Mixed-Integer Linear Programming (MILP)
 - Mixed-Integer Quadratic Programming (MIQP)

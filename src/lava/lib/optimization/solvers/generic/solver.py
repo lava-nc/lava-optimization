@@ -59,19 +59,23 @@ def solve(
 
     Parameters
     ----------
-    problem: Optimization problem to be solved.
-    timeout: Maximum number of iterations (timesteps) to be run. If set to
-    -1 then the solver will run continuously in non-blocking mode until a
-     solution is found.
-    target_cost: A cost value provided by the user as a target for the
-    solution to be found by the solver, when a solution with such cost is
-    found and read, execution ends.
-    backend: Specifies the backend where the main solver network will be
-    deployed.
+    problem: OptimizationProblem
+        Optimization problem to be solved.
+    timeout: int
+        Maximum number of iterations (timesteps) to be run. If set to -1 then
+        the solver will run continuously in non-blocking mode until a solution
+        is found.
+    target_cost: int, optional
+        A cost value provided by the user as a target for the solution to be
+        found by the solver, when a solution with such cost is found and read,
+        execution ends.
+    backend: BACKENDS, optional
+        Specifies the backend where the main solver network will be deployed.
 
     Returns
     ----------
-    solution: candidate solution to the input optimization problem.
+    solution: npt.ArrayLike
+        Candidate solution to the input optimization problem.
     """
     solver = OptimizationSolver(problem)
     solution = solver.solve(
@@ -91,15 +95,19 @@ class OptimizationSolver:
     be created from the problem specification. The dynamics of such process
     implements the algorithms that search a solution to the problem and
     reports it to the user.
-
-    Parameters
-    ----------
-    problem: Optimization problem to be solved.
-    run_cfg: Run configuration for the OptimizationSolverProcess.0
-
     """
 
     def __init__(self, problem: OptimizationProblem, run_cfg=None):
+        """
+        Constructor for the OptimizationSolver class.
+
+        Parameters
+        ----------
+        problem: OptimizationProblem
+            Optimization problem to be solved.
+        run_cfg: Any
+            Run configuration for the OptimizationSolverProcess.
+        """
         self.problem = problem
         self._run_cfg = run_cfg
         self._process_builder = SolverProcessBuilder()
@@ -147,27 +155,32 @@ class OptimizationSolver:
               hyperparameters: ty.Dict[
                   str, ty.Union[int, npt.ArrayLike]] = None) \
             -> npt.ArrayLike:
-        """Create solver from problem spec and run until target_cost or timeout.
+        """
+        Create solver from problem spec and run until target_cost or timeout.
 
         Parameters
         ----------
-        timeout: Maximum number of iterations (timesteps) to be run. If set to
-        -1 then the solver will run continuously in non-blocking mode until a
-         solution is found.
-        target_cost: A cost value provided by the user as a target for the
-        solution to be found by the solver, when a solution with such cost is
-        found and read, execution ends.
-        backend: Specifies the backend where the main solver network will be
-        deployed.
-        hyperparameters: A dictionary specifying values for steps_to_fire,
-        noise_amplitude, step_size and init_value. All but the last are
-        integers, the initial value is an array-like of initial values for the
-        variables defining the problem.
+        timeout: int
+            Maximum number of iterations (timesteps) to be run. If set to -1
+            then the solver will run continuously in non-blocking mode until a
+            solution is found.
+        target_cost: int, optional
+            A cost value provided by the user as a target for the solution to be
+            found by the solver, when a solution with such cost is found and
+            read, execution ends.
+        backend: BACKENDS, optional
+            Specifies the backend where the main solver network will be
+            deployed.
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]], optional
+            A dictionary specifying values for steps_to_fire, noise_amplitude,
+            step_size and init_value. All but the last are integers, the initial
+            value is an array-like of initial values for the variables defining
+            the problem.
 
         Returns
         ----------
-        solution: candidate solution to the input optimization problem.
-
+        solution: npt.ArrayLike
+            Candidate solution to the input optimization problem.
         """
         target_cost = self._validated_cost(target_cost)
         hyperparameters = hyperparameters or self.hyperparameters
@@ -243,17 +256,22 @@ class OptimizationSolver:
                                backend: BACKENDS = None,
                                hyperparameters: ty.Dict[
                                    str, ty.Union[int, npt.ArrayLike]] = None):
-        """Create process and model class as solver for the given problem.
+        """
+        Create process and model class as solver for the given problem.
 
         Parameters
         ----------
-        problem: Optimization problem defined by cost and constraints which
-        will be used to build the process and its model.
-        target_cost: A cost value provided by the user as a target for the
-        solution to be found by the solver, when a solution with such cost is
-        found and read, execution ends.
-        backend: Specifies the backend where the main solver network will be
-        deployed.
+        problem: OptimizationProblem
+            Optimization problem defined by cost and constraints which will be
+            used to build the process and its model.
+        target_cost: int, optional
+            A cost value provided by the user as a target for the solution to be
+            found by the solver, when a solution with such cost is found and
+            read, execution ends.
+        backend: BACKENDS, optional
+            Specifies the backend where the main solver network will be
+            deployed.
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]]
         """
         requirements, protocol = self._get_requirements_and_protocol(backend)
         self._process_builder.create_solver_process(
@@ -272,9 +290,9 @@ class OptimizationSolver:
 
         Parameters
         ----------
-        backend: Specifies the backend for which requirements and protocol
-        classes will be returned.
-
+        backend: BACKENDS
+            Specifies the backend for which requirements and protocol classes
+            will be returned.
         """
         protocol = LoihiProtocol
         if backend in CPUS:

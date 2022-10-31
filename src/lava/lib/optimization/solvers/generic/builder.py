@@ -73,13 +73,15 @@ class SolverProcessBuilder:
 
         Parameters
         ----------
-        problem: Optimization problem defined by cost and constraints which
-        will be used to ensemble the necessary variables and ports with their
-        shape and initial values deriving from the problem specification.
-        hyperparameters: A dictionary specifying values for steps_to_fire,
-        noise_amplitude, step_size and init_value. All but the last are
-        integers, the initial value is an array-like of initial values for the
-        variables defining the problem.
+        problem: OptimizationProblem
+            Optimization problem defined by cost and constraints which will be
+            used to ensemble the necessary variables and ports with their shape
+            and initial values deriving from the problem specification.
+        hyperparameters: dict
+            A dictionary specifying values for steps_to_fire, noise_amplitude,
+            step_size and init_value. All but the last are integers, the initial
+            value is an array-like of initial values for the variables defining
+            the problem.
         """
         self._create_process_constructor(problem, hyperparameters)
         SolverProcess = type("OptimizationSolverProcess",
@@ -97,12 +99,14 @@ class SolverProcessBuilder:
 
         Parameters
         ----------
-        target_cost: A cost value provided by the user as a target for the
-        solution to be found by the solver, when a solution with such cost is
-        found and read, execution ends.
-        requirements: specifies which resources the ProcessModel requires.
-        protocol: The SyncProtocol that the ProcessModel implements.
-
+        target_cost: int
+            A cost value provided by the user as a target for the solution to be
+            found by the solver, when a solution with such cost is found and
+            read, execution ends.
+        requirements: ty.List[AbstractComputeResource]
+            Specifies which resources the ProcessModel requires.
+        protocol: AbstractSyncProtocol
+            The SyncProtocol that the ProcessModel implements.
         """
         self.verify_process_exists()
         self._create_model_constructor(target_cost)
@@ -122,16 +126,16 @@ class SolverProcessBuilder:
 
         Parameters
         ----------
-
-        problem: an instance of an OptimizationProblem defined by cost and
-        constraints which will be used to ensemble the necessary variables
-        and ports with their shape and initial values deriving from the
-        problem specification.
-        hyperparameters: A dictionary specifying values for steps_to_fire,
-        noise_amplitude, step_size and init_value. All but the last are
-        integers, the initial value is an array-like of initial values for the
-        variables defining the problem.
-
+        problem: OptimizationProblem
+            An instance of an OptimizationProblem defined by cost and
+            constraints which will be used to ensemble the necessary variables
+            and ports with their shape and initial values deriving from the
+            problem specification.
+        hyperparameters: dict
+            A dictionary specifying values for steps_to_fire, noise_amplitude,
+            step_size and init_value. All but the last are integers, the initial
+            value is an array-like of initial values for the variables defining
+            the problem.
         """
 
         def constructor(self,
@@ -184,10 +188,10 @@ class SolverProcessBuilder:
 
         Parameters
         ----------
-        target_cost: A cost value provided by the user as a target for the
-        solution to be found by the solver, when a solution with such cost is
-        found and read, execution ends.
-
+        target_cost: int
+            A cost value provided by the user as a target for the solution to be
+            found by the solver, when a solution with such cost is found and
+            read, execution ends.
         """
 
         def constructor(self, proc):
@@ -276,10 +280,9 @@ class SolverProcessBuilder:
 
         Parameters
         ----------
-
-        coefficients: a dictionary-like structure of rank -> tensor pairs. The
-        tensors represent the coefficients of a cost or constraints function.
-
+        coefficients: CoefficientTensorsMixin
+            A dictionary-like structure of rank -> tensor pairs. The tensors
+            represent the coefficients of a cost or constraints function.
         """
         vars = dict()
         for rank, coefficient in coefficients.items():
@@ -298,11 +301,11 @@ class SolverProcessBuilder:
 
         Parameters
         ----------
-
-        coefficient: A tensor representing one of the coefficients of a cost
-        or constraints function.
-        rank: the rank of the tensor coefficient.
-
+        coefficient: npt.ArrayLike
+            A tensor representing one of the coefficients of a cost or
+            constraints function.
+        rank: int
+            The rank of the tensor coefficient.
         """
         if rank == 1:
             return coefficient
@@ -318,12 +321,12 @@ class SolverProcessBuilder:
 
         Parameters
         ----------
-
-        vars: A dictionary where keys are ranks and values are the Lava Vars
-        corresponding to ranks' coefficients.
-        quadratic_coefficient: an array-like tensor of rank 2, corresponds to
-        the coefficient of the quadratic term on a cost or constraint function.
-
+        vars: ty.Dict[int, AbstractProcessMember]
+            A dictionary where keys are ranks and values are the Lava Vars
+            corresponding to ranks' coefficients.
+        quadratic_coefficient: npt.ArrayLike
+            An array-like tensor of rank 2, corresponds to the coefficient of
+            the quadratic term on a cost or constraint function.
         """
         linear_component = quadratic_coefficient.diagonal()
         if 1 in vars.keys():
@@ -338,10 +341,9 @@ class SolverProcessBuilder:
 
         Parameters
         ----------
-
-        coefficients: A tensor representing one of the coefficients of a cost
-        or constraints function.
-
+        coefficients: CoefficientTensorsMixin
+            A tensor representing one of the coefficients of a cost or
+            constraints function.
         """
         in_ports = {coeff.ndim: InPort(shape=coeff.shape) for coeff in
                     coefficients.coefficients}
@@ -359,11 +361,13 @@ class SolverProcessBuilder:
 
         Parameters
         ----------
-        solver_model: A Lava process created as a solver from the specification
-        of an optimization problem.
-        requirements: specifies which resources the ProcessModel requires.
-        protocol: The SyncProtocol that the ProcessModel implements.
-
+        solver_model: "OptimizationSolverModel"
+            A Lava process created as a solver from the specification of an
+            optimization problem.
+        requirements: ty.List[AbstractComputeResource]
+            Specifies which resources the ProcessModel requires.
+        protocol: AbstractSyncProtocol
+            The SyncProtocol that the ProcessModel implements.
         """
         setattr(solver_model, "implements_process", self.solver_process)
         # Get requirements of parent class

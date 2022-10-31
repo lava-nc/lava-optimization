@@ -23,19 +23,6 @@ class DiscreteVariablesProcess(AbstractProcess):
     r"""Process which implementation holds the evolution of discrete variables
     on the solver of an optimization problem.
 
-    Parameters
-    ----------
-    shape: a tuple of the form (number of variables, domain size).
-    step_size: The coefficient of the variables indicating their relative
-        linear contribution to the cost function. Usually corresponds to the
-        linear term or the diagonal of the quadratic term on the cost function.
-    cost_diagonal: The diagonal of the coefficient of the quadratic term on the
-        cost function.
-    name: Name of the Process. Default is 'Process_ID', where ID is an
-        integer value that is determined automatically.
-    log_config: Configuration options for logging.z
-
-
     Attributes
     ----------
     a_in: InPort
@@ -55,13 +42,27 @@ class DiscreteVariablesProcess(AbstractProcess):
     """
 
     def __init__(
-        self,
-        shape: ty.Tuple[int, ...],
-        cost_diagonal: npt.ArrayLike = None,
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
-        name: ty.Optional[str] = None,
-        log_config: ty.Optional[LogConfig] = None,
+            self,
+            shape: ty.Tuple[int, ...],
+            cost_diagonal: npt.ArrayLike = None,
+            hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+            name: ty.Optional[str] = None,
+            log_config: ty.Optional[LogConfig] = None,
     ) -> None:
+        """
+        Parameters
+        ----------
+        shape: tuple
+            A tuple of the form (number of variables, domain size).
+        cost_diagonal: npt.ArrayLike
+            The diagonal of the coefficient of the quadratic term on the cost
+            function.
+        hyperparameters: dict, optional
+        name: str, optional
+            Name of the Process. Default is 'Process_ID', where ID is an integer
+            value that is determined automatically.
+        log_config: LogConfig, optional
+            Configuration options for logging.z"""
         super().__init__(
             shape=shape,
             cost_diagonal=cost_diagonal,
@@ -80,14 +81,6 @@ class DiscreteVariablesProcess(AbstractProcess):
 class CostConvergenceChecker(AbstractProcess):
     """Process that continuously monitors cost convergence.
 
-    Parameters
-    ----------
-    shape: The expected shape of the input cost components.
-    name: Name of the Process. Default is 'Process_ID', where ID is an
-    integer value that is determined automatically.
-    log_config: Configuration options for logging.
-
-
     Attributes
     ----------
     cost_components: InPort
@@ -96,15 +89,27 @@ class CostConvergenceChecker(AbstractProcess):
         Notifies the next process about the detection of a better cost.
     min_cost: Var
         Current minimum cost, i.e., the lowest reported cost so far.
-
     """
 
     def __init__(
-        self,
-        shape: ty.Tuple[int, ...],
-        name: ty.Optional[str] = None,
-        log_config: ty.Optional[LogConfig] = None,
+            self,
+            shape: ty.Tuple[int, ...],
+            name: ty.Optional[str] = None,
+            log_config: ty.Optional[LogConfig] = None,
     ) -> None:
+        """
+        Constructor for CostConvergenceChecker class.
+
+        Parameters
+        ----------
+        shape: tuple
+            The expected shape of the input cost components.
+        name: str, optional
+            Name of the Process. Default is 'Process_ID', where ID is an
+            integer value that is determined automatically.
+        log_config: LogConfig, optional
+            Configuration options for logging.
+        """
         super().__init__(shape=shape, name=name, log_config=log_config)
         self.shape = shape
         self.min_cost = Var(shape=(1,))
@@ -160,32 +165,6 @@ class StochasticIntegrateAndFire(AbstractProcess):
     the network, whilst the second output is to transfer local information to be
     integrated by an auxiliary dynamical system or circuit.
 
-    Parameters
-    ----------
-    shape: The shape of the set of dynamical systems to be created.
-    init_state: The starting value of the state variable.
-    step_size: a value to be added to the state variable at each timestep.
-    noise_amplitude: The width/range for the stochastic perturbation to the
-    state variable. A random number within this range will be added to the
-    state variable at each timestep.
-    input_duration: Number of timesteps by which each input should be preserved.
-    min_state: The minimum value for the state variable. The state variable
-    will be truncated at this value if updating results in a lower value.
-    min_integration: The minimum value for the total input (addition of all
-    valid inputs at a given timestep). The total input value will be truncated
-    at this value if adding current and preserved inputs results in a lower
-    value.
-    steps_to_fire: After how many timesteps would the dynamical system fire
-    and reset without stochastic perturbation. Note that if noise_amplitude > 0,
-    the system will stochastically deviate from this value.
-    refractory_period: number of timesteps to wait after firing and reset before
-    resuming updating.
-    cost_diagonal: The linear coefficients on the cost function of the
-    optimization problem where this system will be used.
-    name: Name of the Process. Default is 'Process_ID', where ID is an
-    integer value that is determined automatically.
-    log_config: Configuration options for logging.
-
     Attributes
     ----------
     added_input: InPort
@@ -204,23 +183,64 @@ class StochasticIntegrateAndFire(AbstractProcess):
     """
 
     def __init__(
-        self,
-        *,
-        step_size: npt.ArrayLike,
-        shape: ty.Tuple[int, ...] = (1,),
-        init_state: npt.ArrayLike = 0,
-        noise_amplitude: npt.ArrayLike = 1,
-        noise_precision: npt.ArrayLike = 8,
-        input_duration: npt.ArrayLike = 6,
-        min_state: npt.ArrayLike = 1000,
-        min_integration: npt.ArrayLike = -1000,
-        steps_to_fire: npt.ArrayLike = 10,
-        refractory_period: npt.ArrayLike = 1,
-        cost_diagonal: npt.ArrayLike = 0,
-        name: ty.Optional[str] = None,
-        log_config: ty.Optional[LogConfig] = None,
-        init_value: None = 0,
+            self,
+            *,
+            step_size: npt.ArrayLike,
+            shape: ty.Tuple[int, ...] = (1,),
+            init_state: npt.ArrayLike = 0,
+            noise_amplitude: npt.ArrayLike = 1,
+            noise_precision: npt.ArrayLike = 8,
+            input_duration: npt.ArrayLike = 6,
+            min_state: npt.ArrayLike = 1000,
+            min_integration: npt.ArrayLike = -1000,
+            steps_to_fire: npt.ArrayLike = 10,
+            refractory_period: npt.ArrayLike = 1,
+            cost_diagonal: npt.ArrayLike = 0,
+            name: ty.Optional[str] = None,
+            log_config: ty.Optional[LogConfig] = None,
+            init_value: None = 0,
     ) -> None:
+        """
+
+        Parameters
+        ----------
+        shape: tuple
+            The shape of the set of dynamical systems to be created.
+        init_state: npt.ArrayLike, optional
+            The starting value of the state variable.
+        step_size: npt.ArrayLike, optional
+            a value to be added to the state variable at each timestep.
+        noise_amplitude: npt.ArrayLike, optional
+            The width/range for the stochastic perturbation to the state
+            variable. A random number within this range will be added to the
+            state variable at each timestep.
+        input_duration: npt.ArrayLike, optional
+            Number of timesteps by which each input should be preserved.
+        min_state: npt.ArrayLike, optional
+            The minimum value for the state variable. The state variable will be
+            truncated at this value if updating results in a lower value.
+        min_integration: npt.ArrayLike, optional
+            The minimum value for the total input (addition of all valid inputs
+            at a given timestep). The total input value will be truncated at
+            this value if adding current and preserved inputs results in a lower
+            value.
+        steps_to_fire: npt.ArrayLike, optional
+            After how many timesteps would the dynamical system fire and reset
+            without stochastic perturbation. Note that if noise_amplitude > 0,
+            the system will stochastically deviate from this value.
+        refractory_period: npt.ArrayLike, optional
+            Number of timesteps to wait after firing and reset before resuming
+            updating.
+        cost_diagonal: npt.ArrayLike, optional
+            The linear coefficients on the cost function of the optimization
+            problem where this system will be used.
+        name: str, optional
+            Name of the Process. Default is 'Process_ID', where ID is an
+            integer value that is determined automatically.
+        log_config: LogConfig, optional
+            Configuration options for logging.
+        init_value: int, optional
+        """
         super().__init__(
             shape=shape,
             initial_state=init_state,

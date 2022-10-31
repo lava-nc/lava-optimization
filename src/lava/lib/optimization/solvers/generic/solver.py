@@ -213,7 +213,6 @@ class OptimizationSolver:
                              "Loihi2 backend, got {backend}.")
 
         from lava.utils.profiler import Profiler
-        self._profiler = Loihi2HWProfiler()
         target_cost = self._validated_cost(target_cost)
         hyperparameters = hyperparameters or self.hyperparameters
         if not self.solver_process:
@@ -247,7 +246,7 @@ class OptimizationSolver:
         steps_to_solution = self.solver_process.solution_step.aliased_var.get()
         self._report["steps_to_solution"] = steps_to_solution
         self._report["time_to_solution"] = None if \
-            self._profiler is None else np.mean(self._profiler.execution_time)
+            self._profiler is None else np.sum(self._profiler.execution_time)
         print(self._report)
 
     def _create_solver_process(self,

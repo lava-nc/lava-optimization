@@ -17,18 +17,19 @@ class QPSolver:
     """Solve Full QP by connecting two Lava processes, GradDynamics and
     ConstraintCheck
 
-        Parameters
-        ----------
-        alpha : 1-D np.array
-            The learning rate for gradient descent
-        beta : 1-D np.array
-            The learning rate for constraint correction
-        alpha_decay_schedule : int, default 10000
-            Number of iterations after which one right shift takes place for
-            alpha
-        beta_growth_schedule : int, default 10000
-            Number of iterations after which one left shift takes place for
-            beta
+    Parameters
+    ----------
+
+    alpha : 1-D np.array
+        The learning rate for gradient descent
+    beta : 1-D np.array
+        The learning rate for constraint correction
+    alpha_decay_schedule : int, default 10000
+        Number of iterations after which one right shift takes place for
+        alpha
+    beta_growth_schedule : int, default 10000
+        Number of iterations after which one left shift takes place for
+        beta
 
     """
 

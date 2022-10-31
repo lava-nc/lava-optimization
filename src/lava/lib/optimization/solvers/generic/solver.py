@@ -234,7 +234,7 @@ class OptimizationSolver:
         steps_to_solution = self.solver_process.solution_step.aliased_var.get()
         self._report["steps_to_solution"] = steps_to_solution
         self._report["time_to_solution"] = None if \
-            self._profiler is None else np.mean(self._profiler.execution_time)
+            self._profiler is None else np.sum(self._profiler.execution_time)
         print(self._report)
 
     def _create_solver_process(self,

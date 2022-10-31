@@ -200,7 +200,6 @@ class OptimizationSolver:
                              "Loihi2 backend, got {backend}.")
 
         from lava.utils.profiler import Profiler
-        self._profiler = Loihi2HWProfiler()
         target_cost = self._validated_cost(target_cost)
         hyperparameters = hyperparameters or self.hyperparameters
         if not self.solver_process:

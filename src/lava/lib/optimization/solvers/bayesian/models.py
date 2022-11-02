@@ -102,7 +102,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
         Returns
         -------
         search_space : list[Union[Real, Integer]]
-            a collection of continuous and discrete dimensions that represent
+            A collection of continuous and discrete dimensions that represent
             the entirety of the problem search space
         """
         search_space: list[Union[Real, Integer]] = []
@@ -141,7 +141,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
         Parameters
         ----------
         vec : np.ndarray
-            a single array of data from the black-box process containing
+            A single array of data from the black-box process containing
             all parameters and objectives for a total length of num_params
             + num_objectives
         """

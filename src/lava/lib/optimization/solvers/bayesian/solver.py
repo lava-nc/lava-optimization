@@ -65,19 +65,19 @@ class BayesianSolver:
                         "grid" = uniform grid sequence
             }
         num_ips : int
-            the number of points to explore with the initial point generator
+            The number of points to explore with the initial point generator
             before using the regressor
         seed : int
             An integer seed that sets the random state increases consistency
             in subsequent runs
-        est_config : dict
+        est_config : dict, optional
             {
                 "type": str
                     specify the type of surrogate regressor to learn the search
                     space:
                         "GP" - gaussian process regressor
             }
-        num_objectives : int
+        num_objectives : int, optional
             specify the number of objectives to optimize over; currently
             limited to single objective
         """
@@ -102,7 +102,8 @@ class BayesianSolver:
 
     def solve(self, name: str, num_iter: int, problem: AbstractProcess,
               search_space: np.ndarray) -> None:
-        """conduct hyperparameter optimization for the argued problem
+        """
+        Conduct hyperparameter optimization for the argued problem
 
         Parameters
         ----------
@@ -283,11 +284,11 @@ class BayesianSolver:
         Parameters
         ----------
         name : str
-            a unique identifier for the given experiment
+            A unique identifier for the given experiment
         num_iter : int
-            the number of Bayesian iterations to conduct
+            The number of Bayesian iterations to conduct
         problem : AbstractProcess
-            the black-box function whose parameters are represented by the
+            The black-box function whose parameters are represented by the
             Bayesian optimizer's search space
         search_space : np.ndarray
             At every index, your search space should consist of three types
@@ -296,10 +297,10 @@ class BayesianSolver:
                 2) ("integer", <min_value>, <max_value>, np.nan, <name>)
                 3) ("categorical", np.nan, np.nan, <choices>, <name>)
         num_ips : int
-            the number of points to explore with the initial point generator
+            The number of points to explore with the initial point generator
             before using the regressor
         num_objectives : int
-            specify the number of objectives to optimize over; currently
+            Specify the number of objectives to optimize over; currently
             limited to single objective
         """
 

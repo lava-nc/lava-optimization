@@ -10,8 +10,6 @@ from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
 from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
-np.random.seed(42)
-
 
 class TestSolverTuner(unittest.TestCase):
     """Unit tests for SolverTuner class."""
@@ -46,7 +44,8 @@ class TestSolverTuner(unittest.TestCase):
         def stop(cost, step_to_sol):
             return step_to_sol < 100 and cost == optimal_cost
 
-        seed = 2
+        seed = 2  # seed for random shuffling
+        np.random.seed(42)
         hyperparams, success = self.solver_tuner.tune(solver=solver,
                                                       solver_parameters=params,
                                                       stopping_condition=stop,

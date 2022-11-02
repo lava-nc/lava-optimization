@@ -9,7 +9,7 @@ import random
 
 
 class SolverTuner:
-    """Class to find and set hyperparameters for an OptimizationSolver."""
+    """Utility class to optimize hyper-parameters by random search."""
 
     def __init__(self, params_grid: ty.Dict):
         """

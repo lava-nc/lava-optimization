@@ -124,7 +124,7 @@ class MISProblem:
         qubo = QUBO(q)
         return qubo
 
-    def get_qubo_matrix(self, w_diag: float, w_off: float) -> QUBO:
+    def get_qubo_matrix(self, w_diag: float, w_off: float) -> np.ndarray:
         """
         Creates a QUBO whose solution corresponds to the maximum independent
         set (MIS) of the graph defined by the input adjacency matrix.

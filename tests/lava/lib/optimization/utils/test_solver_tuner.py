@@ -3,57 +3,59 @@
 # See: https://spdx.org/licenses/
 
 import unittest
-import typing as ty
 
 import numpy as np
 
-from lava.lib.optimization.problems.problems import QUBO, CSP
+from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
 from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 
-def prepare_problem_and_solver():
-    # Define the QUBO matrix
-    q = np.asarray([[-5, 2, 4, 0],
-                    [2, -3, 1, 0],
-                    [4, 1, -8, 5],
-                    [0, 0, 5, -6]])
-
-    # Instantiate the QUBO problem
-    qubo_problem = QUBO(q=q)
-
-    # Instantiate a constraint optimization solver for this workload
-    solver = OptimizationSolver(qubo_problem)
-    return solver
-
-
 class TestSolverTuner(unittest.TestCase):
+    """Unit tests for SolverTuner class."""
 
     def setUp(self) -> None:
         params_grid = {
-            "step_size": (1, 2),
-            "noise_amplitude": (3, 4, 5, 6),
+            "step_size": (1, 20),
+            "noise_amplitude": (0, 10),
         }
         self.solver_tuner = SolverTuner(params_grid=params_grid)
 
     def test_create_obj(self):
+        """Tests correct instantiation of SolverTuner object."""
         self.assertIsInstance(self.solver_tuner, SolverTuner)
 
     def test_tune_success(self):
-        solver = prepare_problem_and_solver()
+        """Tests the correct set of hyper-parameters is found, for a known
+        problem."""
+        q = np.asarray([[-5, 2, 4, 0],
+                        [2, -3, 1, 0],
+                        [4, 1, -8, 5],
+                        [0, 0, 5, -6]])
+
+        qubo_problem = QUBO(q=q)
+        solver = OptimizationSolver(qubo_problem)
+        optimal_cost = -11
 
         params = {"timeout": 1000,
-                  "target_cost": -11,
+                  "target_cost": optimal_cost,
                   "backend": "CPU"}
 
-        def stop(best_cost, best_to_sol):
-            return best_cost < -6
+        def stop(cost, step_to_sol):
+            return step_to_sol < 100 and cost == optimal_cost
 
+        seed = 2  # seed for random shuffling
+        np.random.seed(42)
         hyperparams, success = self.solver_tuner.tune(solver=solver,
                                                       solver_parameters=params,
-                                                      stopping_condition=stop)
+                                                      stopping_condition=stop,
+                                                      seed=seed)
+        correct_best_hyperparams = {
+            "step_size": 20,
+            "noise_amplitude": 10
+        }
 
-        self.assertIsInstance(hyperparams, ty.Dict)
+        self.assertEqual(hyperparams, correct_best_hyperparams)
         self.assertTrue(success)
 
 

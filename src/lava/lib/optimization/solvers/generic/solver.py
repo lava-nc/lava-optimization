@@ -191,15 +191,14 @@ class OptimizationSolver:
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
         self.solver_process._log_config.level = 40
-        self.solver_process.run(condition=run_condition,
-                                run_cfg=run_cfg)
+        self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         if timeout == -1:
             self.solver_process.wait()
         self._update_report(target_cost=target_cost)
         self.solver_process.stop()
         return self._report["best_state"]
 
-    def measure_solving_time(
+    def measure_time_to_solution(
             self,
             timeout: int,
             target_cost: int,
@@ -210,30 +209,26 @@ class OptimizationSolver:
             raise ValueError("For time measurements timeout " "cannot be -1")
         if backend not in NEUROCORES:
             raise ValueError(f"Time measurement can only be performed on "
-                             "Loihi2 backend, got {backend}.")
+                             f"Loihi2 backend, got {backend}.")
 
-        from lava.utils.profiler import Profiler
         target_cost = self._validated_cost(target_cost)
         hyperparameters = hyperparameters or self.hyperparameters
-        if not self.solver_process:
-            self._create_solver_process(self.problem,
-                                        target_cost,
-                                        backend,
-                                        hyperparameters)
+        self._create_solver_process(self.problem,
+                                    target_cost,
+                                    backend,
+                                    hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
         self.solver_process._log_config.level = 40
 
+        from lava.utils.profiler import Profiler
         self._profiler = Profiler.init(run_cfg)
-        self._profiler.execution_time_probe()
+        self._profiler.execution_time_probe(t_start=1, t_end=timeout)
 
-        self.solver_process.run(condition=run_condition,
-                                run_cfg=run_cfg)
-        if timeout == -1:
-            self.solver_process.wait()
+        self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         self._update_report(target_cost=target_cost)
         self.solver_process.stop()
-        return self._report["best_state"]
+        return self._report["time_to_solution"]
 
     def _update_report(self, target_cost=None):
         self._report["target_cost"] = target_cost
@@ -246,7 +241,8 @@ class OptimizationSolver:
         steps_to_solution = self.solver_process.solution_step.aliased_var.get()
         self._report["steps_to_solution"] = steps_to_solution
         self._report["time_to_solution"] = None if \
-            self._profiler is None else np.sum(self._profiler.execution_time)
+            self._profiler is None else float(
+            np.sum(self._profiler.execution_time))
         print(self._report)
 
     def _create_solver_process(self,

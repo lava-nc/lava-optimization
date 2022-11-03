@@ -41,14 +41,16 @@ class TestSolverTuner(unittest.TestCase):
                   "target_cost": optimal_cost,
                   "backend": "CPU"}
 
-        def stop(cost, step_to_sol):
-            return step_to_sol < 100 and cost == optimal_cost
+        def fitness(cost, step_to_sol):
+            return - step_to_sol if cost == optimal_cost else -float('inf')
 
-        seed = 2  # seed for random shuffling
-        np.random.seed(42)
+        f_target = -200
+        seed = 2
+
         hyperparams, success = self.solver_tuner.tune(solver=solver,
-                                                      solver_parameters=params,
-                                                      stopping_condition=stop,
+                                                      solver_params=params,
+                                                      fitness_fn=fitness,
+                                                      fitness_target=f_target,
                                                       seed=seed)
         correct_best_hyperparams = {
             "step_size": 20,

@@ -7,7 +7,6 @@ import typing as ty
 
 import random
 import numpy as np
-import pandas as pd
 
 
 class SolverTuner:

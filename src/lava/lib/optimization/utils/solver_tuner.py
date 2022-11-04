@@ -27,9 +27,9 @@ class SolverTuner:
         self._params_keys = list(params_grid.keys())
         self._params_grid = list(
             it.product(*map(lambda k: params_grid[k], self._params_keys)))
-        self._store = pd.DataFrame(columns=self._params_keys + ['cost',
-                                                                'step_to_sol',
-                                                                'fitness'])
+        self._store_dtype = SolverTuner._build_store_dtype(params_grid,
+                                                           self._params_keys)
+        self._store = np.array([], dtype=self._store_dtype)
 
     def tune(self,
              solver,
@@ -93,12 +93,20 @@ class SolverTuner:
         return best_hyperparams, success
 
     def _store_trial(self, params, cost, step_to_sol, fitness):
-        new_entry = dict(params)
-        new_entry['cost'] = cost
-        new_entry['step_to_sol'] = step_to_sol
-        new_entry['fitness'] = fitness
-        self._store = pd.concat([self._store, pd.DataFrame(new_entry)],
-                                ignore_index=True)
+        new_entry = tuple(map(lambda k: params[k], self._params_keys))
+        new_entry = new_entry + (cost, step_to_sol, fitness)
+        new_entry_array = np.array([new_entry], dtype=self._store_dtype)
+        self._store = np.concatenate([self._store, new_entry_array])
 
-    def get_results_dataframe(self):
+    def get_results(self):
+        """Returns data on all hyper-parameters evaluations as a structured
+        numpy array."""
         return self._store
+
+    @staticmethod
+    def _build_store_dtype(params_grid, keys):
+        type_conv = {float: 'f4', int: 'i4'}
+        dtype = list(
+            map(lambda k: (k, type_conv[type(params_grid[k][0])]), keys))
+        dtype += [('cost', 'f4'), ('step_to_sol', 'i4'), ('fitness', 'f4')]
+        return dtype

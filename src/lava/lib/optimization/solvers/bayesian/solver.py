@@ -22,64 +22,73 @@ class BayesianSolver:
                  ip_gen_config: dict, num_ips: int, seed: int,
                  est_config: dict = {"type": "GP"}, num_objectives: int = 1
                  ) -> None:
-        """initialize the BayesianSolver interface
+        """
+        Constructor method for the BayesianSolver class.
 
         Parameters
         ----------
         acq_func_config : dict
-            {
-                "type": str
-                    specify the function to minimize over the posterior
-                    distribution:
-                        "LCB" = lower confidence bound
-                        "EI" = negative expected improvement
-                        "PI" = negative probability of improvement
-                        "gp_hedge" = probabilistically determine which of the
-                            aforementioned functions to use at every iteration
-                        "EIps" = negative expected improved with consideration
-                            of the total function runtime
-                        "PIps" = negative probability of improvement
-                            while taking into account the total function
-                            runtime
-            }
+            A dictionary to specify the function to minimize over the posterior
+            distribution.
+            #{
+            #    "type": str
+            #        specify the function to minimize over the posterior
+            #        distribution:
+            #            "LCB" = lower confidence bound
+            #            "EI" = negative expected improvement
+            #            "PI" = negative probability of improvement
+            #            "gp_hedge" = probabilistically determine which of the
+            #                aforementioned functions to use at every iteration
+            #            "EIps" = negative expected improved with consideration
+            #                of the total function runtime
+            #            "PIps" = negative probability of improvement
+            #                while taking into account the total function
+            #                runtime
+            #}
         acq_opt_config: dict
-            {
-                "type" : str
-                    specify the method to minimize the acquisition function:
-                        "sampling" = random selection from the acquisition
-                            function
-                        "lbfgs" = inverse Hessian matrix estimation
-                        "auto" = automatically configure based on the search
-                            space
-            }
+            A dictionary to specify the method to minimize the acquisition
+            function.
+            #{
+            #    "type" : str
+            #        specify the method to minimize the acquisition function:
+            #            "sampling" = random selection from the acquisition
+            #                function
+            #            "lbfgs" = inverse Hessian matrix estimation
+            #            "auto" = automatically configure based on the search
+            #                space
+            #}
         ip_gen_config : dict
-            {
-                "type": str
-                    specify the method to explore the search space before the
-                    Gaussian regressor starts to converge:
-                        "random" = uniform distribution of random numbers
-                        "sobol" = Sobol sequence
-                        "halton" = Halton sequence
-                        "hammersly" = Hammersly sequence
-                        "lhs" = latin hypercube sequence
-                        "grid" = uniform grid sequence
-            }
+            A dictionary to specify the method to explore the search space
+            before the Gaussian regressor starts to converge.
+            #{
+            #    "type": str
+            #        specify the method to explore the search space before the
+            #        Gaussian regressor starts to converge:
+            #            "random" = uniform distribution of random numbers
+            #            "sobol" = Sobol sequence
+            #            "halton" = Halton sequence
+            #            "hammersly" = Hammersly sequence
+            #            "lhs" = latin hypercube sequence
+            #            "grid" = uniform grid sequence
+            #}
         num_ips : int
             The number of points to explore with the initial point generator
-            before using the regressor
+            before using the regressor.
         seed : int
             An integer seed that sets the random state increases consistency
-            in subsequent runs
+            in subsequent runs.
         est_config : dict, optional
-            {
-                "type": str
-                    specify the type of surrogate regressor to learn the search
-                    space:
-                        "GP" - gaussian process regressor
-            }
+            A dictionary to specify the type of surrogate regressor to learn
+            the search space.
+            #{
+            #    "type": str
+            #        specify the type of surrogate regressor to learn the search
+            #        space:
+            #            "GP" - gaussian process regressor
+            #}
         num_objectives : int, optional
-            specify the number of objectives to optimize over; currently
-            limited to single objective
+            Specify the number of objectives to optimize over; currently
+            limited to single objective.
         """
 
         self.val_init_args(
@@ -103,7 +112,7 @@ class BayesianSolver:
     def solve(self, name: str, num_iter: int, problem: AbstractProcess,
               search_space: np.ndarray) -> None:
         """
-        Conduct hyperparameter optimization for the argued problem
+        Conduct hyperparameter optimization for the argued problem.
 
         Parameters
         ----------
@@ -117,9 +126,9 @@ class BayesianSolver:
         search_space : np.ndarray
             At every index, your search space should consist of three types
             of parameters:
-                1) ("continuous", <min_value>, <max_value>, np.nan, <name>)
-                2) ("integer", <min_value>, <max_value>, np.nan, <name>)
-                3) ("categorical", np.nan, np.nan, <choices>, <name>)
+            1) ("continuous", <min_value>, <max_value>, np.nan, <name>)
+            2) ("integer", <min_value>, <max_value>, np.nan, <name>)
+            3) ("categorical", np.nan, np.nan, <choices>, <name>)
         """
 
         self.val_solve_args(
@@ -157,64 +166,73 @@ class BayesianSolver:
                       ip_gen_config: dict, num_ips: int, seed: int,
                       est_config: dict = {"type": "GP"},
                       num_objectives: int = 1) -> None:
-        """initialize the BayesianSolver interface
+        """
+        Initialize the BayesianSolver interface.
 
         Parameters
         ----------
         acq_func_config : dict
-            {
-                "type": str
-                    specify the function to minimize over the posterior
-                    distribution:
-                        "LCB" = lower confidence bound
-                        "EI" = negative expected improvement
-                        "PI" = negative probability of improvement
-                        "gp_hedge" = probabilistically determine which of the
-                            aforementioned functions to use at every iteration
-                        "EIps" = negative expected improved with consideration
-                            of the total function runtime
-                        "PIps" = negative probability of improvement
-                            while taking into account the total function
-                            runtime
-            }
+            A dictionary to specify the function to minimize over the posterior
+            distribution.
+            # {
+            #     "type": str
+            #         specify the function to minimize over the posterior
+            #         distribution:
+            #             "LCB" = lower confidence bound
+            #             "EI" = negative expected improvement
+            #             "PI" = negative probability of improvement
+            #             "gp_hedge" = probabilistically determine which of the
+            #                 aforementioned functions to use at every iteration
+            #             "EIps" = negative expected improved with consideration
+            #                 of the total function runtime
+            #             "PIps" = negative probability of improvement
+            #                 while taking into account the total function
+            #                 runtime
+            # }
         acq_opt_config: dict
-            {
-                "type" : str
-                    specify the method to minimize the acquisition function:
-                        "sampling" = random selection from the acquisition
-                            function
-                        "lbfgs" = inverse Hessian matrix estimation
-                        "auto" = automatically configure based on the search
-                            space
-            }
+            A dictionary to specify the method to minimize the acquisition
+            function.
+            # {
+            #     "type" : str
+            #         specify the method to minimize the acquisition function:
+            #             "sampling" = random selection from the acquisition
+            #                 function
+            #             "lbfgs" = inverse Hessian matrix estimation
+            #             "auto" = automatically configure based on the search
+            #                 space
+            # }
         ip_gen_config : dict
-            {
-                "type": str
-                    specify the method to explore the search space before the
-                    Gaussian regressor starts to converge:
-                        "random" = uniform distribution of random numbers
-                        "sobol" = Sobol sequence
-                        "halton" = Halton sequence
-                        "hammersly" = Hammersly sequence
-                        "lhs" = latin hypercube sequence
-                        "grid" = uniform grid sequence
-            }
+            A dictionary to specify the method to explore the search space
+            before the Gaussian regressor starts to converge.
+            # {
+            #     "type": str
+            #         specify the method to explore the search space before the
+            #         Gaussian regressor starts to converge:
+            #             "random" = uniform distribution of random numbers
+            #             "sobol" = Sobol sequence
+            #             "halton" = Halton sequence
+            #             "hammersly" = Hammersly sequence
+            #             "lhs" = latin hypercube sequence
+            #             "grid" = uniform grid sequence
+            # }
         num_ips : int
-            the number of points to explore with the initial point generator
-            before using the regressor
+            The number of points to explore with the initial point generator
+            before using the regressor.
         seed : int
             An integer seed that sets the random state increases consistency
-            in subsequent runs
+            in subsequent runs.
         est_config : dict
-            {
-                "type": str
-                    specify the type of surrogate regressor to learn the search
-                    space:
-                        "GP" - gaussian process regressor
-            }
+            A dictionary to specify the type of surrogate regressor to learn
+            the search space.
+            #{
+            #     "type": str
+            #         specify the type of surrogate regressor to learn the
+            #         search space:
+            #             "GP" - gaussian process regressor
+            #}
         num_objectives : int
-            specify the number of objectives to optimize over; currently
-            limited to single objective
+            Specify the number of objectives to optimize over; currently
+            limited to single objective.
         """
         # validate input argument specifying the acquisition function
         # config
@@ -284,24 +302,24 @@ class BayesianSolver:
         Parameters
         ----------
         name : str
-            A unique identifier for the given experiment
+            A unique identifier for the given experiment.
         num_iter : int
-            The number of Bayesian iterations to conduct
+            The number of Bayesian iterations to conduct.
         problem : AbstractProcess
             The black-box function whose parameters are represented by the
-            Bayesian optimizer's search space
+            Bayesian optimizer's search space.
         search_space : np.ndarray
             At every index, your search space should consist of three types
             of parameters:
-                1) ("continuous", <min_value>, <max_value>, np.nan, <name>)
-                2) ("integer", <min_value>, <max_value>, np.nan, <name>)
-                3) ("categorical", np.nan, np.nan, <choices>, <name>)
+            1) ("continuous", <min_value>, <max_value>, np.nan, <name>)
+            2) ("integer", <min_value>, <max_value>, np.nan, <name>)
+            3) ("categorical", np.nan, np.nan, <choices>, <name>)
         num_ips : int
             The number of points to explore with the initial point generator
-            before using the regressor
+            before using the regressor.
         num_objectives : int
             Specify the number of objectives to optimize over; currently
-            limited to single objective
+            limited to single objective.
         """
 
         # validate the input argument specifying the name

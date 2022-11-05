@@ -95,9 +95,10 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
         space description int scikit-optimize format compatible with all
         lower-level processes. Your search space should consist of three
         types of parameters:
-            1) ("continuous", <min_value>, <max_value>, np.nan, <name>)
-            2) ("integer", <min_value>, <max_value>, np.nan, <name>)
-            3) ("categorical", np.nan, np.nan, <choices>, <name>)
+
+        1) ("continuous", <min_value>, <max_value>, np.nan, <name>)
+        2) ("integer", <min_value>, <max_value>, np.nan, <name>)
+        3) ("categorical", np.nan, np.nan, <choices>, <name>)
 
         Returns
         -------

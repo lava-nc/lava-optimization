@@ -37,15 +37,14 @@ class BayesianOptimizer(AbstractProcess):
             space with object at each index ( dimensions[idx] ) describing
             the range or discrete choices for the idx-th parameters. Your
             search space should consist of two types of parameters:
-                1) continuous: (<min_value>, <max_value>, np.inf)
-                2) discrete: (<min_value>, <max_value>, <float>)
-
+            1) continuous: (<min_value>, <max_value>, np.inf)
+            2) discrete: (<min_value>, <max_value>, <float>)
             The following represents the three main types of parameters:
-                1) a continuous variable from -1000.0 to 256
-                3) a discrete set of categorical variable, the best way to
-                    convert your categorical variables to this format is to
-                    exploit the discretization of enumerations or parse your
-                    list possible selections using array indexing.
+            1) a continuous variable from -1000.0 to 256
+            3) a discrete set of categorical variable, the best way to
+                convert your categorical variables to this format is to
+                exploit the discretization of enumerations or parse your
+                list possible selections using array indexing.
         search_space: np.ndarray
         est_config : dict
             A series of key-value pairs specifying the runtime configuration

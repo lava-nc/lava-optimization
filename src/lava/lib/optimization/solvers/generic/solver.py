@@ -250,9 +250,9 @@ class OptimizationSolver:
 
         from lava.utils.profiler import Profiler
         self._profiler = Profiler.init(run_cfg)
-        self._profiler.execution_time_probe(t_start=1, 
-                                            t_end=timeout, 
-                                            dt=30, 
+        self._profiler.execution_time_probe(t_start=1,
+                                            t_end=timeout,
+                                            dt=30,
                                             buffer_size=1024)
 
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
@@ -313,9 +313,9 @@ class OptimizationSolver:
 
         from lava.utils.profiler import Profiler
         self._profiler = Profiler.init(run_cfg)
-        self._profiler.execution_time_probe(t_start=1, 
-                                            t_end=timeout, 
-                                            dt=30, 
+        self._profiler.execution_time_probe(t_start=1,
+                                            t_end=timeout,
+                                            dt=30,
                                             buffer_size=1024)
         self._profiler.energy_probe(num_steps=timeout)
 
@@ -324,7 +324,7 @@ class OptimizationSolver:
         self._update_report(target_cost=target_cost,
                             energy_to_solution=energy_to_solution)
         self.solver_process.stop()
-        return  energy_to_solution
+        return energy_to_solution
 
     def _update_report(self, target_cost=None,
                        time_to_solution=None,

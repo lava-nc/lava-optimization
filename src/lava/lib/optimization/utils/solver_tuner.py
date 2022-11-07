@@ -97,7 +97,8 @@ class SolverTuner:
         new_entry_array = np.array([new_entry], dtype=self._store_dtype)
         self._store = np.concatenate([self._store, new_entry_array])
 
-    def get_results(self):
+    @property
+    def results(self):
         """Returns data on all hyper-parameters evaluations as a structured
         numpy array."""
         return self._store

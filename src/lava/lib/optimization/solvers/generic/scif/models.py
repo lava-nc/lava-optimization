@@ -187,9 +187,11 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
     s_sig_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
     s_wta_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
 
+    # The local cost
     state: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     spk_hist: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
+    # I mis-used step_size as T
     step_size: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     theta: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     noise_ampl: np.ndarray = LavaPyType(np.ndarray, int, precision=1)
@@ -237,28 +239,52 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
         # If we have fired in the previous time-step, we send out the local
         # cost now, i.e., when spk_hist_buffer == 1
         sig_spk_idx = np.where(spk_hist_buffer == 1)
-        # Compute the local cost
-        s_sig[sig_spk_idx] = self.cost_diagonal[sig_spk_idx] + \
-            self.a_in_data[sig_spk_idx]
+        # Send the local cost
+        s_sig[sig_spk_idx] = self.state[sig_spk_idx]
+
+        print("-" * 20)
+        print(f"State = {self.state[sig_spk_idx]}")
+        print("-" * 20)
 
         return s_sig
 
-    def _gen_wta_spks(self):
+    def _gen_wta_spks(self, spk_hist_buffer):
         lfsr = self._prng()
 
-        self.state += lfsr + self.step_size + self.cost_diagonal + \
-            self.a_in_data
+        self.state += self.a_in_data
+        # Note: this should not happen; otherwise, cost is too high/low!
         np.clip(self.state, a_min=-(2 ** 23), a_max=2 ** 23 - 1,
                 out=self.state)
 
+        # WTA spikes from previous time step
+        wta_spk_idx_prev = (spk_hist_buffer == 1)
+
         # WTA spike indices when threshold is exceeded
-        wta_spk_idx = np.where(self.state >= self.theta)  # Exceeds threshold
+        wta_spk_idx = (2*self.step_size >= -self.state + self.step_size*lfsr)
+        # Exceeds
+        # threshold
         # Spiking neuron voltages go in refractory (if neg_tau_ref < 0)
-        self.state[wta_spk_idx] = 0
+        # self.state[wta_spk_idx] = 0
         self.spk_hist[wta_spk_idx] |= 1
 
         s_wta = np.zeros_like(self.state)
-        s_wta[wta_spk_idx] = 1
+        # Two kinds of spikes.
+        # Switched off to on -> +1
+        s_wta[np.logical_and(wta_spk_idx, np.logical_not(wta_spk_idx_prev))] \
+            = +1
+        # Switched on to off -> -1
+        s_wta[np.logical_and(wta_spk_idx_prev, np.logical_not(wta_spk_idx))] \
+            = -1
+
+        print('#' * 20)
+        print(wta_spk_idx)
+        print(lfsr)
+        print(self.step_size)
+        print(-self.state)
+        print(s_wta)
+        print('#' * 20)
+
+        # s_wta[wta_spk_idx] = 1
 
         return s_wta
 
@@ -269,11 +295,11 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
         # !! Side effect: Changes self.beta !!
         spk_hist_buffer = self._update_buffers()
 
+        # Generate WTA spikes
+        s_wta = self._gen_wta_spks(spk_hist_buffer)
+
         # Generate Sigma spikes
         s_sig = self._gen_sig_spks(spk_hist_buffer)
-
-        # Generate WTA spikes
-        s_wta = self._gen_wta_spks()
 
         # Send out spikes
         self.s_sig_out.send(s_sig)

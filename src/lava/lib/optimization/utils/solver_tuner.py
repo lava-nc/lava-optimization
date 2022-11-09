@@ -12,30 +12,49 @@ import numpy as np
 class SolverTuner:
     """Utility class to optimize hyper-parameters by random search."""
 
-    def __init__(self, params_grid: ty.Dict):
+    def __init__(self,
+                 search_space: list,
+                 params_names: list,
+                 shuffle: bool = False,
+                 seed: int = 0):
         """
-        Instantiate a SolverTuner, defining the admissible search space.
+        Instantiate a SolverTuner, defining a search space and a list of
+        hyperparameters names.
 
         Parameters
         ----------
-        params_grid: dict
-            Dictionary where the keys are the name of the hyperparameters to be
-            tuned, and the values are tuples containing all the admissible
-            values for the associated hyperparameter.
+        search_space
+            List of hyperparameter tuple to evaluate.
+        params_names
+            List of hyperparameters names, one for each tuple dimension.
+        shuffle
+            Boolean flag to control search space shuffling. If set to False,
+            the order of search_space list is preserved, and can be useful to 
+            prioritize the evaluation of certain hyperparamters tuples.
+        seed
+            Seed for random shuffling and numpy seeding.
+
         """
-        self._params_keys = list(params_grid.keys())
-        self._params_grid = list(
-            it.product(*map(lambda k: params_grid[k], self._params_keys)))
-        self._store_dtype = SolverTuner._build_store_dtype(params_grid,
-                                                           self._params_keys)
-        self._store = np.array([], dtype=self._store_dtype)
+        self._search_space = list(search_space)
+        self._params_names = params_names
+        self._shuffle = shuffle
+        self._seed = seed
+
+        if self._shuffle:
+            random.Random(seed).shuffle(self._search_space)
+
+        self._store_dtype = SolverTuner._build_store_dtype(
+            self._search_space, self._params_names
+        )
+        self._store = np.zeros(
+            len(self._search_space), dtype=self._store_dtype)
 
     def tune(self,
              solver,
              solver_params: ty.Dict,
              fitness_fn: ty.Callable[[float, int], float],
              fitness_target: float = None,
-             seed: int = 0):
+             ):
         """
         Perform random search to optimize solver hyper-parameters based on a
         fitness function.
@@ -53,8 +72,6 @@ class SolverTuner:
         fitness_target: float, optional
             Fitness target to reach. If this is not passed, the full grid is
             explored before stopping search.
-        seed: int, default=0
-            Seed for randomized grid search.
 
         Returns
         -------
@@ -65,15 +82,17 @@ class SolverTuner:
             fitness_target is passed, the flag is True.
         """
         # TODO : Check that hyperparams are arguments for solver
+        self._stored_rows = 0
+        if self._store.shape[0] < len(self._search_space):
+            self._store = np.zeros(
+                len(self._search_space), dtype=self._store_dtype)
 
         best_hyperparams = None
-        best_fitness = -float('inf')
+        best_fitness = -float("inf")
 
-        random.Random(seed).shuffle(self._params_grid)
-
-        for params in self._params_grid:
-            np.random.seed(seed)
-            hyperparams = dict(zip(self._params_keys, params))
+        for params in self._search_space:
+            np.random.seed(self._seed)
+            hyperparams = dict(zip(self._params_names, params))
             solver_params["hyperparameters"] = hyperparams
             solver.solve(**solver_params)
             cost = solver.last_run_report["cost"]
@@ -83,19 +102,24 @@ class SolverTuner:
             if fitness > best_fitness:
                 best_hyperparams = hyperparams
                 best_fitness = fitness
-                print(f"Better hyperparameters configuration found!\n"
-                      f"Hyperparameters: {best_hyperparams}")
+                print(
+                    f"Better hyperparameters configuration found!\n"
+                    f"Hyperparameters: {best_hyperparams}"
+                )
             if fitness_target is not None and best_fitness >= fitness_target:
                 break
-
-        success = best_fitness >= (fitness_target or -float('inf'))
+        self._remove_unused_store()
+        success = best_fitness >= (fitness_target or -float("inf"))
         return best_hyperparams, success
 
     def _store_trial(self, params, cost, step_to_sol, fitness):
-        new_entry = tuple(map(lambda k: params[k], self._params_keys))
+        new_entry = tuple(map(lambda k: params[k], self._params_names))
         new_entry = new_entry + (cost, step_to_sol, fitness)
-        new_entry_array = np.array([new_entry], dtype=self._store_dtype)
-        self._store = np.concatenate([self._store, new_entry_array])
+        self._store[self._stored_rows] = new_entry
+        self._stored_rows += 1
+
+    def _remove_unused_store(self):
+        self._store = self._store[:self._stored_rows]
 
     @property
     def results(self):
@@ -104,9 +128,38 @@ class SolverTuner:
         return self._store
 
     @staticmethod
-    def _build_store_dtype(params_grid, keys):
-        type_conv = {float: 'f4', int: 'i4'}
-        dtype = list(
-            map(lambda k: (k, type_conv[type(params_grid[k][0])]), keys))
-        dtype += [('cost', 'f4'), ('step_to_sol', 'i4'), ('fitness', 'f4')]
+    def _build_store_dtype(search_space, params_names) -> list:
+        type_conv = {float: "f4", int: "i4"}
+        dtype = []
+        for i, name in enumerate(params_names):
+            param_type = type(search_space[0][i])
+            if type_conv.get(param_type) is None:
+                raise ValueError(f"Search space must contain only "
+                                 f"{type_conv.keys()}, passed {param_type}")
+            dtype.append((name, type_conv[param_type]))
+        dtype += [("cost", "f4"), ("step_to_sol", "i4"), ("fitness", "f4")]
         return dtype
+
+    @staticmethod
+    def generate_grid(params_domains: dict):
+        params_names = list(params_domains.keys())
+        search_space = list(it.product(
+            *map(lambda k: params_domains[k], params_names)
+        ))
+        return search_space, params_names
+
+    @property
+    def search_space(self) -> list:
+        return self._search_space
+
+    @property
+    def params_names(self) -> list:
+        return self._params_names
+
+    @property
+    def shuffle(self) -> bool:
+        return self._shuffle
+
+    @property
+    def seed(self) -> int:
+        return self._seed

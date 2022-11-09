@@ -29,11 +29,10 @@ class SolverTuner:
             List of hyperparameters names, one for each tuple dimension.
         shuffle
             Boolean flag to control search space shuffling. If set to False,
-            the order of search_space list is preserved, and can be useful to 
+            the order of search_space list is preserved, and can be useful to
             prioritize the evaluation of certain hyperparamters tuples.
         seed
             Seed for random shuffling and numpy seeding.
-
         """
         self._search_space = list(search_space)
         self._params_names = params_names

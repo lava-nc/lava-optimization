@@ -68,6 +68,21 @@ class TestSolverTuner(unittest.TestCase):
         """Tests `results` property exists and returns the correct type."""
         self.assertIsInstance(self.solver_tuner.results, np.ndarray)
 
+    def test_shuffle_setter(self):
+        """Tests `shuffle` setter sets the correct value."""
+        self.solver_tuner.shuffle = not self.shuffle
+        self.assertEqual(self.solver_tuner.shuffle, not self.shuffle)
+
+    def test_seed_setter(self):
+        """Tests `seed` setter sets the correct value."""
+        self.solver_tuner.seed = self.seed + 1
+        self.assertEqual(self.solver_tuner.seed, self.seed + 1)
+
+    def test_search_space_setter(self):
+        """Tests `search_space` setter sets the correct value."""
+        self.solver_tuner.search_space = [self.search_space[0]]
+        self.assertEqual(self.solver_tuner.search_space, [self.search_space[0]])
+
     def test_generate_grid_util(self):
         """Tests `generate_grid` method produces the correct search space."""
         params_domains = {

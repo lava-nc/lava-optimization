@@ -162,3 +162,18 @@ class SolverTuner:
     @property
     def seed(self) -> int:
         return self._seed
+
+    @shuffle.setter
+    def shuffle(self, shuffle: bool) -> None:
+        self._shuffle = shuffle
+
+    @seed.setter
+    def seed(self, seed: int) -> None:
+        self._seed = seed
+
+    @search_space.setter
+    def search_space(self, search_space: list) -> None:
+        """Provide a new list of hyper-parameters tuples to the SolverTuner,
+        with the same order defined by params_names.
+        """
+        self._search_space = search_space

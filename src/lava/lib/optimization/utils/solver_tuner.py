@@ -183,4 +183,3 @@ class SolverTuner:
         self._search_space = list(search_space)
         if self._shuffle:
             random.Random(self._seed).shuffle(self._search_space)
-

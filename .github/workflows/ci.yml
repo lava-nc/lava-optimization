@@ -2,8 +2,12 @@ name: Run CI
 on:
   push:
     branches:
-      - main      
+      - main
   pull_request:
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:

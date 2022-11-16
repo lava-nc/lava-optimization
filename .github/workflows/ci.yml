@@ -2,7 +2,7 @@ name: Run CI
 on:
   push:
     branches:
-      - main      
+      - main
   pull_request:
 
 concurrency:

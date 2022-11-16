@@ -16,7 +16,7 @@
       <a href="#tutorials">Tutorials</a>
       <ul>
         <li><a href="#quadratic-programming">Quadratic Programming</a></li>
-        <li><a href="#quadratic-uncosntrained-binary-optimization">Quadratic Uncosntrained Binary Optimization</a></li>
+        <li><a href="#quadratic-unconstrained-binary-optimization">Quadratic Unconstrained Binary Optimization</a></li>
       </ul>
     </li>
     <li>
@@ -92,7 +92,7 @@ The instance of an ``Optimization problem`` is the valid input for instantiating
 ### Quadratic Programming
 - [Solving LASSO.](https://github.com/lava-nc/lava-optimization/blob/release/v0.2.0/tutorials/tutorial_01_solving_lasso.ipynb)
 
-### Quadratic Uncosntrained Binary Optimization
+### Quadratic Unconstrained Binary Optimization
 - [Solving Maximum Independent Set.](https://github.com/lava-nc/lava-optimization/blob/release/v0.2.0/tutorials/tutorial_02_solving_qubos.ipynb)
 
 ## Examples

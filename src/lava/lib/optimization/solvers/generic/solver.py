@@ -432,27 +432,6 @@ class OptimizationSolver:
         else:
             return RunSteps(num_steps=timeout + 1)
 
-    def tune(self, params_grid: ty.Dict,
-             timeout: int,
-             target_cost: int = 0,
-             backend: BACKENDS = CPU,
-             stopping_condition: ty.Callable[[float, int], bool] = None) -> \
-            ty.Tuple[ty.Dict, bool]:
-        """
-        Provides an interface to SolverTuner to search hyperparameters on the
-        specififed grid. Returns the optimized hyperparameters.
-        """
-        solver_tuner = SolverTuner(params_grid)
-        solver_parameters = {"timeout": timeout,
-                             "target_cost": target_cost,
-                             "backend": backend}
-        hyperparameters, success = solver_tuner.tune(self,
-                                                     solver_parameters,
-                                                     stopping_condition)
-        if success:
-            self.hyperparameters = hyperparameters
-        return hyperparameters, success
-
     def _add_time_to_run_config(self, run_cfg, timeout):
         pre_run_fxs, post_run_fxs = self._benchmarker.get_time_measurement_cfg(
             num_steps=timeout + 1

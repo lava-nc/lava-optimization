@@ -46,6 +46,7 @@ class ReadGate(AbstractProcess):
                          log_config=log_config)
         self.target_cost = Var(shape=(1,), init=target_cost)
         self.best_solution = Var(shape=shape, init=-1)
+        self.best_solution_step = Var(shape=(1,), init=-1)
         self.cost_in = InPort(shape=(1,))
         self.acknowledgement = InPort(shape=(1,))
         self.cost_out = OutPort(shape=(1,))

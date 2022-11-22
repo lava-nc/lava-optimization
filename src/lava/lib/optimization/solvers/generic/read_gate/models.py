@@ -22,6 +22,8 @@ class ReadGatePyModel(PyLoihiProcessModel):
     the upstream process the new payload (cost) and the network state.
     """
     target_cost: int = LavaPyType(int, np.int32, 32)
+    best_solution: int = LavaPyType(int, np.int32, 32)
+    best_solution_step: int = LavaPyType(int, np.int32, 32)
     cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                    precision=32)
     acknowledgement: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
@@ -56,6 +58,7 @@ class ReadGatePyModel(PyLoihiProcessModel):
             self.cost_out.send(np.asarray([0]))
             self.acknowledgement.recv()
             self.send_pause_request.send(np.asarray([self.time_step]))
+            print(self.total_steps)
             self.acknowledgement.recv()
         elif self.solution is not None:
             self.cost_out.send(np.asarray([self.min_cost]))

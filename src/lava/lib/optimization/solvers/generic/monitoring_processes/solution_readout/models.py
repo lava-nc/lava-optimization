@@ -67,7 +67,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             if req_stop[0] != 0:
                 self.solution_step = req_stop[0]
                 print(f"Host: received a better solution: "
-                      f"{self.solution} at "
+                      f"{np.where(self.solution)} at "
                       f"step"
                       f" {self.solution_step}")
         if req_stop[0] == 0:

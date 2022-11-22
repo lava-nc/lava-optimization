@@ -194,7 +194,6 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
     # I mis-used step_size as T
     step_size: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     theta: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
-    noise_ampl: np.ndarray = LavaPyType(np.ndarray, int, precision=1)
 
     cost_diagonal: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     noise_shift: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
@@ -202,6 +201,14 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
     def __init__(self, proc_params):
         super(PyModelQuboScifFixed, self).__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])
+
+        self.refract = np.zeros(proc_params['shape']).astype(int)
+        np.random.seed(123)
+        self.refract_period = np.random.randint(0, 10, proc_params['shape'])
+        """
+        print(f"refractory: {self.refract}")
+        print(f"refractory: {self.refract_period}")
+        """
 
     def _prng(self):
         """Pseudo-random number generator
@@ -214,8 +221,7 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
             rand_nums = \
                 np.random.randint(0, (2 ** 16) - 1, size=prand.size)
             # Assign random numbers only to neurons, for which noise is enabled
-            prand = np.right_shift((rand_nums * self.noise_ampl).astype(int),
-                                   self.noise_shift)
+            prand = np.right_shift(rand_nums, self.noise_shift)
 
         return prand
 
@@ -242,9 +248,7 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
         # Send the local cost
         s_sig[sig_spk_idx] = self.state[sig_spk_idx]
 
-        print("-" * 20)
-        print(f"State = {self.state[sig_spk_idx]}")
-        print("-" * 20)
+        #print(f"Total cost = {np.sum(self.state[sig_spk_idx])}")
 
         return s_sig
 
@@ -259,10 +263,21 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
         # WTA spikes from previous time step
         wta_spk_idx_prev = (spk_hist_buffer == 1)
 
+        # New WTA spikes
+        # Spike always if this would decrease the energy
+        wta_spk_idx = self.state < 0
         # WTA spike indices when threshold is exceeded
-        wta_spk_idx = (2*self.step_size >= -self.state + self.step_size*lfsr)
-        # Exceeds
-        # threshold
+        wta_spk_idx = np.logical_or(
+            wta_spk_idx,
+            (2 ** (16 - self.noise_shift) - 1) *
+            self.step_size >= np.multiply(lfsr, (2 * self.step_size
+                                                 + self.state)))
+
+        # Neurons can only switch states outside their refractory period
+        wta_spk_idx = np.array([wta_spk_idx[ii] if self.refract[ii] <= 0
+                                else wta_spk_idx_prev[ii]
+                                for ii in range(wta_spk_idx.shape[0])])
+
         # Spiking neuron voltages go in refractory (if neg_tau_ref < 0)
         # self.state[wta_spk_idx] = 0
         self.spk_hist[wta_spk_idx] |= 1
@@ -276,13 +291,17 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
         s_wta[np.logical_and(wta_spk_idx_prev, np.logical_not(wta_spk_idx))] \
             = -1
 
+        self.refract = np.maximum(
+            self.refract-1,
+            np.multiply(self.refract_period, (s_wta != 0)))
+        """
+        print(f"WTA indices: {wta_spk_idx}")
+        print(f"s_WTA: {s_wta}")
+        print(f"refractory: {self.refract}")
+        print(f"state: {self.state}")
+        print(f"WTA spike: {s_wta}")
         print('#' * 20)
-        print(wta_spk_idx)
-        print(lfsr)
-        print(self.step_size)
-        print(-self.state)
-        print(s_wta)
-        print('#' * 20)
+        """
 
         # s_wta[wta_spk_idx] = 1
 
@@ -291,6 +310,7 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
     def run_spk(self) -> None:
         # Receive synaptic input
         self.a_in_data = self.a_in.recv().astype(int)
+        #print('#' * 20)
 
         # !! Side effect: Changes self.beta !!
         spk_hist_buffer = self._update_buffers()
@@ -300,7 +320,7 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
 
         # Generate Sigma spikes
         s_sig = self._gen_sig_spks(spk_hist_buffer)
-
+        #print('#' * 20)
         # Send out spikes
         self.s_sig_out.send(s_sig)
         self.s_wta_out.send(s_wta)

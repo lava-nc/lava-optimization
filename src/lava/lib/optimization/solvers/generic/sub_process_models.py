@@ -60,7 +60,8 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         noise_precision = proc.hyperparameters.get("noise_precision", 8)
         steps_to_fire = proc.hyperparameters.get("steps_to_fire", 10)
         init_value = proc.hyperparameters.get("init_value", np.zeros(shape))
-        init_state = proc.hyperparameters.get("init_value", np.zeros(shape))
+        init_state = proc.hyperparameters.get("init_state", np.zeros(shape))
+
         self.s_bit = StochasticIntegrateAndFire(step_size=step_size,
                                                 init_state=init_state,
                                                 shape=shape,
@@ -132,13 +133,17 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
         cost_diagonal = proc.proc_params.get("cost_diagonal", (1,))
         noise_amplitude = proc.proc_params.get("noise_amplitude", (1,))
         noise_precision = proc.proc_params.get("noise_precision", (1,))
+        init_value = proc.proc_params.get("init_value", np.zeros(shape))
+        init_state = proc.proc_params.get("init_state", np.zeros(shape))
         noise_shift = 16 - noise_precision
         self.scif = QuboScif(shape=shape,
                              step_size=step_size,
                              theta=theta,
                              cost_diag=cost_diagonal,
                              noise_amplitude=noise_amplitude,
-                             noise_shift=noise_shift)
+                             noise_shift=noise_shift,
+                             init_value=init_value,
+                             init_state=init_state)
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)

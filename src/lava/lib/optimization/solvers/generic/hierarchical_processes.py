@@ -198,7 +198,7 @@ class StochasticIntegrateAndFire(AbstractProcess):
             cost_diagonal: npt.ArrayLike = 0,
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
-            init_value: None = 0,
+            init_value: npt.ArrayLike = 0,
     ) -> None:
         """
 
@@ -243,7 +243,7 @@ class StochasticIntegrateAndFire(AbstractProcess):
         """
         super().__init__(
             shape=shape,
-            initial_state=init_state,
+            init_state=init_state,
             step_size=step_size,
             noise_amplitude=noise_amplitude,
             noise_precision=noise_precision,

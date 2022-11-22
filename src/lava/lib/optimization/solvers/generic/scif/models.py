@@ -194,6 +194,7 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
     # I mis-used step_size as T
     step_size: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     theta: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
+    noise_ampl: np.ndarray = LavaPyType(np.ndarray, int, precision=1)
 
     cost_diagonal: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     noise_shift: np.ndarray = LavaPyType(np.ndarray, int, precision=24)

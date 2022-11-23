@@ -52,5 +52,5 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             if self.min_cost is not None and self.min_cost <= self.target_cost:
                 print(f"Host: network reached target cost {self.target_cost}.")
 
-            if req_stop[0] > 0:
+            if req_stop[0] >= 0:
                 self._req_pause = True

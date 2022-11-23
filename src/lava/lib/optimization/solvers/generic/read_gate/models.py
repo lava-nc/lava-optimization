@@ -53,11 +53,9 @@ class ReadGatePyModel(PyLoihiProcessModel):
         send messages out."""
         cost = self.cost_in.recv()
         if cost[0]:
-            print('case 1')
             self.min_cost = cost[0]
             self.cost_out.send(np.array([0]))
         elif self.solution is not None:
-            print('case 2')
             pause_request = - np.array([self.time_step])
             if self.min_cost <= self.target_cost:
                 pause_request = - pause_request

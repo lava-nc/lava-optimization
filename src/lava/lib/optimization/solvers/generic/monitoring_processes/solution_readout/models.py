@@ -53,13 +53,12 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             self.solution[:] = (raw_solution.astype(np.int8) >> 2) & 1
             self.min_cost = cost[0]
             self.solution_step = req_stop[0]
-            print(f"Host: received a better solution: "
-                    f"{self.solution} at "
-                    f"step"
-                    f" {self.solution_step}")
-            self._req_pause = True
+            print(f"Host: received a better solution: {self.solution} "
+                 f"at step {self.solution_step}")
 
         if self.min_cost is not None and self.min_cost <= self.target_cost:
-            print(f"Host: eCPU notified network reached target cost:",
-                    self.min_cost)
+            print(f"Host: network reached target cost {self.target_cost}.")
+            self._req_pause = True
 
+        if self.time_step == self.implements_process.runtime.num_steps:
+            self._req_pause = True

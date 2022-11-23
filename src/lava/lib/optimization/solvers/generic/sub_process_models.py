@@ -57,11 +57,11 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             wta_weight
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
-        step_size = proc.hyperparameters.get("step_size", 10)
+        temperature = proc.hyperparameters.get("temperature", 10)
         init_value = proc.hyperparameters.get("init_value", np.zeros(shape))
         init_state = proc.hyperparameters.get("init_state", np.zeros(shape))
 
-        self.s_bit = BoltzmannAbstract(step_size=step_size,
+        self.s_bit = BoltzmannAbstract(temperature=temperature,
                                        init_state=init_state,
                                        shape=shape,
                                        cost_diagonal=diagonal,
@@ -161,15 +161,15 @@ class BoltzmannAbstractModel(AbstractSubProcessModel):
 
     def __init__(self, proc):
         shape = proc.proc_params.get("shape", (1,))
-        step_size = proc.proc_params.get("step_size", (1,))
+        temperature = proc.proc_params.get("temperature", (1,))
         cost_diagonal = proc.proc_params.get("cost_diagonal", (1,))
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))
         self.scif = Boltzmann(shape=shape,
-                             step_size=step_size,
-                             cost_diag=cost_diagonal,
-                             init_value=init_value,
-                             init_state=init_state)
+                              temperature=temperature,
+                              cost_diag=cost_diagonal,
+                              init_value=init_value,
+                              init_state=init_state)
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)

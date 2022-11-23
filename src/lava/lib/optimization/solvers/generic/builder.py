@@ -78,10 +78,10 @@ class SolverProcessBuilder:
             used to ensemble the necessary variables and ports with their shape
             and initial values deriving from the problem specification.
         hyperparameters: dict
-            A dictionary specifying values for steps_to_fire, noise_amplitude,
-            step_size and init_value. All but the last are integers, the initial
-            value is an array-like of initial values for the variables defining
-            the problem.
+            A dictionary specifying values for temperature and init_value.
+            Both are array-like of. init_value defines initial values for the
+            variables defining the problem. The temperature provides the
+            level of noise.
         """
         self._create_process_constructor(problem, hyperparameters)
         SolverProcess = type("OptimizationSolverProcess",
@@ -132,10 +132,10 @@ class SolverProcessBuilder:
             and ports with their shape and initial values deriving from the
             problem specification.
         hyperparameters: dict
-            A dictionary specifying values for steps_to_fire, noise_amplitude,
-            step_size and init_value. All but the last are integers, the initial
-            value is an array-like of initial values for the variables defining
-            the problem.
+            A dictionary specifying values for temperature and init_value.
+            Both are array-like of. init_value defines initial values for the
+            variables defining the problem. The temperature provides the
+            level of noise.
         """
 
         def constructor(self,

@@ -112,7 +112,7 @@ class OptimizationSolver:
         self._process_builder = SolverProcessBuilder()
         self.solver_process = None
         self.solver_model = None
-        self._hyperparameters = dict(step_size=10,
+        self._hyperparameters = dict(temperature=10,
                                      init_value=0)
         self._report = dict(solved=None,
                             best_state=None,

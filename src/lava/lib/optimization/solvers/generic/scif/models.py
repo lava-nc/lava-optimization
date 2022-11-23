@@ -296,8 +296,7 @@ class BoltzmannFixed(PyLoihiProcessModel):
     state: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     spk_hist: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
-    # I mis-used step_size as T
-    step_size: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
+    temperature: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
 
     cost_diagonal: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
 
@@ -371,8 +370,8 @@ class BoltzmannFixed(PyLoihiProcessModel):
         wta_spk_idx = np.logical_or(
             wta_spk_idx,
             (2 ** 16 - 1) *
-            self.step_size >= np.multiply(lfsr, (2 * self.step_size
-                                                 + self.state)))
+            self.temperature >= np.multiply(lfsr, (2 * self.temperature
+                                                   + self.state)))
 
         # Neurons can only switch states outside their refractory period
         wta_spk_idx = np.array([wta_spk_idx[ii] if self.refract[ii] <= 0

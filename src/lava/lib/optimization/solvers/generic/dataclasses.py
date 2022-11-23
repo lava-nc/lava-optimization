@@ -59,11 +59,11 @@ class VariablesImplementation:
 
     @property
     def importances(self):
-        return self.discrete.step_size
+        return self.discrete.cost_diagonal
 
     @importances.setter
     def importances(self, value):
-        self.discrete.step_size = value
+        self.discrete.cost_diagonal = value
 
     @property
     def local_cost(self):

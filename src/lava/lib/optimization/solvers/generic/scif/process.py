@@ -108,7 +108,7 @@ class Boltzmann(AbstractProcess):
                  *,
                  shape: ty.Tuple[int, ...],
                  cost_diag: npty.NDArray,
-                 step_size: ty.Optional[int] = 1,
+                 temperature: ty.Optional[int] = 1,
                  init_value=0,
                  init_state=0):
         """
@@ -118,11 +118,8 @@ class Boltzmann(AbstractProcess):
          ----------
          shape: Tuple
              Number of neurons. Default is (1,).
-         step_size: int
-             bias current driving the SCIF neuron. Default is 1 (arbitrary).
-         theta: int
-             threshold above which a SCIF neuron would fire winner-take-all
-             spike. Default is 4 (arbitrary).
+         temperature: ArrayLike
+             Temperature of the system, defining the level of noise.
          """
         super().__init__(shape=shape)
 
@@ -134,7 +131,7 @@ class Boltzmann(AbstractProcess):
         self.spk_hist = Var(shape=shape,
                             init=np.zeros(shape=shape).astype(int) + init_value)
 
-        self.step_size = Var(shape=shape, init=int(step_size))
+        self.temperature = Var(shape=shape, init=int(temperature))
 
 
 

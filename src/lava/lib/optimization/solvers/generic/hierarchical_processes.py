@@ -305,7 +305,7 @@ class BoltzmannAbstract(AbstractProcess):
     def __init__(
             self,
             *,
-            step_size: npt.ArrayLike,
+            temperature: npt.ArrayLike,
             shape: ty.Tuple[int, ...] = (1,),
             init_state: npt.ArrayLike = 0,
             input_duration: npt.ArrayLike = 6,
@@ -324,8 +324,8 @@ class BoltzmannAbstract(AbstractProcess):
             The shape of the set of dynamical systems to be created.
         init_state: npt.ArrayLike, optional
             The starting value of the state variable.
-        step_size: npt.ArrayLike, optional
-            a value to be added to the state variable at each timestep.
+        temperature: npt.ArrayLike, optional
+            the temperature of the systems, defining the level of noise.
         input_duration: npt.ArrayLike, optional
             Number of timesteps by which each input should be preserved.
         min_state: npt.ArrayLike, optional
@@ -352,7 +352,7 @@ class BoltzmannAbstract(AbstractProcess):
         super().__init__(
             shape=shape,
             init_state=init_state,
-            step_size=step_size,
+            temperature=temperature,
             input_duration=input_duration,
             min_state=min_state,
             min_integration=min_integration,
@@ -366,7 +366,7 @@ class BoltzmannAbstract(AbstractProcess):
         self.local_cost = OutPort(shape=shape)
 
         self.integration = Var(shape=shape, init=0)
-        self.step_size = Var(shape=shape, init=step_size)
+        self.temperature = Var(shape=shape, init=temperature)
         self.state = Var(shape=shape, init=init_state)
         self.input_duration = Var(shape=shape, init=input_duration)
         self.min_state = Var(shape=shape, init=min_state)

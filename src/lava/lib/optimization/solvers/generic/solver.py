@@ -8,10 +8,10 @@ import numpy as np
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    StochasticIntegrateAndFire,
+    BoltzmannAbstract,
 )
 from lava.lib.optimization.solvers.generic.sub_process_models import (
-    StochasticIntegrateAndFireModelSCIF,
+    BoltzmannAbstractModel,
 )
 from lava.magma.core.resources import (
     AbstractComputeResource,
@@ -28,9 +28,8 @@ from lava.proc.dense.process import Dense
 from lava.lib.optimization.solvers.generic.read_gate.models import \
     ReadGatePyModel
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.scif.models import \
-    PyModelQuboScifFixed
-from lava.lib.optimization.solvers.generic.scif.process import QuboScif
+from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed
+from lava.lib.optimization.solvers.generic.scif.process import Boltzmann
 from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
@@ -114,10 +113,7 @@ class OptimizationSolver:
         self.solver_process = None
         self.solver_model = None
         self._hyperparameters = dict(step_size=10,
-                                     steps_to_fire=10,
-                                     noise_amplitude=1,
-                                     init_value=0,
-                                     init_state=0)
+                                     init_value=0)
         self._report = dict(solved=None,
                             best_state=None,
                             cost=None,
@@ -399,16 +395,16 @@ class OptimizationSolver:
             pdict = {self.solver_process: self.solver_model,
                      ReadGate: ReadGatePyModel,
                      Dense: PyDenseModelFloat,
-                     StochasticIntegrateAndFire:
-                         StochasticIntegrateAndFireModelSCIF,
-                     QuboScif: PyModelQuboScifFixed
+                     BoltzmannAbstract:
+                         BoltzmannAbstractModel,
+                     Boltzmann: BoltzmannFixed
                      }
             run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
                                    select_sub_proc_model=True)
         elif backend in NEUROCORES:
             pdict = {self.solver_process: self.solver_model,
-                     StochasticIntegrateAndFire:
-                         StochasticIntegrateAndFireModelSCIF,
+                     BoltzmannAbstract:
+                         BoltzmannAbstractModel,
                      }
             pre_run_fxs, post_run_fxs = [], []
             run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,

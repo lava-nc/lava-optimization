@@ -11,7 +11,8 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.decorator import implements, requires, tag
 from lava.magma.core.model.py.model import PyLoihiProcessModel
-from lava.lib.optimization.solvers.generic.scif.process import CspScif, QuboScif
+from lava.lib.optimization.solvers.generic.scif.process import CspScif, \
+    QuboScif, Boltzmann
 
 
 @implements(proc=CspScif, protocol=LoihiProtocol)
@@ -187,11 +188,9 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
     s_sig_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
     s_wta_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
 
-    # The local cost
     state: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     spk_hist: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
-    # I mis-used step_size as T
     step_size: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     theta: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     noise_ampl: np.ndarray = LavaPyType(np.ndarray, int, precision=1)
@@ -201,6 +200,109 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
 
     def __init__(self, proc_params):
         super(PyModelQuboScifFixed, self).__init__(proc_params)
+        self.a_in_data = np.zeros(proc_params['shape'])
+
+    def _prng(self):
+        """Pseudo-random number generator
+        """
+
+        # ToDo: Choosing a 16-bit signed random integer. For bit-accuracy,
+        #   need to replace it with Loihi-conformant LFSR function
+        prand = np.zeros(shape=self.state.shape)
+        if prand.size > 0:
+            rand_nums = \
+                np.random.randint(0, (2 ** 16) - 1, size=prand.size)
+            # Assign random numbers only to neurons, for which noise is enabled
+            prand = np.right_shift((rand_nums * self.noise_ampl).astype(int),
+                                   self.noise_shift)
+
+        return prand
+
+    def _update_buffers(self):
+        # !! Side effect: Changes self.beta !!
+
+        # Populate the buffer for local computation
+        spk_hist_buffer = self.spk_hist.copy()
+        spk_hist_buffer &= 1
+        self.spk_hist <<= 1
+        # The following ensures that we flush all history beyond 3 timesteps
+        # The number '3' comes from the fact that it takes 3 timesteps to
+        # read out solutions after a minimum cost is detected (due to
+        # downstream connected process-chain)
+        self.spk_hist &= 7
+
+        return spk_hist_buffer
+
+    def _gen_sig_spks(self, spk_hist_buffer):
+        s_sig = np.zeros_like(self.state)
+        # If we have fired in the previous time-step, we send out the local
+        # cost now, i.e., when spk_hist_buffer == 1
+        sig_spk_idx = np.where(spk_hist_buffer == 1)
+        # Compute the local cost
+        s_sig[sig_spk_idx] = self.cost_diagonal[sig_spk_idx] + \
+            self.a_in_data[sig_spk_idx]
+
+        return s_sig
+
+    def _gen_wta_spks(self):
+        lfsr = self._prng()
+
+        self.state += lfsr + self.step_size + self.cost_diagonal + \
+            self.a_in_data
+        np.clip(self.state, a_min=-(2 ** 23), a_max=2 ** 23 - 1,
+                out=self.state)
+
+        # WTA spike indices when threshold is exceeded
+        wta_spk_idx = np.where(self.state >= self.theta)  # Exceeds threshold
+        # Spiking neuron voltages go in refractory (if neg_tau_ref < 0)
+        self.state[wta_spk_idx] = 0
+        self.spk_hist[wta_spk_idx] |= 1
+
+        s_wta = np.zeros_like(self.state)
+        s_wta[wta_spk_idx] = 1
+
+        return s_wta
+
+    def run_spk(self) -> None:
+        # Receive synaptic input
+        self.a_in_data = self.a_in.recv().astype(int)
+
+        # !! Side effect: Changes self.beta !!
+        spk_hist_buffer = self._update_buffers()
+
+        # Generate Sigma spikes
+        s_sig = self._gen_sig_spks(spk_hist_buffer)
+
+        # Generate WTA spikes
+        s_wta = self._gen_wta_spks()
+
+        # Send out spikes
+        self.s_sig_out.send(s_sig)
+        self.s_wta_out.send(s_wta)
+
+
+@implements(proc=Boltzmann, protocol=LoihiProtocol)
+@requires(CPU)
+@tag('fixed_pt')
+class BoltzmannFixed(PyLoihiProcessModel):
+    """Fixed point implementation of Stochastic Constraint Integrate and
+        Fire (SCIF) neuron for solving QUBO problems.
+    """
+    a_in = LavaPyType(PyInPort.VEC_DENSE, int, precision=8)
+    s_sig_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
+    s_wta_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
+
+    # The local cost
+    state: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
+    spk_hist: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
+
+    # I mis-used step_size as T
+    step_size: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
+
+    cost_diagonal: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
+
+    def __init__(self, proc_params):
+        super(BoltzmannFixed, self).__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])
 
         self.refract = np.zeros(proc_params['shape']).astype(int)
@@ -219,10 +321,8 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
         #   need to replace it with Loihi-conformant LFSR function
         prand = np.zeros(shape=self.state.shape)
         if prand.size > 0:
-            rand_nums = \
+            prand = \
                 np.random.randint(0, (2 ** 16) - 1, size=prand.size)
-            # Assign random numbers only to neurons, for which noise is enabled
-            prand = np.right_shift(rand_nums, self.noise_shift)
 
         return prand
 
@@ -270,7 +370,7 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
         # WTA spike indices when threshold is exceeded
         wta_spk_idx = np.logical_or(
             wta_spk_idx,
-            (2 ** (16 - self.noise_shift) - 1) *
+            (2 ** 16 - 1) *
             self.step_size >= np.multiply(lfsr, (2 * self.step_size
                                                  + self.state)))
 

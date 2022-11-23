@@ -197,6 +197,15 @@ class SolverProcessBuilder:
         def constructor(self, proc):
             variables = VariablesImplementation()
             if hasattr(proc, "discrete_variables"):
+                # ADD INIT_STATE HERE
+                # ASSERT THAT USER DOES NOT PROVIDE INITIAL STATE
+                # ADD TODO, needs to be generalized
+                init_value = proc.hyperparameters.get("init_value", np.zeros(
+                    proc.discrete_variables.shape))
+                q_off_diag = proc.cost_coefficients[2].init
+                q_diag = proc.cost_coefficients[1].init
+                proc.hyperparameters['init_state'] = q_off_diag @ \
+                                                     init_value + q_diag
                 variables.discrete = DiscreteVariablesProcess(
                     shape=proc.discrete_variables.shape,
                     cost_diagonal=proc.cost_diagonal,

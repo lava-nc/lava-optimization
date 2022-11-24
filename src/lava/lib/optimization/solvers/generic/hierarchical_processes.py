@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import typing as ty
+from numpy import typing as npty
 
 import numpy as np
 from lava.magma.core.process.ports.ports import InPort, OutPort
@@ -306,6 +307,7 @@ class BoltzmannAbstract(AbstractProcess):
             self,
             *,
             temperature: npt.ArrayLike,
+            refract: ty.Optional[ty.Union[int, npty.NDArray]],
             shape: ty.Tuple[int, ...] = (1,),
             init_state: npt.ArrayLike = 0,
             input_duration: npt.ArrayLike = 6,
@@ -353,6 +355,7 @@ class BoltzmannAbstract(AbstractProcess):
             shape=shape,
             init_state=init_state,
             temperature=temperature,
+            refract=refract,
             input_duration=input_duration,
             min_state=min_state,
             min_integration=min_integration,
@@ -367,6 +370,7 @@ class BoltzmannAbstract(AbstractProcess):
 
         self.integration = Var(shape=shape, init=0)
         self.temperature = Var(shape=shape, init=temperature)
+        self.refract = Var(shape=shape, init=refract)
         self.state = Var(shape=shape, init=init_state)
         self.input_duration = Var(shape=shape, init=input_duration)
         self.min_state = Var(shape=shape, init=min_state)

@@ -297,6 +297,7 @@ class BoltzmannFixed(PyLoihiProcessModel):
     spk_hist: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
     temperature: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
+    refract: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
 
     cost_diagonal: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
 
@@ -304,13 +305,9 @@ class BoltzmannFixed(PyLoihiProcessModel):
         super(BoltzmannFixed, self).__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])
 
-        self.refract = np.zeros(proc_params['shape']).astype(int)
+        self.refract_buffer = np.zeros(proc_params['shape']).astype(int)
         np.random.seed(123)
-        self.refract_period = np.random.randint(0, 10, proc_params['shape'])
-        """
-        print(f"refractory: {self.refract}")
-        print(f"refractory: {self.refract_period}")
-        """
+        self.refract = np.random.randint(0, 10, proc_params['shape'])
 
     def _prng(self):
         """Pseudo-random number generator
@@ -374,7 +371,7 @@ class BoltzmannFixed(PyLoihiProcessModel):
                                                    + self.state)))
 
         # Neurons can only switch states outside their refractory period
-        wta_spk_idx = np.array([wta_spk_idx[ii] if self.refract[ii] <= 0
+        wta_spk_idx = np.array([wta_spk_idx[ii] if self.refract_buffer[ii] <= 0
                                 else wta_spk_idx_prev[ii]
                                 for ii in range(wta_spk_idx.shape[0])])
 
@@ -391,13 +388,13 @@ class BoltzmannFixed(PyLoihiProcessModel):
         s_wta[np.logical_and(wta_spk_idx_prev, np.logical_not(wta_spk_idx))] \
             = -1
 
-        self.refract = np.maximum(
-            self.refract-1,
-            np.multiply(self.refract_period, (s_wta != 0)))
+        self.refract_buffer = np.maximum(
+            self.refract_buffer-1,
+            np.multiply(self.refract, (s_wta != 0)))
         """
         print(f"WTA indices: {wta_spk_idx}")
         print(f"s_WTA: {s_wta}")
-        print(f"refractory: {self.refract}")
+        print(f"refract_buffer: {self.refract_buffer}")
         print(f"state: {self.state}")
         print(f"WTA spike: {s_wta}")
         print('#' * 20)

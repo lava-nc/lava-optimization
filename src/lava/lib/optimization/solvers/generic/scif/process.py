@@ -108,7 +108,8 @@ class Boltzmann(AbstractProcess):
                  *,
                  shape: ty.Tuple[int, ...],
                  cost_diag: npty.NDArray,
-                 temperature: ty.Optional[int] = 1,
+                 temperature: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
+                 refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
                  init_value=0,
                  init_state=0):
         """
@@ -127,18 +128,17 @@ class Boltzmann(AbstractProcess):
         self.s_sig_out = OutPort(shape=shape)
         self.s_wta_out = OutPort(shape=shape)
 
-        self.state = Var(shape=shape, init=np.zeros(shape=shape).astype(int))
         self.spk_hist = Var(shape=shape,
                             init=np.zeros(shape=shape).astype(int) + init_value)
 
         self.temperature = Var(shape=shape, init=int(temperature))
 
-
+        self.refract = Var(shape=shape, init=refract)
 
         self.cost_diagonal = Var(shape=shape, init=cost_diag)
 
         # Initial state determined in DiscreteVariables
-        self.state = Var(shape=shape, init=init_state)
+        self.state = Var(shape=shape, init=init_state.astype(int))
 
         @property
         def shape(self) -> ty.Tuple[int, ...]:

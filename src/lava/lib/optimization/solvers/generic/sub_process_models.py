@@ -57,11 +57,13 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             wta_weight
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
-        temperature = proc.hyperparameters.get("temperature", 10)
+        temperature = proc.hyperparameters.get("temperature", 1)
+        refract = proc.hyperparameters.get("refract", 0)
         init_value = proc.hyperparameters.get("init_value", np.zeros(shape))
         init_state = proc.hyperparameters.get("init_state", np.zeros(shape))
 
         self.s_bit = BoltzmannAbstract(temperature=temperature,
+                                       refract=refract,
                                        init_state=init_state,
                                        shape=shape,
                                        cost_diagonal=diagonal,
@@ -162,11 +164,13 @@ class BoltzmannAbstractModel(AbstractSubProcessModel):
     def __init__(self, proc):
         shape = proc.proc_params.get("shape", (1,))
         temperature = proc.proc_params.get("temperature", (1,))
+        refract = proc.proc_params.get("refract", (1,))
         cost_diagonal = proc.proc_params.get("cost_diagonal", (1,))
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))
         self.scif = Boltzmann(shape=shape,
                               temperature=temperature,
+                              refract=refract,
                               cost_diag=cost_diagonal,
                               init_value=init_value,
                               init_state=init_state)

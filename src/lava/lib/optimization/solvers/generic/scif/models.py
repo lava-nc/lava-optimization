@@ -297,15 +297,14 @@ class BoltzmannFixed(PyLoihiProcessModel):
     spk_hist: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
     temperature: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
-    refract: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
+    refract: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
     def __init__(self, proc_params):
         super(BoltzmannFixed, self).__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])
 
+
         self.refract_buffer = np.zeros(proc_params['shape']).astype(int)
-        np.random.seed(123)
-        self.refract = np.random.randint(0, 10, proc_params['shape'])
 
     def _prng(self):
         """Pseudo-random number generator

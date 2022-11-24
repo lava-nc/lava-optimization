@@ -299,8 +299,6 @@ class BoltzmannFixed(PyLoihiProcessModel):
     temperature: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     refract: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
 
-    cost_diagonal: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
-
     def __init__(self, proc_params):
         super(BoltzmannFixed, self).__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])

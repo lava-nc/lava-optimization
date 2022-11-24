@@ -165,13 +165,11 @@ class BoltzmannAbstractModel(AbstractSubProcessModel):
         shape = proc.proc_params.get("shape", (1,))
         temperature = proc.proc_params.get("temperature", (1,))
         refract = proc.proc_params.get("refract", (1,))
-        cost_diagonal = proc.proc_params.get("cost_diagonal", (1,))
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))
         self.scif = Boltzmann(shape=shape,
                               temperature=temperature,
                               refract=refract,
-                              cost_diag=cost_diagonal,
                               init_value=init_value,
                               init_state=init_state)
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
@@ -180,5 +178,4 @@ class BoltzmannAbstractModel(AbstractSubProcessModel):
 
         proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
         proc.vars.state.alias(self.scif.vars.state)
-        proc.vars.cost_diagonal.alias(self.scif.vars.cost_diagonal)
 

@@ -62,6 +62,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             #  on the assumption that `solution' is the spiking history of the
             #  neurons solving a problem and picks the spiking history from 3
             #  timesteps ago, when the minimum cost was actually achieved.
+            raw_solution &= 7
             self.solution[:] = (raw_solution.astype(np.int8) >> 2) & 1
             self.min_cost = cost[0]
             if req_stop[0] != 0:

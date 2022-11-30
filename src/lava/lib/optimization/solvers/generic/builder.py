@@ -180,6 +180,11 @@ class SolverProcessBuilder:
             self.feasibility = Var(shape=(1,))
             self.solution_step = Var(shape=(1,))
 
+            # TODO: DELETE THIS AGAIN!
+            self.debug = Var(
+                shape=(problem.variables.num_variables,)
+            )
+
         self._process_constructor = constructor
 
     def _create_model_constructor(self, target_cost: int):
@@ -240,6 +245,9 @@ class SolverProcessBuilder:
                 macrostate_reader.cost_convergence_check = c
                 variables.local_cost.connect(macrostate_reader.cost_in)
                 proc.vars.optimality.alias(macrostate_reader.min_cost)
+
+            # TODO: DELETE THIS AGAIN!!!
+            proc.vars.debug.alias(variables.discrete.debug)
 
             # Variable aliasing
             proc.vars.variable_assignment.alias(macrostate_reader.solution)

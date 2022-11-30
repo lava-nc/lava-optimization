@@ -192,7 +192,11 @@ class OptimizationSolver:
         if timeout == -1:
             self.solver_process.wait()
         self._update_report(target_cost=target_cost)
+
+        debug_var = self.solver_process.debug.get()
+
         self.solver_process.stop()
+
         return self._report["best_state"]
 
     def measure_time_to_solution(

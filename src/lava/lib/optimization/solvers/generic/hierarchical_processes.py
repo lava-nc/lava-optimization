@@ -78,6 +78,9 @@ class DiscreteVariablesProcess(AbstractProcess):
         self.cost_diagonal = cost_diagonal
         self.local_cost = OutPort(shape=shape)
 
+        # TODO: DELETE THIS AGAIN
+        self.debug = Var(shape=shape)
+
 
 class CostConvergenceChecker(AbstractProcess):
     """Process that continuously monitors cost convergence.
@@ -380,3 +383,6 @@ class BoltzmannAbstract(AbstractProcess):
         self.cost_diagonal = Var(shape=shape, init=cost_diagonal)
         self.assignment = Var(shape=shape, init=False)
         self.min_cost = Var(shape=shape, init=False)
+
+        # TODO: DELETE THIS AGAIN
+        self.debug = Var(shape=shape, init=0)

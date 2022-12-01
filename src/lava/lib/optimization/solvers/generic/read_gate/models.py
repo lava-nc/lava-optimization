@@ -23,7 +23,6 @@ class ReadGatePyModel(PyLoihiProcessModel):
     """
     target_cost: int = LavaPyType(int, np.int32, 32)
     best_solution: int = LavaPyType(int, np.int32, 32)
-    best_solution_step: int = LavaPyType(int, np.int32, 32)
     cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                    precision=32)
     acknowledgement: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,

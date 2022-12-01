@@ -249,7 +249,7 @@ class OptimizationSolver:
 
         from lava.utils.profiler import Profiler
         self._profiler = Profiler.init(run_cfg)
-        self._profiler.execution_time_probe(num_steps=timeout)
+        self._profiler.execution_time_probe(num_steps=timeout + 1)
 
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         self._update_report(target_cost=target_cost)

@@ -34,25 +34,28 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     acknowledgement: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32,
                                             precision=32)
     min_cost: int = LavaPyType(int, np.int32, 32)
+    stop = False
 
     def run_spk(self):
+        if self.stop:
+            return
         raw_cost = self.cost_in.recv()
-
         if raw_cost[0] != 0:
-            req_stop = self.req_stop_in.recv()
+            time_step = self.req_stop_in.recv()
             # The following casts cost as a signed 24-bit value (8 = 32 - 24)
             cost = (raw_cost.astype(np.int32) << 8) >> 8
             raw_solution = self.read_solution.recv()
             self.solution[:] = (raw_solution.astype(np.int8) >> 2) & 1
             self.min_cost = cost[0]
-            self.solution_step = abs(req_stop[0])
+            self.solution_step = abs(time_step[0])
 
             if cost[0] < 0:
-                print(f"Host: received a better solution at step {req_stop[0]}"
-                      f" with cost {cost[0]}: {self.solution}")
+                print(f"Host: received a better solution at step "
+                      f"{self.solution_step} with cost {cost[0]}: "
+                      f"{self.solution}")
 
             if self.min_cost is not None and self.min_cost <= self.target_cost:
                 print(f"Host: network reached target cost {self.target_cost}.")
 
-            if req_stop[0] >= 0:
-                self._req_pause = True
+            if time_step[0] >= 0:
+                self.stop = True

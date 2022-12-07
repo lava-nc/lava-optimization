@@ -37,7 +37,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     def run_spk(self):
         raw_cost = self.cost_in.recv()
 
-        if raw_cost[0]:
+        if raw_cost[0] != 0:
             req_stop = self.req_stop_in.recv()
             # The following casts cost as a signed 24-bit value (8 = 32 - 24)
             cost = (raw_cost.astype(np.int32) << 8) >> 8
@@ -46,8 +46,10 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             self.solution[:] = (raw_solution.astype(np.int8) >> 2) & 1
             self.min_cost = cost[0]
             self.solution_step = abs(req_stop[0])
-            print(f"Host: received a better solution at step {req_stop[0]}"
-                  f" with cost {cost[0]}: {self.solution}")
+
+            if cost[0] < 0:
+                print(f"Host: received a better solution at step {req_stop[0]}"
+                      f" with cost {cost[0]}: {self.solution}")
 
             if self.min_cost is not None and self.min_cost <= self.target_cost:
                 print(f"Host: network reached target cost {self.target_cost}.")

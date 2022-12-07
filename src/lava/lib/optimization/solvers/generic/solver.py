@@ -404,12 +404,8 @@ class OptimizationSolver:
                      StochasticIntegrateAndFire:
                          StochasticIntegrateAndFireModelSCIF,
                      }
-            pre_run_fxs, post_run_fxs = [], []
             run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
-                                  select_sub_proc_model=True,
-                                  pre_run_fxs=pre_run_fxs,
-                                  post_run_fxs=post_run_fxs
-                                  )
+                                  select_sub_proc_model=True)
         else:
             raise NotImplementedError(str(backend) + BACKEND_MSG)
         return run_cfg
@@ -425,10 +421,3 @@ class OptimizationSolver:
             return RunContinuous()
         else:
             return RunSteps(num_steps=timeout + 1)
-
-    def _add_time_to_run_config(self, run_cfg, timeout):
-        pre_run_fxs, post_run_fxs = self._benchmarker.get_time_measurement_cfg(
-            num_steps=timeout + 1
-        )
-        run_cfg.pre_run_fxs += pre_run_fxs
-        run_cfg.post_run_fxs += post_run_fxs

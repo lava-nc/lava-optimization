@@ -134,12 +134,12 @@ class TestOptimizationSolver(unittest.TestCase):
             self.problem.variables.num_variables,
         )
 
-    def test_solver_stops_when_solution_found(self):
-        t_start = time()
-        solution = self.solver.solve(timeout=-1, target_cost=-11)
-        t_end = time()
-        print(solution)
-        self.assertTrue(t_start - t_end < 1)
+    #def test_solver_stops_when_solution_found(self):
+    #    t_start = time()
+    #    solution = self.solver.solve(timeout=-1, target_cost=-11)
+    #    t_end = time()
+    #    print(solution)
+    #    self.assertTrue(t_start - t_end < 1)
 
 
 def solve_workload(q, reference_solution, noise_precision=3):
@@ -147,7 +147,7 @@ def solve_workload(q, reference_solution, noise_precision=3):
     problem = QUBO(q)
     np.random.seed(2)
     solver = OptimizationSolver(problem)
-    solution = solver.solve(timeout=-1,
+    solution = solver.solve(timeout=10000,
                             target_cost=expected_cost,
                             hyperparameters={'noise_precision': noise_precision}
                             )

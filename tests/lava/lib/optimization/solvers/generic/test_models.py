@@ -17,10 +17,12 @@ from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi2SimCfg
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.monitor.process import Monitor
-from lava.lib.optimization.solvers.generic.sub_process_models import \
-    StochasticIntegrateAndFireModel, StochasticIntegrateAndFireModelSCIF
+from lava.lib.optimization.solvers.generic.sub_process_models import (
+    StochasticIntegrateAndFireModel, StochasticIntegrateAndFireModelSCIF,
+    BoltzmannAbstractModel
+)
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    StochasticIntegrateAndFire,
+    StochasticIntegrateAndFire, BoltzmannAbstract
 )
 
 

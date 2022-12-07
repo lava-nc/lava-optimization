@@ -113,8 +113,7 @@ class OptimizationSolver:
         self.solver_process = None
         self.solver_model = None
         self._hyperparameters = dict(temperature=10,
-                                     refract=1,
-                                     init_value=0)
+                                     refract=1)
         self._report = dict(solved=None,
                             best_state=None,
                             cost=None,

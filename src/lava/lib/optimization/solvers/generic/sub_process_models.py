@@ -83,7 +83,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         )
         proc.vars.variable_assignment.alias(self.s_bit.prev_assignment)
 
-        #TODO: DELETE THIS AGAIN
+        # todo: delete debug variable
         proc.vars.debug.alias(self.s_bit.debug)
 
 
@@ -122,7 +122,6 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
 @requires(Loihi2NeuroCore)
 class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
     """Model for the StochasticIntegrateAndFire process.
-
     The process is just a wrapper over the QuboScif process.
     # Todo deprecate in favour of QuboScif.
     """
@@ -134,17 +133,13 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
         cost_diagonal = proc.proc_params.get("cost_diagonal", (1,))
         noise_amplitude = proc.proc_params.get("noise_amplitude", (1,))
         noise_precision = proc.proc_params.get("noise_precision", (1,))
-        init_value = proc.proc_params.get("init_value", np.zeros(shape))
-        init_state = proc.proc_params.get("init_state", np.zeros(shape))
         noise_shift = 16 - noise_precision
         self.scif = QuboScif(shape=shape,
                              step_size=step_size,
                              theta=theta,
                              cost_diag=cost_diagonal,
                              noise_amplitude=noise_amplitude,
-                             noise_shift=noise_shift,
-                             init_value=init_value,
-                             init_state=init_state)
+                             noise_shift=noise_shift)
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)
@@ -153,6 +148,71 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
         proc.vars.state.alias(self.scif.vars.state)
         proc.vars.cost_diagonal.alias(self.scif.vars.cost_diagonal)
         proc.vars.noise_amplitude.alias(self.scif.vars.noise_ampl)
+
+
+@implements(proc=StochasticIntegrateAndFire, protocol=LoihiProtocol)
+@requires(CPU)
+class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
+    """CPU Model for the StochasticIntegrateAndFire process.
+    The model computes stochastic gradient and local cost both based on
+    the input received from the recurrent connectivity ot other units.
+    # Todo deprecate in favour of QuboScif.
+    """
+    added_input: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
+    messages: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
+    local_cost: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
+
+    integration: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    step_size: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    state: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    noise_amplitude: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    noise_precision: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    input_duration: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    min_state: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    min_integration: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    steps_to_fire: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    refractory_period: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    firing: np.ndarray = LavaPyType(np.ndarray, bool)
+    prev_assignment: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    cost_diagonal: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    assignment: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    min_cost: np.ndarray = LavaPyType(np.ndarray, int, 32)
+
+    def reset_state(self, firing_vector: np.ndarray):
+        self.state[firing_vector] = 0
+
+    def _update_buffers(self):
+        self.prev_assignment[:] = self.assignment[:]
+        self.assignment[:] = self.firing[:]
+
+    def run_spk(self):
+        self._update_buffers()
+        added_input = self.added_input.recv()
+        self.state = self.iterate_dynamics(added_input, self.state)
+        local_cost = self.firing * (added_input + self.cost_diagonal
+                                    * self.firing)
+        self.firing[:] = self.do_fire(self.state)
+        self.reset_state(firing_vector=self.firing[:])
+        self.messages.send(self.firing[:])
+        self.local_cost.send(local_cost)
+
+    def iterate_dynamics(self, added_input: np.ndarray, state: np.ndarray):
+        integration_decay = 1
+        state_decay = 0
+        noise = self.noise_amplitude * np.random.randint(0, 2 * self.step_size,
+                                                         self.integration.shape)
+        self.integration[:] = self.integration * (1 - integration_decay)
+        self.integration[:] += added_input.astype(int)
+        decayed_state = state * (1 - state_decay)
+        state[:] = decayed_state + self.integration + self.step_size + noise
+        return state
+
+    def do_fire(self, state):
+        threshold = self.step_size * self.steps_to_fire
+        return state > threshold
+
+    def is_satisfied(self, prev_assignment, integration):
+        return np.logical_and(prev_assignment, np.logical_not(integration))
 
 
 @implements(proc=BoltzmannAbstract, protocol=LoihiProtocol)
@@ -182,4 +242,3 @@ class BoltzmannAbstractModel(AbstractSubProcessModel):
         proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
         proc.vars.state.alias(self.scif.vars.state)
         proc.vars.debug.alias(self.scif.vars.debug)
-

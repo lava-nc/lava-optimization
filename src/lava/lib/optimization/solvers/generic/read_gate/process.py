@@ -47,7 +47,6 @@ class ReadGate(AbstractProcess):
         self.target_cost = Var(shape=(1,), init=target_cost)
         self.best_solution = Var(shape=shape, init=-1)
         self.cost_in = InPort(shape=(1,))
-        self.acknowledgement = InPort(shape=(1,))
         self.cost_out = OutPort(shape=(1,))
         self.send_pause_request = OutPort(shape=(1,))
         self.solution_out = OutPort(shape=shape)

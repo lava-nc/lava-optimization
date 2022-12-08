@@ -53,11 +53,11 @@ class ReadGatePyModel(PyLoihiProcessModel):
             self.min_cost = cost[0]
             self.cost_out.send(np.array([0]))
         elif self.solution is not None:
-            pause_request = - np.array([self.time_step])
+            solution_step = - np.array([self.time_step])
             if self.min_cost <= self.target_cost:
-                pause_request = - pause_request
-            self.cost_out.send(np.asarray([self.min_cost]))
-            self.send_pause_request.send(pause_request)
+                solution_step = - solution_step
+            self.cost_out.send(np.array([self.min_cost]))
+            self.send_pause_request.send(solution_step)
             self.solution_out.send(self.solution)
             self.solution = None
             self.min_cost = None
@@ -66,6 +66,4 @@ class ReadGatePyModel(PyLoihiProcessModel):
 
     def run_post_mgmt(self):
         """Execute post management phase."""
-        self._req_pause = True
         self.solution = self.solution_reader.read()
-        self._req_pause = False

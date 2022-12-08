@@ -31,12 +31,16 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
                                        precision=32)
     target_cost: int = LavaPyType(int, np.int32, 32)
     min_cost: int = LavaPyType(int, np.int32, 32)
+    stop = False
 
     def run_spk(self):
+        if self.stop:
+            return
         raw_cost = self.cost_in.recv()
 
         if raw_cost[0] != 0:
             timestep = self.timestep_in.recv()[0]
+            print(f"Timestep: {timestep}")
             # The following casts cost as a signed 24-bit value (8 = 32 - 24)
             cost = (raw_cost.astype(np.int32) << 8) >> 8
             raw_solution = self.read_solution.recv()
@@ -53,4 +57,4 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
                 print(f"Host: network reached target cost {self.target_cost}.")
 
             if timestep >= 0:
-                self._req_pause = True
+                self.stop = True

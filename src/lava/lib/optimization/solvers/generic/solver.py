@@ -191,11 +191,7 @@ class OptimizationSolver:
         if timeout == -1:
             self.solver_process.wait()
         self._update_report(target_cost=target_cost)
-
-        debug_var = self.solver_process.debug.get()
-
         self.solver_process.stop()
-
         return self._report["best_state"]
 
     def measure_time_to_solution(
@@ -246,18 +242,15 @@ class OptimizationSolver:
                                     hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 40
 
         from lava.utils.profiler import Profiler
         self._profiler = Profiler.init(run_cfg)
-        self._profiler.execution_time_probe(num_steps=timeout - 1)
+        self._profiler.execution_time_probe(num_steps=timeout + 1)
 
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        time_to_solution = float(np.sum(self._profiler.execution_time))
-        self._update_report(target_cost=target_cost,
-                            time_to_solution=time_to_solution)
+        self._update_report(target_cost=target_cost)
         self.solver_process.stop()
-        return time_to_solution
+        return self._profiler.execution_time
 
     def measure_energy_to_solution(
             self,
@@ -306,19 +299,16 @@ class OptimizationSolver:
                                     hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 40
 
         from lava.utils.profiler import Profiler
         self._profiler = Profiler.init(run_cfg)
-        self._profiler.execution_time_probe(num_steps=timeout - 1)
-        self._profiler.energy_probe(num_steps=timeout - 1)
+        self._profiler.execution_time_probe(num_steps=timeout + 1)
+        self._profiler.energy_probe(num_steps=timeout + 1)
 
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        energy_to_solution = float(self._profiler.energy)
-        self._update_report(target_cost=target_cost,
-                            energy_to_solution=energy_to_solution)
+        self._update_report(target_cost=target_cost)
         self.solver_process.stop()
-        return energy_to_solution
+        return self._profiler.energy
 
     def _update_report(self, target_cost=None,
                        time_to_solution=None,

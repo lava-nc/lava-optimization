@@ -40,7 +40,6 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 
         if raw_cost[0] != 0:
             timestep = self.timestep_in.recv()[0]
-            print(f"Timestep: {timestep}")
             # The following casts cost as a signed 24-bit value (8 = 32 - 24)
             cost = (raw_cost.astype(np.int32) << 8) >> 8
             raw_solution = self.read_solution.recv()

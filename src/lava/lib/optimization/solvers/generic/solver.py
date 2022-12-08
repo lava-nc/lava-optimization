@@ -178,6 +178,8 @@ class OptimizationSolver:
         solution: npt.ArrayLike
             Candidate solution to the input optimization problem.
         """
+        if timeout < 0:
+            raise NotImplementedError("The timeout must be > 0.")
         target_cost = self._validated_cost(target_cost)
         hyperparameters = hyperparameters or self.hyperparameters
         self._create_solver_process(self.problem,
@@ -188,8 +190,6 @@ class OptimizationSolver:
         run_condition = self._get_run_condition(timeout)
         self.solver_process._log_config.level = 40
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        if timeout == -1:
-            self.solver_process.wait()
         self._update_report(target_cost=target_cost)
         self.solver_process.stop()
         return self._report["best_state"]
@@ -228,8 +228,8 @@ class OptimizationSolver:
         time_to_solution: npt.ArrayLike
             Total time to solution in seconds.
         """
-        if timeout == -1:
-            raise ValueError("For time measurements timeout " "cannot be -1")
+        if timeout < 0:
+            raise NotImplementedError("The timeout must be > 0.")
         if backend not in NEUROCORES:
             raise ValueError(f"Time measurement can only be performed on "
                              f"Loihi2 backend, got {backend}.")
@@ -285,8 +285,8 @@ class OptimizationSolver:
         energy_to_solution: npt.ArrayLike
             Total energy to solution in Joule.
         """
-        if timeout == -1:
-            raise ValueError("For time measurements timeout " "cannot be -1")
+        if timeout < 0:
+            raise NotImplementedError("The timeout must be > 0.")
         if backend not in NEUROCORES:
             raise ValueError(f"Enegy measurement can only be performed on "
                              f"Loihi2 backend, got {backend}.")
@@ -407,7 +407,4 @@ class OptimizationSolver:
         return int(target_cost)
 
     def _get_run_condition(self, timeout):
-        if timeout == -1:
-            return RunContinuous()
-        else:
-            return RunSteps(num_steps=timeout + 1)
+        return RunSteps(num_steps=timeout + 1)

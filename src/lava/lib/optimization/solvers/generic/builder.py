@@ -261,7 +261,7 @@ class SolverProcessBuilder:
                 macrostate_reader.solution_readout_cost_in
             )
             macrostate_reader.read_gate_req_stop.connect(
-                macrostate_reader.solution_readout_req_stop_in
+                macrostate_reader.solution_readout_timestep_in
             )
             macrostate_reader.ref_port.connect_var(
                 variables.variables_assignment

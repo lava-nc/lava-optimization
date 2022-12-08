@@ -27,7 +27,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     read_solution: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                          precision=32)
     cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
-    req_stop_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
+    timestep_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                        precision=32)
     target_cost: int = LavaPyType(int, np.int32, 32)
     min_cost: int = LavaPyType(int, np.int32, 32)
@@ -36,21 +36,21 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
         raw_cost = self.cost_in.recv()
 
         if raw_cost[0] != 0:
-            req_stop = self.req_stop_in.recv()
+            timestep = self.timestep_in.recv()[0]
             # The following casts cost as a signed 24-bit value (8 = 32 - 24)
             cost = (raw_cost.astype(np.int32) << 8) >> 8
             raw_solution = self.read_solution.recv()
             raw_solution &= 7
             self.solution[:] = (raw_solution.astype(np.int8) >> 2) & 1
+            self.solution_step = abs(timestep)
             self.min_cost = cost[0]
-            self.solution_step = abs(req_stop[0])
 
             if cost[0] < 0:
-                print(f"Host: received a better solution at step {req_stop[0]}"
-                      f" with cost {cost[0]}: {self.solution}")
+                print(f"Host: better solution found at step {abs(timestep)} "
+                      f"with cost {cost[0]}: {self.solution}")
 
             if self.min_cost is not None and self.min_cost <= self.target_cost:
                 print(f"Host: network reached target cost {self.target_cost}.")
 
-            if req_stop[0] >= 0:
+            if timestep >= 0:
                 self._req_pause = True

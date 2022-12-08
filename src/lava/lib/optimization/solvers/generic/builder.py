@@ -78,10 +78,10 @@ class SolverProcessBuilder:
             used to ensemble the necessary variables and ports with their shape
             and initial values deriving from the problem specification.
         hyperparameters: dict
-            A dictionary specifying values for steps_to_fire, noise_amplitude,
-            step_size and init_value. All but the last are integers, the initial
-            value is an array-like of initial values for the variables defining
-            the problem.
+            A dictionary specifying values for temperature and init_value.
+            Both are array-like of. init_value defines initial values for the
+            variables defining the problem. The temperature provides the
+            level of noise.
         """
         self._create_process_constructor(problem, hyperparameters)
         SolverProcess = type("OptimizationSolverProcess",
@@ -132,10 +132,10 @@ class SolverProcessBuilder:
             and ports with their shape and initial values deriving from the
             problem specification.
         hyperparameters: dict
-            A dictionary specifying values for steps_to_fire, noise_amplitude,
-            step_size and init_value. All but the last are integers, the initial
-            value is an array-like of initial values for the variables defining
-            the problem.
+            A dictionary specifying values for temperature and init_value.
+            Both are array-like of. init_value defines initial values for the
+            variables defining the problem. The temperature provides the
+            level of noise.
         """
 
         def constructor(self,
@@ -180,6 +180,11 @@ class SolverProcessBuilder:
             self.feasibility = Var(shape=(1,))
             self.solution_step = Var(shape=(1,))
 
+            # TODO: DELETE THIS AGAIN!
+            self.debug = Var(
+                shape=(problem.variables.num_variables,)
+            )
+
         self._process_constructor = constructor
 
     def _create_model_constructor(self, target_cost: int):
@@ -197,6 +202,15 @@ class SolverProcessBuilder:
         def constructor(self, proc):
             variables = VariablesImplementation()
             if hasattr(proc, "discrete_variables"):
+                # ADD INIT_STATE HERE
+                # ASSERT THAT USER DOES NOT PROVIDE INITIAL STATE
+                # ADD TODO, needs to be generalized
+                init_value = proc.hyperparameters.get("init_value", np.zeros(
+                    proc.discrete_variables.shape))
+                q_off_diag = proc.cost_coefficients[2].init
+                q_diag = proc.cost_coefficients[1].init
+                proc.hyperparameters['init_state'] = q_off_diag @ init_value \
+                    + q_diag
                 variables.discrete = DiscreteVariablesProcess(
                     shape=proc.discrete_variables.shape,
                     cost_diagonal=proc.cost_diagonal,
@@ -231,6 +245,9 @@ class SolverProcessBuilder:
                 macrostate_reader.cost_convergence_check = c
                 variables.local_cost.connect(macrostate_reader.cost_in)
                 proc.vars.optimality.alias(macrostate_reader.min_cost)
+
+            # TODO: DELETE THIS AGAIN!!!
+            proc.vars.debug.alias(variables.discrete.debug)
 
             # Variable aliasing
             proc.vars.variable_assignment.alias(macrostate_reader.solution)

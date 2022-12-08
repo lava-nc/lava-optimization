@@ -26,7 +26,6 @@ class AbstractScif(AbstractProcess):
             noise_amplitude: ty.Optional[int] = 0) -> None:
         """
         Stochastic Constraint Integrate and Fire neuron Process.
-
         Parameters
         ----------
         shape: Tuple
@@ -98,3 +97,48 @@ class QuboScif(AbstractScif):
         # User provides a desired precision. We convert it to the amount by
         # which unsigned 16-bit noise is right-shifted:
         self.noise_shift = Var(shape=shape, init=noise_shift)
+
+
+class Boltzmann(AbstractProcess):
+    """Stochastic Constraint Integrate-and-Fire neurons to solve QUBO
+    problems.
+    """
+
+    def __init__(self,
+                 *,
+                 shape: ty.Tuple[int, ...],
+                 temperature: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
+                 refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
+                 init_value=0,
+                 init_state=0):
+        """
+         Stochastic Constraint Integrate and Fire neuron Process.
+
+         Parameters
+         ----------
+         shape: Tuple
+             Number of neurons. Default is (1,).
+         temperature: ArrayLike
+             Temperature of the system, defining the level of noise.
+         """
+        super().__init__(shape=shape)
+
+        self.a_in = InPort(shape=shape)
+        self.s_sig_out = OutPort(shape=shape)
+        self.s_wta_out = OutPort(shape=shape)
+
+        self.spk_hist = Var(shape=shape,
+                            init=np.zeros(shape=shape).astype(int) + init_value)
+
+        self.temperature = Var(shape=shape, init=int(temperature))
+
+        self.refract = Var(shape=shape, init=refract)
+
+        self.debug = Var(shape=shape, init=0)
+
+        # Initial state determined in DiscreteVariables
+        self.state = Var(shape=shape, init=init_state.astype(int))
+
+        @property
+        def shape(self) -> ty.Tuple[int, ...]:
+            return self.proc_params['shape']

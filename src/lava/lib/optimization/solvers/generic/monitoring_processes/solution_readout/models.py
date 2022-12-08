@@ -16,7 +16,6 @@ from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 @requires(CPU)
 class SolutionReadoutPyModel(PyLoihiProcessModel):
     """CPU model for the SolutionReadout process.
-
     The process receives two types of messages, an updated cost and the state of
     the solver network representing the current candidate solution to an
     OptimizationProblem. Additionally, a target cost can be defined by the
@@ -43,6 +42,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             # The following casts cost as a signed 24-bit value (8 = 32 - 24)
             cost = (raw_cost.astype(np.int32) << 8) >> 8
             raw_solution = self.read_solution.recv()
+            raw_solution &= 7
             self.solution[:] = (raw_solution.astype(np.int8) >> 2) & 1
             self.min_cost = cost[0]
             self.solution_step = abs(req_stop[0])

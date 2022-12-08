@@ -29,10 +29,10 @@ class TestSolverTuner(unittest.TestCase):
 
     def setUp(self) -> None:
         """Setup test environment for `SolverTuner` class."""
-        self.search_space = [(1, 0), (1, 10), (20, 0), (20, 10)]
-        self.params_names = ['step_size', 'noise_amplitude']
+        self.search_space = [(0,), (1,)]
+        self.params_names = ['temperature']
         self.shuffle = True
-        self.seed = 42
+        self.seed = 41
         self.solver_tuner = SolverTuner(search_space=self.search_space,
                                         params_names=self.params_names,
                                         shuffle=self.shuffle,
@@ -86,8 +86,7 @@ class TestSolverTuner(unittest.TestCase):
     def test_generate_grid_util(self):
         """Tests `generate_grid` method produces the correct search space."""
         params_domains = {
-            'step_size': (1, 20),
-            'noise_amplitude': (0, 10)
+            'temperature': (0, 1),
         }
         gen_search_space, gen_params_names = SolverTuner.generate_grid(
             params_domains=params_domains
@@ -102,13 +101,12 @@ class TestSolverTuner(unittest.TestCase):
         problem."""
 
         solver, solver_params = prepare_solver_and_params()
-        correct_best_hyperparams = {"step_size": 20, "noise_amplitude": 10}
 
         def fitness(cost, step_to_sol):
             return - step_to_sol if cost <= solver_params['target_cost'] \
                 else - float("inf")
 
-        fitness_target = -200
+        fitness_target = -21
 
         hyperparams, success = self.solver_tuner.tune(
             solver=solver,
@@ -117,7 +115,11 @@ class TestSolverTuner(unittest.TestCase):
             fitness_target=fitness_target
         )
 
-        self.assertEqual(hyperparams, correct_best_hyperparams)
+        print(hyperparams)
+
+        correct_best_temperature = 1
+
+        self.assertEqual(hyperparams['temperature'], correct_best_temperature)
         self.assertTrue(success)
 
 

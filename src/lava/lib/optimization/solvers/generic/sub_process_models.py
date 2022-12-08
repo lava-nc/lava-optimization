@@ -12,7 +12,8 @@ import numpy as np
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     CostConvergenceChecker,
     DiscreteVariablesProcess,
-    StochasticIntegrateAndFire)
+    StochasticIntegrateAndFire,
+    BoltzmannAbstract)
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.model.py.model import PyLoihiProcessModel
@@ -31,7 +32,8 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.decorator import implements, requires, tag
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 
-from lava.lib.optimization.solvers.generic.scif.process import QuboScif
+from lava.lib.optimization.solvers.generic.scif.process import QuboScif, \
+    Boltzmann
 
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
@@ -55,20 +57,17 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             wta_weight
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
-        step_size = proc.hyperparameters.get("step_size", 10)
-        noise_amplitude = proc.hyperparameters.get("noise_amplitude", 1)
-        noise_precision = proc.hyperparameters.get("noise_precision", 8)
-        steps_to_fire = proc.hyperparameters.get("steps_to_fire", 10)
+        temperature = proc.hyperparameters.get("temperature", 1)
+        refract = proc.hyperparameters.get("refract", 0)
         init_value = proc.hyperparameters.get("init_value", np.zeros(shape))
-        init_state = proc.hyperparameters.get("init_value", np.zeros(shape))
-        self.s_bit = StochasticIntegrateAndFire(step_size=step_size,
-                                                init_state=init_state,
-                                                shape=shape,
-                                                noise_amplitude=noise_amplitude,
-                                                noise_precision=noise_precision,
-                                                steps_to_fire=steps_to_fire,
-                                                cost_diagonal=diagonal,
-                                                init_value=init_value)
+        init_state = proc.hyperparameters.get("init_state", np.zeros(shape))
+
+        self.s_bit = BoltzmannAbstract(temperature=temperature,
+                                       refract=refract,
+                                       init_state=init_state,
+                                       shape=shape,
+                                       cost_diagonal=diagonal,
+                                       init_value=init_value)
         if weights.shape != (0, 0):
             self.dense = Dense(weights=weights)
             self.s_bit.out_ports.messages.connect(self.dense.in_ports.s_in)
@@ -83,6 +82,9 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             proc.out_ports.local_cost
         )
         proc.vars.variable_assignment.alias(self.s_bit.prev_assignment)
+
+        # todo: delete debug variable
+        proc.vars.debug.alias(self.s_bit.debug)
 
 
 @implements(proc=CostConvergenceChecker, protocol=LoihiProtocol)
@@ -120,7 +122,6 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
 @requires(Loihi2NeuroCore)
 class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
     """Model for the StochasticIntegrateAndFire process.
-
     The process is just a wrapper over the QuboScif process.
     # Todo deprecate in favour of QuboScif.
     """
@@ -153,7 +154,6 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
 @requires(CPU)
 class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
     """CPU Model for the StochasticIntegrateAndFire process.
-
     The model computes stochastic gradient and local cost both based on
     the input received from the recurrent connectivity ot other units.
     # Todo deprecate in favour of QuboScif.
@@ -213,3 +213,32 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
 
     def is_satisfied(self, prev_assignment, integration):
         return np.logical_and(prev_assignment, np.logical_not(integration))
+
+
+@implements(proc=BoltzmannAbstract, protocol=LoihiProtocol)
+@requires(Loihi2NeuroCore)
+class BoltzmannAbstractModel(AbstractSubProcessModel):
+    """Model for the StochasticIntegrateAndFire process.
+
+    The process is just a wrapper over the Boltzmann process.
+    # Todo deprecate in favour of Boltzmann.
+    """
+
+    def __init__(self, proc):
+        shape = proc.proc_params.get("shape", (1,))
+        temperature = proc.proc_params.get("temperature", (1,))
+        refract = proc.proc_params.get("refract", (1,))
+        init_value = proc.proc_params.get("init_value", np.zeros(shape))
+        init_state = proc.proc_params.get("init_state", np.zeros(shape))
+        self.scif = Boltzmann(shape=shape,
+                              temperature=temperature,
+                              refract=refract,
+                              init_value=init_value,
+                              init_state=init_state)
+        proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
+        self.scif.s_wta_out.connect(proc.out_ports.messages)
+        self.scif.s_sig_out.connect(proc.out_ports.local_cost)
+
+        proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
+        proc.vars.state.alias(self.scif.vars.state)
+        proc.vars.debug.alias(self.scif.vars.debug)

@@ -165,7 +165,6 @@ class TestCspScifModels(unittest.TestCase):
         num_epochs = 5
         num_steps = (
             (theta // step_size) + num_epochs * total_period + inj_times[1]
-
         )
         v_scif, v_lif_wta, v_lif_sig = self.run_test(
             num_steps=num_steps,

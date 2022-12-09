@@ -25,8 +25,6 @@ class ReadGatePyModel(PyLoihiProcessModel):
     best_solution: int = LavaPyType(int, np.int32, 32)
     cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                    precision=32)
-    acknowledgement: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                           precision=32)
     cost_out: PyOutPort = LavaPyType(
         PyOutPort.VEC_DENSE, np.int32, precision=32
     )
@@ -36,16 +34,13 @@ class ReadGatePyModel(PyLoihiProcessModel):
     send_pause_request: PyOutPort = LavaPyType(
         PyOutPort.VEC_DENSE, np.int32, precision=32
     )
-    solution_reader = LavaPyType(PyRefPort.VEC_DENSE, np.int32,
-                                 precision=32)
+    solution_reader = LavaPyType(PyRefPort.VEC_DENSE, np.int32, precision=32)
     min_cost: int = None
     solution: np.ndarray = None
 
     def post_guard(self):
         """Decide whether to run post management phase."""
-        if self.min_cost:
-            return True
-        return False
+        return True if self.min_cost else False
 
     def run_spk(self):
         """Execute spiking phase, integrate input, update dynamics and
@@ -55,11 +50,11 @@ class ReadGatePyModel(PyLoihiProcessModel):
             self.min_cost = cost[0]
             self.cost_out.send(np.array([0]))
         elif self.solution is not None:
-            pause_request = - np.array([self.time_step])
+            timestep = - np.array([self.time_step])
             if self.min_cost <= self.target_cost:
-                pause_request = - pause_request
-            self.cost_out.send(np.asarray([self.min_cost]))
-            self.send_pause_request.send(pause_request)
+                self._req_pause = True
+            self.cost_out.send(np.array([self.min_cost]))
+            self.send_pause_request.send(timestep)
             self.solution_out.send(self.solution)
             self.solution = None
             self.min_cost = None
@@ -68,6 +63,4 @@ class ReadGatePyModel(PyLoihiProcessModel):
 
     def run_post_mgmt(self):
         """Execute post management phase."""
-        self._req_pause = True
         self.solution = self.solution_reader.read()
-        self._req_pause = False

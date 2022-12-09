@@ -261,7 +261,7 @@ class SolverProcessBuilder:
                 macrostate_reader.solution_readout_cost_in
             )
             macrostate_reader.read_gate_req_stop.connect(
-                macrostate_reader.solution_readout_req_stop_in
+                macrostate_reader.solution_readout_timestep_in
             )
             macrostate_reader.ref_port.connect_var(
                 variables.variables_assignment
@@ -269,8 +269,6 @@ class SolverProcessBuilder:
             )
             macrostate_reader.read_gate_solution_out.connect(
                 macrostate_reader.solution_readout_solution_in)
-            macrostate_reader.solution_readout.acknowledgement.connect(
-                macrostate_reader.read_gate.acknowledgement)
             cost_minimizer.gradient_out.connect(variables.gradient_in)
             variables.state_out.connect(cost_minimizer.state_in)
             self.macrostate_reader = macrostate_reader

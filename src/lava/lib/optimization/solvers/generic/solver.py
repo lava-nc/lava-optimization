@@ -30,7 +30,6 @@ from lava.lib.optimization.solvers.generic.read_gate.models import \
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed
 from lava.lib.optimization.solvers.generic.scif.process import Boltzmann
-from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -178,6 +177,8 @@ class OptimizationSolver:
         solution: npt.ArrayLike
             Candidate solution to the input optimization problem.
         """
+        if timeout < 0:
+            raise NotImplementedError("The timeout must be > 0.")
         target_cost = self._validated_cost(target_cost)
         hyperparameters = hyperparameters or self.hyperparameters
         self._create_solver_process(self.problem,
@@ -186,16 +187,10 @@ class OptimizationSolver:
                                     hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 40
+        self.solver_process._log_config.level = 20
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        if timeout == -1:
-            self.solver_process.wait()
         self._update_report(target_cost=target_cost)
-
-        debug_var = self.solver_process.debug.get()
-
         self.solver_process.stop()
-
         return self._report["best_state"]
 
     def measure_time_to_solution(
@@ -232,8 +227,8 @@ class OptimizationSolver:
         time_to_solution: npt.ArrayLike
             Total time to solution in seconds.
         """
-        if timeout == -1:
-            raise ValueError("For time measurements timeout " "cannot be -1")
+        if timeout < 0:
+            raise NotImplementedError("The timeout must be > 0.")
         if backend not in NEUROCORES:
             raise ValueError(f"Time measurement can only be performed on "
                              f"Loihi2 backend, got {backend}.")
@@ -246,18 +241,15 @@ class OptimizationSolver:
                                     hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 40
 
         from lava.utils.profiler import Profiler
         self._profiler = Profiler.init(run_cfg)
-        self._profiler.execution_time_probe(num_steps=timeout - 1)
+        self._profiler.execution_time_probe(num_steps=timeout + 1)
 
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        time_to_solution = float(np.sum(self._profiler.execution_time))
-        self._update_report(target_cost=target_cost,
-                            time_to_solution=time_to_solution)
+        self._update_report(target_cost=target_cost)
         self.solver_process.stop()
-        return time_to_solution
+        return self._profiler.execution_time
 
     def measure_energy_to_solution(
             self,
@@ -292,8 +284,8 @@ class OptimizationSolver:
         energy_to_solution: npt.ArrayLike
             Total energy to solution in Joule.
         """
-        if timeout == -1:
-            raise ValueError("For time measurements timeout " "cannot be -1")
+        if timeout < 0:
+            raise NotImplementedError("The timeout must be > 0.")
         if backend not in NEUROCORES:
             raise ValueError(f"Enegy measurement can only be performed on "
                              f"Loihi2 backend, got {backend}.")
@@ -306,19 +298,16 @@ class OptimizationSolver:
                                     hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 40
 
         from lava.utils.profiler import Profiler
         self._profiler = Profiler.init(run_cfg)
-        self._profiler.execution_time_probe(num_steps=timeout - 1)
-        self._profiler.energy_probe(num_steps=timeout - 1)
+        self._profiler.execution_time_probe(num_steps=timeout + 1)
+        self._profiler.energy_probe(num_steps=timeout + 1)
 
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        energy_to_solution = float(self._profiler.energy)
-        self._update_report(target_cost=target_cost,
-                            energy_to_solution=energy_to_solution)
+        self._update_report(target_cost=target_cost)
         self.solver_process.stop()
-        return energy_to_solution
+        return self._profiler.energy
 
     def _update_report(self, target_cost=None,
                        time_to_solution=None,
@@ -417,7 +406,4 @@ class OptimizationSolver:
         return int(target_cost)
 
     def _get_run_condition(self, timeout):
-        if timeout == -1:
-            return RunContinuous()
-        else:
-            return RunSteps(num_steps=timeout + 1)
+        return RunSteps(num_steps=timeout + 1)

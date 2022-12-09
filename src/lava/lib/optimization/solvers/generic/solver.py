@@ -30,7 +30,6 @@ from lava.lib.optimization.solvers.generic.read_gate.models import \
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed
 from lava.lib.optimization.solvers.generic.scif.process import Boltzmann
-from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]

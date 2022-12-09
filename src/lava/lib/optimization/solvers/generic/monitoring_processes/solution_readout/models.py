@@ -31,11 +31,8 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
                                        precision=32)
     target_cost: int = LavaPyType(int, np.int32, 32)
     min_cost: int = LavaPyType(int, np.int32, 32)
-    stop = False
 
     def run_spk(self):
-        if self.stop:
-            return
         raw_cost = self.cost_in.recv()
 
         if raw_cost[0] != 0:
@@ -54,6 +51,3 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 
             if self.min_cost is not None and self.min_cost <= self.target_cost:
                 print(f"Host: network reached target cost {self.target_cost}.")
-
-            if timestep >= 0:
-                self.stop = True

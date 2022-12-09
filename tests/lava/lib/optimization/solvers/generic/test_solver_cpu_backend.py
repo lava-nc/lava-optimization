@@ -140,7 +140,7 @@ def solve_workload(q, reference_solution, noise_precision=3):
     problem = QUBO(q)
     np.random.seed(2)
     solver = OptimizationSolver(problem)
-    solution = solver.solve(timeout=10000,
+    solution = solver.solve(timeout=20000,
                             target_cost=expected_cost,
                             hyperparameters={'noise_precision': noise_precision}
                             )

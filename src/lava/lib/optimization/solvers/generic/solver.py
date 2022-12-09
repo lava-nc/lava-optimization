@@ -187,7 +187,7 @@ class OptimizationSolver:
                                     hyperparameters)
         run_cfg = self._get_run_config(backend)
         run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 40
+        self.solver_process._log_config.level = 20
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         self._update_report(target_cost=target_cost)
         self.solver_process.stop()

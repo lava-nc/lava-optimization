@@ -6,7 +6,7 @@ from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import SolutionReadout
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
-from lava.magma.core.model.py.ports import PyInPort, PyOutPort, PyRefPort
+from lava.magma.core.model.py.ports import PyInPort
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
@@ -31,10 +31,12 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
                                        precision=32)
     target_cost: int = LavaPyType(int, np.int32, 32)
     min_cost: int = LavaPyType(int, np.int32, 32)
+    stop = False
 
     def run_spk(self):
+        if self.stop:
+            return
         raw_cost = self.cost_in.recv()
-
         if raw_cost[0] != 0:
             timestep = self.timestep_in.recv()[0]
             # The following casts cost as a signed 24-bit value (8 = 32 - 24)
@@ -51,3 +53,6 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 
             if self.min_cost is not None and self.min_cost <= self.target_cost:
                 print(f"Host: network reached target cost {self.target_cost}.")
+
+            if timestep > 0:
+                self.stop = True

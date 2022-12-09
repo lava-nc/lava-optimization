@@ -52,7 +52,6 @@ class ReadGatePyModel(PyLoihiProcessModel):
         elif self.solution is not None:
             timestep = - np.array([self.time_step])
             if self.min_cost <= self.target_cost:
-                timestep = - timestep
                 self._req_pause = True
             self.cost_out.send(np.array([self.min_cost]))
             self.send_pause_request.send(timestep)

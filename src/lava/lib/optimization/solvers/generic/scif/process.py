@@ -21,9 +21,11 @@ class AbstractScif(AbstractProcess):
             self,
             *,
             shape: ty.Tuple[int, ...],
-            step_size: ty.Optional[int] = 1,
+            step_size: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
             theta: ty.Optional[int] = 4,
-            noise_amplitude: ty.Optional[int] = 0) -> None:
+            sustained_on_tau: ty.Optional[int] = 0,
+            noise_amplitude: ty.Optional[int] = 0,
+            noise_precision: ty.Optional[int] = 0) -> None:
         """
         Stochastic Constraint Integrate and Fire neuron Process.
 
@@ -32,10 +34,25 @@ class AbstractScif(AbstractProcess):
         shape: Tuple
             Number of neurons. Default is (1,).
         step_size: int
-            bias current driving the SCIF neuron. Default is 1 (arbitrary).
+            The bias driving a SCIF neuron. Default is arbitrarily chosen to
+            be 1. In the case of quadratic unconstrained binary optimization
+            (QUBO) problems, `step_size` is the vector formed by the diagonal
+            elements of the cost matrix.
         theta: int
-            threshold above which a SCIF neuron would fire winner-take-all
-            spike. Default is 4 (arbitrary).
+            The threshold above which a SCIF neuron would fire a winner-take-all
+            spike. Default is arbitrarily chosen to be 4.
+        sustained_on_tau: int
+            The time constant for which a SCIF neuron's state is considered
+            to be "ON". The neuron issues a +1 spike when it crosses `theta`,
+            signifying the beginning of the "ON" period and issues a -1 spike
+            at the end of `sustained_on_tau` steps, signifying the end of the
+            "ON" period.
+        noise_amplitude: int
+            The multiplicative amplitude of pseudorandom noise added to SCIF
+            dynamics.
+        noise_precision: int
+            The precision (in bits) of the pseudorandom noise added to SCIF
+            dynamics.
         """
         super().__init__(shape=shape)
 
@@ -44,10 +61,16 @@ class AbstractScif(AbstractProcess):
         self.s_wta_out = OutPort(shape=shape)
 
         self.state = Var(shape=shape, init=np.zeros(shape=shape).astype(int))
+        self.cnstr_intg = Var(shape=shape, init=np.zeros(shape=shape).astype(
+            int))
         self.spk_hist = Var(shape=shape, init=np.zeros(shape=shape).astype(int))
+        self.state_hist = Var(shape=shape,
+                              init=np.zeros(shape=shape).astype(int))
         self.noise_ampl = Var(shape=shape, init=noise_amplitude)
+        self.noise_prec = Var(shape=shape, init=noise_precision)
+        self.step_size = Var(shape=shape, init=step_size)
 
-        self.step_size = Var(shape=shape, init=int(step_size))
+        self.sustained_on_tau = Var(shape=(1,), init=sustained_on_tau)
         self.theta = Var(shape=(1,), init=int(theta))
 
     @property
@@ -64,16 +87,16 @@ class CspScif(AbstractScif):
                  shape: ty.Tuple[int, ...],
                  step_size: ty.Optional[int] = 1,
                  theta: ty.Optional[int] = 4,
-                 neg_tau_ref: ty.Optional[int] = -5,
-                 noise_amplitude: ty.Optional[int] = 0):
+                 sustained_on_tau: ty.Optional[int] = -5,
+                 noise_amplitude: ty.Optional[int] = 0,
+                 noise_precision: ty.Optional[int] = 8):
 
         super(CspScif, self).__init__(shape=shape,
                                       step_size=step_size,
                                       theta=theta,
-                                      noise_amplitude=noise_amplitude)
-        self.neg_tau_ref = Var(shape=(1,), init=int(neg_tau_ref))
-        self.cnstr_intg = Var(shape=shape, init=np.zeros(shape=shape).astype(
-            int))
+                                      sustained_on_tau=sustained_on_tau,
+                                      noise_amplitude=noise_amplitude,
+                                      noise_precision=noise_precision)
 
 
 class QuboScif(AbstractScif):
@@ -85,16 +108,16 @@ class QuboScif(AbstractScif):
                  *,
                  shape: ty.Tuple[int, ...],
                  cost_diag: npty.NDArray,
-                 step_size: ty.Optional[int] = 1,
                  theta: ty.Optional[int] = 4,
+                 sustained_on_tau: ty.Optional[int] = 0,
                  noise_amplitude: ty.Optional[int] = 0,
-                 noise_shift: ty.Optional[int] = 8):
+                 noise_precision: ty.Optional[int] = 8):
 
         super(QuboScif, self).__init__(shape=shape,
-                                       step_size=step_size,
+                                       step_size=cost_diag,
                                        theta=theta,
-                                       noise_amplitude=noise_amplitude)
+                                       sustained_on_tau=sustained_on_tau,
+                                       noise_amplitude=noise_amplitude,
+                                       noise_precision=noise_precision)
+
         self.cost_diagonal = Var(shape=shape, init=cost_diag)
-        # User provides a desired precision. We convert it to the amount by
-        # which unsigned 16-bit noise is right-shifted:
-        self.noise_shift = Var(shape=shape, init=noise_shift)

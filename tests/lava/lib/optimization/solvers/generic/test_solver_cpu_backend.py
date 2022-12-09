@@ -41,8 +41,12 @@ class TestOptimizationSolver(unittest.TestCase):
     def test_solve_method(self):
         print("test_solve_method")
         np.random.seed(2)
-        solution = self.solver.solve(timeout=200, target_cost=-11,
-                                     backend="CPU")
+        solution = self.solver.solve(timeout=200,
+                                     target_cost=-100,
+                                     backend="CPU",
+                                     hyperparameters={'noise_precision': 6,
+                                                      'noise_amplitude': 1,
+                                                      'sustained_on_tau': -3})
         print(solution)
         self.assertTrue((solution == self.solution).all())
 
@@ -142,14 +146,18 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertTrue(t_start - t_end < 1)
 
 
-def solve_workload(q, reference_solution, noise_precision=3):
+def solve_workload(q, reference_solution, noise_precision=3,
+                   sustained_on_tau=-3):
     expected_cost = reference_solution @ q @ reference_solution
     problem = QUBO(q)
     np.random.seed(2)
     solver = OptimizationSolver(problem)
-    solution = solver.solve(timeout=-1,
+    solution = solver.solve(timeout=500,
                             target_cost=expected_cost,
-                            hyperparameters={'noise_precision': noise_precision}
+                            hyperparameters={'noise_precision': noise_precision,
+                                             'sustained_on_tau':
+                                                 sustained_on_tau,
+                                             'threshold': 10}
                             )
     cost = solution @ q @ solution
     return solution, cost, expected_cost
@@ -167,7 +175,8 @@ class TestWorkloads(unittest.TestCase):
                       [0, 0, 5, -6]])
         reference_solution = np.asarray([1, 0, 0, 1]).astype(int)
         solution, cost, expected_cost = solve_workload(q, reference_solution,
-                                                       noise_precision=5)
+                                                       noise_precision=5,
+                                                       sustained_on_tau=-3)
         print(solution)
         self.assertEqual(cost, expected_cost)
 
@@ -179,7 +188,8 @@ class TestWorkloads(unittest.TestCase):
 
         reference_solution = np.zeros(4)
         np.put(reference_solution, [1, 2], 1)
-        solution, cost, expected_cost = solve_workload(q, reference_solution)
+        solution, cost, expected_cost = solve_workload(q, reference_solution,
+                                                       sustained_on_tau=-3)
         self.assertEqual(cost, expected_cost)
 
     def test_solve_max_cut_problem(self):
@@ -191,7 +201,8 @@ class TestWorkloads(unittest.TestCase):
                        [0, 0, -1, -1, 2]])
         reference_solution = np.zeros(5)
         np.put(reference_solution, [1, 2], 1)
-        solution, cost, expected_cost = solve_workload(q, reference_solution)
+        solution, cost, expected_cost = solve_workload(q, reference_solution,
+                                                       noise_precision=5)
         self.assertEqual(cost, expected_cost)
 
     def test_solve_set_partitioning(self):
@@ -204,7 +215,7 @@ class TestWorkloads(unittest.TestCase):
         reference_solution = np.zeros(6)
         np.put(reference_solution, [0, 4], 1)
         solution, cost, expected_cost = solve_workload(q, reference_solution,
-                                                       noise_precision=5)
+                                                       noise_precision=6)
         self.assertEqual(cost, expected_cost)
 
     def test_solve_map_coloring(self):
@@ -226,8 +237,9 @@ class TestWorkloads(unittest.TestCase):
         reference_solution = np.zeros(15)
         np.put(reference_solution, [1, 3, 8, 10, 14], 1)
         solution, cost, expected_cost = solve_workload(q, reference_solution,
-                                                       noise_precision=5)
-        self.assertEqual(cost, expected_cost)
+                                                       noise_precision=8,
+                                                       sustained_on_tau=-5)
+        self.assertEqual(expected_cost, cost)
 
 
 if __name__ == "__main__":

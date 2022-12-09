@@ -40,9 +40,16 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 
         if raw_cost[0] != 0:
             req_stop = self.req_stop_in.recv()
+            # print(f"SLRT: {self.time_step=}\t{req_stop=}")
             # The following casts cost as a signed 24-bit value (8 = 32 - 24)
             cost = (raw_cost.astype(np.int32) << 8) >> 8
             raw_solution = self.read_solution.recv()
+            # print(f"\nSLRT: {self.time_step=}{raw_solution=}")
+            # ToDo: The following way of reading out solutions only works
+            #  when the solutions are binary, i.e., QUBO problems. It relies
+            #  on the assumption that `solution' is the spiking history of the
+            #  neurons solving a problem and picks the spiking history from 3
+            #  timesteps ago, when the minimum cost was actually achieved.
             self.solution[:] = (raw_solution.astype(np.int8) >> 2) & 1
             self.min_cost = cost[0]
             self.solution_step = abs(req_stop[0])

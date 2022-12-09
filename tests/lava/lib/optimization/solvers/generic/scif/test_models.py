@@ -6,6 +6,8 @@ import unittest
 import numpy as np
 from typing import Tuple, Dict
 
+from lava.lib.optimization.solvers.generic.scif.models import \
+    PyModelQuboScifFixed, PyModelQuboScifRefracFixed
 from lava.magma.core.run_configs import Loihi2SimCfg
 from lava.magma.core.run_conditions import RunSteps
 from lava.lib.optimization.solvers.generic.scif.process import CspScif, QuboScif
@@ -40,7 +42,7 @@ class TestCspScifModels(unittest.TestCase):
         csp_scif = CspScif(shape=(num_neurons,),
                            step_size=step_size,
                            theta=theta,
-                           neg_tau_ref=neg_tau_ref)
+                           sustained_on_tau=neg_tau_ref)
         dense_wta = Dense(weights=wt * np.eye(num_neurons),
                           num_message_bits=16)
         dense_sig = Dense(weights=wt * np.eye(num_neurons),
@@ -160,6 +162,7 @@ class TestCspScifModels(unittest.TestCase):
                                                      neg_tau_ref=neg_tau_ref,
                                                      wt=wt,
                                                      t_inj_spk=t_inj_spk)
+
         # Test pre-inhibitory-injection SCIF voltage and spiking
         spk_idxs_pre_inj = np.array([theta // step_size]).astype(int) - 1
         wta_pos_spk_pre_inj = spk_idxs_pre_inj + 1
@@ -289,7 +292,10 @@ class TestQuboScifModels(unittest.TestCase):
         dense_sig.a_out.connect(lif_sig.a_in)
 
         run_condition = RunSteps(num_steps=1)
-        run_config = Loihi2SimCfg(select_tag=tag)
+        exception_dict = {QuboScif: PyModelQuboScifFixed}
+        # exception_dict = {QuboScif: PyModelQuboScifRefracFixed}
+        run_config = Loihi2SimCfg(select_tag=tag,
+                                  exception_proc_model_map=exception_dict)
 
         volts_scif = []
         volts_lif_wta = []

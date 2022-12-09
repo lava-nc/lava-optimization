@@ -194,18 +194,14 @@ class StochasticIntegrateAndFire(AbstractProcess):
             init_state: npt.ArrayLike = 0,
             noise_amplitude: npt.ArrayLike = 1,
             noise_precision: npt.ArrayLike = 8,
-            input_duration: npt.ArrayLike = 6,
-            min_state: npt.ArrayLike = 1000,
-            min_integration: npt.ArrayLike = -1000,
-            steps_to_fire: npt.ArrayLike = 10,
-            refractory_period: npt.ArrayLike = 1,
+            sustained_on_tau: npt.ArrayLike = -3,
+            threshold: npt.ArrayLike = 10,
             cost_diagonal: npt.ArrayLike = 0,
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
             init_value: npt.ArrayLike = 0,
     ) -> None:
         """
-
         Parameters
         ----------
         shape: tuple
@@ -218,23 +214,10 @@ class StochasticIntegrateAndFire(AbstractProcess):
             The width/range for the stochastic perturbation to the state
             variable. A random number within this range will be added to the
             state variable at each timestep.
-        input_duration: npt.ArrayLike, optional
-            Number of timesteps by which each input should be preserved.
-        min_state: npt.ArrayLike, optional
-            The minimum value for the state variable. The state variable will be
-            truncated at this value if updating results in a lower value.
-        min_integration: npt.ArrayLike, optional
-            The minimum value for the total input (addition of all valid inputs
-            at a given timestep). The total input value will be truncated at
-            this value if adding current and preserved inputs results in a lower
-            value.
         steps_to_fire: npt.ArrayLike, optional
             After how many timesteps would the dynamical system fire and reset
             without stochastic perturbation. Note that if noise_amplitude > 0,
             the system will stochastically deviate from this value.
-        refractory_period: npt.ArrayLike, optional
-            Number of timesteps to wait after firing and reset before resuming
-            updating.
         cost_diagonal: npt.ArrayLike, optional
             The linear coefficients on the cost function of the optimization
             problem where this system will be used.
@@ -251,11 +234,8 @@ class StochasticIntegrateAndFire(AbstractProcess):
             step_size=step_size,
             noise_amplitude=noise_amplitude,
             noise_precision=noise_precision,
-            input_duration=input_duration,
-            min_state=min_state,
-            min_integration=min_integration,
-            steps_to_fire=steps_to_fire,
-            refractory_period=refractory_period,
+            sustained_on_tau=sustained_on_tau,
+            threshold=threshold,
             cost_diagonal=cost_diagonal,
             name=name,
             log_config=log_config,
@@ -270,12 +250,8 @@ class StochasticIntegrateAndFire(AbstractProcess):
         self.state = Var(shape=shape, init=init_state)
         self.noise_amplitude = Var(shape=shape, init=noise_amplitude)
         self.noise_precision = Var(shape=shape, init=noise_precision)
-        self.input_duration = Var(shape=shape, init=input_duration)
-        self.min_state = Var(shape=shape, init=min_state)
-        self.min_integration = Var(shape=shape, init=min_integration)
-        self.steps_to_fire = Var(shape=shape, init=steps_to_fire)
-        self.refractory_period = Var(shape=shape, init=refractory_period)
-        self.firing = Var(shape=shape, init=init_value)
+        self.sustained_on_tau = Var(shape=(1,), init=sustained_on_tau)
+        self.threshold = Var(shape=shape, init=threshold)
         self.prev_assignment = Var(shape=shape, init=False)
         self.cost_diagonal = Var(shape=shape, init=cost_diagonal)
         self.assignment = Var(shape=shape, init=False)

@@ -127,8 +127,9 @@ class Boltzmann(AbstractProcess):
         self.s_sig_out = OutPort(shape=shape)
         self.s_wta_out = OutPort(shape=shape)
 
-        self.spk_hist = Var(shape=shape,
-                            init=np.zeros(shape=shape).astype(int) + init_value)
+        self.spk_hist = Var(
+            shape=shape, init=(np.zeros(shape=shape) + init_value).astype(int)
+        )
 
         self.temperature = Var(shape=shape, init=int(temperature))
 

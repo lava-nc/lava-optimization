@@ -59,8 +59,10 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         )
         temperature = proc.hyperparameters.get("temperature", 1)
         refract = proc.hyperparameters.get("refract", 0)
-        init_value = proc.hyperparameters.get("init_value", np.zeros(shape))
-        init_state = proc.hyperparameters.get("init_state", np.zeros(shape))
+        init_value = proc.hyperparameters.get("init_value", np.zeros(shape,
+                                                                     dtype=int))
+        init_state = proc.hyperparameters.get("init_state", np.zeros(shape,
+                                                                     dtype=int))
 
         self.s_bit = BoltzmannAbstract(temperature=temperature,
                                        refract=refract,

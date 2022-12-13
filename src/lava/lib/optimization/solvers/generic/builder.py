@@ -206,7 +206,7 @@ class SolverProcessBuilder:
                 # ASSERT THAT USER DOES NOT PROVIDE INITIAL STATE
                 # ADD TODO, needs to be generalized
                 init_value = proc.hyperparameters.get("init_value", np.zeros(
-                    proc.discrete_variables.shape))
+                    proc.discrete_variables.shape, dtype=int))
                 q_off_diag = proc.cost_coefficients[2].init
                 q_diag = proc.cost_coefficients[1].init
                 proc.hyperparameters['init_state'] = q_off_diag @ init_value \

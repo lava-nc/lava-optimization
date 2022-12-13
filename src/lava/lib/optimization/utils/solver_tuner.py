@@ -39,8 +39,10 @@ class SolverTuner:
         self._shuffle = shuffle
         self._seed = seed
 
+        np.random.seed(seed=seed)
+
         if self._shuffle:
-            random.Random(seed).shuffle(self._search_space)
+            np.random.shuffle(self._search_space)
 
         self._store_dtype = SolverTuner._build_store_dtype(
             self._search_space, self._params_names
@@ -166,14 +168,16 @@ class SolverTuner:
     @shuffle.setter
     def shuffle(self, shuffle: bool) -> None:
         self._shuffle = shuffle
+        np.random.seed(seed=self._seed)
         if self._shuffle:
-            random.Random(self._seed).shuffle(self._search_space)
+            np.random.shuffle(self._search_space)
 
     @seed.setter
     def seed(self, seed: int) -> None:
         self._seed = seed
+        np.random.seed(seed=seed)
         if self._shuffle:
-            random.Random(self._seed).shuffle(self._search_space)
+            np.random.shuffle(self._search_space)
 
     @search_space.setter
     def search_space(self, search_space: list) -> None:
@@ -182,4 +186,5 @@ class SolverTuner:
         """
         self._search_space = list(search_space)
         if self._shuffle:
-            random.Random(self._seed).shuffle(self._search_space)
+            np.random.seed(seed=self._seed)
+            np.random.shuffle(self._search_space)

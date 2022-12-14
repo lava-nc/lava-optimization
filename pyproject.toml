@@ -10,7 +10,7 @@ packages = [
     {include = "tests"}
 ]
 include = ["tutorials"]
-version = "0.2.2"
+version = "0.2.3"
 description = "A library of solvers that leverage neuromorphic hardware for constrained optimization. Lava-Optimization is part of Lava Framework. Lava-optimization is part of Lava Framework"
 homepage = "https://lava-nc.org/"
 repository = "https://github.com/lava-nc/lava-optimization"
@@ -48,7 +48,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.8, <3.11"
 
-lava-nc = { git = "https://github.com/lava-nc/lava.git", branch = "main", develop = true }
+lava-nc = { git = "https://github.com/lava-nc/lava.git", tag = "v0.6.0", develop = true }
 
 numpy = "^1.23.1"
 networkx = "<=2.8"

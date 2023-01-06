@@ -3515,4 +3515,8 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8, <3.11"
+<<<<<<< Updated upstream
 content-hash = "3e988d54c4fbc7cfac3d62a06ab7559cef314f2f68cd6389568bdd6ef4b6549f"
+=======
+content-hash = "7a543c169792dd747c64cf500e27f7731b53afa25428fdc7d92e4cdd03a5ab8a"
+>>>>>>> Stashed changes

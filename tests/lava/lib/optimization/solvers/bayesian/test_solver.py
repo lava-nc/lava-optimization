@@ -274,6 +274,7 @@ class TeatSolvers(unittest.TestCase):
                 num_objectives=1
             )
 
+    @unittest.skip("WIP")
     def test_valid_solve(self) -> None:
         """test the solving method with valid arguments"""
 

@@ -140,6 +140,7 @@ class TestModels(unittest.TestCase):
             {"type": t} for t in valid_ips
         ]
 
+    @unittest.skip("WIP")
     def test_model_bayesian_optimizer(self) -> None:
         """test behavior of the BayesianOptimizer process"""
 

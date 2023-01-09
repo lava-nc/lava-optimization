@@ -165,10 +165,6 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
     def _gen_wta_spks(self, spk_hist_status, local_conflict):
         # Indices of WTA neurons signifying unsatisfied constraints, based on
         # buffered history from previous timestep
-        wta_enter_off_state = np.where(np.logical_and(spk_hist_status & 1,
-                                                      local_conflict))
-        # # Reset voltages of unsatisfied WTA
-        self.state[wta_enter_off_state] = 0
         # indices of neurons to be integrated:
         intg_idx = np.where(self.state >= 0)
         # indices of neurons in refractory:
@@ -177,6 +173,8 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         # Indices of WTA neurons that will spike and enter refractory
         wta_enter_on_state = self._integration_dynamics(intg_idx)
 
+        wta_enter_off_state = np.where(np.logical_and(spk_hist_status & 1,
+                                                      local_conflict))
         # Indices of WTA neurons coming out of refractory or those signifying
         # unsatisfied constraints
         wta_enter_off_state_2 = self._refractory_dynamics(rfct_idx,
@@ -265,28 +263,14 @@ class PyModelQuboScifFixed(PyModelAbstractScifFixed):
         super(PyModelQuboScifFixed, self).__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])
 
-    # def _get_local_validity_conflict(self, state_hist_status):
-    #     local_validity = self.cnstr_intg + self.cost_diagonal < 0
-    #     local_conflict = (1 - local_validity).astype(bool)
-    #
-    #     return local_validity, local_conflict
-
     def _gen_sig_spks(self, spk_hist_status, local_validity):
         s_sig = np.zeros_like(self.state)
 
         sig_spk_idx = np.where(np.logical_and(spk_hist_status & 1,
                                               local_validity))
-        # sig_unsat_idx = np.where(state_hist_status == 2)
         # Compute the local cost
         s_sig[sig_spk_idx] = self.cnstr_intg[sig_spk_idx] + \
             self.cost_diagonal[sig_spk_idx]
-        # s_sig[sig_unsat_idx] = - (self.cnstr_intg[sig_unsat_idx] +
-        #                           self.cost_diagonal[sig_unsat_idx])
-
-        # print(f"SCIF: {self.time_step=}\t{s_sig=}")
-        # print(f"{self.time_step=}\n{state_hist_status=}\n{s_sig=}\n"
-        #       f"{self.a_in_data=}\n{self.cost_diagonal=}\n{self.cnstr_intg=}\n"
-        #       f"{(state_hist_status   &  1)=}\n{local_validity.astype(int)=}")
 
         return s_sig
 

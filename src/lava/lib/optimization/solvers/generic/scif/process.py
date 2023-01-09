@@ -64,8 +64,6 @@ class AbstractScif(AbstractProcess):
         self.cnstr_intg = Var(shape=shape, init=np.zeros(shape=shape).astype(
             int))
         self.spk_hist = Var(shape=shape, init=np.zeros(shape=shape).astype(int))
-        self.state_hist = Var(shape=shape,
-                              init=np.zeros(shape=shape).astype(int))
         self.noise_ampl = Var(shape=shape, init=noise_amplitude)
         self.noise_prec = Var(shape=shape, init=noise_precision)
         self.step_size = Var(shape=shape, init=step_size)

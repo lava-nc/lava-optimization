@@ -42,8 +42,9 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             # The following casts cost as a signed 24-bit value (8 = 32 - 24)
             cost = (raw_cost.astype(np.int32) << 8) >> 8
             raw_solution = self.read_solution.recv()
-            raw_solution &= 7
-            self.solution[:] = (raw_solution.astype(np.int8) >> 2) & 1
+            raw_solution &= 0x1F  # Retain only last 5 bits
+            # The binary solution was attained 2 steps ago. Shift down by 4.
+            self.solution[:] = (raw_solution.astype(np.int8) >> 4)
             self.solution_step = abs(timestep)
             self.min_cost = cost[0]
 

@@ -57,19 +57,40 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             wta_weight
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
-        temperature = proc.hyperparameters.get("temperature", 1)
-        refract = proc.hyperparameters.get("refract", 0)
-        init_value = proc.hyperparameters.get("init_value", np.zeros(shape,
-                                                                     dtype=int))
-        init_state = proc.hyperparameters.get("init_state", np.zeros(shape,
-                                                                     dtype=int))
+        neuron_model = proc.hyperparameters.get("neuron_model", 'nebm')
+        if neuron_model == 'nebm':
+            temperature = proc.hyperparameters.get("temperature", 1)
+            refract = proc.hyperparameters.get("refract", 0)
+            init_value = proc.hyperparameters.get("init_value",
+                                                  np.zeros(shape, dtype=int))
+            init_state = proc.hyperparameters.get("init_state",
+                                                  np.zeros(shape, dtype=int))
 
-        self.s_bit = BoltzmannAbstract(temperature=temperature,
-                                       refract=refract,
-                                       init_state=init_state,
-                                       shape=shape,
-                                       cost_diagonal=diagonal,
-                                       init_value=init_value)
+            self.s_bit = BoltzmannAbstract(temperature=temperature,
+                                           refract=refract,
+                                           init_state=init_state,
+                                           shape=shape,
+                                           cost_diagonal=diagonal,
+                                           init_value=init_value)
+        elif neuron_model == 'scif':
+            step_size = proc.hyperparameters.get("step_size", 10)
+            noise_amplitude = proc.hyperparameters.get("noise_amplitude", 1)
+            noise_precision = proc.hyperparameters.get("noise_precision", 5)
+            steps_to_fire = proc.hyperparameters.get("steps_to_fire", 10)
+            init_value = proc.hyperparameters.get("init_value", np.zeros(shape))
+            init_state = proc.hyperparameters.get("init_value", np.zeros(shape))
+            on_tau = proc.hyperparameters.get("sustained_on_tau", (-3))
+            self.s_bit = \
+                StochasticIntegrateAndFire(shape=shape,
+                                           step_size=diagonal,
+                                           init_state=init_state,
+                                           init_value=init_value,
+                                           noise_amplitude=noise_amplitude,
+                                           noise_precision=noise_precision,
+                                           sustained_on_tau=on_tau,
+                                           cost_diagonal=diagonal)
+        else:
+            AssertionError("Unknown neuron model specified")
         if weights.shape != (0, 0):
             self.dense = Dense(weights=weights)
             self.s_bit.out_ports.messages.connect(self.dense.in_ports.s_in)
@@ -134,8 +155,8 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
         theta = proc.proc_params.get("threshold", (1,))
         cost_diagonal = proc.proc_params.get("cost_diagonal", (1,))
         noise_amplitude = proc.proc_params.get("noise_amplitude", (1,))
-        noise_precision = proc.proc_params.get("noise_precision", (1,))
-        sustained_on_tau = proc.proc_params.get("sustained_on_tau", (-3,))
+        noise_precision = proc.proc_params.get("noise_precision", (3,))
+        sustained_on_tau = proc.proc_params.get("sustained_on_tau", (-5,))
         self.scif = QuboScif(shape=shape,
                              cost_diag=cost_diagonal,
                              theta=theta,

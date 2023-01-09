@@ -256,6 +256,7 @@ class StochasticIntegrateAndFire(AbstractProcess):
         self.cost_diagonal = Var(shape=shape, init=cost_diagonal)
         self.assignment = Var(shape=shape, init=False)
         self.min_cost = Var(shape=shape, init=False)
+        self.debug = Var(shape=shape, init=0)
 
 
 class BoltzmannAbstract(AbstractProcess):

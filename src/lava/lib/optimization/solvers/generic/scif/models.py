@@ -28,7 +28,6 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
     cnstr_intg: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     state: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     spk_hist: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
-    state_hist: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
     step_size: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     theta: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
@@ -80,25 +79,24 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         prand = np.random.randint(0, 2 ** 24 - 1, size=self.state.size)
         ampl_prec = self._get_precision(self.noise_ampl)
         prand = \
-            self.noise_ampl * (((prand << (24 - self.noise_prec + ampl_prec)) &
-                                0xFFFFFF) >> (24 - self.noise_prec + ampl_prec))
+            self.noise_ampl * (
+                ((prand << (24 - self.noise_prec + ampl_prec)
+                  ) & 0xFFFFFF) >> (24 - self.noise_prec + ampl_prec))
         return prand
 
     def _update_buffers(self):
         # !! Side effect: Changes self.spk_hist !!
 
         # Populate the buffer for local computation
-        state_hist_buffer = self.state_hist.copy()
-        state_hist_buffer &= 3
-        self.state_hist <<= 2
-        self.state_hist &= 0xFF
-        self.spk_hist <<= 1
-        self.spk_hist &= 0xF
+        spk_hist_buffer = self.spk_hist.copy()
+        spk_hist_buffer &= 3
+        self.spk_hist <<= 2
+        self.spk_hist &= 0xFF
 
-        return state_hist_buffer
+        return spk_hist_buffer
 
     # This method is overloaded for CSP and QUBO
-    def _get_local_validity_conflict(self, state_hist_status):
+    def _get_local_validity_conflict(self, spk_hist_status):
         return np.ones_like(self.cnstr_intg).astype(bool), np.zeros_like(
             self.cnstr_intg).astype(bool)
 
@@ -128,7 +126,6 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         # Spiking neuron voltages go in refractory (sustained_on_tau < 0)
         self.state[wta_enter_on_state] = self.sustained_on_tau
         self.spk_hist[wta_enter_on_state] |= 1
-        self.state_hist[wta_enter_on_state] |= 1
 
         return wta_enter_on_state
 
@@ -136,12 +133,10 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         # Split/fork state variables
         state_in_rfct = self.state[rfct_idx]  # voltages in refractory
         spk_hist_in_rfct = self.spk_hist[rfct_idx]
-        state_hist_in_rfct = self.state_hist[rfct_idx]
 
         # Refractory dynamics
         state_in_rfct += 1  # voltage increments by 1 every step
-        state_hist_in_rfct |= 3
-        spk_hist_in_rfct |= 1
+        spk_hist_in_rfct |= 3
 
         # The following proxy avoids picking up states that have gone to zero
         # through their "natural" dynamics, and only picks up indices of
@@ -149,33 +144,30 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         # period.
         state_proxy_for_rfct = np.ones_like(self.state)
         state_proxy_for_rfct[rfct_idx] = state_in_rfct
-        state_hist_proxy = np.zeros_like(self.state_hist)
-        state_hist_proxy[rfct_idx] = state_hist_in_rfct
+        spk_hist_proxy = np.zeros_like(self.spk_hist)
+        spk_hist_proxy[rfct_idx] = spk_hist_in_rfct
 
         # Second set of unsatisfied WTA indices based on refractory
         wta_enter_off_state = np.where(
             np.logical_or(state_proxy_for_rfct == 0, np.logical_and(
-                state_hist_proxy & 1, local_conflict)))
+                spk_hist_proxy & 1, local_conflict)))
 
         # Assign all temporary states to state Vars
         self.state[rfct_idx] = state_in_rfct
-        self.state_hist[rfct_idx] = state_hist_in_rfct
         self.spk_hist[rfct_idx] = spk_hist_in_rfct
 
         # Reset voltage of unsatisfied WTA in refractory
         self.state[wta_enter_off_state] = 0
-        self.state_hist[wta_enter_off_state] &= 0xFE  # Last two bits &= 10
-        self.spk_hist[wta_enter_off_state] &= 0xE  # Erase the last bit
+        self.spk_hist[wta_enter_off_state] &= 0xFE  # Last two bits &= 10
 
         return wta_enter_off_state
 
-    def _gen_wta_spks(self, state_hist_status, local_conflict):
+    def _gen_wta_spks(self, spk_hist_status, local_conflict):
         # Indices of WTA neurons signifying unsatisfied constraints, based on
         # buffered history from previous timestep
-        wta_enter_off_state = np.where(np.logical_and(state_hist_status & 1,
+        wta_enter_off_state = np.where(np.logical_and(spk_hist_status & 1,
                                                       local_conflict))
-        # wta_enter_off_state = (np.array([], dtype=np.int64),)
-        # Reset voltages of unsatisfied WTA
+        # # Reset voltages of unsatisfied WTA
         self.state[wta_enter_off_state] = 0
         # indices of neurons to be integrated:
         intg_idx = np.where(self.state >= 0)
@@ -196,10 +188,6 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         s_wta[wta_enter_off_state] = -1
         s_wta[wta_enter_off_state_2] = -1
 
-        # s_tmp = (self.spk_hist & 1)
-        # print(f"SCIF: {self.time_step=}\nSCIF: {s_wta=}\nSCIF: {s_tmp=}\nSCIF: "
-        #       f"{self.spk_hist=}")
-
         return s_wta
 
     def run_spk(self) -> None:
@@ -213,17 +201,17 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         # !! Side effect: Changes self.beta !!
         # State history status:
         # 1 -> entering ON state, 2 -> entering OFF state, 3 -> refractory
-        state_hist_status = self._update_buffers()
+        spk_hist_status = self._update_buffers()
 
         local_validity, local_conflict = self._get_local_validity_conflict(
-            state_hist_status)
+            spk_hist_status)
 
         # Generate Sigma spikes
-        s_sig = self._gen_sig_spks(state_hist_status,
+        s_sig = self._gen_sig_spks(spk_hist_status,
                                    local_validity)
 
         # Generate WTA spikes
-        s_wta = self._gen_wta_spks(state_hist_status,
+        s_wta = self._gen_wta_spks(spk_hist_status,
                                    local_conflict)
 
         # Send out spikes
@@ -243,17 +231,17 @@ class PyModelCspScifFixed(PyModelAbstractScifFixed):
         super(PyModelCspScifFixed, self).__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])
 
-    def _get_local_validity_conflict(self, state_hist_status):
+    def _get_local_validity_conflict(self, spk_hist_status):
         local_validity = self.cnstr_intg == 0
         local_conflict = self.cnstr_intg < 0
 
         return local_validity, local_conflict
 
-    def _gen_sig_spks(self, state_hist_status, local_validity):
+    def _gen_sig_spks(self, spk_hist_status, local_validity):
         s_sig = np.zeros_like(self.state)
         # Gather spike and unsatisfied indices for summation axons
-        sig_unsat_idx = np.where(state_hist_status == 2)
-        sig_spk_idx = np.where(np.logical_and(state_hist_status == 1,
+        sig_unsat_idx = np.where(spk_hist_status == 2)
+        sig_spk_idx = np.where(np.logical_and(spk_hist_status == 1,
                                               local_validity))
 
         # Assign sigma spikes (+/- 1)
@@ -283,10 +271,10 @@ class PyModelQuboScifFixed(PyModelAbstractScifFixed):
     #
     #     return local_validity, local_conflict
 
-    def _gen_sig_spks(self, state_hist_status, local_validity):
+    def _gen_sig_spks(self, spk_hist_status, local_validity):
         s_sig = np.zeros_like(self.state)
 
-        sig_spk_idx = np.where(np.logical_and(state_hist_status & 1,
+        sig_spk_idx = np.where(np.logical_and(spk_hist_status & 1,
                                               local_validity))
         # sig_unsat_idx = np.where(state_hist_status == 2)
         # Compute the local cost
@@ -397,8 +385,9 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
             np.where(np.logical_and(
                 self.sustained_on_tau + self.sustained_off_tau <= self.state,
                 self.state < self.sustained_off_tau))
-        wta_keep_off_idx = np.where(np.logical_and(self.sustained_off_tau <=
-                                                   self.state, self.state < 0))
+        wta_keep_off_idx = \
+            np.where(np.logical_and(self.sustained_off_tau <= self.state,
+                                    self.state < 0))
         # Need to update history for neurons which will keep on spiking
         self.spk_hist[wta_keep_on_idx] |= 1
 
@@ -503,13 +492,9 @@ class BoltzmannFixed(PyLoihiProcessModel):
 
         # Populate the buffer for local computation
         spk_hist_buffer = self.spk_hist.copy()
-        spk_hist_buffer &= 1
-        self.spk_hist <<= 1
-        # The following ensures that we flush all history beyond 3 timesteps
-        # The number '3' comes from the fact that it takes 3 timesteps to
-        # read out solutions after a minimum cost is detected (due to
-        # downstream connected process-chain)
-        self.spk_hist &= 7
+        spk_hist_buffer &= 3
+        self.spk_hist <<= 2
+        self.spk_hist &= 0xFF
 
         return spk_hist_buffer
 

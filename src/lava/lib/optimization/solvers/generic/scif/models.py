@@ -28,7 +28,6 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
     cnstr_intg: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     state: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     spk_hist: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
-    state_hist: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
     step_size: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     theta: np.ndarray = LavaPyType(np.ndarray, int, precision=24)

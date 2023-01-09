@@ -162,6 +162,7 @@ class TestCspScifModels(unittest.TestCase):
                                                      neg_tau_ref=neg_tau_ref,
                                                      wt=wt,
                                                      t_inj_spk=t_inj_spk)
+
         # Test pre-inhibitory-injection SCIF voltage and spiking
         spk_idxs_pre_inj = np.array([theta // step_size]).astype(int) - 1
         wta_pos_spk_pre_inj = spk_idxs_pre_inj + 1

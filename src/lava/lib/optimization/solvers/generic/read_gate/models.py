@@ -49,8 +49,6 @@ class ReadGatePyModel(PyLoihiProcessModel):
         if cost[0]:
             self.min_cost = cost[0]
             self.cost_out.send(np.array([0]))
-            # print(f"RDGT: Found a solution with cost: {self.min_cost} at step "
-            #       f"{self.time_step}")
         elif self.solution is not None:
             timestep = - np.array([self.time_step])
             if self.min_cost <= self.target_cost:

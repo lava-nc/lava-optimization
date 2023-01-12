@@ -148,7 +148,8 @@ class OptimizationSolver:
               target_cost: int = 0,
               backend: BACKENDS = CPU,
               hyperparameters: ty.Dict[
-                  str, ty.Union[int, npt.ArrayLike]] = None) \
+                  str, ty.Union[int, npt.ArrayLike]] = None,
+              cost_probe: bool = False) \
             -> npt.ArrayLike:
         """
         Create solver from problem spec and run until target_cost or timeout.
@@ -186,6 +187,9 @@ class OptimizationSolver:
                                     backend,
                                     hyperparameters)
         run_cfg = self._get_run_config(backend)
+        if cost_probe:
+            from lava.utils.loihi2_state_probes import StateProbe
+            pass
         run_condition = self._get_run_condition(timeout)
         self.solver_process._log_config.level = 20
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)

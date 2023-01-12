@@ -96,7 +96,7 @@ class TestTutorials(unittest.TestCase):
         """
         with tempfile.NamedTemporaryFile(mode="w+t", suffix=".py") \
                 as fout:
-            args = ["jupyter", "nbconvert", "--to", "python", "--execute",
+            args = ["jupyter", "nbconvert", "--to", "python",
                     "--output", fout.name, notebook]
             subprocess.check_call(args, env=env)  # noqa: S603
 

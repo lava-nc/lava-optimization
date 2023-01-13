@@ -11,7 +11,9 @@ from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     CostConvergenceChecker,
 )
-from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
+from lava.lib.optimization.solvers.generic.solver import (
+    SolverConfig, OptimizationSolver
+)
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import SolutionReadout
@@ -33,21 +35,19 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertIsInstance(self.solver, OptimizationSolver)
 
     def test_solution_has_expected_shape(self):
-
         print("test_solution_has_expected_shape")
-        solution = self.solver.solve(timeout=3000, backend="CPU")
+        solution = self.solver.solve(timeout=3000)
         self.assertEqual(solution.shape, self.solution.shape)
 
     def test_solve_method(self):
         print("test_solve_method")
         np.random.seed(2)
-        solution = self.solver.solve(timeout=200, target_cost=-11,
-                                     backend="CPU")
+        solution = self.solver.solve(timeout=200, target_cost=-11)
         print(solution)
         self.assertTrue((solution == self.solution).all())
 
     def test_solver_creates_optimizationsolver_process(self):
-        self.solver._create_solver_process(self.problem, backend="CPU")
+        self.solver._create_solver_process(config=SolverConfig())
         class_name = type(self.solver.solver_process).__name__
         self.assertEqual(class_name, "OptimizationSolverProcess")
 
@@ -140,10 +140,10 @@ def solve_workload(q, reference_solution, noise_precision=3):
     problem = QUBO(q)
     np.random.seed(2)
     solver = OptimizationSolver(problem)
+    config = SolverConfig(hyperparameters={"noise_precision": noise_precision})
     solution = solver.solve(timeout=20000,
                             target_cost=expected_cost,
-                            hyperparameters={'noise_precision': noise_precision}
-                            )
+                            config=config)
     cost = solution @ q @ solution
     return solution, cost, expected_cost
 

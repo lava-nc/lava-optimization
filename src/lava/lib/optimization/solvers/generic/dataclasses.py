@@ -95,7 +95,7 @@ class MacroStateReader:
 
     @property
     def cost(self):
-        return  self.cost_convergence_check.cost
+        return self.cost_convergence_check.cost
 
     @property
     def cost_in(self):

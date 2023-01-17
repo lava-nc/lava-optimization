@@ -36,15 +36,15 @@ class TestOptimizationSolver(unittest.TestCase):
 
     def test_solution_has_expected_shape(self):
         print("test_solution_has_expected_shape")
-        solution = self.solver.solve(timeout=3000)
-        self.assertEqual(solution.shape, self.solution.shape)
+        report = self.solver.solve(timeout=3000)
+        self.assertEqual(report.best_state.shape, self.solution.shape)
 
     def test_solve_method(self):
         print("test_solve_method")
         np.random.seed(2)
-        solution = self.solver.solve(timeout=200, target_cost=-11)
-        print(solution)
-        self.assertTrue((solution == self.solution).all())
+        report = self.solver.solve(timeout=200, target_cost=-11)
+        print(report.best_state)
+        self.assertTrue((report.best_state == self.solution).all())
 
     def test_solver_creates_optimizationsolver_process(self):
         self.solver._create_solver_process(config=SolverConfig())
@@ -141,11 +141,11 @@ def solve_workload(q, reference_solution, noise_precision=3):
     np.random.seed(2)
     solver = OptimizationSolver(problem)
     config = SolverConfig(hyperparameters={"noise_precision": noise_precision})
-    solution = solver.solve(timeout=20000,
-                            target_cost=expected_cost,
-                            config=config)
-    cost = solution @ q @ solution
-    return solution, cost, expected_cost
+    report = solver.solve(timeout=20000,
+                          target_cost=expected_cost,
+                          config=config)
+    cost = report.best_state @ q @ report.best_state
+    return report.best_state, cost, expected_cost
 
 
 class TestWorkloads(unittest.TestCase):

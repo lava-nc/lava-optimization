@@ -7,7 +7,9 @@ import unittest
 import numpy as np
 
 from lava.lib.optimization.problems.problems import QUBO
-from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
+from lava.lib.optimization.solvers.generic.solver import (
+    OptimizationSolver, SolverConfig
+)
 from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 
@@ -19,7 +21,9 @@ def prepare_solver_and_params():
     qubo_problem = QUBO(q=q)
 
     solver = OptimizationSolver(qubo_problem)
-    solver_params = {"timeout": 1000, "target_cost": -11, "backend": "CPU"}
+    solver_params = {"timeout": 1000,
+                     "target_cost": -11,
+                     "config": SolverConfig()}
 
     return solver, solver_params
 

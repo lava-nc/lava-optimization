@@ -82,7 +82,6 @@ class SolverTuner:
             Flag signaling if the fitness_target has been reached. If no
             fitness_target is passed, the flag is True.
         """
-        # TODO : Check that hyperparams are arguments for solver
         self._stored_rows = 0
         if self._store.shape[0] < len(self._search_space):
             self._store = np.zeros(
@@ -94,12 +93,13 @@ class SolverTuner:
         for params in self._search_space:
             np.random.seed(self._seed)
             hyperparams = dict(zip(self._params_names, params))
-            solver_params["hyperparameters"] = hyperparams
-            solver.solve(**solver_params)
-            cost = solver.last_run_report["cost"]
-            step_to_sol = solver.last_run_report["steps_to_solution"]
-            fitness = fitness_fn(cost, step_to_sol)
-            self._store_trial(hyperparams, cost, step_to_sol, fitness)
+            solver_params["config"].hyperparameters = hyperparams
+            report = solver.solve(**solver_params)
+            fitness = fitness_fn(report.best_cost, report.best_timestep)
+            self._store_trial(hyperparams,
+                              report.best_cost,
+                              report.best_timestep,
+                              fitness)
             if fitness > best_fitness:
                 best_hyperparams = hyperparams
                 best_fitness = fitness
@@ -109,7 +109,7 @@ class SolverTuner:
                 )
             if fitness_target is not None and best_fitness >= fitness_target:
                 break
-        self._remove_unused_store()
+        self._store = self._store[:self._stored_rows]
         success = best_fitness >= (fitness_target or -float("inf"))
         return best_hyperparams, success
 
@@ -118,9 +118,6 @@ class SolverTuner:
         new_entry = new_entry + (cost, step_to_sol, fitness)
         self._store[self._stored_rows] = new_entry
         self._stored_rows += 1
-
-    def _remove_unused_store(self):
-        self._store = self._store[:self._stored_rows]
 
     @property
     def results(self):

@@ -1,6 +1,7 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
+from dataclasses import dataclass
 import typing as ty
 
 import numpy.typing as npt
@@ -47,51 +48,21 @@ The explicit resource classes can be imported from
 lava.magma.core.resources"""
 
 
+@dataclass
 class SolverConfig:
-
-    def __init__(self,
-                 backend: BACKENDS = "CPU",
-                 hyperparameters: dict = {},
-                 probe_cost: bool = False,
-                 probe_time: bool = False,
-                 probe_energy: bool = False) -> None:
-        if backend not in NEUROCORES + CPUS:
-            raise ValueError(f"{backend} {BACKEND_MSG}")
-        if backend in CPUS and (probe_time or probe_energy):
-            raise ValueError(
-                f"Time and energy probing are only enabled on Loihi backend.")
-        if probe_time and probe_energy:
-            raise ValueError("Time and energy probing should be executed in"
-                             "in different runs for better accuracy.")
-        self._backend = backend
-        self._hyperparameters = hyperparameters
-        self._probe_cost = probe_cost
-        self._probe_time = probe_time
-        self._probe_energy = probe_energy
-
-    @property
-    def backend(self) -> BACKENDS:
-        return self._backend
-
-    @property
-    def hyperparameters(self) -> dict:
-        return self._hyperparameters
-
-    @property
-    def probe_cost(self) -> bool:
-        return self._probe_cost
-
-    @property
-    def probe_time(self) -> bool:
-        return self._probe_time
-
-    @property
-    def probe_energy(self) -> bool:
-        return self._probe_energy
+    backend: BACKENDS = "CPU"
+    hyperparameters: dict = None
+    probe_cost: bool = False
+    probe_time: bool = False
+    probe_energy: bool = False
 
 
+@dataclass(frozen=True)
 class SolverReport:
-    pass
+    best_cost: int = None
+    best_state: np.ndarray = None
+    best_timestep: int = None
+    solver_config: SolverConfig = None
 
 
 def solve(problem: OptimizationProblem,
@@ -193,13 +164,16 @@ class OptimizationSolver:
 
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         best_state = self.solver_process.variable_assignment.aliased_var.get()
-        raw_cost = self.solver_process.optimality.aliased_var.get()
-        cost = (raw_cost.astype(np.int32) << 8) >> 8
-        steps_to_solution = self.solver_process.solution_step.aliased_var.get()
-
+        best_cost = self.solver_process.optimality.aliased_var.get()
+        best_cost = (best_cost.astype(np.int32) << 8) >> 8
+        best_timestep = self.solver_process.solution_step.aliased_var.get()
         self.solver_process.stop()
-        report = SolverReport()
-        return best_state
+
+        report = SolverReport(best_cost=best_cost,
+                              best_state=best_state,
+                              best_timestep=best_timestep)
+
+        return report
 
     def _create_solver_process(self,
                                target_cost: ty.Optional[int] = None,
@@ -220,7 +194,7 @@ class OptimizationSolver:
             config.backend
         )
         self._process_builder.create_solver_process(
-            self.problem, config.hyperparameters
+            self.problem, config.hyperparameters or dict()
         )
         self._process_builder.create_solver_model(
             target_cost, requirements, protocol

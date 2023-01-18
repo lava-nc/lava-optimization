@@ -244,7 +244,7 @@ class SolverProcessBuilder:
                     shape=proc.variable_assignment.shape)
                 macrostate_reader.cost_convergence_check = c
                 variables.local_cost.connect(macrostate_reader.cost_in)
-                proc.vars.optimality.alias(macrostate_reader.min_cost)
+                proc.vars.optimality.alias(macrostate_reader.cost)
 
             # TODO: DELETE THIS AGAIN!!!
             proc.vars.debug.alias(variables.discrete.debug)

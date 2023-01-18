@@ -135,8 +135,11 @@ class TestOptimizationSolver(unittest.TestCase):
         )
 
     def test_cost_from_cost_integrator_is_accessible_from_solver_process(self):
-        self.solver._create_solver_process(target_cost=5, config=SolverConfig())
-        self.assertIsNotNone(self.solver.solver_process.cost)
+        self.solver.solve(timeout=1)
+        optimality=self.solver.solver_process.optimality
+        self.assertIsInstance(optimality.aliased_var.process,
+                              CostConvergenceChecker)
+
 
 def solve_workload(q, reference_solution, noise_precision=3):
     expected_cost = reference_solution @ q @ reference_solution

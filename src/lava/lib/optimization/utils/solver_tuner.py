@@ -5,8 +5,8 @@
 import itertools as it
 import typing as ty
 
-import random
 import numpy as np
+from lava.lib.optimization.solvers.generic.solver import OptimizationSolver, SolverConfig
 
 
 class SolverTuner:
@@ -51,9 +51,9 @@ class SolverTuner:
             len(self._search_space), dtype=self._store_dtype)
 
     def tune(self,
-             solver,
-             solver_params: ty.Dict,
              fitness_fn: ty.Callable[[float, int], float],
+             solver: OptimizationSolver,
+             config: SolverConfig = SolverConfig(),
              fitness_target: float = None,
              ):
         """
@@ -62,14 +62,14 @@ class SolverTuner:
 
         Parameters
         ----------
-        solver: OptimizationSolver
-            Optimization solver to use for solving the problem.
-        solver_params: ty.Dict
-            Parameters for the solver.
         fitness_fn: ty.Callable[[float, int], float]
             Fitness function to evaluate a given set of hyper-parameters,
             taking as input the current cost and number of steps to solution.
             This is the function that is maximized by the SolverTuner.
+        solver: OptimizationSolver
+            Optimization solver to use for solving the problem.
+        config: SolverConfig, optional
+            Configuration dataclass for OptimizationSolver.
         fitness_target: float, optional
             Fitness target to reach. If this is not passed, the full grid is
             explored before stopping search.
@@ -93,8 +93,9 @@ class SolverTuner:
         for params in self._search_space:
             np.random.seed(self._seed)
             hyperparams = dict(zip(self._params_names, params))
-            solver_params["config"].hyperparameters = hyperparams
-            report = solver.solve(**solver_params)
+            config.hyperparameters = hyperparams
+            report = solver.solve(config=config)
+            print(report)
             fitness = fitness_fn(report.best_cost, report.best_timestep)
             self._store_trial(hyperparams,
                               report.best_cost,

@@ -22,8 +22,7 @@ def prepare_solver_and_params():
 
     solver = OptimizationSolver(qubo_problem)
     solver_params = {"timeout": 1000,
-                     "target_cost": -11,
-                     "config": SolverConfig()}
+                     "target_cost": -11}
 
     return solver, solver_params
 
@@ -123,8 +122,8 @@ class TestSolverTuner(unittest.TestCase):
 
         correct_best_temperature = 1
 
-        self.assertEqual(hyperparams['temperature'], correct_best_temperature)
         self.assertTrue(success)
+        self.assertEqual(hyperparams['temperature'], correct_best_temperature)
 
 
 if __name__ == "__main__":

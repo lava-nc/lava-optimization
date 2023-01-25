@@ -60,22 +60,22 @@ class SolverConfig:
     probe_energy: bool = False
     log_level: int = 40
 
-    @timeout.setter
-    def timeout(self, value) -> None:
-        self._validate(timeout=value)
+    #@timeout.setter
+    #def timeout(self, value) -> None:
+    #    self._validate(timeout=value)
 
-    @staticmethod
-    def _validated_cost(target_cost: int) -> int:
-        if target_cost != int(target_cost):
-            raise ValueError(f"target_cost has to be an integer, received "
-                             f"{target_cost}")
-        return int(target_cost)
+    #@staticmethod
+    #def _validated_cost(target_cost: int) -> int:
+    #    if target_cost != int(target_cost):
+    #        raise ValueError(f"target_cost has to be an integer, received "
+    #                         f"{target_cost}")
+    #    return int(target_cost)
 
-    @staticmethod
-    def _validated_timeout(timeout: int) -> int:
-        if timeout < 0:
-            raise NotImplementedError("The timeout must be > 0.")
-        return int(timeout)
+    #@staticmethod
+    #def _validated_timeout(timeout: int) -> int:
+    #    if timeout < 0:
+    #        raise NotImplementedError("The timeout must be > 0.")
+    #    return int(timeout)
 
 
 @dataclass(frozen=True)
@@ -88,7 +88,7 @@ class SolverReport:
 
     def plot_cost_timeseries(self, filename: str = None) -> None:
         if self.cost_timeseries is None:
-            # what to do?
+            return NotImplemented # what to do?
         from matplotlib import pyplot as plt
         plt.plot(self.cost_timeseries, "ro")
         if filename is None:
@@ -169,14 +169,6 @@ class OptimizationSolver:
 
         Parameters
         ----------
-        timeout: int
-            Maximum number of iterations (timesteps) to be run. If set to -1
-            then the solver will run continuously in non-blocking mode until a
-            solution is found.
-        target_cost: int, optional
-            A cost value provided by the user as a target for the solution to be
-            found by the solver, when a solution with such cost is found and
-            read, execution ends.
         config: SolverConfig, optional
 
         Returns
@@ -186,7 +178,7 @@ class OptimizationSolver:
         """
         self._create_solver_process(config)
         run_cfg = self._get_run_config(config.backend)
-        run_condition = RunSteps(num_steps=timeout)
+        run_condition = RunSteps(num_steps=config.timeout)
 
         # from lava.utils.profiler import Profiler
         # self._profiler = Profiler.init(run_cfg)
@@ -195,7 +187,8 @@ class OptimizationSolver:
 
         if config.probe_cost:
             monitor = Monitor()
-            monitor.probe(target=self.solver_process.optimality, num_steps=timeout)
+            monitor.probe(target=self.solver_process.optimality, 
+                          num_steps=config.timeout)
 
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         best_state = self.solver_process.variable_assignment.aliased_var.get()
@@ -205,13 +198,13 @@ class OptimizationSolver:
         if config.probe_cost:
             cost_timeseries = monitor.get_data()[self.solver_process.name][
                 self.solver_process.optimality.name
-            ]
-            print(cost_timeseries)
+            ].T.astype(np.int32)
         self.solver_process.stop()
 
         report = SolverReport(best_cost=best_cost,
                               best_state=best_state,
-                              best_timestep=best_timestep)
+                              best_timestep=best_timestep,
+                              cost_timeseries=None)
 
         return report
 

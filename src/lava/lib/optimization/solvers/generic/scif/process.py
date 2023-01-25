@@ -135,8 +135,6 @@ class Boltzmann(AbstractProcess):
 
         self.refract = Var(shape=shape, init=refract)
 
-        self.debug = Var(shape=shape, init=0)
-
         # Initial state determined in DiscreteVariables
         self.state = Var(shape=shape, init=init_state.astype(int))
 

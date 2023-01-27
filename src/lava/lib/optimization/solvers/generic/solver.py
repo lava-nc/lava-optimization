@@ -176,6 +176,11 @@ class OptimizationSolver:
         report: SolverReport
 
         """
+
+        self._profiler = None
+        self._monitor = None
+        self._state_probe = None
+
         self._create_solver_process(config)
         run_cfg = self._get_run_config(config.backend)
         run_condition = RunSteps(num_steps=config.timeout)
@@ -191,15 +196,12 @@ class OptimizationSolver:
                           num_steps=config.timeout)
 
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        best_state = self.solver_process.variable_assignment.aliased_var.get()
-        best_cost = self.solver_process.optimality.aliased_var.get()
-        best_cost = (best_cost.astype(np.int32) << 8) >> 8
-        best_timestep = self.solver_process.solution_step.aliased_var.get()
-        if config.probe_cost:
-            cost_timeseries = monitor.get_data()[self.solver_process.name][
-                self.solver_process.optimality.name
-            ].T.astype(np.int32)
+
+        best_state, best_cost, best_timestep = self._get_results()
+        cost_timeseries = self._get_cost_tracking()
         self.solver_process.stop()
+
+        execution_time, energy = self._get_profiler_data()
 
         report = SolverReport(best_cost=best_cost,
                               best_state=best_state,
@@ -241,13 +243,20 @@ class OptimizationSolver:
             Specifies the backend for which requirements and protocol classes
             will be returned.
         """
-        protocol = LoihiProtocol
-        if backend in CPUS:
-            return [CPU], protocol
-        elif backend in NEUROCORES:
-            return [Loihi2NeuroCore], protocol
-        else:
-            raise NotImplementedError(str(backend) + BACKEND_MSG)
+        return [CPU] if backend in CPUS else [Loihi2NeuroCore], LoihiProtocol
+
+    def _get_results(self):
+        best_state = self.solver_process.variable_assignment.aliased_var.get()
+        best_cost = self.solver_process.optimality.aliased_var.get()
+        best_cost = (best_cost.astype(np.int32) << 8) >> 8
+        best_timestep = self.solver_process.solution_step.aliased_var.get()
+        return best_state, int(best_cost), int(best_timestep)
+
+    def _get_cost_tracking(self):
+        cost_timeseries = self._monitor.get_data()[self.solver_process.name][
+            self.solver_process.optimality.name].T.astype(np.int32)
+        return cost_timeseries
+
 
     def _get_run_config(self, backend):
         if backend in CPUS:

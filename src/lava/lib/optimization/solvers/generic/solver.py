@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import typing as ty
+from dataclasses import dataclass
 
 import numpy.typing as npt
 import numpy as np
@@ -47,11 +48,39 @@ The explicit resource classes can be imported from
 lava.magma.core.resources"""
 
 
+@dataclass
+class SolverConfig:
+    """Dataclass to store and validate OptimizationSolver configurations."""
+
+    timeout: int = 1e3
+    target_cost: int = 0
+    backend: BACKENDS = CPU
+    hyperparameters: dict = None
+    probe_time: bool = False
+    probe_energy: bool = False
+    log_level: int = 40
+
+    # TODO: Validation Rules
+    # timeout > 0
+    # target_cost is an integer
+    # probe_time/probe_energy cannot be True if backend is not in NEUROCORES
+
+    # TODO: Hyperparameters validation
+
+
+@dataclass(frozen=True)
+class SolverReport:
+    best_cost: int = None
+    best_state: np.ndarray = None
+    best_timestep: int = None
+    solver_config: SolverConfig = None
+
+
 def solve(
-        problem: OptimizationProblem,
-        timeout: int,
-        target_cost: int = None,
-        backend: BACKENDS = Loihi2NeuroCore,
+    problem: OptimizationProblem,
+    timeout: int,
+    target_cost: int = None,
+    backend: BACKENDS = Loihi2NeuroCore,
 ) -> npt.ArrayLike:
     """Create solver from problem spec and run until target_cost or timeout.
 
@@ -76,10 +105,14 @@ def solve(
         Candidate solution to the input optimization problem.
     """
     solver = OptimizationSolver(problem)
-    solution = solver.solve(
-        timeout=timeout, target_cost=target_cost, backend=backend
+    report = solver.solve(
+        config=SolverConfig(
+            timeout=timeout,
+            target_cost=target_cost,
+            backend=backend
+        )
     )
-    return solution
+    return report.best_state
 
 
 class OptimizationSolver:
@@ -95,7 +128,7 @@ class OptimizationSolver:
     reports it to the user.
     """
 
-    def __init__(self, problem: OptimizationProblem, run_cfg=None):
+    def __init__(self, problem: OptimizationProblem):
         """
         Constructor for the OptimizationSolver class.
 
@@ -103,260 +136,73 @@ class OptimizationSolver:
         ----------
         problem: OptimizationProblem
             Optimization problem to be solved.
-        run_cfg: Any
-            Run configuration for the OptimizationSolverProcess.
         """
         self.problem = problem
-        self._run_cfg = run_cfg
         self._process_builder = SolverProcessBuilder()
         self.solver_process = None
         self.solver_model = None
-        self._hyperparameters = dict(temperature=10,
-                                     refract=1)
-        self._report = dict(solved=None,
-                            best_state=None,
-                            cost=None,
-                            target_cost=None,
-                            steps_to_solution=None,
-                            time_to_solution=None)
-        self._profiler = None
 
-    @property
-    def run_cfg(self):
-        """Run configuration for process model selection."""
-        return self._run_cfg
-
-    @run_cfg.setter
-    def run_cfg(self, value):
-        self._run_cfg = value
-
-    @property
-    def hyperparameters(self):
-        return self._hyperparameters
-
-    @hyperparameters.setter
-    def hyperparameters(self,
-                        value: ty.Dict[str, ty.Union[int, npt.ArrayLike]]):
-        self._hyperparameters = value
-
-    @property
-    def last_run_report(self):
-        return self._report
-
-    def solve(self,
-              timeout: int,
-              target_cost: int = 0,
-              backend: BACKENDS = CPU,
-              hyperparameters: ty.Dict[
-                  str, ty.Union[int, npt.ArrayLike]] = None) \
-            -> npt.ArrayLike:
+    def solve(self, config: SolverConfig = SolverConfig()) -> SolverReport:
         """
         Create solver from problem spec and run until target_cost or timeout.
 
         Parameters
         ----------
-        timeout: int
-            Maximum number of iterations (timesteps) to be run. If set to -1
-            then the solver will run continuously in non-blocking mode until a
-            solution is found.
-        target_cost: int, optional
-            A cost value provided by the user as a target for the solution to be
-            found by the solver, when a solution with such cost is found and
-            read, execution ends.
-        backend: BACKENDS, optional
-            Specifies the backend where the main solver network will be
-            deployed.
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]], optional
-            A dictionary specifying values for steps_to_fire, noise_amplitude,
-            step_size and init_value. All but the last are integers, the initial
-            value is an array-like of initial values for the variables defining
-            the problem.
+        config: SolverConfig, optional
+
 
         Returns
         ----------
-        solution: npt.ArrayLike
-            Candidate solution to the input optimization problem.
+        report: SolverReport
+            An object containing all the data geenrated by the execution.
         """
-        if timeout < 0:
-            raise NotImplementedError("The timeout must be > 0.")
-        target_cost = self._validated_cost(target_cost)
-        hyperparameters = hyperparameters or self.hyperparameters
-        self._create_solver_process(self.problem,
-                                    target_cost,
-                                    backend,
-                                    hyperparameters)
-        run_cfg = self._get_run_config(backend)
-        run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 20
-        self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        self._update_report(target_cost=target_cost)
-        self.solver_process.stop()
-        return self._report["best_state"]
+        self._create_solver_process(config=config)
+        run_cfg = self._get_run_config(backend=config.backend)
+        run_condition = RunSteps(num_steps=config.timeout)
 
-    def measure_time_to_solution(
-            self,
-            timeout: int,
-            target_cost: int,
-            backend: BACKENDS,
-            hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
-    ):
-        """
-        Run solver until target_cost or timeout and returns total time to
-        solution.
-
-        Parameters
-        ----------
-        timeout: int
-            Maximum number of iterations (timesteps) to be run. If set to -1
-            then the solver will run continuously in non-blocking mode until a
-            solution is found.
-        target_cost: int, optional
-            A cost value provided by the user as a target for the solution to be
-            found by the solver, when a solution with such cost is found and
-            read, execution ends.
-        backend: BACKENDS
-            At the moment, only the Loihi2 backend can be used.
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]], optional
-            A dictionary specifying values for steps_to_fire, noise_amplitude,
-            step_size and init_value. All but the last are integers, the initial
-            value is an array-like of initial values for the variables defining
-            the problem.
-
-        Returns
-        ----------
-        time_to_solution: npt.ArrayLike
-            Total time to solution in seconds.
-        """
-        if timeout < 0:
-            raise NotImplementedError("The timeout must be > 0.")
-        if backend not in NEUROCORES:
-            raise ValueError(f"Time measurement can only be performed on "
-                             f"Loihi2 backend, got {backend}.")
-
-        target_cost = self._validated_cost(target_cost)
-        hyperparameters = hyperparameters or self.hyperparameters
-        self._create_solver_process(self.problem,
-                                    target_cost,
-                                    backend,
-                                    hyperparameters)
-        run_cfg = self._get_run_config(backend)
-        run_condition = self._get_run_condition(timeout)
-
-        from lava.utils.profiler import Profiler
-        self._profiler = Profiler.init(run_cfg)
-        self._profiler.execution_time_probe(num_steps=timeout + 1)
+        # TODO: Enable profiling with new interface
+        # from lava.utils.profiler import Profiler
+        # self._profiler = Profiler.init(run_cfg)
+        # self._profiler.execution_time_probe(num_steps=timeout)
+        # self._profiler.energy_probe(num_steps=timeout)
 
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        self._update_report(target_cost=target_cost)
+        best_state, best_cost, best_timestep = self._get_results()
         self.solver_process.stop()
-        return self._profiler.execution_time
 
-    def measure_energy_to_solution(
-            self,
-            timeout: int,
-            target_cost: int,
-            backend: BACKENDS,
-            hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
-    ):
-        """
-        Run solver until target_cost or timeout and returns energy to solution.
+        report = SolverReport(
+            best_cost=best_cost,
+            best_state=best_state,
+            best_timestep=best_timestep,
+            solver_config=config
+        )
 
-        Parameters
-        ----------
-        timeout: int
-            Maximum number of iterations (timesteps) to be run. If set to -1
-            then the solver will run continuously in non-blocking mode until a
-            solution is found.
-        target_cost: int, optional
-            A cost value provided by the user as a target for the solution to be
-            found by the solver, when a solution with such cost is found and
-            read, execution ends.
-        backend: BACKENDS
-            At the moment, only the Loihi2 backend can be used.
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]], optional
-            A dictionary specifying values for steps_to_fire, noise_amplitude,
-            step_size and init_value. All but the last are integers, the initial
-            value is an array-like of initial values for the variables defining
-            the problem.
+        return report
 
-        Returns
-        ----------
-        energy_to_solution: npt.ArrayLike
-            Total energy to solution in Joule.
-        """
-        if timeout < 0:
-            raise NotImplementedError("The timeout must be > 0.")
-        if backend not in NEUROCORES:
-            raise ValueError(f"Enegy measurement can only be performed on "
-                             f"Loihi2 backend, got {backend}.")
-
-        target_cost = self._validated_cost(target_cost)
-        hyperparameters = hyperparameters or self.hyperparameters
-        self._create_solver_process(self.problem,
-                                    target_cost,
-                                    backend,
-                                    hyperparameters)
-        run_cfg = self._get_run_config(backend)
-        run_condition = self._get_run_condition(timeout)
-
-        from lava.utils.profiler import Profiler
-        self._profiler = Profiler.init(run_cfg)
-        self._profiler.execution_time_probe(num_steps=timeout + 1)
-        self._profiler.energy_probe(num_steps=timeout + 1)
-
-        self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        self._update_report(target_cost=target_cost)
-        self.solver_process.stop()
-        return self._profiler.energy
-
-    def _update_report(self, target_cost=None,
-                       time_to_solution=None,
-                       energy_to_solution=None):
-        self._report["target_cost"] = target_cost
-        best_state = self.solver_process.variable_assignment.aliased_var.get()
-        self._report["best_state"] = best_state
-        raw_cost = self.solver_process.optimality.aliased_var.get()
-        cost = (raw_cost.astype(np.int32) << 8) >> 8
-        self._report["cost"] = cost
-        self._report["solved"] = cost == target_cost
-        steps_to_solution = self.solver_process.solution_step.aliased_var.get()
-        self._report["steps_to_solution"] = steps_to_solution
-        self._report["time_to_solution"] = time_to_solution
-        self._report["energy_to_solution"] = energy_to_solution
-        print(self._report)
-
-    def _create_solver_process(self,
-                               problem: OptimizationProblem,
-                               target_cost: ty.Optional[int] = None,
-                               backend: BACKENDS = None,
-                               hyperparameters: ty.Dict[
-                                   str, ty.Union[int, npt.ArrayLike]] = None):
+    def _create_solver_process(self, config: SolverConfig) -> None:
         """
         Create process and model class as solver for the given problem.
 
         Parameters
         ----------
-        problem: OptimizationProblem
-            Optimization problem defined by cost and constraints which will be
-            used to build the process and its model.
-        target_cost: int, optional
-            A cost value provided by the user as a target for the solution to be
-            found by the solver, when a solution with such cost is found and
-            read, execution ends.
-        backend: BACKENDS, optional
-            Specifies the backend where the main solver network will be
-            deployed.
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]]
+        config: SolverConfig
+
         """
-        requirements, protocol = self._get_requirements_and_protocol(backend)
+        requirements, protocol = self._get_requirements_and_protocol(
+            backend=config.backend
+        )
         self._process_builder.create_solver_process(
-            problem, hyperparameters or dict()
+            problem=self.problem,
+            hyperparameters=config.hyperparameters or dict()
         )
         self._process_builder.create_solver_model(
-            target_cost, requirements, protocol
+            target_cost=config.target_cost,
+            requirements=requirements,
+            protocol=protocol
         )
         self.solver_process = self._process_builder.solver_process
         self.solver_model = self._process_builder.solver_model
+        self.solver_process._log_config.level = config.log_level
 
     def _get_requirements_and_protocol(
             self, backend: BACKENDS
@@ -369,13 +215,7 @@ class OptimizationSolver:
             Specifies the backend for which requirements and protocol classes
             will be returned.
         """
-        protocol = LoihiProtocol
-        if backend in CPUS:
-            return [CPU], protocol
-        elif backend in NEUROCORES:
-            return [Loihi2NeuroCore], protocol
-        else:
-            raise NotImplementedError(str(backend) + BACKEND_MSG)
+        return [CPU] if backend in CPUS else [Loihi2NeuroCore], LoihiProtocol
 
     def _get_run_config(self, backend):
         if backend in CPUS:
@@ -399,11 +239,9 @@ class OptimizationSolver:
             raise NotImplementedError(str(backend) + BACKEND_MSG)
         return run_cfg
 
-    def _validated_cost(self, target_cost):
-        if target_cost != int(target_cost):
-            raise ValueError(f"target_cost has to be an integer, received "
-                             f"{target_cost}")
-        return int(target_cost)
-
-    def _get_run_condition(self, timeout):
-        return RunSteps(num_steps=timeout + 1)
+    def _get_results(self):
+        best_state = self.solver_process.variable_assignment.aliased_var.get()
+        best_cost = self.solver_process.optimality.aliased_var.get()
+        best_cost = (best_cost.astype(np.int32) << 8) >> 8
+        best_timestep = self.solver_process.solution_step.aliased_var.get()
+        return best_state, int(best_cost), int(best_timestep)

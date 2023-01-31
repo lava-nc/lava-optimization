@@ -18,8 +18,8 @@ from lava.lib.optimization.solvers.generic.scif.process import CspScif, \
 
 
 class PyModelAbstractScifFixed(PyLoihiProcessModel):
-    """Fixed point implementation of Stochastic Constraint Integrate and
-    Fire (SCIF) neuron for solving CSP problems.
+    """Abstract fixed point implementation of Stochastic Constraint
+    Integrate and Fire (SCIF) neuron for solving QUBO and CSP problems.
     """
     a_in = LavaPyType(PyInPort.VEC_DENSE, int, precision=8)
     s_sig_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
@@ -82,29 +82,80 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
             self.noise_ampl * (
                 ((prand << (24 - self.noise_prec + ampl_prec)
                   ) & 0xFFFFFF) >> (24 - self.noise_prec + ampl_prec))
+        # AND with 0xFFFFFF -> retains 24 LSBs
         return prand
 
     def _update_buffers(self):
+        """Update spiking history from previous time-step.
+        """
         # !! Side effect: Changes self.spk_hist !!
 
         # Populate the buffer for local computation
         spk_hist_buffer = self.spk_hist.copy()
         spk_hist_buffer &= 3
         self.spk_hist <<= 2
-        self.spk_hist &= 0xFF
+        self.spk_hist &= 0xFF  # AND with 0xFF retains 8 LSBs
 
         return spk_hist_buffer
 
     # This method is overloaded for CSP and QUBO
     def _get_local_validity_conflict(self, spk_hist_status):
+        """Method for checking local conflict of a neuron and its incoming
+        connections.
+
+        Irrelevant for QUBO. Overloaded for CSP in a meaningful manner.
+
+        Parameters
+        ----------
+        spk_hist_status : np.ndarray
+            Status of spiking history of the previous time-step
+
+        Returns
+        -------
+        local_validity : np.ndarray
+            Boolean array with True corresponding to validity
+        local_conflict : np.ndarray
+            Boolean array with True corresponding to a conflict
+        """
         return np.ones_like(self.cnstr_intg).astype(bool), np.zeros_like(
             self.cnstr_intg).astype(bool)
 
     # This method is overloaded for CSP and QUBO
     def _gen_sig_spks(self, spk_hist_status, local_validity):
+        """Method to generate 'sigma' spikes on the output axon that
+        communicates local cost in the case of QUBO and termination of
+        activity in the case of CSP.
+
+        The method is overloaded for QUBO and CSP separately.
+
+        Parameters
+        ----------
+        spk_hist_status : np.ndarray
+            Spike history from previous time-step.
+        local_validity : np.ndarray
+            Boolean array with True corresponding to local validity
+        Returns
+        -------
+        s_sig : np.ndarray
+            Sigma spikes
+        """
         return np.zeros_like(self.state)
 
     def _integration_dynamics(self, intg_idx):
+        """Dynamics of integration of neural state.
+
+        Parameters
+        ----------
+        intg_idx : np.ndarray
+            Indices of neurons that need integration. Excludes the neurons
+            in their refractory state.
+
+        Returns
+        -------
+        wta_enter_on_state : np.ndarray
+            Indices of neurons that have crossed threshold and are entering
+            the 'on' state (i.e., refractory state, see refractory dynamics).
+        """
         state_to_intg = self.state[intg_idx]  # voltages to be integrated
         cnstr_to_intg = self.cnstr_intg[intg_idx]  # currents to be integrated
         step_size_to_intg = self.step_size[intg_idx]  # bias to be integrated
@@ -130,6 +181,25 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         return wta_enter_on_state
 
     def _refractory_dynamics(self, rfct_idx, local_conflict):
+        """Dynamics of refractory state of neurons.
+
+        Here, 'refractory' means a neuron keeps spiking as long as it is in
+        this state, ignoring all synaptic input. This is in contrast with
+        biological neurons, which are silent when they are in a refractory
+        period.
+
+        Parameters
+        ----------
+        rfct_idx : np.ndarray
+            Indices of neurons in refractory state.
+        local_conflict
+
+        Returns
+        -------
+        wta_enter_off_state : np.ndarray
+            Indices of neurons that will enter 'off' state in the next
+            time-step.
+        """
         # Split/fork state variables
         state_in_rfct = self.state[rfct_idx]  # voltages in refractory
         spk_hist_in_rfct = self.spk_hist[rfct_idx]
@@ -158,11 +228,25 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
 
         # Reset voltage of unsatisfied WTA in refractory
         self.state[wta_enter_off_state] = 0
-        self.spk_hist[wta_enter_off_state] &= 0xFE  # Last two bits &= 10
+        self.spk_hist[wta_enter_off_state] &= 0xFE
+        # AND with 0xFE is same as AND with 2 (=0b10)
 
         return wta_enter_off_state
 
     def _gen_wta_spks(self, spk_hist_status, local_conflict):
+        """Generate spikes on 'WTA' output axons.
+
+        Parameters
+        ----------
+        spk_hist_status : np.ndarray
+            Spiking history from previous time-step
+        local_conflict : np.ndarray
+            Boolean array with True corresponding to a local conflict
+        Returns
+        -------
+        s_wta : np.ndarray
+            WTA spikes
+        """
         # Indices of WTA neurons signifying unsatisfied constraints, based on
         # buffered history from previous timestep
         # indices of neurons to be integrated:
@@ -221,8 +305,10 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
 @requires(CPU)
 @tag('fixed_pt')
 class PyModelCspScifFixed(PyModelAbstractScifFixed):
-    """Fixed point implementation of Stochastic Constraint Integrate and
+    """Concrete implementation of Stochastic Constraint Integrate and
     Fire (SCIF) neuron for solving CSP problems.
+
+    Derives from `PyModelAbstractScifFixed`.
     """
 
     def __init__(self, proc_params):
@@ -253,8 +339,10 @@ class PyModelCspScifFixed(PyModelAbstractScifFixed):
 @requires(CPU)
 @tag('fixed_pt')
 class PyModelQuboScifFixed(PyModelAbstractScifFixed):
-    """Fixed point implementation of Stochastic Constraint Integrate and
-        Fire (SCIF) neuron for solving QUBO problems.
+    """Concrete implementation of Stochastic Constraint Integrate and
+    Fire (SCIF) neuron for solving QUBO problems.
+
+    Derives from `PyModelAbstractScifFixed`.
     """
 
     cost_diagonal: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
@@ -279,8 +367,8 @@ class PyModelQuboScifFixed(PyModelAbstractScifFixed):
 @requires(CPU)
 @tag('fixed_pt')
 class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
-    """Fixed point implementation of Stochastic Constraint Integrate and
-        Fire (SCIF) neuron for solving QUBO problems.
+    """***Deprecated*** Concrete implementation of Stochastic Constraint
+    Integrate and Fire (SCIF) neuron for solving QUBO problems.
     """
     a_in = LavaPyType(PyInPort.VEC_DENSE, int, precision=8)
     s_sig_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
@@ -385,7 +473,6 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         # Compute the local cost
         s_sig[sig_spk_idx] = self.cost_diagonal[sig_spk_idx] + \
             self.a_in_data[sig_spk_idx]
-        print(f"{s_sig=}")
 
         return s_sig
 
@@ -450,8 +537,6 @@ class BoltzmannFixed(PyLoihiProcessModel):
     temperature: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
     refract: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
-    debug: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
-
     def __init__(self, proc_params):
         super(BoltzmannFixed, self).__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])
@@ -478,7 +563,7 @@ class BoltzmannFixed(PyLoihiProcessModel):
         spk_hist_buffer = self.spk_hist.copy()
         spk_hist_buffer &= 3
         self.spk_hist <<= 2
-        self.spk_hist &= 0xFF
+        self.spk_hist &= 0xFF  # AND with 0xFF retains 8 LSBs
 
         return spk_hist_buffer
 

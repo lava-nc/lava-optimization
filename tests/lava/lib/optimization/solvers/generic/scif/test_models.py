@@ -294,7 +294,6 @@ class TestQuboScifModels(unittest.TestCase):
 
         run_condition = RunSteps(num_steps=1)
         exception_dict = {QuboScif: PyModelQuboScifFixed}
-        # exception_dict = {QuboScif: PyModelQuboScifRefracFixed}
         run_config = Loihi2SimCfg(select_tag=tag,
                                   exception_proc_model_map=exception_dict)
 
@@ -336,7 +335,7 @@ class TestQuboScifModels(unittest.TestCase):
         neuron goes into inhibition and sends 2 inhibitory spikes of payload -1
         at the end of its refractory period.
         """
-        num_neurons = 3  # np.random.randint(1, 11)
+        num_neurons = np.random.randint(1, 11)
         cost_diag = np.ones((num_neurons,))
         theta = 4
         on_tau = -5
@@ -377,8 +376,8 @@ class TestQuboScifModels(unittest.TestCase):
         An excitatory spike is injected to nullify the inhibition and neuron
         starts spiking periodically again.
         """
-        num_neurons = 3  # np.random.randint(1, 11)
-        cost_diag_coeff = 1  # -2
+        num_neurons = np.random.randint(1, 11)
+        cost_diag_coeff = 1
         cost_diag = cost_diag_coeff * np.ones(num_neurons,)
         theta = 4
         on_tau = -5

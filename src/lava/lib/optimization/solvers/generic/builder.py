@@ -241,7 +241,6 @@ class SolverProcessBuilder:
                 macrostate_reader.cost_convergence_check = c
                 variables.local_cost.connect(macrostate_reader.cost_in)
                 proc.vars.optimality.alias(macrostate_reader.min_cost)
-                #proc.vars.
 
             # Variable aliasing
             proc.vars.variable_assignment.alias(macrostate_reader.solution)

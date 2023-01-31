@@ -57,19 +57,40 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             wta_weight
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
-        temperature = proc.hyperparameters.get("temperature", 1)
-        refract = proc.hyperparameters.get("refract", 0)
-        init_value = proc.hyperparameters.get("init_value", np.zeros(shape,
-                                                                     dtype=int))
-        init_state = proc.hyperparameters.get("init_state", np.zeros(shape,
-                                                                     dtype=int))
+        neuron_model = proc.hyperparameters.get("neuron_model", 'nebm')
+        if neuron_model == 'nebm':
+            temperature = proc.hyperparameters.get("temperature", 1)
+            refract = proc.hyperparameters.get("refract", 0)
+            init_value = proc.hyperparameters.get("init_value",
+                                                  np.zeros(shape, dtype=int))
+            init_state = proc.hyperparameters.get("init_state",
+                                                  np.zeros(shape, dtype=int))
 
-        self.s_bit = BoltzmannAbstract(temperature=temperature,
-                                       refract=refract,
-                                       init_state=init_state,
-                                       shape=shape,
-                                       cost_diagonal=diagonal,
-                                       init_value=init_value)
+            self.s_bit = BoltzmannAbstract(temperature=temperature,
+                                           refract=refract,
+                                           init_state=init_state,
+                                           shape=shape,
+                                           cost_diagonal=diagonal,
+                                           init_value=init_value)
+        elif neuron_model == 'scif':
+            step_size = proc.hyperparameters.get("step_size", 10)
+            noise_amplitude = proc.hyperparameters.get("noise_amplitude", 1)
+            noise_precision = proc.hyperparameters.get("noise_precision", 5)
+            steps_to_fire = proc.hyperparameters.get("steps_to_fire", 10)
+            init_value = proc.hyperparameters.get("init_value", np.zeros(shape))
+            init_state = proc.hyperparameters.get("init_value", np.zeros(shape))
+            on_tau = proc.hyperparameters.get("sustained_on_tau", (-3))
+            self.s_bit = \
+                StochasticIntegrateAndFire(shape=shape,
+                                           step_size=diagonal,
+                                           init_state=init_state,
+                                           init_value=init_value,
+                                           noise_amplitude=noise_amplitude,
+                                           noise_precision=noise_precision,
+                                           sustained_on_tau=on_tau,
+                                           cost_diagonal=diagonal)
+        else:
+            AssertionError("Unknown neuron model specified")
         if weights.shape != (0, 0):
             self.dense = Dense(weights=weights)
             self.s_bit.out_ports.messages.connect(self.dense.in_ports.s_in)
@@ -129,17 +150,17 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
     def __init__(self, proc):
         shape = proc.proc_params.get("shape", (1,))
         step_size = proc.proc_params.get("step_size", (1,))
-        theta = proc.proc_params.get("steps_to_fire", (1,)) * step_size
+        theta = proc.proc_params.get("threshold", (1,))
         cost_diagonal = proc.proc_params.get("cost_diagonal", (1,))
         noise_amplitude = proc.proc_params.get("noise_amplitude", (1,))
-        noise_precision = proc.proc_params.get("noise_precision", (1,))
-        noise_shift = 16 - noise_precision
+        noise_precision = proc.proc_params.get("noise_precision", (3,))
+        sustained_on_tau = proc.proc_params.get("sustained_on_tau", (-5,))
         self.scif = QuboScif(shape=shape,
-                             step_size=step_size,
-                             theta=theta,
                              cost_diag=cost_diagonal,
+                             theta=theta,
+                             sustained_on_tau=sustained_on_tau,
                              noise_amplitude=noise_amplitude,
-                             noise_shift=noise_shift)
+                             noise_precision=noise_precision)
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)
@@ -148,71 +169,7 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
         proc.vars.state.alias(self.scif.vars.state)
         proc.vars.cost_diagonal.alias(self.scif.vars.cost_diagonal)
         proc.vars.noise_amplitude.alias(self.scif.vars.noise_ampl)
-
-
-@implements(proc=StochasticIntegrateAndFire, protocol=LoihiProtocol)
-@requires(CPU)
-class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
-    """CPU Model for the StochasticIntegrateAndFire process.
-    The model computes stochastic gradient and local cost both based on
-    the input received from the recurrent connectivity ot other units.
-    # Todo deprecate in favour of QuboScif.
-    """
-    added_input: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
-    messages: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
-    local_cost: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
-
-    integration: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    step_size: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    state: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    noise_amplitude: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    noise_precision: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    input_duration: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    min_state: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    min_integration: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    steps_to_fire: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    refractory_period: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    firing: np.ndarray = LavaPyType(np.ndarray, bool)
-    prev_assignment: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    cost_diagonal: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    assignment: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    min_cost: np.ndarray = LavaPyType(np.ndarray, int, 32)
-
-    def reset_state(self, firing_vector: np.ndarray):
-        self.state[firing_vector] = 0
-
-    def _update_buffers(self):
-        self.prev_assignment[:] = self.assignment[:]
-        self.assignment[:] = self.firing[:]
-
-    def run_spk(self):
-        self._update_buffers()
-        added_input = self.added_input.recv()
-        self.state = self.iterate_dynamics(added_input, self.state)
-        local_cost = self.firing * (added_input + self.cost_diagonal
-                                    * self.firing)
-        self.firing[:] = self.do_fire(self.state)
-        self.reset_state(firing_vector=self.firing[:])
-        self.messages.send(self.firing[:])
-        self.local_cost.send(local_cost)
-
-    def iterate_dynamics(self, added_input: np.ndarray, state: np.ndarray):
-        integration_decay = 1
-        state_decay = 0
-        noise = self.noise_amplitude * np.random.randint(0, 2 * self.step_size,
-                                                         self.integration.shape)
-        self.integration[:] = self.integration * (1 - integration_decay)
-        self.integration[:] += added_input.astype(int)
-        decayed_state = state * (1 - state_decay)
-        state[:] = decayed_state + self.integration + self.step_size + noise
-        return state
-
-    def do_fire(self, state):
-        threshold = self.step_size * self.steps_to_fire
-        return state > threshold
-
-    def is_satisfied(self, prev_assignment, integration):
-        return np.logical_and(prev_assignment, np.logical_not(integration))
+        proc.vars.noise_precision.alias(self.scif.vars.noise_prec)
 
 
 @implements(proc=BoltzmannAbstract, protocol=LoihiProtocol)

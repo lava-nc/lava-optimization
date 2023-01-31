@@ -30,8 +30,10 @@ from lava.proc.dense.process import Dense
 from lava.lib.optimization.solvers.generic.read_gate.models import \
     ReadGatePyModel
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed
-from lava.lib.optimization.solvers.generic.scif.process import Boltzmann
+from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed, \
+    PyModelQuboScifFixed
+from lava.lib.optimization.solvers.generic.scif.process import Boltzmann, \
+    QuboScif
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -265,7 +267,8 @@ class OptimizationSolver:
                      Dense: PyDenseModelFloat,
                      BoltzmannAbstract:
                          BoltzmannAbstractModel,
-                     Boltzmann: BoltzmannFixed
+                     Boltzmann: BoltzmannFixed,
+                     QuboScif: PyModelQuboScifFixed
                      }
             run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
                                    select_sub_proc_model=True)

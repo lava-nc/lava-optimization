@@ -97,7 +97,7 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         self.spk_hist <<= 2
         self.spk_hist &= 0xFF  # AND with 0xFF retains 8 LSBs
 
-        return state_hist_buffer
+        return spk_hist_buffer
 
     # This method is overloaded for CSP and QUBO
     def _get_local_validity_conflict(self, spk_hist_status):
@@ -493,7 +493,6 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         s_sig[sig_spk_idx] = (
             self.cost_diagonal[sig_spk_idx] + self.a_in_data[sig_spk_idx]
         )
-
         return s_sig
 
     def _gen_wta_spks(self):

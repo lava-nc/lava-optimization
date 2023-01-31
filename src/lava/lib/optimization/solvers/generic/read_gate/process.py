@@ -51,16 +51,12 @@ class ReadGate(AbstractProcess):
             log_config=log_config,
         )
         self.target_cost = Var(shape=(1,), init=target_cost)
-<<<<<<< HEAD
+
         self.best_solution = Var(shape=shape, init=-1)
         for id in range(num_in_ports):
             setattr(self, f"cost_in_{id}", InPort(shape=(1,)))
         self.cost_out = OutPort(shape=(2,))
-=======
-        # self.best_solution = Var(shape=shape, init=-1)
-        self.cost_in = InPort(shape=(1,))
-        self.cost_out = OutPort(shape=(1,))
->>>>>>> 0e3a36e (Prelim commit)
+        self.best_solution = Var(shape=shape, init=-1)
         self.send_pause_request = OutPort(shape=(1,))
         self.solution_out = OutPort(shape=shape)
         self.solution_reader = RefPort(shape=shape)

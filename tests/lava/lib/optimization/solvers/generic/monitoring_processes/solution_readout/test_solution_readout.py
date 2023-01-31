@@ -41,4 +41,4 @@ class TestSolutionReadout(unittest.TestCase):
         self.readout.wait()
         solution = self.readout.solution.get()
         self.readout.stop()
-        self.assertTrue(np.all(solution == np.ones(4)))
+        self.assertTrue(np.all(solution == np.zeros(4)))

@@ -106,9 +106,6 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         )
         proc.vars.variable_assignment.alias(self.s_bit.prev_assignment)
 
-        # todo: delete debug variable
-        proc.vars.debug.alias(self.s_bit.debug)
-
 
 @implements(proc=CostConvergenceChecker, protocol=LoihiProtocol)
 @requires(CPU)
@@ -200,4 +197,3 @@ class BoltzmannAbstractModel(AbstractSubProcessModel):
 
         proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
         proc.vars.state.alias(self.scif.vars.state)
-        proc.vars.debug.alias(self.scif.vars.debug)

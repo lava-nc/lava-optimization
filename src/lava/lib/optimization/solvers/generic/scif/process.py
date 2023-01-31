@@ -25,7 +25,9 @@ class AbstractScif(AbstractProcess):
             theta: ty.Optional[int] = 4,
             sustained_on_tau: ty.Optional[int] = 0,
             noise_amplitude: ty.Optional[int] = 0,
-            noise_precision: ty.Optional[int] = 0) -> None:
+            noise_precision: ty.Optional[int] = 0,
+            init_value: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
+            init_state: ty.Optional[ty.Union[int, npty.NDArray]] = 0) -> None:
         """
         Stochastic Constraint Integrate and Fire neuron Process.
 
@@ -42,8 +44,8 @@ class AbstractScif(AbstractProcess):
             The threshold above which a SCIF neuron would fire a winner-take-all
             spike. Default is arbitrarily chosen to be 4.
         sustained_on_tau: int
-            The time constant for which a SCIF neuron's state is considered
-            to be "ON". The neuron issues a +1 spike when it crosses `theta`,
+            The time constant for which a SCIF neuron's state is sustained
+            as "ON". The neuron issues a +1 spike when it crosses `theta`,
             signifying the beginning of the "ON" period and issues a -1 spike
             at the end of `sustained_on_tau` steps, signifying the end of the
             "ON" period.
@@ -53,17 +55,27 @@ class AbstractScif(AbstractProcess):
         noise_precision: int
             The precision (in bits) of the pseudorandom noise added to SCIF
             dynamics.
+        init_value : int, np.ndarray
+            The spiking history with which the network is initialized
+        init_state : int, np.ndarray
+            The state of neurons with which the network is initialized
         """
         super().__init__(shape=shape)
+
+        if sustained_on_tau > 0:
+            AssertionError("Sustained ON period for SCIF neurons cannot "
+                           "be positive (sustained_on_tau should be "
+                           "negative). The Timer 'counts up' from "
+                           "sustained_on_tau to 0.")
 
         self.a_in = InPort(shape=shape)
         self.s_sig_out = OutPort(shape=shape)
         self.s_wta_out = OutPort(shape=shape)
 
-        self.state = Var(shape=shape, init=np.zeros(shape=shape).astype(int))
+        self.state = Var(shape=shape, init=init_state)
         self.cnstr_intg = Var(shape=shape, init=np.zeros(shape=shape).astype(
             int))
-        self.spk_hist = Var(shape=shape, init=np.zeros(shape=shape).astype(int))
+        self.spk_hist = Var(shape=shape, init=init_value)
         self.noise_ampl = Var(shape=shape, init=noise_amplitude)
         self.noise_prec = Var(shape=shape, init=noise_precision)
         self.step_size = Var(shape=shape, init=step_size)
@@ -122,8 +134,7 @@ class QuboScif(AbstractScif):
 
 
 class Boltzmann(AbstractProcess):
-    """Stochastic Constraint Integrate-and-Fire neurons to solve QUBO
-    problems.
+    """Non-equilibrium Boltzmann (NEBM) neuron model to solve QUBO problems.
     """
 
     def __init__(self,
@@ -134,7 +145,7 @@ class Boltzmann(AbstractProcess):
                  init_value=0,
                  init_state=0):
         """
-         Stochastic Constraint Integrate and Fire neuron Process.
+         NEBM Process.
 
          Parameters
          ----------
@@ -142,6 +153,13 @@ class Boltzmann(AbstractProcess):
              Number of neurons. Default is (1,).
          temperature: ArrayLike
              Temperature of the system, defining the level of noise.
+         refract : ArrayLike
+             Refractory period for each neuron. This is the time for which a
+             neuron 'stays ON'.
+         init_value : ArrayLike
+             The spiking history with which the network is initialized
+         init_state : ArrayLike
+             The state of neurons with which the network is initialized
          """
         super().__init__(shape=shape)
 
@@ -156,8 +174,6 @@ class Boltzmann(AbstractProcess):
         self.temperature = Var(shape=shape, init=int(temperature))
 
         self.refract = Var(shape=shape, init=refract)
-
-        self.debug = Var(shape=shape, init=0)
 
         # Initial state determined in DiscreteVariables
         self.state = Var(shape=shape, init=init_state.astype(int))

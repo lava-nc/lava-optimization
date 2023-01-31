@@ -54,7 +54,7 @@ class TestOptimizationSolver(unittest.TestCase):
             timeout=200,
             target_cost=-11,
             hyperparameters={"neuron_model": "scif",
-                             "noise_precision": 5})
+                             "noise_precision": 5}
         ))
         print(report)
         self.assertTrue((report.best_state == self.solution).all())
@@ -158,10 +158,10 @@ def solve_workload(q, reference_solution, noise_precision=3,
         timeout=20000,
         target_cost=expected_cost,
         hyperparameters={
-          'neuron_model': 'scif',
-          'noise_amplitude': noise_amplitude,
-          'noise_precision': noise_precision,
-          'sustained_on_tau': on_tau
+            'neuron_model': 'scif',
+            'noise_amplitude': noise_amplitude,
+            'noise_precision': noise_precision,
+            'sustained_on_tau': on_tau
         }
     ))
     cost = report.best_state @ q @ report.best_state

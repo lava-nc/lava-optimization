@@ -69,7 +69,6 @@ class SolverReport:
     best_state: np.ndarray = None
     best_timestep: int = None
     solver_config: SolverConfig = None
-    profiler = None
 
 
 def solve(problem: OptimizationProblem,
@@ -134,16 +133,14 @@ class OptimizationSolver:
         """
         run_condition, run_cfg = self._prepare_solver(config)
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        self.solver_process.stop()
-
         best_state, best_cost, best_timestep = self._get_results()
+        self.solver_process.stop()
 
         report = SolverReport(
             best_cost=best_cost,
             best_state=best_state,
             best_timestep=best_timestep,
-            solver_config=config,
-            profiler=self._profiler
+            solver_config=config
         )
 
         return report

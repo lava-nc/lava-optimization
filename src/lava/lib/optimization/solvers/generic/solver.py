@@ -52,8 +52,36 @@ lava.magma.core.resources"""
 
 @dataclass
 class SolverConfig:
-    """Dataclass to store and validate OptimizationSolver configurations."""
+    """
+    Dataclass to store and validate OptimizationSolver configurations.
 
+    Parameters
+    ----------
+    timeout: int
+        Maximum number of iterations (timesteps) to be run. If set to -1
+        then the solver will run continuously in non-blocking mode until a
+        solution is found.
+    target_cost: int, optional
+        A cost value provided by the user as a target for the solution to be
+        found by the solver, when a solution with such cost is found and
+        read, execution ends.
+    backend: BACKENDS, optional
+        Specifies the backend where the main solver network will be
+        deployed.
+    hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]], optional
+        A dictionary specifying values for steps_to_fire, noise_amplitude,
+        step_size and init_value. All but the last are integers, the initial
+        value is an array-like of initial values for the variables defining
+        the problem.
+    probe_time: bool
+        A boolean flag to request time profiling, available only on "Loihi2"
+        backend.
+    probe_energy: bool
+        A boolean flag to request time profiling, available only on "Loihi2"
+        backend.
+    log_level: int
+        Select log verbosity (40: default, 20: verbose).
+    """
     timeout: int = 1e3
     target_cost: int = 0
     backend: BACKENDS = CPU
@@ -65,6 +93,20 @@ class SolverConfig:
 
 @dataclass(frozen=True)
 class SolverReport:
+    """
+    Dataclass to store OptimizationSolver results.
+
+    Parameters
+    ----------
+    best_cost: int
+        Best cost found during the execution.
+    best_state: np.ndarray
+        Candidate solution associated to the best cost.
+    best_timestep: int
+        Execution timestep during which the best solution was found.
+    solver_config: SolverConfig
+        Solver configuraiton used. Refers to SolverConfig documentation.
+    """
     best_cost: int = None
     best_state: np.ndarray = None
     best_timestep: int = None
@@ -82,6 +124,7 @@ def solve(problem: OptimizationProblem,
     problem: OptimizationProblem
         Optimization problem to be solved.
     config: SolverConfig, optional
+        Solver configuraiton used. Refers to SolverConfig documentation.
     """
     solver = OptimizationSolver(problem)
     report = solver.solve(config=config)
@@ -124,7 +167,7 @@ class OptimizationSolver:
         Parameters
         ----------
         config: SolverConfig, optional
-
+            Solver configuraiton used. Refers to SolverConfig documentation.
 
         Returns
         ----------
@@ -159,7 +202,7 @@ class OptimizationSolver:
         Parameters
         ----------
         config: SolverConfig
-
+            Solver configuraiton used. Refers to SolverConfig documentation.
         """
         requirements, protocol = self._get_requirements_and_protocol(
             backend=config.backend

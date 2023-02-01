@@ -67,10 +67,11 @@ class SolverTuner:
         ----------
         solver: OptimizationSolver
             Optimization solver to use for solving the problem.
-        fitness_fn: ty.Callable[[float, int], float]
+        fitness_fn: ty.Callable[[SolverReport], float]
             Fitness function to evaluate a given set of hyper-parameters,
-            taking as input the current cost and number of steps to solution.
-            This is the function that is maximized by the SolverTuner.
+            taking as input a SolverReport instance (refers to its documentation
+            for the available parameters). This is the function that is 
+            maximized by the SolverTuner.
         fitness_target: float, optional
             Fitness target to reach. If this is not passed, the full grid is
             explored before stopping search.

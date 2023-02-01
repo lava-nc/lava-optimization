@@ -70,7 +70,7 @@ class SolverTuner:
         fitness_fn: ty.Callable[[SolverReport], float]
             Fitness function to evaluate a given set of hyper-parameters,
             taking as input a SolverReport instance (refers to its documentation
-            for the available parameters). This is the function that is 
+            for the available parameters). This is the function that is
             maximized by the SolverTuner.
         fitness_target: float, optional
             Fitness target to reach. If this is not passed, the full grid is

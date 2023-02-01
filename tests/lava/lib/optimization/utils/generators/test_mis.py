@@ -5,7 +5,9 @@
 import unittest
 import numpy as np
 
-from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
+from lava.lib.optimization.solvers.generic.solver import (
+    OptimizationSolver, SolverConfig
+)
 from lava.lib.optimization.utils.generators.mis import MISProblem
 
 
@@ -113,19 +115,21 @@ class TestMISProblem(unittest.TestCase):
         optimal_cost = -2
         qubo = self.problem.get_as_qubo(w_diag=1, w_off=4)
 
-        params = {"timeout": 1000,
-                  "target_cost": optimal_cost,
-                  "backend": "CPU",
-                  "hyperparameters": {
-                      "steps_to_fire": 11,
-                      "noise_amplitude": 1,
-                      "noise_precision": 4,
-                      "step_size": 11,
-                  }}
+        config = SolverConfig(
+            timeout=1000,
+            target_cost=optimal_cost,
+            backend="CPU",
+            hyperparameters={
+                "steps_to_fire": 11,
+                "noise_amplitude": 1,
+                "noise_precision": 4,
+                "step_size": 11,
+            }
+        )
 
         solver = OptimizationSolver(qubo)
-        solution = solver.solve(**params)
-        self.assertEqual(qubo.evaluate_cost(solution), optimal_cost)
+        report = solver.solve(config=config)
+        self.assertEqual(qubo.evaluate_cost(report.best_state), optimal_cost)
 
 
 if __name__ == "__main__":

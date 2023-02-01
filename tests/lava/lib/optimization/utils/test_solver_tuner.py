@@ -7,11 +7,13 @@ import unittest
 import numpy as np
 
 from lava.lib.optimization.problems.problems import QUBO
-from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
+from lava.lib.optimization.solvers.generic.solver import (
+    OptimizationSolver, SolverConfig, SolverReport
+)
 from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 
-def prepare_solver_and_params():
+def prepare_solver_and_config():
     """Generate an example QUBO workload."""
 
     q = np.asarray([[-5, 2, 4, 0], [2, -3, 1, 0],
@@ -19,9 +21,13 @@ def prepare_solver_and_params():
     qubo_problem = QUBO(q=q)
 
     solver = OptimizationSolver(qubo_problem)
-    solver_params = {"timeout": 1000, "target_cost": -11, "backend": "CPU"}
+    config = SolverConfig(
+        timeout=1000,
+        target_cost=-11,
+        backend="CPU"
+    )
 
-    return solver, solver_params
+    return solver, config
 
 
 class TestSolverTuner(unittest.TestCase):
@@ -100,19 +106,21 @@ class TestSolverTuner(unittest.TestCase):
         """Tests the correct set of hyper-parameters is found, for a known
         problem."""
 
-        solver, solver_params = prepare_solver_and_params()
+        solver, config = prepare_solver_and_config()
 
-        def fitness(cost, step_to_sol):
-            return - step_to_sol if cost <= solver_params['target_cost'] \
-                else - float("inf")
+        def fitness(report: SolverReport) -> float:
+            if report.best_cost <= config.target_cost:
+                return - report.best_timestep
+            else:
+                return - float("inf")
 
         fitness_target = -21
 
         hyperparams, success = self.solver_tuner.tune(
             solver=solver,
-            solver_params=solver_params,
             fitness_fn=fitness,
-            fitness_target=fitness_target
+            fitness_target=fitness_target,
+            config=config
         )
 
         print(hyperparams)

@@ -9,7 +9,9 @@ from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     CostConvergenceChecker,
 )
-from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
+from lava.lib.optimization.solvers.generic.solver import (
+    OptimizationSolver, SolverConfig
+)
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import SolutionReadout
@@ -33,37 +35,42 @@ class TestOptimizationSolver(unittest.TestCase):
     def test_solution_has_expected_shape(self):
 
         print("test_solution_has_expected_shape")
-        solution = self.solver.solve(timeout=3000, backend="CPU",
-                                     hyperparameters={'neuron_model': 'scif'})
-        self.assertEqual(solution.shape, self.solution.shape)
+        report = self.solver.solve(config=SolverConfig(timeout=3000))
+        self.assertEqual(report.best_state.shape, self.solution.shape)
 
     def test_solve_method_nebm(self):
         print("test_solve_method")
         np.random.seed(2)
-        solution = self.solver.solve(timeout=200, target_cost=-11,
-                                     backend="CPU",
-                                     hyperparameters={"neuron_model": "nebm"})
-        print(solution)
-        self.assertTrue((solution == self.solution).all())
+        config = SolverConfig(
+            timeout=200,
+            target_cost=-11,
+            backend="CPU",
+            hyperparameters={"neuron_model": "nebm"}
+        )
+        report = self.solver.solve(config=config)
+        print(report)
+        self.assertTrue((report.best_state == self.solution).all())
 
     def test_solve_method_scif(self):
         print("test_solve_method")
         np.random.seed(2)
-        solution = self.solver.solve(timeout=200, target_cost=-11,
-                                     backend="CPU",
-                                     hyperparameters={"neuron_model": "scif",
-                                                      "noise_precision": 5})
-        print(solution)
-        self.assertTrue((solution == self.solution).all())
+        report = self.solver.solve(config=SolverConfig(
+            timeout=200,
+            target_cost=-11,
+            hyperparameters={"neuron_model": "scif",
+                             "noise_precision": 5}
+        ))
+        print(report)
+        self.assertTrue((report.best_state == self.solution).all())
 
     def test_solver_creates_optimizationsolver_process(self):
-        self.solver._create_solver_process(self.problem, backend="CPU")
+        self.solver._create_solver_process(config=SolverConfig(backend="CPU"))
         class_name = type(self.solver.solver_process).__name__
         self.assertEqual(class_name, "OptimizationSolverProcess")
 
     def test_solves_creates_macrostate_reader_processes(self):
         self.assertIsNone(self.solver.solver_process)
-        self.solver.solve(timeout=1)
+        self.solver.solve(config=SolverConfig(timeout=1))
         mr = self.solver.solver_process.model_class(
             self.solver.solver_process
         ).macrostate_reader
@@ -77,7 +84,7 @@ class TestOptimizationSolver(unittest.TestCase):
 
     def test_macrostate_reader_processes_connections(self):
         self.assertIsNone(self.solver.solver_process)
-        self.solver.solve(timeout=1)
+        self.solver.solve(config=SolverConfig(timeout=1))
         mr = self.solver.solver_process.model_class(
             self.solver.solver_process
         ).macrostate_reader
@@ -100,7 +107,7 @@ class TestOptimizationSolver(unittest.TestCase):
 
     def test_cost_checker_is_connected_to_variables_population(self):
         self.assertIsNone(self.solver.solver_process)
-        self.solver.solve(timeout=1)
+        self.solver.solve(config=SolverConfig(timeout=1))
         pm = self.solver.solver_process.model_class(
             self.solver.solver_process
         )
@@ -111,7 +118,7 @@ class TestOptimizationSolver(unittest.TestCase):
         )
 
     def test_qubo_cost_defines_weights(self):
-        self.solver.solve(timeout=1)
+        self.solver.solve(config=SolverConfig(timeout=1))
         pm = self.solver.solver_process.model_class(
             self.solver.solver_process
         )
@@ -122,7 +129,7 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertTrue(condition)
 
     def test_qubo_cost_defines_biases(self):
-        self.solver.solve(timeout=1)
+        self.solver.solve(config=SolverConfig(timeout=1))
         pm = self.solver.solver_process.model_class(
             self.solver.solver_process
         )
@@ -131,7 +138,7 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertTrue(condition)
 
     def test_qubo_cost_defines_num_vars_in_discrete_variables_process(self):
-        self.solver.solve(timeout=1)
+        self.solver.solve(config=SolverConfig(timeout=1))
         pm = self.solver.solver_process.model_class(
             self.solver.solver_process
         )
@@ -151,17 +158,18 @@ def solve_workload(q, reference_solution, noise_precision=3,
     problem = QUBO(q)
     np.random.seed(2)
     solver = OptimizationSolver(problem)
-    solution = solver.solve(timeout=50000,
-                            target_cost=expected_cost,
-                            hyperparameters={
-                                'neuron_model': 'scif',
-                                'noise_amplitude': noise_amplitude,
-                                'noise_precision': noise_precision,
-                                'sustained_on_tau': on_tau
-                            }
-                            )
-    cost = solution @ q @ solution
-    return solution, cost, expected_cost
+    report = solver.solve(config=SolverConfig(
+        timeout=20000,
+        target_cost=expected_cost,
+        hyperparameters={
+            'neuron_model': 'scif',
+            'noise_amplitude': noise_amplitude,
+            'noise_precision': noise_precision,
+            'sustained_on_tau': on_tau
+        }
+    ))
+    cost = report.best_state @ q @ report.best_state
+    return report.best_state, cost, expected_cost
 
 
 class TestWorkloads(unittest.TestCase):

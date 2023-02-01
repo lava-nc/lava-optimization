@@ -41,11 +41,15 @@ class TestOptimizationSolver(unittest.TestCase):
     def test_solve_method_nebm(self):
         print("test_solve_method")
         np.random.seed(2)
-        solution = self.solver.solve(timeout=200, target_cost=-11,
-                                     backend="CPU",
-                                     hyperparameters={"neuron_model": "nebm"})
-        print(solution)
-        self.assertTrue((solution == self.solution).all())
+        config = SolverConfig(
+            timeout=200,
+            target_cost=-11,
+            backend="CPU",
+            hyperparameters={"neuron_model": "nebm"}
+        )
+        report = self.solver.solve(config=config)
+        print(report)
+        self.assertTrue((report.best_state == self.solution).all())
 
     def test_solve_method_scif(self):
         print("test_solve_method")

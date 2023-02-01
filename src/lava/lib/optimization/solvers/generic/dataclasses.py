@@ -94,6 +94,10 @@ class MacroStateReader:
         return self.solution_readout.solution_step
 
     @property
+    def cost(self):
+        return self.cost_convergence_check.cost
+
+    @property
     def cost_in(self):
         return self.cost_convergence_check.cost_components
 

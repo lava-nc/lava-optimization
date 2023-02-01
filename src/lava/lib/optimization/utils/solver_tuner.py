@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
+from lava.lib.optimization.solvers.generic.solver import (
+    OptimizationSolver, SolverConfig, SolverReport
+)
 import itertools as it
 import typing as ty
 
@@ -51,10 +54,10 @@ class SolverTuner:
             len(self._search_space), dtype=self._store_dtype)
 
     def tune(self,
-             solver,
-             solver_params: ty.Dict,
-             fitness_fn: ty.Callable[[float, int], float],
+             solver: OptimizationSolver,
+             fitness_fn: ty.Callable[[SolverReport], float],
              fitness_target: float = None,
+             config: SolverConfig = SolverConfig()
              ):
         """
         Perform random search to optimize solver hyper-parameters based on a
@@ -64,8 +67,6 @@ class SolverTuner:
         ----------
         solver: OptimizationSolver
             Optimization solver to use for solving the problem.
-        solver_params: ty.Dict
-            Parameters for the solver.
         fitness_fn: ty.Callable[[float, int], float]
             Fitness function to evaluate a given set of hyper-parameters,
             taking as input the current cost and number of steps to solution.
@@ -73,6 +74,8 @@ class SolverTuner:
         fitness_target: float, optional
             Fitness target to reach. If this is not passed, the full grid is
             explored before stopping search.
+        config: SolverConfig, optional
+            Solver configuration to be used.
 
         Returns
         -------
@@ -82,7 +85,6 @@ class SolverTuner:
             Flag signaling if the fitness_target has been reached. If no
             fitness_target is passed, the flag is True.
         """
-        # TODO : Check that hyperparams are arguments for solver
         self._stored_rows = 0
         if self._store.shape[0] < len(self._search_space):
             self._store = np.zeros(
@@ -94,15 +96,17 @@ class SolverTuner:
         for params in self._search_space:
             np.random.seed(self._seed)
             hyperparams = dict(zip(self._params_names, params))
-            solver_params["hyperparameters"] = hyperparams
-            solver.solve(**solver_params)
-            cost = solver.last_run_report["cost"]
-            step_to_sol = solver.last_run_report["steps_to_solution"]
-            fitness = fitness_fn(cost, step_to_sol)
-            self._store_trial(hyperparams, cost, step_to_sol, fitness)
-            if fitness > best_fitness:
+            config.hyperparameters = hyperparams
+            report = solver.solve(config=config)
+            self._store_trial(
+                params=hyperparams,
+                cost=report.best_cost,
+                step_to_sol=report.best_timestep,
+                fitness=fitness_fn(report)
+            )
+            if fitness_fn(report) > best_fitness:
                 best_hyperparams = hyperparams
-                best_fitness = fitness
+                best_fitness = fitness_fn(report)
                 print(
                     f"Better hyperparameters configuration found!\n"
                     f"Hyperparameters: {best_hyperparams}"

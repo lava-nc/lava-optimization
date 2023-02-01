@@ -77,6 +77,8 @@ class SolverConfig:
         step_size and init_value. All but the last are integers, the initial
         value is an array-like of initial values for the variables defining
         the problem.
+    probe_cost: bool
+        A boolean flag to request cost tracking through time.
     probe_time: bool
         A boolean flag to request time profiling, available only on "Loihi2"
         backend.
@@ -210,14 +212,14 @@ class OptimizationSolver:
         return report
 
     def _prepare_solver(self, config: SolverConfig):
+        self._create_solver_process(config=config)
         if config.probe_cost:
-            if config.backend == "Loihi2":
+            if config.backend in NEUROCORES:
                 self._cost_tracker = StateProbe(self.solver_process.optimality)
-            if config.backend == "CPU":
+            if config.backend in CPUS:
                 self._cost_tracker = Monitor()
                 self._cost_tracker.probe(target=self.solver_process.optimality,
                                          num_steps=config.timeout)
-        self._create_solver_process(config=config)
         run_cfg = self._get_run_config(backend=config.backend,
                                        probes=[self._cost_tracker])
         run_condition = RunSteps(num_steps=config.timeout)

@@ -3,6 +3,7 @@
 # See: https://spdx.org/licenses/
 import typing as ty
 from dataclasses import dataclass
+from lava.utils.profiler import Profiler
 
 import numpy.typing as npt
 import numpy as np
@@ -106,11 +107,14 @@ class SolverReport:
         Execution timestep during which the best solution was found.
     solver_config: SolverConfig
         Solver configuraiton used. Refers to SolverConfig documentation.
+    profiler: Profiler
+        Profiler instance containing time, energy and activity measurements.
     """
     best_cost: int = None
     best_state: np.ndarray = None
     best_timestep: int = None
     solver_config: SolverConfig = None
+    profiler: Profiler = None
 
 
 def solve(problem: OptimizationProblem,
@@ -183,7 +187,8 @@ class OptimizationSolver:
             best_cost=best_cost,
             best_state=best_state,
             best_timestep=best_timestep,
-            solver_config=config
+            solver_config=config,
+            profiler=self._profiler
         )
 
         return report
@@ -258,12 +263,13 @@ class OptimizationSolver:
 
     def _prepare_profiler(self, config: SolverConfig, run_cfg) -> None:
         if config.probe_time or config.probe_energy:
-            from lava.utils.profiler import Profiler
             self._profiler = Profiler.init(run_cfg)
             if config.probe_time:
                 self._profiler.execution_time_probe(num_steps=config.timeout)
             if config.probe_energy:
                 self._profiler.energy_probe(num_steps=config.timeout)
+        else:
+            self._profiler = None
 
     def _get_results(self):
         best_state = self.solver_process.variable_assignment.aliased_var.get()

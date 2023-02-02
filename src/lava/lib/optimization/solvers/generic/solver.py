@@ -28,7 +28,6 @@ from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
-from lava.utils.loihi2_state_probes import StateProbe
 
 from lava.lib.optimization.solvers.generic.read_gate.models import \
     ReadGatePyModel
@@ -215,6 +214,7 @@ class OptimizationSolver:
         self._create_solver_process(config=config)
         if config.probe_cost:
             if config.backend in NEUROCORES:
+                from lava.utils.loihi2_state_probes import StateProbe
                 self._cost_tracker = StateProbe(self.solver_process.optimality)
             if config.backend in CPUS:
                 self._cost_tracker = Monitor()
@@ -266,10 +266,12 @@ class OptimizationSolver:
         return [CPU] if backend in CPUS else [Loihi2NeuroCore], LoihiProtocol
 
     def _get_cost_tracking(self):
-        if type(self._cost_tracker) is Monitor:
+        if self._cost_tracker is None:
+            return None
+        elif type(self._cost_tracker) is Monitor:
             return self._cost_tracker.get_data()[self.solver_process.name][
                 self.solver_process.optimality.name].T.astype(np.int32)
-        elif type(self._cost_tracker) is StateProbe:
+        else:
             return self._cost_tracker.time_series
 
     def _get_run_config(self, backend: BACKENDS, probes=None):

@@ -132,6 +132,7 @@ class SolverReport:
         else:
             plt.savefig(filename)
 
+
 def solve(problem: OptimizationProblem,
           config: SolverConfig = SolverConfig()) -> np.ndarray:
     """

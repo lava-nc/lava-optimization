@@ -200,7 +200,7 @@ class OptimizationSolver:
         best_state, best_cost, best_timestep = self._get_results()
         self.solver_process.stop()
         cost_timeseries = self._get_cost_tracking()
-        report = SolverReport(
+        return SolverReport(
             best_cost=best_cost,
             best_state=best_state,
             best_timestep=best_timestep,
@@ -208,8 +208,6 @@ class OptimizationSolver:
             profiler=self._profiler,
             cost_timeseries=cost_timeseries
         )
-
-        return report
 
     def _prepare_solver(self, config: SolverConfig):
         self._create_solver_process(config=config)
@@ -222,7 +220,8 @@ class OptimizationSolver:
                 self._cost_tracker.probe(target=self.solver_process.optimality,
                                          num_steps=config.timeout)
         run_cfg = self._get_run_config(backend=config.backend,
-                                       probes=[self._cost_tracker])
+                                       probes=[self._cost_tracker]
+                                       if self._cost_tracker else None)
         run_condition = RunSteps(num_steps=config.timeout)
         self._prepare_profiler(config=config, run_cfg=run_cfg)
         return run_condition, run_cfg
@@ -269,7 +268,7 @@ class OptimizationSolver:
     def _get_cost_tracking(self):
         if self._cost_tracker is None:
             return None
-        elif type(self._cost_tracker) is Monitor:
+        if isinstance(self._cost_tracker, Monitor):
             return self._cost_tracker.get_data()[self.solver_process.name][
                 self.solver_process.optimality.name].T.astype(np.int32)
         else:

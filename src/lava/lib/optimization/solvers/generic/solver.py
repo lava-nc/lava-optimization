@@ -12,6 +12,8 @@ from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     BoltzmannAbstract,
 )
+from lava.lib.optimization.solvers.generic import sconfig
+
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     BoltzmannAbstractModel,
 )
@@ -27,8 +29,7 @@ from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
-from lava.lib.optimization.solvers.generic.read_gate.models import \
-    ReadGatePyModel
+
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed, \
     PyModelQuboScifFixed
@@ -86,7 +87,7 @@ class SolverConfig:
     timeout: int = 1e3
     target_cost: int = 0
     backend: BACKENDS = CPU
-    hyperparameters: dict = None
+    hyperparameters: ty.Union[ty.Dict, ty.List[ty.Dict]] = None
     probe_time: bool = False
     probe_energy: bool = False
     log_level: int = 40
@@ -181,8 +182,13 @@ class OptimizationSolver:
         run_condition, run_cfg = self._prepare_solver(config)
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         best_state, best_cost, best_timestep = self._get_results()
+        if type(config.hyperparameters) is list:
+            optimality, idx = self.solver_process.optimality.get()
+            raw_solution =np.asarray(self.solver_process.finders[
+                int(idx)].variables_assignment.get()).astype(np.int32)
+            raw_solution &= 0x3F
+            best_state = (raw_solution.astype(np.int8) >> 5)
         self.solver_process.stop()
-
         report = SolverReport(
             best_cost=best_cost,
             best_state=best_state,
@@ -190,10 +196,12 @@ class OptimizationSolver:
             solver_config=config,
             profiler=self._profiler
         )
-
         return report
 
     def _prepare_solver(self, config: SolverConfig):
+        hyperparameters=config.hyperparameters
+        sconfig.num_in_ports = len(hyperparameters) if type(hyperparameters) \
+                                                       is list else 1
         self._create_solver_process(config=config)
         run_cfg = self._get_run_config(backend=config.backend)
         run_condition = RunSteps(num_steps=config.timeout)
@@ -241,6 +249,7 @@ class OptimizationSolver:
 
     def _get_run_config(self, backend: BACKENDS):
         if backend in CPUS:
+            from lava.lib.optimization.solvers.generic.read_gate.models import ReadGatePyModel
             pdict = {self.solver_process: self.solver_model,
                      ReadGate: ReadGatePyModel,
                      Dense: PyDenseModelFloat,
@@ -273,7 +282,7 @@ class OptimizationSolver:
 
     def _get_results(self):
         best_state = self.solver_process.variable_assignment.aliased_var.get()
-        best_cost = self.solver_process.optimality.aliased_var.get()
-        best_cost = (best_cost.astype(np.int32) << 8) >> 8
+        best_cost = self.solver_process.optimality.aliased_var.get()[0]
+        best_cost = (np.asarray([best_cost]).astype(np.int32) << 8) >> 8
         best_timestep = self.solver_process.solution_step.aliased_var.get()
         return best_state, int(best_cost), int(best_timestep)

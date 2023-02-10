@@ -501,7 +501,6 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         return s_wta
 
     def run_spk(self) -> None:
-
         # Receive synaptic input
         self.a_in_data = self.a_in.recv().astype(int)
 

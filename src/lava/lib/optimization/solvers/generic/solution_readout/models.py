@@ -10,7 +10,7 @@ from lava.magma.core.model.py.ports import PyInPort
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
-
+from lava.lib.optimization.solvers.generic import sconfig
 
 @implements(SolutionReadout, protocol=LoihiProtocol)
 @requires(CPU)
@@ -52,8 +52,8 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 				print(
 					f"Host: better solution found by network {min_cost_id} at "
 					f"step {abs(timestep)} "
-					f"with cost {cost[0]}: {self.solution}")
-
+					f"with cost {cost[0]}" + (f": {self.solution}" if \
+						sconfig.num_in_ports==1 else ""))
 			if self.min_cost[0] is not None and self.min_cost[0] <= \
 					self.target_cost:
 				print(f"Host: network reached target cost {self.target_cost}.")

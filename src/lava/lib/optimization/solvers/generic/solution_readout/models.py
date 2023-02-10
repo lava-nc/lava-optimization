@@ -31,7 +31,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 	timestep_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
 									   precision=32)
 	target_cost: int = LavaPyType(int, np.int32, 32)
-	min_cost: int = LavaPyType(int, np.int32, 32)
+	min_cost: np.ndarray  = LavaPyType(np.ndarray, np.int32, 32)
 	stop = False
 
 	def run_spk(self):
@@ -47,7 +47,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 			# The binary solution was attained 2 steps ago. Shift down by 4.
 			self.solution[:] = (raw_solution.astype(np.int8) >> 4)
 			self.solution_step = abs(timestep)
-			self.min_cost = np.asarray([cost[0], min_cost_id])
+			self.min_cost[:] = np.asarray([cost[0], min_cost_id])
 			if cost[0] < 0:
 				print(
 					f"Host: better solution found by network {min_cost_id} at "

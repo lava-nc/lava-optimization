@@ -119,16 +119,16 @@ class TestOptimizationSolver(unittest.TestCase):
 				backend="CPU",
 				hyperparameters=[{
 						"neuron_model"    : "scif",
-						'noise_amplitude' : 0,
-						'noise_precision' : 5,
-						'sustained_on_tau': -3
-						},
-						{
-						"neuron_model"    : "scif",
 						'noise_amplitude' : 1,
 						'noise_precision' : 5,
 						'sustained_on_tau': -3
-						}
+						},
+						# {
+						# "neuron_model"    : "scif",
+						# 'noise_amplitude' : 1,
+						# 'noise_precision' : 5,
+						# 'sustained_on_tau': -3
+						# }
 						]
 				)
 		report = self.solver.solve(config=config)

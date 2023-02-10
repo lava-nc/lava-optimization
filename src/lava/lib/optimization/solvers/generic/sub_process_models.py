@@ -71,7 +71,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
 			steps_to_fire = proc.hyperparameters.get("steps_to_fire", 10)
 			init_value = proc.hyperparameters.get("init_value", np.zeros(
                     shape))
-			init_state = proc.hyperparameters.get("init_value", np.zeros(
+			init_state = proc.hyperparameters.get("init_state", np.zeros(
                     shape))
 			on_tau = proc.hyperparameters.get("sustained_on_tau", (-3))
 			self.s_bit = \

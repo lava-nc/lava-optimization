@@ -124,10 +124,7 @@ class TestOptimizationSolver(unittest.TestCase):
 						'sustained_on_tau': -3
 						},
 						{
-						"neuron_model"    : "scif",
-						'noise_amplitude' : 1,
-						'noise_precision' : 5,
-						'sustained_on_tau': -3
+						"neuron_model"    : "nebm"
 						}
 						]
 				)

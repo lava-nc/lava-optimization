@@ -184,10 +184,11 @@ class OptimizationSolver:
         best_state, best_cost, best_timestep = self._get_results()
         if type(config.hyperparameters) is list:
             optimality, idx = self.solver_process.optimality.get()
+            is_nebm = config.hyperparameters[int(idx)]['neuron_model'] == "nebm"
             raw_solution =np.asarray(self.solver_process.finders[
                 int(idx)].variables_assignment.get()).astype(np.int32)
-            raw_solution &= 0x3F
-            best_state = (raw_solution.astype(np.int8) >> 5)
+            raw_solution &= (0xFF if is_nebm else 0x3F)
+            best_state = (raw_solution.astype(np.int8) >> (6 if is_nebm else 5))
         self.solver_process.stop()
         report = SolverReport(
             best_cost=best_cost,

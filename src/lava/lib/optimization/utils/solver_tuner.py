@@ -97,7 +97,7 @@ class SolverTuner:
         for params in self._search_space:
             np.random.seed(self._seed)
             hyperparams = dict(zip(self._params_names, params))
-            config.hyperparameters = hyperparams
+            config.hyperparameters.update(hyperparams)
             report = solver.solve(config=config)
             self._store_trial(
                 params=hyperparams,
@@ -106,7 +106,7 @@ class SolverTuner:
                 fitness=fitness_fn(report)
             )
             if fitness_fn(report) > best_fitness:
-                best_hyperparams = hyperparams
+                best_hyperparams = config.hyperparameters.copy()
                 best_fitness = fitness_fn(report)
                 print(
                     f"Better hyperparameters configuration found!\n"

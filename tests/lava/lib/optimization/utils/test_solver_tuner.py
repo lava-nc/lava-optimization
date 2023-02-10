@@ -24,7 +24,10 @@ def prepare_solver_and_config():
     config = SolverConfig(
         timeout=1000,
         target_cost=-11,
-        backend="CPU"
+        backend="CPU",
+        hyperparameters={
+            "neuron_model": "nebm"
+        }
     )
 
     return solver, config

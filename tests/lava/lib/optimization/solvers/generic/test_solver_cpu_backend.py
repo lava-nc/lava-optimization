@@ -15,6 +15,7 @@ from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.solver import (
     OptimizationSolver, SolverConfig
 )
+from lava.lib.optimization.utils.generators.mis import MISProblem
 
 
 class TestOptimizationSolver(unittest.TestCase):
@@ -164,10 +165,8 @@ def solve_workload(problem, reference_solution, noise_precision=3,
         timeout=20000,
         target_cost=expected_cost,
         hyperparameters={
-            'neuron_model': 'scif',
-            'noise_amplitude': noise_amplitude,
-            'noise_precision': noise_precision,
-            'sustained_on_tau': on_tau
+            'neuron_model': 'nebm',
+            'temperature': 1
         }
     ))
     return report, expected_cost
@@ -255,6 +254,21 @@ class TestWorkloads(unittest.TestCase):
                                                noise_amplitude=1,
                                                on_tau=-1)
         self.assertEqual(p.evaluate_cost(report.best_state), expected_cost)
+
+    def test_solve_mis(self):
+        mis = MISProblem(
+            num_vertices=15,
+            connection_prob=0.9,
+            seed=0
+        )
+        problem = mis.get_as_qubo(1, 8)
+        reference_solution = mis.find_maximum_independent_set()
+        report, expected_cost = solve_workload(problem, reference_solution,
+                                               noise_precision=5,
+                                               noise_amplitude=1,
+                                               on_tau=-1)
+        self.assertEqual(problem.evaluate_cost(report.best_state),
+                         expected_cost)
 
 
 if __name__ == "__main__":

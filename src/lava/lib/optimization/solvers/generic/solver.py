@@ -27,8 +27,7 @@ from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
-from lava.lib.optimization.solvers.generic.read_gate.models import \
-    ReadGatePyModel
+
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed, \
     PyModelQuboScifFixed
@@ -241,6 +240,7 @@ class OptimizationSolver:
 
     def _get_run_config(self, backend: BACKENDS):
         if backend in CPUS:
+            from lava.lib.optimization.solvers.generic.read_gate.models import ReadGatePyModel
             pdict = {self.solver_process: self.solver_model,
                      ReadGate: ReadGatePyModel,
                      Dense: PyDenseModelFloat,

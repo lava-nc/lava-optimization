@@ -1,18 +1,22 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
-import typing as ty
-from dataclasses import dataclass
-from lava.proc.monitor.process import Monitor
-from lava.utils.profiler import Profiler
-
-import numpy.typing as npt
 import numpy as np
+import typing as ty
+
+from dataclasses import dataclass
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     BoltzmannAbstract,
 )
+from lava.lib.optimization.solvers.generic.read_gate.models import \
+    ReadGatePyModel
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed, \
+    PyModelQuboScifFixed
+from lava.lib.optimization.solvers.generic.scif.process import Boltzmann, \
+    QuboScif
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     BoltzmannAbstractModel,
 )
@@ -28,14 +32,8 @@ from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
-
-from lava.lib.optimization.solvers.generic.read_gate.models import \
-    ReadGatePyModel
-from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed, \
-    PyModelQuboScifFixed
-from lava.lib.optimization.solvers.generic.scif.process import Boltzmann, \
-    QuboScif
+from lava.proc.monitor.process import Monitor
+from lava.utils.profiler import Profiler
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -198,8 +196,8 @@ class OptimizationSolver:
         run_condition, run_cfg = self._prepare_solver(config)
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         best_state, best_cost, best_timestep = self._get_results()
-        self.solver_process.stop()
         cost_timeseries = self._get_cost_tracking()
+        self.solver_process.stop()
         return SolverReport(
             best_cost=best_cost,
             best_state=best_state,
@@ -217,8 +215,9 @@ class OptimizationSolver:
                 self._cost_tracker = StateProbe(self.solver_process.optimality)
             if config.backend in CPUS:
                 self._cost_tracker = Monitor()
-                self._cost_tracker.probe(target=self.solver_process.optimality,
-                                         num_steps=config.timeout)
+                self._cost_tracker.probe(
+                    target=self.solver_process.optimality,
+                    num_steps=config.timeout)
         run_cfg = self._get_run_config(backend=config.backend,
                                        probes=[self._cost_tracker]
                                        if self._cost_tracker else None)

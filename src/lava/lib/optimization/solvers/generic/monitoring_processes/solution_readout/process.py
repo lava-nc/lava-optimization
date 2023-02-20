@@ -1,6 +1,7 @@
 # Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
+import numpy as np
 import typing as ty
 
 from lava.magma.core.process.ports.ports import InPort, OutPort
@@ -45,7 +46,7 @@ class SolutionReadout(AbstractProcess):
                          log_config=log_config)
         self.solution = Var(shape=shape, init=-1)
         self.solution_step = Var(shape=(1,), init=-1)
-        self.min_cost = Var(shape=(1,), init=-1)
+        self.min_cost = Var(shape=(1,), init=np.array([-1]))
         self.target_cost = Var(shape=(1,), init=target_cost)
         self.read_solution = InPort(shape=shape)
         self.cost_in = InPort(shape=(1,))

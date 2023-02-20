@@ -9,12 +9,12 @@ from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     CostConvergenceChecker,
 )
+from lava.lib.optimization.solvers.generic.monitoring_processes \
+    .solution_readout.process import SolutionReadout
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.solver import (
     OptimizationSolver, SolverConfig, SolverReport
 )
-from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.monitoring_processes \
-    .solution_readout.process import SolutionReadout
 
 
 class TestOptimizationSolver(unittest.TestCase):
@@ -33,7 +33,6 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertIsInstance(self.solver, OptimizationSolver)
 
     def test_solution_has_expected_shape(self):
-
         print("test_solution_has_expected_shape")
         report = self.solver.solve(config=SolverConfig(timeout=3000))
         self.assertEqual(report.best_state.shape, self.solution.shape)
@@ -154,13 +153,15 @@ class TestOptimizationSolver(unittest.TestCase):
     def test_cost_tracking(self):
         print("test_cost_tracking")
         config = SolverConfig(
-            timeout=100,
-            target_cost=-100,
+            timeout=50,
+            target_cost=-20,
             backend="CPU",
             probe_cost=True
         )
         report: SolverReport = self.solver.solve(config=config)
-        print(report.cost_timeseries)
+        self.assertIsInstance(report.cost_timeseries, np.ndarray)
+        self.assertEqual(report.cost_timeseries[0][report.best_timestep],
+                         report.best_cost)
 
 
 def solve_workload(q, reference_solution, noise_precision=3,
@@ -177,10 +178,8 @@ def solve_workload(q, reference_solution, noise_precision=3,
             'noise_amplitude': noise_amplitude,
             'noise_precision': noise_precision,
             'sustained_on_tau': on_tau
-        },
-        probe_cost=True
+        }
     ))
-    print(report.cost_timeseries)
     cost = report.best_state @ q @ report.best_state
     return report.best_state, cost, expected_cost
 

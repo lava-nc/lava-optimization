@@ -23,9 +23,13 @@ from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
 from lava.magma.core.resources import AbstractComputeResource
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
-from lava.proc.dense.process import Dense
-from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from numpy import typing as npt
+
+from lava.lib.optimization.solvers.generic.solution_reader.process import \
+    SolutionReader
+
+from lava.lib.optimization.solvers.generic.solution_finder.process import \
+    SolutionFinder
 
 
 class SolverProcessBuilder:
@@ -139,10 +143,10 @@ class SolverProcessBuilder:
         """
 
         def constructor(self,
-                        hyperparameters: ty.Dict[
-                            str, ty.Union[int, npt.ArrayLike]],
-                        name: ty.Optional[str] = None,
-                        log_config: ty.Optional[LogConfig] = None) -> None:
+                    hyperparameters: ty.Dict[
+                        str, ty.Union[int, npt.ArrayLike]],
+                    name: ty.Optional[str] = None,
+                    log_config: ty.Optional[LogConfig] = None) -> None:
             super(type(self), self).__init__(hyperparameters=hyperparameters,
                                              name=name,
                                              log_config=log_config)
@@ -150,23 +154,23 @@ class SolverProcessBuilder:
             self.hyperparameters = hyperparameters
             if not hasattr(problem, "variables"):
                 raise Exception(
-                    "An optimization problem must contain " "variables."
-                )
+                        "An optimization problem must contain " "variables."
+                        )
             if hasattr(problem.variables, "continuous") or isinstance(
                     problem.variables, ContinuousVariables
-            ):
+                    ):
                 self.continuous_variables = Var(
-                    shape=(problem.variables.continuous.num_vars, 2)
-                )
+                        shape=(problem.variables.continuous.num_vars, 2)
+                        )
             if hasattr(problem.variables, "discrete") or isinstance(
                     problem.variables, DiscreteVariables
-            ):
+                    ):
                 self.discrete_variables = Var(
-                    shape=(
-                        problem.variables.num_variables,
-                        # problem.variables.domain_sizes[0]
-                    )
-                )
+                        shape=(
+                                problem.variables.num_variables,
+                                # problem.variables.domain_sizes[0]
+                                )
+                        )
             self.cost_diagonal = None
             if hasattr(problem, "cost"):
                 mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
@@ -174,12 +178,12 @@ class SolverProcessBuilder:
                 self.cost_diagonal = problem.cost.coefficients[
                     2].diagonal()
             self.variable_assignment = Var(
-                shape=(problem.variables.num_variables,)
-            )
-            self.optimality = Var(shape=(1,))
+                    shape=(problem.variables.num_variables,)
+                    )
+            self.optimality = Var(shape=(2,))
             self.feasibility = Var(shape=(1,))
             self.solution_step = Var(shape=(1,))
-
+            self.finders = None
         self._process_constructor = constructor
 
     def _create_model_constructor(self, target_cost: int):
@@ -195,90 +199,51 @@ class SolverProcessBuilder:
         """
 
         def constructor(self, proc):
-            variables = VariablesImplementation()
+            var_shape = proc.variable_assignment.shape
+            discrete_var_shape = None
             if hasattr(proc, "discrete_variables"):
-                # ADD INIT_STATE HERE
-                # ASSERT THAT USER DOES NOT PROVIDE INITIAL STATE
-                # ADD TODO, needs to be generalized
-                init_value = proc.hyperparameters.get("init_value", np.zeros(
-                    proc.discrete_variables.shape, dtype=int))
-                q_off_diag = proc.cost_coefficients[2].init
-                q_diag = proc.cost_coefficients[1].init
-                proc.hyperparameters['init_state'] = q_off_diag @ init_value \
-                    + q_diag
-                variables.discrete = DiscreteVariablesProcess(
-                    shape=proc.discrete_variables.shape,
-                    cost_diagonal=proc.cost_diagonal,
-                    hyperparameters=proc.hyperparameters)
+                discrete_var_shape = proc.discrete_variables.shape
+            continuous_var_shape = None
             if hasattr(proc, "continuous_variables"):
-                variables.continuous = ContinuousVariablesProcess(
-                    shape=proc.continuous_variables.shape
-                )
+                continuous_var_shape = proc.continuous_variables.shape
+            cost_diagonal = proc.cost_diagonal
+            cost_coefficients = proc.cost_coefficients
+            constraints = proc.problem.constraints
+            hyperparameters = proc.hyperparameters
 
-            macrostate_reader = MacroStateReader(
-                ReadGate(shape=proc.variable_assignment.shape,
-                         target_cost=target_cost),
-                SolutionReadout(shape=proc.variable_assignment.shape,
-                                target_cost=target_cost),
-            )
-            if proc.problem.constraints:
-                macrostate_reader.sat_convergence_check = SatConvergenceChecker(
-                    shape=proc.variable_assignment.shape
-                )
-                proc.vars.feasibility.alias(macrostate_reader.satisfaction)
-            if hasattr(proc, "cost_coefficients"):
-                cost_minimizer = CostMinimizer(
-                    Dense(
-                        # todo just using the last coefficient for now
-                        weights=proc.cost_coefficients[2].init,
-                        num_message_bits=24
-                    )
-                )
-                variables.importances = proc.cost_coefficients[1].init
-                c = CostConvergenceChecker(
-                    shape=proc.variable_assignment.shape)
-                macrostate_reader.cost_convergence_check = c
-                variables.local_cost.connect(macrostate_reader.cost_in)
-                proc.vars.optimality.alias(macrostate_reader.min_cost)
+            hps = hyperparameters if type(hyperparameters) is list else [
+                    hyperparameters]
 
+            self.solution_reader = SolutionReader(var_shape=discrete_var_shape,
+                                                  target_cost=target_cost,
+                                                  num_in_ports=len(hps)
+                                                  )
+            finders = []
+            for idx, hp in enumerate(hps):
+                finder = SolutionFinder(cost_diagonal=cost_diagonal,
+                                        cost_coefficients=cost_coefficients,
+                                        constraints=constraints,
+                                        hyperparameters=hp,
+                                        discrete_var_shape=discrete_var_shape,
+                                        continuous_var_shape=continuous_var_shape,
+                                        )
+                setattr(self, f"finder_{idx}", finder)
+                finders.append(finder)
+                finder.cost_out.connect(getattr(self.solution_reader,
+                                                f"read_gate_in_port_{idx}")
+                                        )
+            proc.finders = finders
             # Variable aliasing
-            proc.vars.variable_assignment.alias(macrostate_reader.solution)
-            # Connect processes
-            macrostate_reader.update_buffer.connect(
-                macrostate_reader.read_gate_in_port
-            )
-            # macrostate_reader.cost_convergence_check.s_out.connect(
-            #     variables.discrete.)
-            macrostate_reader.read_gate_cost_out.connect(
-                macrostate_reader.solution_readout_cost_in
-            )
-            macrostate_reader.read_gate_req_stop.connect(
-                macrostate_reader.solution_readout_timestep_in
-            )
-            macrostate_reader.ref_port.connect_var(
-                variables.variables_assignment
+            if hasattr(proc, "cost_coefficients"):
+                proc.vars.optimality.alias(self.solution_reader.min_cost)
+            proc.vars.variable_assignment.alias(self.solution_reader.solution)
+            proc.vars.solution_step.alias(self.solution_reader.solution_step)
 
-            )
-            macrostate_reader.read_gate_solution_out.connect(
-                macrostate_reader.solution_readout_solution_in)
-            cost_minimizer.gradient_out.connect(variables.gradient_in)
-            variables.state_out.connect(cost_minimizer.state_in)
-            self.macrostate_reader = macrostate_reader
-            self.variables = variables
-            self.cost_minimizer = cost_minimizer
-            proc.vars.solution_step.alias(macrostate_reader.solution_step)
-            for container in [macrostate_reader, cost_minimizer, variables]:
-                SolverProcessBuilder.update_parent_process(data_class=container,
-                                                           parent=proc)
+            # Connect processes
+            self.solution_reader.ref_port.connect_var(
+                    finders[0].variables_assignment)
 
         self._model_constructor = constructor
-
-    @staticmethod
-    def update_parent_process(data_class: ty.Any,
-                              parent: AbstractProcess):
-        for child in list(data_class.__dict__.values()):
-            if child is not None:
-                child.parent_proc = parent
 
     @staticmethod
     def _map_rank_to_coefficients_vars(coefficients: CoefficientTensorsMixin) \

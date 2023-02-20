@@ -34,9 +34,9 @@ class SolutionFinderModel(AbstractSubProcessModel):
 		self.variables = VariablesImplementation()
 		if discrete_var_shape:
 			hyperparameters.update(dict(
-					init_state=self._get_init_state(hyperparameters,
-													cost_coefficients,
-													discrete_var_shape)))
+				init_state=self._get_init_state(hyperparameters,
+												cost_coefficients,
+												discrete_var_shape)))
 			self.variables.discrete = DiscreteVariablesProcess(
 					shape=discrete_var_shape,
 					cost_diagonal=cost_diagonal,

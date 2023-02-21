@@ -179,6 +179,7 @@ class SolverProcessBuilder:
             self.optimality = Var(shape=(1,))
             self.feasibility = Var(shape=(1,))
             self.solution_step = Var(shape=(1,))
+            self.cost_monitor = Var(shape=(1,))
 
         self._process_constructor = constructor
 

@@ -46,7 +46,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             # The binary solution was attained 2 steps ago. Shift down by 4.
             self.solution[:] = (raw_solution.astype(np.int8) >> 4)
             self.solution_step = abs(timestep)
-            self.min_cost = cost[0]
+            self.min_cost = np.array([cost[0]])
 
             if cost[0] < 0:
                 print(f"Host: better solution found at step {abs(timestep)} "

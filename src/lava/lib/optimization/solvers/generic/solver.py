@@ -1,17 +1,22 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
-import typing as ty
-from dataclasses import dataclass
-from lava.utils.profiler import Profiler
-
-import numpy.typing as npt
 import numpy as np
+import typing as ty
+
+from dataclasses import dataclass
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     BoltzmannAbstract,
 )
+from lava.lib.optimization.solvers.generic.read_gate.models import \
+    ReadGatePyModel
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed, \
+    PyModelQuboScifFixed
+from lava.lib.optimization.solvers.generic.scif.process import Boltzmann, \
+    QuboScif
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     BoltzmannAbstractModel,
 )
@@ -21,19 +26,14 @@ from lava.magma.core.resources import (
     Loihi2NeuroCore,
     NeuroCore,
 )
-from lava.magma.core.run_conditions import RunContinuous, RunSteps
+from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg, Loihi2HwCfg
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
-from lava.lib.optimization.solvers.generic.read_gate.models import \
-    ReadGatePyModel
-from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed, \
-    PyModelQuboScifFixed
-from lava.lib.optimization.solvers.generic.scif.process import Boltzmann, \
-    QuboScif
+from lava.proc.monitor.process import Monitor
+from lava.utils.profiler import Profiler
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -74,6 +74,8 @@ class SolverConfig:
         step_size and init_value. All but the last are integers, the initial
         value is an array-like of initial values for the variables defining
         the problem.
+    probe_cost: bool
+        A boolean flag to request cost tracking through time.
     probe_time: bool
         A boolean flag to request time profiling, available only on "Loihi2"
         backend.
@@ -87,6 +89,7 @@ class SolverConfig:
     target_cost: int = 0
     backend: BACKENDS = CPU
     hyperparameters: dict = None
+    probe_cost: bool = False
     probe_time: bool = False
     probe_energy: bool = False
     log_level: int = 40
@@ -113,6 +116,7 @@ class SolverReport:
     best_cost: int = None
     best_state: np.ndarray = None
     best_timestep: int = None
+    cost_timeseries: np.ndarray = None
     solver_config: SolverConfig = None
     profiler: Profiler = None
 
@@ -163,6 +167,7 @@ class OptimizationSolver:
         self.solver_process = None
         self.solver_model = None
         self._profiler = None
+        self._cost_tracker = None
 
     def solve(self, config: SolverConfig = SolverConfig()) -> SolverReport:
         """
@@ -181,21 +186,32 @@ class OptimizationSolver:
         run_condition, run_cfg = self._prepare_solver(config)
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         best_state, best_cost, best_timestep = self._get_results()
+        cost_timeseries = self._get_cost_tracking()
         self.solver_process.stop()
-
-        report = SolverReport(
+        return SolverReport(
             best_cost=best_cost,
             best_state=best_state,
             best_timestep=best_timestep,
             solver_config=config,
-            profiler=self._profiler
+            profiler=self._profiler,
+            cost_timeseries=cost_timeseries
         )
-
-        return report
 
     def _prepare_solver(self, config: SolverConfig):
         self._create_solver_process(config=config)
-        run_cfg = self._get_run_config(backend=config.backend)
+        if config.probe_cost:
+            if config.backend in NEUROCORES:
+                # from lava.utils.loihi2_state_probes import StateProbe
+                # self._cost_tracker = StateProbe()
+                raise NotImplementedError
+            if config.backend in CPUS:
+                self._cost_tracker = Monitor()
+                self._cost_tracker.probe(
+                    target=self.solver_process.optimality,
+                    num_steps=config.timeout)
+        run_cfg = self._get_run_config(backend=config.backend,
+                                       probes=[self._cost_tracker]
+                                       if self._cost_tracker else None)
         run_condition = RunSteps(num_steps=config.timeout)
         self._prepare_profiler(config=config, run_cfg=run_cfg)
         return run_condition, run_cfg
@@ -239,7 +255,16 @@ class OptimizationSolver:
         """
         return [CPU] if backend in CPUS else [Loihi2NeuroCore], LoihiProtocol
 
-    def _get_run_config(self, backend: BACKENDS):
+    def _get_cost_tracking(self):
+        if self._cost_tracker is None:
+            return None
+        if isinstance(self._cost_tracker, Monitor):
+            return self._cost_tracker.get_data()[self.solver_process.name][
+                self.solver_process.optimality.name].T.astype(np.int32)
+        else:
+            return self._cost_tracker.time_series
+
+    def _get_run_config(self, backend: BACKENDS, probes=None):
         if backend in CPUS:
             pdict = {self.solver_process: self.solver_model,
                      ReadGate: ReadGatePyModel,
@@ -257,7 +282,9 @@ class OptimizationSolver:
                          BoltzmannAbstractModel,
                      }
             return Loihi2HwCfg(exception_proc_model_map=pdict,
-                               select_sub_proc_model=True)
+                               select_sub_proc_model=True,
+                               callback_fxs=probes
+                               )
         else:
             raise NotImplementedError(str(backend) + BACKEND_MSG)
 

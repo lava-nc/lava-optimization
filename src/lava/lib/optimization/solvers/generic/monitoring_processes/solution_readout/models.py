@@ -3,8 +3,7 @@
 # See: https://spdx.org/licenses/
 import numpy as np
 from lava.lib.optimization.solvers.generic.monitoring_processes\
-    .solution_readout.process import \
-	SolutionReadout
+    .solution_readout.process import SolutionReadout
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.py.ports import PyInPort

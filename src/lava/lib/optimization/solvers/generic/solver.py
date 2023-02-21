@@ -37,6 +37,7 @@ from lava.lib.optimization.solvers.generic.scif.process import Boltzmann, \
     QuboScif
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
+HP_TYPE = ty.Union[ty.Dict, ty.List[ty.Dict]]
 CPUS = [CPU, "CPU"]
 NEUROCORES = [Loihi2NeuroCore, NeuroCore, "Loihi2"]
 
@@ -70,7 +71,8 @@ class SolverConfig:
     backend: BACKENDS, optional
         Specifies the backend where the main solver network will be
         deployed.
-    hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]], optional
+    hyperparameters: ty.Union[ty.Dict, ty.Dict[str, ty.Union[int, npt.ArrayLike]]],
+     optional
         A dictionary specifying values for steps_to_fire, noise_amplitude,
         step_size and init_value. All but the last are integers, the initial
         value is an array-like of initial values for the variables defining
@@ -87,7 +89,7 @@ class SolverConfig:
     timeout: int = 1e3
     target_cost: int = 0
     backend: BACKENDS = CPU
-    hyperparameters: ty.Union[ty.Dict, ty.List[ty.Dict]] = None
+    hyperparameters: HP_TYPE = None
     probe_time: bool = False
     probe_energy: bool = False
     log_level: int = 40
@@ -181,14 +183,7 @@ class OptimizationSolver:
         """
         run_condition, run_cfg = self._prepare_solver(config)
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        best_state, best_cost, best_timestep = self._get_results()
-        if type(config.hyperparameters) is list:
-            optimality, idx = self.solver_process.optimality.get()
-            is_nebm = config.hyperparameters[int(idx)]['neuron_model'] == "nebm"
-            raw_solution =np.asarray(self.solver_process.finders[
-                int(idx)].variables_assignment.get()).astype(np.int32)
-            raw_solution &= (0xFF if is_nebm else 0x3F)
-            best_state = (raw_solution.astype(np.int8) >> (6 if is_nebm else 5))
+        best_state, best_cost, best_timestep = self._get_results(config.hyperparameters)
         self.solver_process.stop()
         report = SolverReport(
             best_cost=best_cost,
@@ -281,9 +276,18 @@ class OptimizationSolver:
         else:
             self._profiler = None
 
-    def _get_results(self):
-        best_state = self.solver_process.variable_assignment.aliased_var.get()
+    def _get_results(self, hyperparameters):
         best_cost, idx = self.solver_process.optimality.get()
         best_cost = (np.asarray([best_cost]).astype(np.int32) << 8) >> 8
+        best_state = self._get_best_state(hyperparameters, idx)
         best_timestep = self.solver_process.solution_step.aliased_var.get()
         return best_state, int(best_cost), int(best_timestep)
+
+    def _get_best_state(self, hyperparameters: HP_TYPE, idx: int):
+        if type(hyperparameters) is list:
+            is_nebm = hyperparameters[int(idx)]['neuron_model'] == "nebm"
+            raw_solution = np.asarray(self.solver_process.finders[int(idx)].variables_assignment.get()).astype(np.int32)
+            raw_solution &= (0xFF if is_nebm else 0x3F)
+            return (raw_solution.astype(np.int8) >> (6 if is_nebm else 5))
+        else:
+            return self.solver_process.variable_assignment.aliased_var.get()

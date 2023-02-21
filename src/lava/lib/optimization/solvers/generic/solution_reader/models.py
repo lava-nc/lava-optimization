@@ -5,9 +5,8 @@ from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.solution_reader.process import (
     SolutionReader,
 )
-from lava.lib.optimization.solvers.generic.monitoring_processes.solution_readout.process import (
-    SolutionReadout,
-)
+from lava.lib.optimization.solvers.generic.monitoring_processes\
+    .solution_readout.process import SolutionReadout
 from lava.magma.core.decorator import implements
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol

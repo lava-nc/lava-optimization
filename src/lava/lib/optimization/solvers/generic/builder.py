@@ -9,21 +9,13 @@ from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.problems.variables import (
     ContinuousVariables,
     DiscreteVariables,
-)
-from lava.lib.optimization.solvers.generic.dataclasses import (
-    CostMinimizer,
-    MacroStateReader,
-    VariablesImplementation,
-)
-from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    ContinuousVariablesProcess,
-    CostConvergenceChecker,
-    DiscreteVariablesProcess,
-    SatConvergenceChecker,
-)
-from lava.lib.optimization.solvers.generic.monitoring_processes.solution_readout.process import (
-    SolutionReadout,
-)
+    )
+from lava.lib.optimization.solvers.generic.solution_finder.process import (
+    SolutionFinder,
+    )
+from lava.lib.optimization.solvers.generic.solution_reader.process import (
+    SolutionReader,
+    )
 from lava.magma.core.model.model import AbstractProcessModel
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.process.interfaces import AbstractProcessMember
@@ -33,14 +25,6 @@ from lava.magma.core.process.variable import Var
 from lava.magma.core.resources import AbstractComputeResource
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from numpy import typing as npt
-
-from lava.lib.optimization.solvers.generic.solution_reader.process import (
-    SolutionReader,
-)
-
-from lava.lib.optimization.solvers.generic.solution_finder.process import (
-    SolutionFinder,
-)
 
 
 class SolverProcessBuilder:

@@ -11,9 +11,8 @@ from lava.lib.optimization.solvers.generic.read_gate.models import (
     ReadGatePyModel,
 )
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.monitoring_processes.solution_readout.process import (
-    SolutionReadout,
-)
+from lava.lib.optimization.solvers.generic.monitoring_processes\
+    .solution_readout.process import SolutionReadout
 from lava.proc.spiker.models import SpikerModel
 from lava.proc.spiker.process import Spiker
 

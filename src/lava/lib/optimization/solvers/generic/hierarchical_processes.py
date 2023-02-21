@@ -43,12 +43,12 @@ class DiscreteVariablesProcess(AbstractProcess):
     """
 
     def __init__(
-            self,
-            shape: ty.Tuple[int, ...],
-            cost_diagonal: npt.ArrayLike = None,
-            hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
-            name: ty.Optional[str] = None,
-            log_config: ty.Optional[LogConfig] = None,
+        self,
+        shape: ty.Tuple[int, ...],
+        cost_diagonal: npt.ArrayLike = None,
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
     ) -> None:
         """
         Parameters
@@ -93,10 +93,10 @@ class CostConvergenceChecker(AbstractProcess):
     """
 
     def __init__(
-            self,
-            shape: ty.Tuple[int, ...],
-            name: ty.Optional[str] = None,
-            log_config: ty.Optional[LogConfig] = None,
+        self,
+        shape: ty.Tuple[int, ...],
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
     ) -> None:
         """
         Constructor for CostConvergenceChecker class.
@@ -184,19 +184,19 @@ class StochasticIntegrateAndFire(AbstractProcess):
     """
 
     def __init__(
-            self,
-            *,
-            step_size: npt.ArrayLike,
-            shape: ty.Tuple[int, ...] = (1,),
-            init_state: npt.ArrayLike = 0,
-            noise_amplitude: npt.ArrayLike = 1,
-            noise_precision: npt.ArrayLike = 8,
-            sustained_on_tau: npt.ArrayLike = -3,
-            threshold: npt.ArrayLike = 10,
-            cost_diagonal: npt.ArrayLike = 0,
-            name: ty.Optional[str] = None,
-            log_config: ty.Optional[LogConfig] = None,
-            init_value: npt.ArrayLike = 0,
+        self,
+        *,
+        step_size: npt.ArrayLike,
+        shape: ty.Tuple[int, ...] = (1,),
+        init_state: npt.ArrayLike = 0,
+        noise_amplitude: npt.ArrayLike = 1,
+        noise_precision: npt.ArrayLike = 8,
+        sustained_on_tau: npt.ArrayLike = -3,
+        threshold: npt.ArrayLike = 10,
+        cost_diagonal: npt.ArrayLike = 0,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+        init_value: npt.ArrayLike = 0,
     ) -> None:
         """
         Parameters
@@ -280,19 +280,19 @@ class BoltzmannAbstract(AbstractProcess):
     """
 
     def __init__(
-            self,
-            *,
-            temperature: npt.ArrayLike,
-            refract: ty.Optional[ty.Union[int, npty.NDArray]],
-            shape: ty.Tuple[int, ...] = (1,),
-            init_state: npt.ArrayLike = 0,
-            input_duration: npt.ArrayLike = 6,
-            min_state: npt.ArrayLike = 1000,
-            min_integration: npt.ArrayLike = -1000,
-            cost_diagonal: npt.ArrayLike = 0,
-            name: ty.Optional[str] = None,
-            log_config: ty.Optional[LogConfig] = None,
-            init_value: npt.ArrayLike = 0,
+        self,
+        *,
+        temperature: npt.ArrayLike,
+        refract: ty.Optional[ty.Union[int, npty.NDArray]],
+        shape: ty.Tuple[int, ...] = (1,),
+        init_state: npt.ArrayLike = 0,
+        input_duration: npt.ArrayLike = 6,
+        min_state: npt.ArrayLike = 1000,
+        min_integration: npt.ArrayLike = -1000,
+        cost_diagonal: npt.ArrayLike = 0,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+        init_value: npt.ArrayLike = 0,
     ) -> None:
         """
 

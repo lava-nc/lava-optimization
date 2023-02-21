@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import numpy as np
-from lava.lib.optimization.solvers.generic.monitoring_processes \
-    .solution_readout.process import SolutionReadout
+from lava.lib.optimization.solvers.generic.monitoring_processes.solution_readout.process import (
+    SolutionReadout,
+)
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.py.ports import PyInPort
@@ -22,13 +23,16 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     user, once this cost is reached by the solver network, this process
     will request the runtime service to pause execution.
     """
+
     solution: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     solution_step: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
-    read_solution: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                         precision=32)
+    read_solution: PyInPort = LavaPyType(
+        PyInPort.VEC_DENSE, np.int32, precision=32
+    )
     cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
-    timestep_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                       precision=32)
+    timestep_in: PyInPort = LavaPyType(
+        PyInPort.VEC_DENSE, np.int32, precision=32
+    )
     target_cost: int = LavaPyType(int, np.int32, 32)
     min_cost: int = LavaPyType(int, np.int32, 32)
     stop = False
@@ -44,13 +48,15 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             raw_solution = self.read_solution.recv()
             raw_solution &= 0x1F  # AND with 0x1F (=0b11111) retains 5 LSBs
             # The binary solution was attained 2 steps ago. Shift down by 4.
-            self.solution[:] = (raw_solution.astype(np.int8) >> 4)
+            self.solution[:] = raw_solution.astype(np.int8) >> 4
             self.solution_step = abs(timestep)
             self.min_cost = cost[0]
 
             if cost[0] < 0:
-                print(f"Host: better solution found at step {abs(timestep)} "
-                      f"with cost {cost[0]}: {self.solution}")
+                print(
+                    f"Host: better solution found at step {abs(timestep)} "
+                    f"with cost {cost[0]}: {self.solution}"
+                )
 
             if self.min_cost is not None and self.min_cost <= self.target_cost:
                 print(f"Host: network reached target cost {self.target_cost}.")

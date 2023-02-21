@@ -31,10 +31,14 @@ from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
 
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed, \
-    PyModelQuboScifFixed
-from lava.lib.optimization.solvers.generic.scif.process import Boltzmann, \
-    QuboScif
+from lava.lib.optimization.solvers.generic.scif.models import (
+    BoltzmannFixed,
+    PyModelQuboScifFixed,
+)
+from lava.lib.optimization.solvers.generic.scif.process import (
+    Boltzmann,
+    QuboScif,
+)
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 HP_TYPE = ty.Union[ty.Dict, ty.List[ty.Dict]]
@@ -86,6 +90,7 @@ class SolverConfig:
     log_level: int
         Select log verbosity (40: default, 20: verbose).
     """
+
     timeout: int = 1e3
     target_cost: int = 0
     backend: BACKENDS = CPU
@@ -113,6 +118,7 @@ class SolverReport:
     profiler: Profiler
         Profiler instance containing time, energy and activity measurements.
     """
+
     best_cost: int = None
     best_state: np.ndarray = None
     best_timestep: int = None
@@ -120,8 +126,9 @@ class SolverReport:
     profiler: Profiler = None
 
 
-def solve(problem: OptimizationProblem,
-          config: SolverConfig = SolverConfig()) -> np.ndarray:
+def solve(
+    problem: OptimizationProblem, config: SolverConfig = SolverConfig()
+) -> np.ndarray:
     """
     Solve the given optimization problem using the passed configuration, and
     returns the best candidate solution.
@@ -183,21 +190,24 @@ class OptimizationSolver:
         """
         run_condition, run_cfg = self._prepare_solver(config)
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
-        best_state, best_cost, best_timestep = self._get_results(config.hyperparameters)
+        best_state, best_cost, best_timestep = self._get_results(
+            config.hyperparameters
+        )
         self.solver_process.stop()
         report = SolverReport(
             best_cost=best_cost,
             best_state=best_state,
             best_timestep=best_timestep,
             solver_config=config,
-            profiler=self._profiler
+            profiler=self._profiler,
         )
         return report
 
     def _prepare_solver(self, config: SolverConfig):
-        hyperparameters=config.hyperparameters
-        sconfig.num_in_ports = len(hyperparameters) if type(hyperparameters) \
-                                                       is list else 1
+        hyperparameters = config.hyperparameters
+        sconfig.num_in_ports = (
+            len(hyperparameters) if type(hyperparameters) is list else 1
+        )
         self._create_solver_process(config=config)
         run_cfg = self._get_run_config(backend=config.backend)
         run_condition = RunSteps(num_steps=config.timeout)
@@ -218,19 +228,19 @@ class OptimizationSolver:
         )
         self._process_builder.create_solver_process(
             problem=self.problem,
-            hyperparameters=config.hyperparameters or dict()
+            hyperparameters=config.hyperparameters or dict(),
         )
         self._process_builder.create_solver_model(
             target_cost=config.target_cost,
             requirements=requirements,
-            protocol=protocol
+            protocol=protocol,
         )
         self.solver_process = self._process_builder.solver_process
         self.solver_model = self._process_builder.solver_model
         self.solver_process._log_config.level = config.log_level
 
     def _get_requirements_and_protocol(
-            self, backend: BACKENDS
+        self, backend: BACKENDS
     ) -> ty.Tuple[AbstractComputeResource, AbstractSyncProtocol]:
         """
         Figure out requirements and protocol for a given backend.
@@ -245,24 +255,29 @@ class OptimizationSolver:
 
     def _get_run_config(self, backend: BACKENDS):
         if backend in CPUS:
-            from lava.lib.optimization.solvers.generic.read_gate.models import ReadGatePyModel
-            pdict = {self.solver_process: self.solver_model,
-                     ReadGate: ReadGatePyModel,
-                     Dense: PyDenseModelFloat,
-                     BoltzmannAbstract:
-                         BoltzmannAbstractModel,
-                     Boltzmann: BoltzmannFixed,
-                     QuboScif: PyModelQuboScifFixed
-                     }
-            return Loihi1SimCfg(exception_proc_model_map=pdict,
-                                select_sub_proc_model=True)
+            from lava.lib.optimization.solvers.generic.read_gate.models import (
+                ReadGatePyModel,
+            )
+
+            pdict = {
+                self.solver_process: self.solver_model,
+                ReadGate: ReadGatePyModel,
+                Dense: PyDenseModelFloat,
+                BoltzmannAbstract: BoltzmannAbstractModel,
+                Boltzmann: BoltzmannFixed,
+                QuboScif: PyModelQuboScifFixed,
+            }
+            return Loihi1SimCfg(
+                exception_proc_model_map=pdict, select_sub_proc_model=True
+            )
         elif backend in NEUROCORES:
-            pdict = {self.solver_process: self.solver_model,
-                     BoltzmannAbstract:
-                         BoltzmannAbstractModel,
-                     }
-            return Loihi2HwCfg(exception_proc_model_map=pdict,
-                               select_sub_proc_model=True)
+            pdict = {
+                self.solver_process: self.solver_model,
+                BoltzmannAbstract: BoltzmannAbstractModel,
+            }
+            return Loihi2HwCfg(
+                exception_proc_model_map=pdict, select_sub_proc_model=True
+            )
         else:
             raise NotImplementedError(str(backend) + BACKEND_MSG)
 
@@ -285,9 +300,11 @@ class OptimizationSolver:
 
     def _get_best_state(self, hyperparameters: HP_TYPE, idx: int):
         if type(hyperparameters) is list:
-            is_nebm = hyperparameters[int(idx)]['neuron_model'] == "nebm"
-            raw_solution = np.asarray(self.solver_process.finders[int(idx)].variables_assignment.get()).astype(np.int32)
-            raw_solution &= (0xFF if is_nebm else 0x3F)
-            return (raw_solution.astype(np.int8) >> (6 if is_nebm else 5))
+            is_nebm = hyperparameters[int(idx)]["neuron_model"] == "nebm"
+            raw_solution = np.asarray(
+                self.solver_process.finders[int(idx)].variables_assignment.get()
+            ).astype(np.int32)
+            raw_solution &= 0xFF if is_nebm else 0x3F
+            return raw_solution.astype(np.int8) >> (6 if is_nebm else 5)
         else:
             return self.solver_process.variable_assignment.aliased_var.get()

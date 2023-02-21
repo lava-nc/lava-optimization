@@ -75,8 +75,9 @@ class SolverConfig:
     backend: BACKENDS, optional
         Specifies the backend where the main solver network will be
         deployed.
-    hyperparameters: ty.Union[ty.Dict, ty.Dict[str, ty.Union[int, npt.ArrayLike]]],
-     optional
+    hyperparameters:
+        ty.Union[ty.Dict, ty.Dict[str, ty.Union[int, npt.ArrayLike]]],
+        optional.
         A dictionary specifying values for steps_to_fire, noise_amplitude,
         step_size and init_value. All but the last are integers, the initial
         value is an array-like of initial values for the variables defining

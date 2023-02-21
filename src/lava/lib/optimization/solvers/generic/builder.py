@@ -6,16 +6,12 @@ import typing as ty
 import numpy as np
 from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 from lava.lib.optimization.problems.problems import OptimizationProblem
-from lava.lib.optimization.problems.variables import (
-    ContinuousVariables,
-    DiscreteVariables,
-    )
-from lava.lib.optimization.solvers.generic.solution_finder.process import (
-    SolutionFinder,
-    )
-from lava.lib.optimization.solvers.generic.solution_reader.process import (
-    SolutionReader,
-    )
+from lava.lib.optimization.problems.variables import ContinuousVariables, \
+    DiscreteVariables
+from lava.lib.optimization.solvers.generic.solution_finder.process import \
+    SolutionFinder
+from lava.lib.optimization.solvers.generic.solution_reader.process import \
+    SolutionReader
 from lava.magma.core.model.model import AbstractProcessModel
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.process.interfaces import AbstractProcessMember

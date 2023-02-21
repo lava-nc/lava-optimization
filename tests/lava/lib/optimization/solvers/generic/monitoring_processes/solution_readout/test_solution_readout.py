@@ -7,12 +7,10 @@ import numpy as np
 from lava.magma.core.run_conditions import RunSteps, RunContinuous
 from lava.magma.core.run_configs import Loihi2SimCfg
 
-from lava.lib.optimization.solvers.generic.read_gate.models import (
-    ReadGatePyModel,
-)
+from lava.lib.optimization.solvers.generic.read_gate.models import \
+    ReadGatePyModel
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.monitoring_processes\
-    .solution_readout.process import SolutionReadout
+from lava.lib.optimization.solvers.generic.solution_readout.process import SolutionReadout
 from lava.proc.spiker.models import SpikerModel
 from lava.proc.spiker.process import Spiker
 
@@ -26,7 +24,7 @@ class TestSolutionReadout(unittest.TestCase):
         self.readout = SolutionReadout(shape=(4,), target_cost=-3)
 
         # Connect processes.
-        integrator.s_out.connect(readgate.cost_in)
+        integrator.s_out.connect(readgate.cost_in_0)
         readgate.solution_reader.connect_var(spiker.payload)
         readgate.solution_out.connect(self.readout.read_solution)
         readgate.cost_out.connect(self.readout.cost_in)

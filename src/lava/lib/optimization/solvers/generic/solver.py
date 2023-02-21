@@ -120,16 +120,6 @@ class SolverReport:
     solver_config: SolverConfig = None
     profiler: Profiler = None
 
-    def plot_cost_timeseries(self, filename: str = None) -> None:
-        if self.cost_timeseries is None:
-            return NotImplemented  # what to do?
-        from matplotlib import pyplot as plt
-        plt.plot(self.cost_timeseries, "ro")
-        if filename is None:
-            plt.show()
-        else:
-            plt.savefig(filename)
-
 
 def solve(problem: OptimizationProblem,
           config: SolverConfig = SolverConfig()) -> np.ndarray:

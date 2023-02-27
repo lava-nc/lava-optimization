@@ -206,7 +206,7 @@ class OptimizationSolver:
         self._create_solver_process(config=config)
         hps = config.hyperparameters
         num_in_ports = len(hps) if type(hps) is list else 1
-        run_cfg = self._get_run_config(backend=config.backend, num_in_ports)
+        run_cfg = self._get_run_config(config.backend, num_in_ports)
         run_condition = RunSteps(num_steps=config.timeout)
         self._prepare_profiler(config=config, run_cfg=run_cfg)
         return run_condition, run_cfg

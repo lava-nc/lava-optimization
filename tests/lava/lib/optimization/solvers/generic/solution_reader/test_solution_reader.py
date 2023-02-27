@@ -7,9 +7,8 @@ import numpy as np
 from lava.lib.optimization.solvers.generic.solution_reader.process import (
     SolutionReader,
 )
-from lava.lib.optimization.solvers.generic.read_gate.models import (
-    ReadGatePyModel,
-)
+from lava.lib.optimization.solvers.generic.read_gate.models import \
+    get_read_gate_model_class
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.magma.core.run_conditions import RunContinuous
 from lava.magma.core.run_configs import Loihi2SimCfg
@@ -32,6 +31,7 @@ class TestSolutionReader(unittest.TestCase):
         self.solution_reader.ref_port.connect_var(spiker.payload)
 
         # Execution configurations.
+        ReadGatePyModel = get_read_gate_model_class(1)
         pdict = {ReadGate: ReadGatePyModel, Spiker: SpikerModel}
         self.run_cfg = Loihi2SimCfg(exception_proc_model_map=pdict)
         self.solution_reader._log_config.level = 20

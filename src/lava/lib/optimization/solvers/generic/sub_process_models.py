@@ -134,6 +134,7 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
             proc.out_ports.update_buffer
         )
         proc.vars.min_cost.alias(self.cost_integrator.vars.min_cost)
+        proc.vars.cost.alias(self.cost_integrator.vars.cost)
 
 
 @implements(proc=StochasticIntegrateAndFire, protocol=LoihiProtocol)

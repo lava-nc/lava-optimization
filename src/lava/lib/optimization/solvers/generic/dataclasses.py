@@ -81,3 +81,4 @@ class VariablesImplementation:
 @dataclass
 class ProximalGradientMinimizer:
     augmented_terms: AugmentedTermsProcess
+

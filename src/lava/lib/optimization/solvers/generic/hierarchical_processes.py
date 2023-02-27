@@ -114,6 +114,7 @@ class CostConvergenceChecker(AbstractProcess):
         super().__init__(shape=shape, name=name, log_config=log_config)
         self.shape = shape
         self.min_cost = Var(shape=(1,))
+        self.cost = Var(shape=(1,))
         self.cost_components = InPort(shape=shape)
         self.update_buffer = OutPort(shape=(1,))
 

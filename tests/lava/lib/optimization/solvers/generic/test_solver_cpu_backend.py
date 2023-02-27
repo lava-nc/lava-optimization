@@ -11,9 +11,11 @@ from lava.lib.optimization.solvers.generic.solution_finder.process import (
 from lava.lib.optimization.solvers.generic.solution_reader.process import (
     SolutionReader,
 )
+from lava.lib.optimization.solvers.generic.monitoring_processes \
+    .solution_readout.process import SolutionReadout
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.solver import (
-    OptimizationSolver,
-    SolverConfig,
+    OptimizationSolver, SolverConfig, SolverReport
 )
 
 
@@ -31,6 +33,7 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertIsInstance(self.solver, OptimizationSolver)
 
     def test_solution_has_expected_shape(self):
+        print("test_solution_has_expected_shape")
         report = self.solver.solve(config=SolverConfig(timeout=3000))
         self.assertEqual(report.best_state.shape, self.solution.shape)
 
@@ -98,6 +101,19 @@ class TestOptimizationSolver(unittest.TestCase):
         wgts = pm.finder_0.proc_params.get("cost_coefficients")[2].init
         condition = (wgts == q_no_diag).all()
         self.assertTrue(condition)
+
+    def test_cost_tracking(self):
+        print("test_cost_tracking")
+        config = SolverConfig(
+            timeout=50,
+            target_cost=-20,
+            backend="CPU",
+            probe_cost=True
+        )
+        report: SolverReport = self.solver.solve(config=config)
+        self.assertIsInstance(report.cost_timeseries, np.ndarray)
+        self.assertEqual(report.cost_timeseries[0][report.best_timestep],
+                         report.best_cost)
 
 
 def solve_workload(

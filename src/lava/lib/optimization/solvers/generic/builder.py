@@ -181,8 +181,8 @@ class SolverProcessBuilder:
             self.optimality = Var(shape=(2,))
             self.feasibility = Var(shape=(1,))
             self.solution_step = Var(shape=(1,))
+            self.cost_monitor = Var(shape=(1,))
             self.finders = None
-
         self._process_constructor = constructor
 
     def _create_model_constructor(self, target_cost: int):

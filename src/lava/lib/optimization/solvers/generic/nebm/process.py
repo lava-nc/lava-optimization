@@ -7,8 +7,9 @@ from lava.magma.core.process.process import AbstractProcess
 from lava.magma.core.process.variable import Var
 
 
-class Boltzmann(AbstractProcess):
-    """Non-equilibrium Boltzmann (NEBM) neuron model to solve QUBO problems.
+class NEBM(AbstractProcess):
+    """
+    Non-equilibrium Boltzmann (NEBM) neuron model to solve QUBO problems.
     """
 
     def __init__(self,

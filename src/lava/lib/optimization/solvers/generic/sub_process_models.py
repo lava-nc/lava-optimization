@@ -33,7 +33,7 @@ from lava.magma.core.decorator import implements, requires, tag
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
-from lava.lib.optimization.solvers.generic.nebm.process import Boltzmann
+from lava.lib.optimization.solvers.generic.nebm.process import NEBM
 
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
@@ -187,11 +187,11 @@ class BoltzmannAbstractModel(AbstractSubProcessModel):
         refract = proc.proc_params.get("refract", (1,))
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))
-        self.scif = Boltzmann(shape=shape,
-                              temperature=temperature,
-                              refract=refract,
-                              init_value=init_value,
-                              init_state=init_state)
+        self.scif = NEBM(shape=shape,
+                         temperature=temperature,
+                         refract=refract,
+                         init_value=init_value,
+                         init_state=init_state)
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)

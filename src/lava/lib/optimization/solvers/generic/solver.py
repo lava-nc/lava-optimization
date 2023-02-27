@@ -15,9 +15,9 @@ from lava.lib.optimization.solvers.generic.read_gate.models import \
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.scif.models import \
     PyModelQuboScifFixed
-from lava.lib.optimization.solvers.generic.nebm.models import BoltzmannFixed
+from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
-from lava.lib.optimization.solvers.generic.nebm.process import Boltzmann
+from lava.lib.optimization.solvers.generic.nebm.process import NEBM
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     BoltzmannAbstractModel,
 )
@@ -272,7 +272,7 @@ class OptimizationSolver:
                      Dense: PyDenseModelFloat,
                      BoltzmannAbstract:
                          BoltzmannAbstractModel,
-                     Boltzmann: BoltzmannFixed,
+                     NEBM: NEBMPyModel,
                      QuboScif: PyModelQuboScifFixed
                      }
             return Loihi1SimCfg(exception_proc_model_map=pdict,

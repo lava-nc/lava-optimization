@@ -1,6 +1,6 @@
 import numpy as np
 
-from lava.lib.optimization.solvers.generic.nebm.process import Boltzmann
+from lava.lib.optimization.solvers.generic.nebm.process import NEBM
 from lava.magma.core.decorator import implements, requires, tag
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.py.ports import PyInPort, PyOutPort
@@ -9,10 +9,10 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
 
-@implements(proc=Boltzmann, protocol=LoihiProtocol)
+@implements(proc=NEBM, protocol=LoihiProtocol)
 @requires(CPU)
 @tag('fixed_pt')
-class BoltzmannFixed(PyLoihiProcessModel):
+class NEBMPyModel(PyLoihiProcessModel):
     """Fixed point implementation of Stochastic Constraint Integrate and
         Fire (SCIF) neuron for solving QUBO problems.
     """
@@ -28,7 +28,7 @@ class BoltzmannFixed(PyLoihiProcessModel):
     refract: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
     def __init__(self, proc_params):
-        super(BoltzmannFixed, self).__init__(proc_params)
+        super(NEBMPyModel, self).__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])
 
         self.refract_buffer = np.zeros(proc_params['shape']).astype(int)

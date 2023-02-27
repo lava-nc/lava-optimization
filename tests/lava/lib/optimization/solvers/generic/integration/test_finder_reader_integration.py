@@ -24,6 +24,8 @@ from lava.magma.core.run_configs import Loihi2SimCfg
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from numpy import typing as npt
 
+ReadGatePyModel = get_read_gate_model_class(1)
+
 
 class Mock:
     def __init__(self, val):
@@ -104,7 +106,6 @@ class TestOptSolverWrapper(unittest.TestCase):
         )
 
         # Execution configurations.
-        ReadGatePyModel = get_read_gate_model_class(1)
         pdict = {ReadGate: ReadGatePyModel}
         self.run_cfg = Loihi2SimCfg(exception_proc_model_map=pdict)
         self.solver._log_config.level = 20

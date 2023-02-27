@@ -276,7 +276,8 @@ class OptimizationSolver:
         else:
             return self._cost_tracker.time_series
 
-    def _get_run_config(self, backend: BACKENDS, probes=None, num_in_ports: int):
+    def _get_run_config(self, backend: BACKENDS, probes=None,
+                        num_in_ports: int=None):
         if backend in CPUS:
             from lava.lib.optimization.solvers.generic.read_gate.process \
                 import ReadGate

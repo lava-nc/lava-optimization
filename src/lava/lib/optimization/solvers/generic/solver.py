@@ -13,10 +13,11 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
 from lava.lib.optimization.solvers.generic.read_gate.models import \
     ReadGatePyModel
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed, \
+from lava.lib.optimization.solvers.generic.scif.models import \
     PyModelQuboScifFixed
-from lava.lib.optimization.solvers.generic.scif.process import Boltzmann, \
-    QuboScif
+from lava.lib.optimization.solvers.generic.nebm.models import BoltzmannFixed
+from lava.lib.optimization.solvers.generic.scif.process import QuboScif
+from lava.lib.optimization.solvers.generic.nebm.process import Boltzmann
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     BoltzmannAbstractModel,
 )

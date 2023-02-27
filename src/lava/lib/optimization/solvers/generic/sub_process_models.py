@@ -32,8 +32,8 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.decorator import implements, requires, tag
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 
-from lava.lib.optimization.solvers.generic.scif.process import QuboScif, \
-    Boltzmann
+from lava.lib.optimization.solvers.generic.scif.process import QuboScif
+from lava.lib.optimization.solvers.generic.nebm.process import Boltzmann
 
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)

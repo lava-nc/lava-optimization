@@ -223,7 +223,7 @@ class OptimizationSolver:
         run_cfg = self._get_run_config(backend=config.backend,
                                        probes=[self._cost_tracker]
                                        if self._cost_tracker else None,
-                                       num_in_ports)
+                                       num_in_ports=num_in_ports)
         run_condition = RunSteps(num_steps=config.timeout)
         self._prepare_profiler(config=config, run_cfg=run_cfg)
         return run_condition, run_cfg

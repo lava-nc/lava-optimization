@@ -3,7 +3,7 @@
 # See: https://spdx.org/licenses/
 import typing as ty
 
-from lava.magma.core.process.ports.ports import InPort, OutPort
+from lava.magma.core.process.ports.ports import InPort
 from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
 

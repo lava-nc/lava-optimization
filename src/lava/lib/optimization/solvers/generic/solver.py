@@ -12,7 +12,6 @@ from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     BoltzmannAbstract,
 )
-from lava.lib.optimization.solvers.generic import sconfig
 
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     BoltzmannAbstractModel,
@@ -30,7 +29,6 @@ from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
 
-from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.scif.models import (
     BoltzmannFixed,
     PyModelQuboScifFixed,
@@ -205,12 +203,10 @@ class OptimizationSolver:
         return report
 
     def _prepare_solver(self, config: SolverConfig):
-        hyperparameters = config.hyperparameters
-        sconfig.num_in_ports = (
-            len(hyperparameters) if type(hyperparameters) is list else 1
-        )
         self._create_solver_process(config=config)
-        run_cfg = self._get_run_config(backend=config.backend)
+        hps = config.hyperparameters
+        num_in_ports = len(hps) if type(hps) is list else 1
+        run_cfg = self._get_run_config(backend=config.backend, num_in_ports)
         run_condition = RunSteps(num_steps=config.timeout)
         self._prepare_profiler(config=config, run_cfg=run_cfg)
         return run_condition, run_cfg
@@ -254,12 +250,13 @@ class OptimizationSolver:
         """
         return [CPU] if backend in CPUS else [Loihi2NeuroCore], LoihiProtocol
 
-    def _get_run_config(self, backend: BACKENDS):
+    def _get_run_config(self, backend: BACKENDS, num_in_ports: int):
         if backend in CPUS:
-            from lava.lib.optimization.solvers.generic.read_gate.models import (
-                ReadGatePyModel,
-            )
-
+            from lava.lib.optimization.solvers.generic.read_gate.process \
+                import ReadGate
+            from lava.lib.optimization.solvers.generic.read_gate.models import \
+                get_read_gate_model_class
+            ReadGatePyModel = get_read_gate_model_class(num_in_ports)
             pdict = {
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGatePyModel,

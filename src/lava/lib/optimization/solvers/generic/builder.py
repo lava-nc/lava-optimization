@@ -212,7 +212,7 @@ class SolverProcessBuilder:
 
             hps = (
                 hyperparameters
-                if type(hyperparameters) is list
+                if isinstance(hyperparameters, list)
                 else [hyperparameters]
             )
 

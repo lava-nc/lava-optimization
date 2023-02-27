@@ -22,7 +22,7 @@ from lava.proc.dense.process import Dense
 
 
 @implements(proc=SolutionFinder, protocol=LoihiProtocol)
-@requires(CPU)  # todo enable also Loihi2
+@requires(CPU)
 class SolutionFinderModel(AbstractSubProcessModel):
     def __init__(self, proc):
         cost_diagonal = proc.proc_params.get("cost_diagonal")

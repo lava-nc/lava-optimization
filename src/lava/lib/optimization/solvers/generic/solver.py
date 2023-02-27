@@ -325,11 +325,10 @@ class OptimizationSolver:
 
     def _get_best_state(self, hyperparameters: HP_TYPE, idx: int):
         if type(hyperparameters) is list:
-            is_nebm = hyperparameters[int(idx)]["neuron_model"] == "nebm"
             raw_solution = np.asarray(
                 self.solver_process.finders[int(idx)].variables_assignment.get()
             ).astype(np.int32)
-            raw_solution &= 0xFF if is_nebm else 0x3F
-            return raw_solution.astype(np.int8) >> (6 if is_nebm else 5)
+            raw_solution &= 0x3F
+            return raw_solution.astype(np.int8) >> 5
         else:
             return self.solver_process.variable_assignment.aliased_var.get()

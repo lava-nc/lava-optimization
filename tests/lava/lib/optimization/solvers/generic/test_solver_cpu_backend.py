@@ -155,6 +155,19 @@ class TestOptimizationSolver(unittest.TestCase):
             self.problem.variables.num_variables,
         )
 
+    def test_cost_tracking(self):
+        print("test_cost_tracking")
+        config = SolverConfig(
+            timeout=50,
+            target_cost=-20,
+            backend="CPU",
+            probe_cost=True
+        )
+        report = self.solver.solve(config=config)
+        self.assertIsInstance(report.cost_timeseries, np.ndarray)
+        self.assertEqual(report.cost_timeseries[0][report.best_timestep],
+                         report.best_cost)
+
 
 def solve_workload(problem, reference_solution, noise_precision=3,
                    noise_amplitude=1, on_tau=-3):

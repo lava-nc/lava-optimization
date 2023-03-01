@@ -42,8 +42,6 @@ class QMatrixVRP:
         lamda_cnstrnt=1,
         lamda_wypts=1,
         lamda_vhcles=1,
-        lamda_dist=1,
-        lamda_cnstrt=1,
         fixed_pt=False,
         fixed_pt_range=(0, 127),
 
@@ -103,7 +101,7 @@ class QMatrixVRP:
                 mat_size_for_random, mat_size_for_random))
         elif self.problem_type == ProblemType.CLUSTER:
             self.matrix = self._gen_clustering_Q_matrix(
-                input_nodes, lamda_dist, lamda_cnstrnt
+                input_nodes, lamda_dist, lamda_wypts, lamda_vhcles
             )
         elif self.problem_type == ProblemType.TSP:
             self.matrix = self._gen_tsp_Q_matrix(

@@ -10,19 +10,20 @@ except ImportError:
         pass
 
 import numpy as np
+
 from lava.lib.optimization.solvers.generic.cost_integrator.process import (
     CostIntegrator,
-    )
+)
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     CostConvergenceChecker,
     DiscreteVariablesProcess,
     StochasticIntegrateAndFire,
     BoltzmannAbstract,
-    )
+)
 from lava.lib.optimization.solvers.generic.scif.process import (
     QuboScif,
     Boltzmann,
-    )
+)
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.resources import Loihi2NeuroCore, CPU

@@ -10,6 +10,14 @@ from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     BoltzmannAbstract,
 )
+from lava.lib.optimization.solvers.generic.scif.models import (
+    BoltzmannFixed,
+    PyModelQuboScifFixed,
+)
+from lava.lib.optimization.solvers.generic.scif.process import (
+    Boltzmann,
+    QuboScif,
+)
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     BoltzmannAbstractModel,
 )
@@ -25,14 +33,6 @@ from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
-from lava.lib.optimization.solvers.generic.scif.models import (
-    BoltzmannFixed,
-    PyModelQuboScifFixed,
-)
-from lava.lib.optimization.solvers.generic.scif.process import (
-    Boltzmann,
-    QuboScif,
-)
 from lava.proc.monitor.process import Monitor
 from lava.utils.profiler import Profiler
 
@@ -128,7 +128,7 @@ class SolverReport:
 
 
 def solve(
-    problem: OptimizationProblem, config: SolverConfig = SolverConfig()
+        problem: OptimizationProblem, config: SolverConfig = SolverConfig()
 ) -> np.ndarray:
     """
     Solve the given optimization problem using the passed configuration, and
@@ -204,7 +204,7 @@ class OptimizationSolver:
             solver_config=config,
             profiler=self._profiler,
             cost_timeseries=cost_timeseries
-            )
+        )
 
     def _prepare_solver(self, config: SolverConfig):
         self._create_solver_process(config=config)
@@ -254,7 +254,7 @@ class OptimizationSolver:
         self.solver_process._log_config.level = config.log_level
 
     def _get_requirements_and_protocol(
-        self, backend: BACKENDS
+            self, backend: BACKENDS
     ) -> ty.Tuple[AbstractComputeResource, AbstractSyncProtocol]:
         """
         Figure out requirements and protocol for a given backend.
@@ -277,7 +277,7 @@ class OptimizationSolver:
             return self._cost_tracker.time_series
 
     def _get_run_config(self, backend: BACKENDS, probes=None,
-                        num_in_ports: int=None):
+                        num_in_ports: int = None):
         if backend in CPUS:
             from lava.lib.optimization.solvers.generic.read_gate.process \
                 import ReadGate

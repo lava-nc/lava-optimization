@@ -3,19 +3,19 @@
 # See: https://spdx.org/licenses/
 
 import unittest
-import numpy as np
-from lava.magma.core.run_conditions import RunSteps, RunContinuous
-from lava.magma.core.run_configs import Loihi2SimCfg
 
-from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.monitoring_processes\
+import numpy as np
+
+from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import \
     SolutionReadout
-from lava.proc.spiker.models import SpikerModel
-from lava.proc.spiker.process import Spiker
 from lava.lib.optimization.solvers.generic.read_gate.models import \
     get_read_gate_model_class
-
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
+from lava.magma.core.run_conditions import RunContinuous
+from lava.magma.core.run_configs import Loihi2SimCfg
+from lava.proc.spiker.models import SpikerModel
+from lava.proc.spiker.process import Spiker
 
 
 class TestSolutionReadout(unittest.TestCase):

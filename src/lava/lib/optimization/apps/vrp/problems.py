@@ -18,18 +18,19 @@ class VRP:
     initial coordinates are sufficient.
     """
     def __init__(self,
-                 nodes: ty.Dict[int, ty.Tuple[int, int]],
-                 vehicles: ty.Union[int, ty.Dict[int, ty.Tuple[int, int]]],
+                 node_coords: ty.List[ty.Tuple[int, int]],
+                 vehicle_coords: ty.Union[int, ty.List[ty.Tuple[int, int]]],
                  edges: ty.Optional[ty.List[ty.Tuple[int, int]]] = None):
         """
         Parameters
         ----------
-        nodes : dict(int, tuple(int, int))
-            A dictionary mapping node IDs to node coordinates. Nodes signify
-            the "customers" in a VRP, which need to be visited by the vehicles.
-        vehicles : dict(int, tuple(int, int))
-            A dictionary mapping the vehicle IDs to their initial
-            coordinates. If all coordinate tuples are equal, then it is
+        node_coords : list(tuple(int, int))
+            A list of integer tuples corresponding to node coordinates.
+            Nodes signify the "customers" in a VRP, which need to be visited
+            by the vehicles.
+        vehicle_coords : list(tuple(int, int))
+            A list of integer tuples corresponding to the initial vehicle
+            coordinates. If the length of the list is 1, then it is
             assumed that all vehicles begin from the same depot.
         edges: (Optional) list(tuple(int, int))
             An optional list of edges connecting nodes, given as a list of
@@ -37,9 +38,19 @@ class VRP:
             between nodes.
         """
         super().__init__()
-        self._nodes = nodes
-        self._edges = edges
-        self._vehicles = vehicles
+        self._node_coords = node_coords
+        self._vehicle_coords = vehicle_coords
+        self._num_nodes = len(self._node_coords)
+        self._num_vehicles = len(self._vehicle_coords)
+        self._vehicle_ids = list(np.arange(1, self._num_vehicles + 1))
+        self._node_ids = list(np.arange(
+            self._num_vehicles + 1, self._num_vehicles + self._num_nodes + 1))
+        self._nodes = dict(zip(self._node_ids, self._node_coords))
+        if edges:
+            self._edges = edges
+        else:
+            self._edges = []
+        self._vehicles = dict(zip(self._vehicle_ids, self._vehicle_coords))
         self._problem_graph = self._generate_problem_graph()
 
     @property
@@ -51,6 +62,22 @@ class VRP:
         self._nodes = nodes
 
     @property
+    def node_ids(self):
+        return self._node_ids
+
+    @property
+    def node_coords(self):
+        return self._node_coords
+
+    @property
+    def num_nodes(self):
+        return self._num_nodes
+
+    @property
+    def edges(self):
+        return self._edges
+
+    @property
     def vehicles(self):
         return self._vehicles
 
@@ -59,27 +86,23 @@ class VRP:
         self._vehicles = vehicles
 
     @property
-    def node_ids(self):
-        return list(self._nodes.keys())
-
-    @property
-    def node_coords(self):
-        return list(self._nodes.values())
-
-    @property
     def vehicle_ids(self):
-        return list(self._vehicles.keys())
+        return self._vehicle_ids
 
     @property
     def vehicle_init_coords(self):
-        return list(self._vehicles.values())
+        return self._vehicle_coords
+
+    @property
+    def num_vehicles(self):
+        return self._num_vehicles
 
     @property
     def problem_graph(self):
         return self._problem_graph
 
     def _generate_problem_graph(self):
-        if self.edges:
+        if len(self.edges) > 0:
             gph = ntx.DiGraph()
             # Add the nodes to be visited
             gph.add_nodes_from(self.node_ids)
@@ -98,7 +121,7 @@ class VRP:
         gph.add_nodes_from(self.vehicle_ids)
         # Associate node type as "Vehicle" and vehicle coordinates as attributes
         vehicle_type_dict = dict(zip(self.vehicle_ids,
-                                     ["Vehicles"] * len(self.vehicle_ids)))
+                                     ["Vehicle"] * len(self.vehicle_ids)))
         ntx.set_node_attributes(gph, vehicle_type_dict, name="Type")
         ntx.set_node_attributes(gph, self.vehicles, name="Coordinates")
 
@@ -112,8 +135,8 @@ class VRP:
         # ToDo: Replace the loop with independent distance matrix computation
         #  and then assign the distances as attributes
         for edge in gph.edges.keys():
-            gph.edges[edge]["weight"] = np.linalg.norm(
-                gph.nodes[edge[1]]["Coordinates"] -
-                gph.nodes[edge[0]]["Coordinates"])
+            gph.edges[edge]["cost"] = np.linalg.norm(
+                np.array(gph.nodes[edge[1]]["Coordinates"]) -
+                np.array(gph.nodes[edge[0]]["Coordinates"]))
 
         return gph

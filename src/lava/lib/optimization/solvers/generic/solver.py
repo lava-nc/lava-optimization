@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    BoltzmannAbstract,
+    NEBMAbstract, NEBMSimulatedAnnealingAbstract,
 )
 from lava.lib.optimization.solvers.generic.read_gate.models import \
     ReadGatePyModel
@@ -19,7 +19,7 @@ from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.lib.optimization.solvers.generic.nebm.process import NEBM
 from lava.lib.optimization.solvers.generic.sub_process_models import (
-    BoltzmannAbstractModel,
+    NEBMAbstractModel, NEBMSimulatedAnnealingAbstractModel,
 )
 from lava.magma.core.resources import (
     AbstractComputeResource,
@@ -270,8 +270,8 @@ class OptimizationSolver:
             pdict = {self.solver_process: self.solver_model,
                      ReadGate: ReadGatePyModel,
                      Dense: PyDenseModelFloat,
-                     BoltzmannAbstract:
-                         BoltzmannAbstractModel,
+                     NEBMAbstract:
+                         NEBMAbstractModel,
                      NEBM: NEBMPyModel,
                      QuboScif: PyModelQuboScifFixed
                      }
@@ -279,8 +279,10 @@ class OptimizationSolver:
                                 select_sub_proc_model=True)
         elif backend in NEUROCORES:
             pdict = {self.solver_process: self.solver_model,
-                     BoltzmannAbstract:
-                         BoltzmannAbstractModel,
+                     NEBMAbstract:
+                         NEBMAbstractModel,
+                     NEBMSimulatedAnnealingAbstract:
+                        NEBMSimulatedAnnealingAbstractModel
                      }
             return Loihi2HwCfg(exception_proc_model_map=pdict,
                                select_sub_proc_model=True,

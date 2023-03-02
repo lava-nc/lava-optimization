@@ -13,7 +13,7 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     CostConvergenceChecker,
     DiscreteVariablesProcess,
     StochasticIntegrateAndFire,
-    BoltzmannAbstract)
+    NEBMAbstract, NEBMSimulatedAnnealingAbstract)
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.model.py.model import PyLoihiProcessModel
@@ -67,12 +67,12 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             init_state = proc.hyperparameters.get("init_state",
                                                   np.zeros(shape, dtype=int))
 
-            self.s_bit = BoltzmannAbstract(temperature=temperature,
-                                           refract=refract,
-                                           init_state=init_state,
-                                           shape=shape,
-                                           cost_diagonal=diagonal,
-                                           init_value=init_value)
+            self.s_bit = NEBMAbstract(temperature=temperature,
+                                      refract=refract,
+                                      init_state=init_state,
+                                      shape=shape,
+                                      cost_diagonal=diagonal,
+                                      init_value=init_value)
         elif neuron_model == 'scif':
             noise_amplitude = proc.hyperparameters.get("noise_amplitude", 1)
             noise_precision = proc.hyperparameters.get("noise_precision", 5)
@@ -94,17 +94,13 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             delta_temperature = proc.hyperparameters.get("delta_temperature", 1)
             steps_per_temperature = proc.hyperparameters.get(
                 "steps_per_temperature", 100)
-            min_refract = proc.hyperparameters.get("min_refract", 1)
-            max_refract = proc.hyperparameters.get("max_refract", 10)
-            refract = proc.hyperparameters.get(
-                "refract",
-                np.random.randint(min_refract, max_refract + 1, shape))
+            refract = proc.hyperparameters.get("refract", 0)
             init_value = proc.hyperparameters.get("init_value",
                                                   np.zeros(shape, dtype=int))
             init_state = proc.hyperparameters.get("init_state",
                                                   np.zeros(shape, dtype=int))
             self.s_bit = \
-                NEBMSimulatedAnnealing(
+                NEBMSimulatedAnnealingAbstract(
                     shape=shape,
                     max_temperature=max_temperature,
                     min_temperature=min_temperature,
@@ -114,7 +110,6 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                     init_value=init_value,
                     init_state=init_state
                 )
-
         else:
             AssertionError("Unknown neuron model specified")
         if weights.shape != (0, 0):
@@ -198,9 +193,9 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
         proc.vars.noise_precision.alias(self.scif.vars.noise_prec)
 
 
-@implements(proc=BoltzmannAbstract, protocol=LoihiProtocol)
+@implements(proc=NEBMAbstract, protocol=LoihiProtocol)
 @requires(Loihi2NeuroCore)
-class BoltzmannAbstractModel(AbstractSubProcessModel):
+class NEBMAbstractModel(AbstractSubProcessModel):
     """Model for the StochasticIntegrateAndFire process.
 
     The process is just a wrapper over the Boltzmann process.
@@ -218,6 +213,43 @@ class BoltzmannAbstractModel(AbstractSubProcessModel):
                          refract=refract,
                          init_value=init_value,
                          init_state=init_state)
+        proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
+        self.scif.s_wta_out.connect(proc.out_ports.messages)
+        self.scif.s_sig_out.connect(proc.out_ports.local_cost)
+
+        proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
+        proc.vars.state.alias(self.scif.vars.state)
+
+
+@implements(proc=NEBMSimulatedAnnealingAbstract, protocol=LoihiProtocol)
+@requires(Loihi2NeuroCore)
+class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
+    """Model for the StochasticIntegrateAndFire process.
+
+    The process is just a wrapper over the Boltzmann process.
+    # Todo deprecate in favour of Boltzmann.
+    """
+
+    def __init__(self, proc):
+        shape = proc.proc_params.get("shape", (1,))
+        max_temperature = proc.proc_params.get("max_temperature", 10)
+        min_temperature = proc.proc_params.get("min_temperature", 0)
+        delta_temperature = proc.proc_params.get("delta_temperature", 1)
+        steps_per_temperature = proc.proc_params.get(
+            "steps_per_temperature", 100)
+        refract = proc.proc_params.get("refract", (1,))
+        init_value = proc.proc_params.get("init_value", np.zeros(shape))
+        init_state = proc.proc_params.get("init_state", np.zeros(shape))
+        self.scif = NEBMSimulatedAnnealing(
+            shape=shape,
+            max_temperature=max_temperature,
+            min_temperature=min_temperature,
+            delta_temperature=delta_temperature,
+            steps_per_temperature=steps_per_temperature,
+            refract=refract,
+            init_value=init_value,
+            init_state=init_state
+        )
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)

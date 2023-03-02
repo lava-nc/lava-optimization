@@ -112,8 +112,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         self.refract = Var(shape=shape, init=refract)
 
         # Initial state determined in DiscreteVariables
-        self.state = Var(shape=shape, init=(init_state or np.array([0])).astype(
-            int))
+        self.state = Var(shape=shape, init=init_state.astype(int))
 
         @property
         def shape(self) -> ty.Tuple[int, ...]:

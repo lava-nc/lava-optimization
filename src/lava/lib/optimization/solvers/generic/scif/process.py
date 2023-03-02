@@ -131,5 +131,3 @@ class QuboScif(AbstractScif):
                                        noise_precision=noise_precision)
 
         self.cost_diagonal = Var(shape=shape, init=cost_diag)
-
-

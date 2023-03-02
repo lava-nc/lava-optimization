@@ -58,7 +58,7 @@ class NEBM(AbstractProcess):
             return self.proc_params['shape']
 
 
-class NEBMSA(AbstractProcess):
+class NEBMSimulatedAnnealing(AbstractProcess):
     """
     Non-equilibrium Boltzmann (NEBM) neuron model to solve QUBO problems.
     """
@@ -69,7 +69,7 @@ class NEBMSA(AbstractProcess):
                  max_temperature: int,
                  min_temperature: int,
                  delta_temperature: int,
-                 steps_per_temp: int,
+                 steps_per_temperature: int,
                  refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
                  init_value=0,
                  init_state=None
@@ -97,7 +97,7 @@ class NEBMSA(AbstractProcess):
                          max_temperature=max_temperature,
                          min_temperature=min_temperature,
                          delta_temperature=delta_temperature,
-                         steps_per_temp=steps_per_temp)
+                         steps_per_temperature=steps_per_temperature)
 
         self.a_in = InPort(shape=shape)
         self.s_sig_out = OutPort(shape=shape)

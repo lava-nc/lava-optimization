@@ -516,5 +516,3 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         # Send out spikes
         self.s_sig_out.send(s_sig)
         self.s_wta_out.send(s_wta)
-
-

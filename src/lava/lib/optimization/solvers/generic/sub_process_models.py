@@ -33,7 +33,8 @@ from lava.magma.core.decorator import implements, requires, tag
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
-from lava.lib.optimization.solvers.generic.nebm.process import NEBM
+from lava.lib.optimization.solvers.generic.nebm.process import NEBM, \
+    NEBMSimulatedAnnealing
 
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
@@ -73,10 +74,8 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                                            cost_diagonal=diagonal,
                                            init_value=init_value)
         elif neuron_model == 'scif':
-            step_size = proc.hyperparameters.get("step_size", 10)
             noise_amplitude = proc.hyperparameters.get("noise_amplitude", 1)
             noise_precision = proc.hyperparameters.get("noise_precision", 5)
-            steps_to_fire = proc.hyperparameters.get("steps_to_fire", 10)
             init_value = proc.hyperparameters.get("init_value", np.zeros(shape))
             init_state = proc.hyperparameters.get("init_value", np.zeros(shape))
             on_tau = proc.hyperparameters.get("sustained_on_tau", (-3))
@@ -89,6 +88,33 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                                            noise_precision=noise_precision,
                                            sustained_on_tau=on_tau,
                                            cost_diagonal=diagonal)
+        elif neuron_model == 'nebm-sa':
+            max_temperature = proc.hyperparameters.get("max_temperature", 10)
+            min_temperature = proc.hyperparameters.get("min_temperature", 0)
+            delta_temperature = proc.hyperparameters.get("delta_temperature", 1)
+            steps_per_temperature = proc.hyperparameters.get(
+                "steps_per_temperature", 100)
+            min_refract = proc.hyperparameters.get("min_refract", 1)
+            max_refract = proc.hyperparameters.get("max_refract", 10)
+            refract = proc.hyperparameters.get(
+                "refract",
+                np.random.randint(min_refract, max_refract + 1, shape))
+            init_value = proc.hyperparameters.get("init_value",
+                                                  np.zeros(shape, dtype=int))
+            init_state = proc.hyperparameters.get("init_state",
+                                                  np.zeros(shape, dtype=int))
+            self.s_bit = \
+                NEBMSimulatedAnnealing(
+                    shape=shape,
+                    max_temperature=max_temperature,
+                    min_temperature=min_temperature,
+                    delta_temperature=delta_temperature,
+                    steps_per_temperature=steps_per_temperature,
+                    refract=refract,
+                    init_value=init_value,
+                    init_state=init_state
+                )
+
         else:
             AssertionError("Unknown neuron model specified")
         if weights.shape != (0, 0):

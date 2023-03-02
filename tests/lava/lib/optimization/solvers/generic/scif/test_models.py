@@ -422,5 +422,6 @@ class TestQuboScifModels(unittest.TestCase):
         self.assertTrue(np.all(
             v_lif_sig[sig_pos_spk_idxs] == cost_diag_coeff))
 
+
 if __name__ == "__main__":
     unittest.main()

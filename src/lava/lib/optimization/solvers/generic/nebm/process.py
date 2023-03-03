@@ -70,6 +70,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
                  min_temperature: int,
                  delta_temperature: int,
                  steps_per_temperature: int,
+                 refract_scaling: int,
                  refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
                  init_value=0,
                  init_state=None
@@ -97,7 +98,8 @@ class NEBMSimulatedAnnealing(AbstractProcess):
                          max_temperature=max_temperature,
                          min_temperature=min_temperature,
                          delta_temperature=delta_temperature,
-                         steps_per_temperature=steps_per_temperature)
+                         steps_per_temperature=steps_per_temperature,
+                         refract_scaling=refract_scaling)
 
         self.a_in = InPort(shape=shape)
         self.s_sig_out = OutPort(shape=shape)
@@ -112,7 +114,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         self.refract = Var(shape=shape, init=refract)
 
         # Initial state determined in DiscreteVariables
-        self.state = Var(shape=shape, init=init_state.astype(int))
+        self.state = Var(shape=shape, init=(init_state or np.zeros(shape=shape)).astype(int))
 
         @property
         def shape(self) -> ty.Tuple[int, ...]:

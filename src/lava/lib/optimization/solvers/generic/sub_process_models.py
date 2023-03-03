@@ -94,6 +94,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             delta_temperature = proc.hyperparameters.get("delta_temperature", 1)
             steps_per_temperature = proc.hyperparameters.get(
                 "steps_per_temperature", 100)
+            refract_scaling = proc.hyperparameters.get("refract_scaling", 2)
             refract = proc.hyperparameters.get("refract", 0)
             init_value = proc.hyperparameters.get("init_value",
                                                   np.zeros(shape, dtype=int))
@@ -237,6 +238,7 @@ class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
         delta_temperature = proc.proc_params.get("delta_temperature", 1)
         steps_per_temperature = proc.proc_params.get(
             "steps_per_temperature", 100)
+        refract_scaling = proc.proc_params.get("refract_scaling", 2)
         refract = proc.proc_params.get("refract", (1,))
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))
@@ -246,6 +248,7 @@ class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
             min_temperature=min_temperature,
             delta_temperature=delta_temperature,
             steps_per_temperature=steps_per_temperature,
+            refract_scaling=refract_scaling,
             refract=refract,
             init_value=init_value,
             init_state=init_state

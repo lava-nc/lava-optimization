@@ -40,6 +40,8 @@ class QMatrixVRP:
         mat_size_for_random=1,
         lamda_wypts=1,
         lamda_vhcles=1,
+        lamda_dist=1,
+        lamda_cnstrt=1,
         fixed_pt=False,
         fixed_pt_range=(0, 127),
 

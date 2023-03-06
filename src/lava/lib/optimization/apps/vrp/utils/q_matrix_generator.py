@@ -42,6 +42,8 @@ class QMatrixVRP:
         lamda_cnstrnt=1,
         lamda_wypts=1,
         lamda_vhcles=1,
+        lamda_dist=1,
+        lamda_cnstrt=1,
         fixed_pt=False,
         fixed_pt_range=(0, 127),
 
@@ -74,9 +76,17 @@ class QMatrixVRP:
             lamda_vhcles (float, optional): penalty term for the vhcle nodes in 
             the Q matrix generator for clustering
 
+            lamda_dist (float, optional): penalty term for the distances between 
+            nodes in the Q matrix generator for tsp (weighted graphs)
+
+            lamda_cnstrt (float, optional): penalty term for the constraint 
+            between nodes in the Q matrix generator for tsp problem. This also 
+            corresponds to the unweighted part of the tsp problem.
+
             fixed_pt (bool, optional): Specifies if the Q matrix should
-            ultimately be rounded down to integer. If `True`, stochastic rounding 
-            to integer range of Loihi 2 is performed. Defaults to `False`.
+            ultimately be rounded down to integer. If `True`, stochastic 
+            rounding to integer range of Loihi 2 is performed. Defaults to 
+            `False`.
 
             fixed_pt_range (tuple<int>, optional): Specifies the absolute value 
             of  min and max values that the Q matrix can have if 
@@ -105,7 +115,7 @@ class QMatrixVRP:
                 "serviced"
             )
 
-    def _gen_tsp_Q_matrix(self, input_nodes, lamda_wypts):
+    def _gen_tsp_Q_matrix(self, input_nodes, lamda_dist, lamda_cnstrnt):
         """Return the Q matrix that sets up the QUBO for the 
         clustering problem. The cluster centers are assumed to be uniformly 
         distributed across the graph.
@@ -114,17 +124,54 @@ class QMatrixVRP:
             input_nodes (list[tuples]): Input to matrix generator functions 
             containing a list of nodes specifed as tuples. All the nodes 
             correspond to waypoints relevant to the tsp problem
+
+            
         Returns:
             np.ndarray: Returns a 2 dimension connectivity matrix of size 
-            n^2
+            n^2 * n^2
         """
         # Euclidean distances between all nodes input to the graph
         Dist = distance.cdist(input_nodes, input_nodes, "euclidean")
 
-        # Waypoints can only belong to one cluster
-        Cnstrnt_wypnts = np.eye(Dist.shape[0], Dist.shape[1])
+        # number  of waypoints
+        num_wypts = Dist.shape[0]
 
-        Q = Dist - lamda_wypts * Cnstrnt_wypnts
+        
+        # TSP constraint encoding
+        # distance block matrix
+        Q_dist_blck_mtrx = np.kron(np.eye(num_wypts),Dist)
+        
+        # Only one vrtx can be selected at a time instant
+        # Off-diagonal elements are two, populating matrix with 2
+        vrtx_mat_off_diag = 2 * np.ones((num_wypts, num_wypts))
+
+        # Diag elements of -3 to subtract from earlier matrix and get -1 in the
+        # diagonal later
+        vrtx_mat_diag = -3 * np.eye(num_wypts, num_wypts)
+
+        # Off-diag elements are two, diagonal elements are -1
+        vrtx_mat = vrtx_mat_off_diag + vrtx_mat_diag
+        vrtx_constraints = np.kron(np.eye(num_wypts),vrtx_mat)
+
+        
+        # Encoding sequence constraints here
+        seq_constraint_diag = np.eye(num_wypts*num_wypts, num_wypts*num_wypts) 
+        seq_constraint_vector = np.array([1 if i%num_wypts==0 else 0 for i in range(num_wypts*num_wypts)])
+        seq_constraint_off_diag=seq_constraint_vector
+        for i in range(num_wypts*num_wypts-1):
+            seq_constraint_off_diag = np.vstack((seq_constraint_off_diag, np.roll(seq_constraint_vector, i+1)))
+                
+        # Off-diag elements are two, diagonal elements are -1
+        seq_constraints = -3 * seq_constraint_diag + 2 * seq_constraint_off_diag
+
+        # matrix should contain non-zero elements with only value 2 now.
+        Q_cnstrnts_blck_mtrx = vrtx_constraints + seq_constraints
+
+        # Q_cnstrnts
+        Q = (
+            lamda_dist * Q_dist_blck_mtrx
+            + lamda_cnstrnt * Q_cnstrnts_blck_mtrx
+        )
 
         if self.fixed_pt:
             Q = self._stochastic_rounding(Q)
@@ -148,7 +195,7 @@ class QMatrixVRP:
         
         Returns:
             np.ndarray: Returns a 2 dimension connectivity matrix of size 
-            n^2
+            n*n
         """
         Dist = distance.cdist(input_nodes, input_nodes, "euclidean")
         # TODO: Introduce cut-off distancing later to sparsify distance matrix

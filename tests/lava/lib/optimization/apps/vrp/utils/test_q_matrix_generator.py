@@ -75,19 +75,32 @@ class TestMatrixGen(unittest.TestCase):
         self.assertLessEqual(fixed_pt_Q_max == 127, True)
 
     def test_tsp_Q_gen(self) -> None:
-        input_nodes = [(0, 1), (2, 3), (2, 1), (1, 1), (2, 4)]
-        lamda_wypts = 2.5
+        input_nodes = [(0, 1), (2, 3), (2, 1)]
+        lamda_dist = 2.5
+        lamda_cnstrt = 4
         num_vehicles = 1
         # testing floating point Q matrix
         Q_tsp_fltg_pt = QMatrixVRP(
             input_nodes,
             num_vehicles=num_vehicles,
             problem_type="tsp",
-            lamda_wypts=lamda_wypts,
+            lamda_dist=lamda_dist,
+            lamda_cnstrt=lamda_cnstrt
         ).matrix
         Q_dist_test = distance.cdist(input_nodes, input_nodes, "euclidean")
-        Q_cnstrnt_test = np.eye(Q_dist_test.shape[0], Q_dist_test.shape[1])
-        Q_test = Q_dist_test - lamda_wypts * Q_cnstrnt_test
+        Q_dist_blck_test = np.kron(np.eye(3), Q_dist_test)
+        Q_cnstrnts_test = 2*np.array([[-1, 1, 1, 1, 0, 0, 1, 0, 0],
+                                      [1, -1, 1, 0, 1, 0, 0, 1, 0],
+                                      [1, 1, -1, 0, 0, 1, 0, 0, 1],
+                                      [1, 0, 0, -1, 1, 1, 1, 0, 0],
+                                      [0, 1, 0, 1, -1, 1, 0, 1, 0],
+                                      [0, 0, 1, 1, 1, -1, 0, 0, 1],
+                                      [1, 0, 0, 1, 0, 0, -1, 1, 1],
+                                      [0, 1, 0, 0, 1, 0, 1, -1, 1],
+                                      [0, 0, 1, 0, 0, 1, 1, 1, -1]])
+        
+        Q_test = lamda_dist*Q_dist_blck_test + lamda_cnstrt*Q_cnstrnts_test
+        
         self.assertEqual(np.all(Q_tsp_fltg_pt == Q_test), True)
 
         # testing fixed point Q matrix

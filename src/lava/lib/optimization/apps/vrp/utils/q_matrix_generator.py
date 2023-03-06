@@ -66,22 +66,22 @@ class QMatrixVRP:
             2. `clustering` : Clustering problem framed as a QUBO.
             Defaults to 'None'.
             
-            lamda_wypts (float, optional): penalty term for the wypt nodes in 
+            lamda_wypts (float, optional): penalty term for the wypt nodes in
             the Q matrix generator for clustering.
 
-            lamda_vhcles (float, optional): penalty term for the vhcle nodes in 
+            lamda_vhcles (float, optional): penalty term for the vhcle nodes in
             the Q matrix generator for clustering
 
-            lamda_dist (float, optional): penalty term for the distances between 
+            lamda_dist (float, optional): penalty term for the distances between
             nodes in the Q matrix generator.
 
-            lamda_cnstrt (float, optional): penalty term for the constraint 
-            between nodes in the Q matrix generator for tsp problem. This also 
+            lamda_cnstrt (float, optional): penalty term for the constraint
+            between nodes in the Q matrix generator for tsp problem. This also
             corresponds to the unweighted part of the tsp problem.
 
             fixed_pt (bool, optional): Specifies if the Q matrix should
-            ultimately be rounded down to integer. If `True`, stochastic 
-            rounding to integer range of Loihi 2 is performed. Defaults to 
+            ultimately be rounded down to integer. If `True`, stochastic
+            rounding to integer range of Loihi 2 is performed. Defaults to
             `False`.
 
             fixed_pt_range (tuple<int>, optional): Specifies the absolute value 
@@ -119,10 +119,10 @@ class QMatrixVRP:
         Args:
             input_nodes (list[tuples]): Input to matrix generator functions 
             containing a list of nodes specifed as tuples. All the nodes 
-            correspond to waypoints relevant to the tsp problem. The distance 
+            correspond to waypoints relevant to the tsp problem. The distance
             between nodes is assumed to be symmetric i.e. A->B = B->A
 
-            
+
         Returns:
             np.ndarray: Returns a 2 dimension connectivity matrix of size 
             n^2 * n^2
@@ -218,15 +218,15 @@ class QMatrixVRP:
             containing a list of nodes specifed as tuples. First `num_vehicles`
             tuples correspond to the vehicle nodes.
 
-            lamda_dist (float, optional): penalty term for the euclidean 
+            lamda_dist (float, optional): penalty term for the euclidean
             distance between all nodes for the clustering Q matrix generator.
 
-            lamda_wypts (float, optional): penalty term for the wypt nodes in 
+            lamda_wypts (float, optional): penalty term for the wypt nodes in
             the Q matrix generator for clustering.
 
-            lamda_vhcles (float, optional): penalty term for the vhcle nodes in 
+            lamda_vhcles (float, optional): penalty term for the vhcle nodes in
             the Q matrix generator for clustering
-        
+
         Returns:
             np.ndarray: Returns a 2 dimension connectivity matrix of size 
             n*n
@@ -282,7 +282,7 @@ class QMatrixVRP:
             else:
                 wypnt_cnstrnt_vector.append(0)
         wypnt_cnstrnt_vector = np.array(wypnt_cnstrnt_vector)
-        
+
         # repeating fundamental unit constructed
         wypnt_cnstrnt_off_diag_unit = wypnt_cnstrnt_vector
         for i in range(self.num_vehicles - 1):

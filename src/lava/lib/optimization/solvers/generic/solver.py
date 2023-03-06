@@ -8,18 +8,21 @@ from dataclasses import dataclass
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    NEBMAbstract, NEBMSimulatedAnnealingAbstract,
+    NEBMAbstract, NEBMSimulatedAnnealingAbstract
 )
-from lava.lib.optimization.solvers.generic.read_gate.models import \
-    ReadGatePyModel
+from lava.lib.optimization.solvers.generic.read_gate.models import (
+    ReadGatePyModel,
+)
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.scif.models import \
-    PyModelQuboScifFixed
+from lava.lib.optimization.solvers.generic.scif.models import (
+    PyModelQuboScifFixed,
+)
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.lib.optimization.solvers.generic.nebm.process import NEBM
 from lava.lib.optimization.solvers.generic.sub_process_models import (
-    NEBMAbstractModel, NEBMSimulatedAnnealingAbstractModel,
+    NEBMAbstractModel,
+    NEBMSimulatedAnnealingAbstractModel,
 )
 from lava.magma.core.resources import (
     AbstractComputeResource,
@@ -86,6 +89,7 @@ class SolverConfig:
     log_level: int
         Select log verbosity (40: default, 20: verbose).
     """
+
     timeout: int = 1e3
     target_cost: int = 0
     backend: BACKENDS = CPU
@@ -114,6 +118,7 @@ class SolverReport:
     profiler: Profiler
         Profiler instance containing time, energy and activity measurements.
     """
+
     best_cost: int = None
     best_state: np.ndarray = None
     best_timestep: int = None
@@ -122,8 +127,9 @@ class SolverReport:
     profiler: Profiler = None
 
 
-def solve(problem: OptimizationProblem,
-          config: SolverConfig = SolverConfig()) -> np.ndarray:
+def solve(
+    problem: OptimizationProblem, config: SolverConfig = SolverConfig()
+) -> np.ndarray:
     """
     Solve the given optimization problem using the passed configuration, and
     returns the best candidate solution.
@@ -195,7 +201,7 @@ class OptimizationSolver:
             best_timestep=best_timestep,
             solver_config=config,
             profiler=self._profiler,
-            cost_timeseries=cost_timeseries
+            cost_timeseries=cost_timeseries,
         )
 
     def _prepare_solver(self, config: SolverConfig):
@@ -209,10 +215,12 @@ class OptimizationSolver:
                 self._cost_tracker = Monitor()
                 self._cost_tracker.probe(
                     target=self.solver_process.optimality,
-                    num_steps=config.timeout)
-        run_cfg = self._get_run_config(backend=config.backend,
-                                       probes=[self._cost_tracker]
-                                       if self._cost_tracker else None)
+                    num_steps=config.timeout,
+                )
+        run_cfg = self._get_run_config(
+            backend=config.backend,
+            probes=[self._cost_tracker] if self._cost_tracker else None,
+        )
         run_condition = RunSteps(num_steps=config.timeout)
         self._prepare_profiler(config=config, run_cfg=run_cfg)
         return run_condition, run_cfg
@@ -231,19 +239,19 @@ class OptimizationSolver:
         )
         self._process_builder.create_solver_process(
             problem=self.problem,
-            hyperparameters=config.hyperparameters or dict()
+            hyperparameters=config.hyperparameters or dict(),
         )
         self._process_builder.create_solver_model(
             target_cost=config.target_cost,
             requirements=requirements,
-            protocol=protocol
+            protocol=protocol,
         )
         self.solver_process = self._process_builder.solver_process
         self.solver_model = self._process_builder.solver_model
         self.solver_process._log_config.level = config.log_level
 
     def _get_requirements_and_protocol(
-            self, backend: BACKENDS
+        self, backend: BACKENDS
     ) -> ty.Tuple[AbstractComputeResource, AbstractSyncProtocol]:
         """
         Figure out requirements and protocol for a given backend.
@@ -261,33 +269,36 @@ class OptimizationSolver:
             return None
         if isinstance(self._cost_tracker, Monitor):
             return self._cost_tracker.get_data()[self.solver_process.name][
-                self.solver_process.optimality.name].T.astype(np.int32)
+                self.solver_process.optimality.name
+            ].T.astype(np.int32)
         else:
             return self._cost_tracker.time_series
 
     def _get_run_config(self, backend: BACKENDS, probes=None):
         if backend in CPUS:
-            pdict = {self.solver_process: self.solver_model,
-                     ReadGate: ReadGatePyModel,
-                     Dense: PyDenseModelFloat,
-                     NEBMAbstract:
-                         NEBMAbstractModel,
-                     NEBM: NEBMPyModel,
-                     QuboScif: PyModelQuboScifFixed
-                     }
-            return Loihi1SimCfg(exception_proc_model_map=pdict,
-                                select_sub_proc_model=True)
+            pdict = {
+                self.solver_process: self.solver_model,
+                ReadGate: ReadGatePyModel,
+                Dense: PyDenseModelFloat,
+                NEBMAbstract: NEBMAbstractModel,
+                NEBM: NEBMPyModel,
+                QuboScif: PyModelQuboScifFixed,
+            }
+            return Loihi1SimCfg(
+                exception_proc_model_map=pdict, select_sub_proc_model=True
+            )
         elif backend in NEUROCORES:
-            pdict = {self.solver_process: self.solver_model,
-                     NEBMAbstract:
-                         NEBMAbstractModel,
-                     NEBMSimulatedAnnealingAbstract:
-                        NEBMSimulatedAnnealingAbstractModel
-                     }
-            return Loihi2HwCfg(exception_proc_model_map=pdict,
-                               select_sub_proc_model=True,
-                               callback_fxs=probes
-                               )
+            pdict = {
+                self.solver_process: self.solver_model,
+                NEBMAbstract: NEBMAbstractModel,
+                NEBMSimulatedAnnealingAbstract:
+                    NEBMSimulatedAnnealingAbstractModel,
+            }
+            return Loihi2HwCfg(
+                exception_proc_model_map=pdict,
+                select_sub_proc_model=True,
+                callback_fxs=probes,
+            )
         else:
             raise NotImplementedError(str(backend) + BACKEND_MSG)
 

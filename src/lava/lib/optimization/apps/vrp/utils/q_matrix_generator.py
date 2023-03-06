@@ -16,7 +16,7 @@ import enum
 
 import numpy as np
 from scipy.spatial import distance
-# import typing as ty
+import typing as ty
 
 
 class ProblemType(enum.IntEnum):
@@ -40,6 +40,8 @@ class QMatrixVRP:
         mat_size_for_random=1,
         lamda_dist=1,
         lamda_cnstrnt=1,
+        lamda_wypts=1,
+        lamda_vhcles=1,
         fixed_pt=False,
         fixed_pt_range=(0, 127),
 
@@ -66,9 +68,11 @@ class QMatrixVRP:
             2. `clustering` : Clustering problem framed as a QUBO.
             Defaults to 'None'.
             
-            lamda_dist (float, optional):
+            lamda_wypts (float, optional): penalty term for the wypt nodes in 
+            the Q matrix generator for clustering.
 
-            lamda_cnstrt (float, optional):
+            lamda_vhcles (float, optional): penalty term for the vhcle nodes in 
+            the Q matrix generator for clustering
 
             fixed_pt (bool, optional): Specifies if the Q matrix should
             ultimately be rounded down to integer. If `True`, stochastic rounding 
@@ -83,6 +87,7 @@ class QMatrixVRP:
         self.max_fixed_pt_mant = fixed_pt_range[1]
         self.problem_type = problem_type
         self.num_vehicles = num_vehicles
+
         if self.problem_type == ProblemType.RANDOM:
             self.matrix = np.random.randint(-128, 127, size=(
                 mat_size_for_random, mat_size_for_random))
@@ -100,7 +105,7 @@ class QMatrixVRP:
                 "serviced"
             )
 
-    def _gen_tsp_Q_matrix(self, input_nodes, lamda_dist, lamda_cnstrnt):
+    def _gen_tsp_Q_matrix(self, input_nodes, lamda_wypts):
         """Return the Q matrix that sets up the QUBO for the 
         clustering problem. The cluster centers are assumed to be uniformly 
         distributed across the graph.
@@ -118,13 +123,14 @@ class QMatrixVRP:
 
         # Waypoints can only belong to one cluster
         Cnstrnt_wypnts = np.eye(Dist.shape[0], Dist.shape[1])
-        Q = lamda_dist * Dist - lamda_cnstrnt * Cnstrnt_wypnts
+
+        Q = Dist - lamda_wypts * Cnstrnt_wypnts
 
         if self.fixed_pt:
             Q = self._stochastic_rounding(Q)
         return Q
 
-    def _gen_clustering_Q_matrix(self, input_nodes, lamda_dist, lamda_cnstrnt):
+    def _gen_clustering_Q_matrix(self, input_nodes, lamda_wypts, lamda_vhcles):
         """Return the Q matrix that sets up the QUBO for the 
         clustering problem. The cluster centers are assumed to be uniformly 
         distributed across the graph.
@@ -133,18 +139,37 @@ class QMatrixVRP:
             input_nodes (list[tuples]): Input to matrix generator functions 
             containing a list of nodes specifed as tuples. First `num_vehicles`
             tuples correspond to the vehicle nodes.
+            
+            lamda_wypts (float, optional): penalty term for the wypt nodes in 
+            the Q matrix generator for clustering.
 
+            lamda_vhcles (float, optional): penalty term for the vhcle nodes in 
+            the Q matrix generator for clustering
+        
         Returns:
             np.ndarray: Returns a 2 dimension connectivity matrix of size 
             n^2
         """
         Dist = distance.cdist(input_nodes, input_nodes, "euclidean")
-        # TODO: Introduce cut-off distancing later to sparsify distance matrix 
+        # TODO: Introduce cut-off distancing later to sparsify distance matrix
         # later
 
         # Vehicles can only belong to one cluster
-        Cnstrnt_vehicles = np.pad(
-            np.eye(self.num_vehicles, self.num_vehicles),
+        # Off-diagonal elements are two, populating matrix with 2
+        vhcle_mat_off_diag = 2 * np.ones(
+            (self.num_vehicles, self.num_vehicles)
+        )
+
+        # Diag elements of -3 to subtract from earlier matrix and get -1 in the
+        # diagonal later
+        vhcle_mat_diag = -3 * np.eye(self.num_vehicles, self.num_vehicles)
+
+        # Off-diag elements are two, diagonal elements are -1
+        vhcle_mat = vhcle_mat_off_diag + vhcle_mat_diag
+
+        # Only vehicle waypoints get affected by this constraint
+        Cnstrnt_vhcles = np.pad(
+            vhcle_mat,
             (
                 (0, Dist.shape[0] - self.num_vehicles),
                 (0, Dist.shape[1] - self.num_vehicles),
@@ -153,8 +178,18 @@ class QMatrixVRP:
             constant_values=(0),
         )
 
+        # waypoints can only belong to one cluster
+        # Off-diagonal elements are two, populating matrix with 2
+        wypt_mat_off_diag = 2 * np.ones(Dist.shape)
+
+        # Diag elements of -3 to subtract from earlier matrix and get -1 in the
+        # diagonal later
+        wypt_mat_diag = -3 * np.eye(Dist.shape[0], Dist.shape[1])
+
+        # Off-diag elements are two, diagonal elements are -1
+        Cnstrnt_wypts = wypt_mat_off_diag + wypt_mat_diag
         # Combine all matrices to get final Q matrix
-        Q = lamda_dist * Dist - lamda_cnstrnt * Cnstrnt_vehicles
+        Q = Dist + lamda_vhcles * Cnstrnt_vhcles + lamda_wypts * Cnstrnt_wypts
         if self.fixed_pt:
             Q = self._stochastic_rounding(Q)
         return Q

@@ -21,21 +21,24 @@ from lava.lib.optimization.apps.vrp.utils.q_matrix_generator import QMatrixVRP
 class TestMatrixGen(unittest.TestCase):
     def test_cluster_Q_gen(self) -> None:
         input_nodes = [(0, 1), (2, 3), (2, 1), (1, 1), (2, 4)]
-        lamda_dist = 1.5
-        lamda_cnstrnt = 2.5
+        lamda_vhcles = 1.5
+        lamda_wypts = 2.5
         num_vehicles = 2
         # testing floating point Q matrix
         Q_clustering_fltg_pt = QMatrixVRP(
             input_nodes,
             num_vehicles=num_vehicles,
             problem_type="clustering",
-            lamda_dist=lamda_dist,
-            lamda_cnstrnt=lamda_cnstrnt,
+            lamda_vhcles=lamda_vhcles,
+            lamda_wypts=lamda_wypts,
         ).matrix
 
         Q_dist_test = distance.cdist(input_nodes, input_nodes, "euclidean")
-        Q_cnst_test = np.pad(
-            np.eye(num_vehicles, num_vehicles),
+        vhcle_mat_off_diag = 2 * np.ones((num_vehicles, num_vehicles))
+        vhcle_mat_diag = -3 * np.eye(num_vehicles, num_vehicles)
+        vhcle_mat = vhcle_mat_off_diag + vhcle_mat_diag
+        Q_vhcle_cnst_test = np.pad(
+            vhcle_mat,
             (
                 (0, Q_dist_test.shape[0] - num_vehicles),
                 (0, Q_dist_test.shape[1] - num_vehicles),
@@ -43,7 +46,18 @@ class TestMatrixGen(unittest.TestCase):
             "constant",
             constant_values=(0),
         )
-        Q_test = lamda_dist * Q_dist_test - lamda_cnstrnt * Q_cnst_test
+
+        wypts_mat_off_diag = 2 * np.ones(Q_dist_test.shape)
+        wypts_mat_diag = -3 * np.eye(
+            Q_dist_test.shape[0], Q_dist_test.shape[1]
+        )
+        Q_wypt_cnst_test = wypts_mat_off_diag + wypts_mat_diag
+
+        Q_test = (
+            Q_dist_test
+            + lamda_vhcles * Q_vhcle_cnst_test
+            + lamda_wypts * Q_wypt_cnst_test
+        )
         self.assertEqual(np.all(Q_clustering_fltg_pt == Q_test), True)
 
         # testing fixed point Q matrix
@@ -62,20 +76,18 @@ class TestMatrixGen(unittest.TestCase):
 
     def test_tsp_Q_gen(self) -> None:
         input_nodes = [(0, 1), (2, 3), (2, 1), (1, 1), (2, 4)]
-        lamda_dist = 1.5
-        lamda_cnstrnt = 2.5
-        num_vehicles = 2
+        lamda_wypts = 2.5
+        num_vehicles = 1
         # testing floating point Q matrix
         Q_tsp_fltg_pt = QMatrixVRP(
             input_nodes,
             num_vehicles=num_vehicles,
             problem_type="tsp",
-            lamda_dist=lamda_dist,
-            lamda_cnstrnt=lamda_cnstrnt,
+            lamda_wypts=lamda_wypts,
         ).matrix
         Q_dist_test = distance.cdist(input_nodes, input_nodes, "euclidean")
         Q_cnstrnt_test = np.eye(Q_dist_test.shape[0], Q_dist_test.shape[1])
-        Q_test = lamda_dist * Q_dist_test - lamda_cnstrnt * Q_cnstrnt_test
+        Q_test = Q_dist_test - lamda_wypts * Q_cnstrnt_test
         self.assertEqual(np.all(Q_tsp_fltg_pt == Q_test), True)
 
         # testing fixed point Q matrix

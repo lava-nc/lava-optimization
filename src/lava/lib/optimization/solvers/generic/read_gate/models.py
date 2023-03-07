@@ -100,4 +100,5 @@ def get_read_gate_model_class(num_in_ports: int):
     ReadGatePyModel = requires(CPU)(ReadGatePyModelImpl)
     return ReadGatePyModel
 
+
 ReadGatePyModel = get_read_gate_model_class(num_in_ports=1)

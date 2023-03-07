@@ -10,33 +10,25 @@ except ImportError:
         pass
 
 import numpy as np
-
 from lava.lib.optimization.solvers.generic.cost_integrator.process import (
     CostIntegrator,
-)
+    )
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     CostConvergenceChecker,
     DiscreteVariablesProcess,
     StochasticIntegrateAndFire,
-    NEBMAbstract, NEBMSimulatedAnnealingAbstract)
-    
+    NEBMAbstract, NEBMSimulatedAnnealingAbstract
+    )
+from lava.lib.optimization.solvers.generic.nebm.process import (
+    NEBM,
+    NEBMSimulatedAnnealing
+    )
+from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.resources import Loihi2NeuroCore, CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.process import Dense
-from lava.magma.core.resources import Loihi2NeuroCore
-import numpy as np
-from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
-from lava.magma.core.model.py.ports import PyInPort, PyOutPort
-from lava.magma.core.model.py.type import LavaPyType
-from lava.magma.core.resources import CPU
-from lava.magma.core.decorator import implements, requires, tag
-from lava.magma.core.model.py.model import PyLoihiProcessModel
-
-from lava.lib.optimization.solvers.generic.scif.process import QuboScif
-from lava.lib.optimization.solvers.generic.nebm.process import NEBM, \
-    NEBMSimulatedAnnealing
 
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)

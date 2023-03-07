@@ -68,6 +68,9 @@ except ImportError:
     class CostIntegratorNcModel:
         pass
 
+from lava.lib.optimization.solvers.generic.read_gate.models import \
+    ReadGatePyModel
+
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 HP_TYPE = ty.Union[ty.Dict, ty.List[ty.Dict]]
 CPUS = [CPU, "CPU"]

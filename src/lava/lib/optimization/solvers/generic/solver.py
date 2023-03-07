@@ -58,12 +58,16 @@ try:
 except ImportError:
     class ReadGateCModel:
         pass
+
     class NcModelDense:
         pass
+
     class NEBMNcModel:
         pass
+
     class NEBMSimulatedAnnealingNcModel:
         pass
+
     class CostIntegratorNcModel:
         pass
 

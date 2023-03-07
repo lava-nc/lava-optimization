@@ -13,6 +13,7 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
 from lava.lib.optimization.solvers.generic.read_gate.models import (
     ReadGatePyModel,
 )
+from lava.lib.optimization.solvers.generic.read_gate.ncmodels import ReadGateCModel
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.scif.models import (
     PyModelQuboScifFixed,
@@ -290,6 +291,7 @@ class OptimizationSolver:
         elif backend in NEUROCORES:
             pdict = {
                 self.solver_process: self.solver_model,
+                ReadGate: ReadGateCModel,
                 NEBMAbstract: NEBMAbstractModel,
                 NEBMSimulatedAnnealingAbstract:
                     NEBMSimulatedAnnealingAbstractModel,

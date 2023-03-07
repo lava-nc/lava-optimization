@@ -121,7 +121,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
 
         # Initial state determined in DiscreteVariables
         self.state = Var(
-            shape=shape, init=(init_state or np.zeros(shape=shape)).astype(int)
+            shape=shape, init=init_state.astype(int) if init_state is not None else np.zeros(shape=shape, dtype=int)
         )
 
         @property

@@ -13,12 +13,12 @@ from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 @requires(CPU)
 @tag('fixed_pt')
 class NEBMPyModel(PyLoihiProcessModel):
-    """Fixed point implementation of Stochastic Constraint Integrate and
-        Fire (SCIF) neuron for solving QUBO problems.
     """
-    a_in = LavaPyType(PyInPort.VEC_DENSE, int, precision=8)
-    s_sig_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
-    s_wta_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
+    Fixed point implementation of Boltzmann neuron for solving QUBO problems.
+    """
+    a_in = LavaPyType(PyInPort.VEC_DENSE, int, precision=24)
+    s_sig_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=24)
+    s_wta_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=24)
 
     # The local cost
     state: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
@@ -28,7 +28,7 @@ class NEBMPyModel(PyLoihiProcessModel):
     refract: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
     def __init__(self, proc_params):
-        super(NEBMPyModel, self).__init__(proc_params)
+        super().__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])
 
         self.refract_buffer = np.zeros(proc_params['shape']).astype(int)

@@ -390,12 +390,10 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             min_temperature: int = 0,
             delta_temperature: int = 1,
             steps_per_temperature: int = 100,
-            refract_scaling: int = 2,
+            refract_scaling: int = 14,
             refract: ty.Optional[ty.Union[int, npty.NDArray]],
             shape: ty.Tuple[int, ...] = (1,),
             init_state: npt.ArrayLike = 0,
-            input_duration: npt.ArrayLike = 6,
-            min_state: npt.ArrayLike = 1000,
             min_integration: npt.ArrayLike = -1000,
             cost_diagonal: npt.ArrayLike = 0,
             name: ty.Optional[str] = None,
@@ -412,11 +410,6 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             The starting value of the state variable.
         temperature: npt.ArrayLike, optional
             the temperature of the systems, defining the level of noise.
-        input_duration: npt.ArrayLike, optional
-            Number of timesteps by which each input should be preserved.
-        min_state: npt.ArrayLike, optional
-            The minimum value for the state variable. The state variable will be
-            truncated at this value if updating results in a lower value.
         min_integration: npt.ArrayLike, optional
             The minimum value for the total input (addition of all valid inputs
             at a given timestep). The total input value will be truncated at
@@ -444,8 +437,6 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             steps_per_temperature=steps_per_temperature,
             refract_scaling=refract_scaling,
             refract=refract,
-            input_duration=input_duration,
-            min_state=min_state,
             min_integration=min_integration,
             cost_diagonal=cost_diagonal,
             name=name,
@@ -464,8 +455,6 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
                                          init=steps_per_temperature)
         self.refract = Var(shape=shape, init=refract)
         self.state = Var(shape=shape, init=init_state)
-        self.input_duration = Var(shape=shape, init=input_duration)
-        self.min_state = Var(shape=shape, init=min_state)
         self.min_integration = Var(shape=shape, init=min_integration)
         self.firing = Var(shape=shape, init=init_value)
         self.prev_assignment = Var(shape=shape, init=False)

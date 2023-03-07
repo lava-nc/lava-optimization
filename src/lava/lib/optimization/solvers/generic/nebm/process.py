@@ -31,8 +31,8 @@ class NEBM(AbstractProcess):
         temperature: ArrayLike
             Temperature of the system, defining the level of noise.
         refract : ArrayLike
-            Refractory period for each neuron. This is the time for which a
-            neuron 'stays ON'.
+            Minimum number of timesteps a neuron remains in a state after a
+            transition.
         init_value : ArrayLike
             The spiking history with which the network is initialized
         init_state : ArrayLike
@@ -90,8 +90,8 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         temperature: ArrayLike
             Temperature of the system, defining the level of noise.
         refract : ArrayLike
-            Refractory period for each neuron. This is the time for which a
-            neuron 'stays ON'.
+            Minimum number of timesteps a neuron remains in a state after a
+            transition.
         init_value : ArrayLike
             The spiking history with which the network is initialized
         init_state : ArrayLike
@@ -99,7 +99,6 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         """
         super().__init__(
             shape=shape,
-            max_temperature=max_temperature,
             min_temperature=min_temperature,
             delta_temperature=delta_temperature,
             steps_per_temperature=steps_per_temperature,
@@ -121,7 +120,10 @@ class NEBMSimulatedAnnealing(AbstractProcess):
 
         # Initial state determined in DiscreteVariables
         self.state = Var(
-            shape=shape, init=init_state.astype(int) if init_state is not None else np.zeros(shape=shape, dtype=int)
+            shape=shape,
+            init=init_state.astype(int)
+            if init_state is not None
+            else np.zeros(shape=shape, dtype=int),
         )
 
         @property

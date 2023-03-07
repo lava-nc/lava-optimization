@@ -10,19 +10,14 @@ except ImportError:
         pass
 
 import numpy as np
-from lava.lib.optimization.solvers.generic.cost_integrator.process import (
-    CostIntegrator,
-    )
-from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    CostConvergenceChecker,
-    DiscreteVariablesProcess,
-    StochasticIntegrateAndFire,
-    NEBMAbstract, NEBMSimulatedAnnealingAbstract
-    )
-from lava.lib.optimization.solvers.generic.nebm.process import (
-    NEBM,
+from lava.lib.optimization.solvers.generic.cost_integrator.process import \
+    CostIntegrator
+from lava.lib.optimization.solvers.generic.hierarchical_processes import \
+    CostConvergenceChecker, DiscreteVariablesProcess, \
+    StochasticIntegrateAndFire, NEBMAbstract, NEBMSimulatedAnnealingAbstract
+
+from lava.lib.optimization.solvers.generic.nebm.process import NEBM, \
     NEBMSimulatedAnnealing
-    )
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel

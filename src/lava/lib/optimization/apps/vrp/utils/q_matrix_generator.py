@@ -123,7 +123,8 @@ class QMatrixVRP:
         Args:
             input_nodes (list[tuples]): Input to matrix generator functions 
             containing a list of nodes specifed as tuples. All the nodes 
-            correspond to waypoints relevant to the tsp problem
+            correspond to waypoints relevant to the tsp problem. The distance 
+            between nodes is assumed to be symmetric i.e. A->B = B->A
 
             
         Returns:
@@ -136,11 +137,29 @@ class QMatrixVRP:
         # number  of waypoints
         num_wypts = Dist.shape[0]
 
-        
+        # TSP distance encoding
+        # Distance encoding based on manual calculations that scale to problems
+        # of any size
+        num_wypts_sq = num_wypts**2
+        Q_dist_mtrx = np.zeros((num_wypts_sq, num_wypts_sq))
+        for k in range(num_wypts):
+            for l in range(num_wypts):
+                # Sufficent to traverse only lower triangle
+                if (k==l):
+                    break
+                else:
+                    q_inter_matrx = np.zeros((num_wypts_sq, num_wypts_sq))
+                    u, v = k, l
+                    for i in range(num_wypts):
+                        for j  in range(num_wypts-1):
+                            v_ind_row = (v+ (j+1)*num_wypts)%num_wypts_sq
+                            u_ind_row = (u+ (j+1)*num_wypts)%num_wypts_sq
+                            q_inter_matrx[v_ind_row, u]=1
+                            q_inter_matrx[u_ind_row, v]=1
+                        v = (v+num_wypts)%num_wypts_sq
+                        u = (u+num_wypts)%num_wypts_sq
+                    Q_dist_mtrx += Dist[k,l] * q_inter_matrx
         # TSP constraint encoding
-        # distance block matrix
-        Q_dist_blck_mtrx = np.kron(np.eye(num_wypts),Dist)
-        
         # Only one vrtx can be selected at a time instant
         # Off-diagonal elements are two, populating matrix with 2
         vrtx_mat_off_diag = 2 * np.ones((num_wypts, num_wypts))
@@ -151,25 +170,38 @@ class QMatrixVRP:
 
         # Off-diag elements are two, diagonal elements are -1
         vrtx_mat = vrtx_mat_off_diag + vrtx_mat_diag
-        vrtx_constraints = np.kron(np.eye(num_wypts),vrtx_mat)
+        vrtx_constraints = np.kron(np.eye(num_wypts), vrtx_mat)
 
-        
         # Encoding sequence constraints here
-        seq_constraint_diag = np.eye(num_wypts*num_wypts, num_wypts*num_wypts) 
-        seq_constraint_vector = np.array([1 if i%num_wypts==0 else 0 for i in range(num_wypts*num_wypts)])
-        seq_constraint_off_diag=seq_constraint_vector
-        for i in range(num_wypts*num_wypts-1):
-            seq_constraint_off_diag = np.vstack((seq_constraint_off_diag, np.roll(seq_constraint_vector, i+1)))
-                
+        seq_constraint_diag = np.eye(
+            num_wypts * num_wypts, num_wypts * num_wypts
+        )
+        seq_constraint_vector = np.array(
+            [
+                1 if i % num_wypts == 0 else 0
+                for i in range(num_wypts * num_wypts)
+            ]
+        )
+        seq_constraint_off_diag = seq_constraint_vector
+        for i in range(num_wypts * num_wypts - 1):
+            seq_constraint_off_diag = np.vstack(
+                (
+                    seq_constraint_off_diag,
+                    np.roll(seq_constraint_vector, i + 1),
+                )
+            )
+
         # Off-diag elements are two, diagonal elements are -1
-        seq_constraints = -3 * seq_constraint_diag + 2 * seq_constraint_off_diag
+        seq_constraints = (
+            -3 * seq_constraint_diag + 2 * seq_constraint_off_diag
+        )
 
         # matrix should contain non-zero elements with only value 2 now.
         Q_cnstrnts_blck_mtrx = vrtx_constraints + seq_constraints
 
         # Q_cnstrnts
         Q = (
-            lamda_dist * Q_dist_blck_mtrx
+            lamda_dist * Q_dist_mtrx
             + lamda_cnstrnt * Q_cnstrnts_blck_mtrx
         )
 

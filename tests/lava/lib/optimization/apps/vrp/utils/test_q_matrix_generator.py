@@ -17,7 +17,6 @@ import numpy as np
 from scipy.spatial import distance
 from lava.lib.optimization.apps.vrp.utils.q_matrix_generator import QMatrixVRP
 
-
 class TestMatrixGen(unittest.TestCase):
     def test_cluster_Q_gen(self) -> None:
         input_nodes = [(0, 1), (2, 3), (2, 1), (1, 1), (2, 4)]
@@ -75,7 +74,7 @@ class TestMatrixGen(unittest.TestCase):
         self.assertLessEqual(fixed_pt_Q_max == 127, True)
 
     def test_tsp_Q_gen(self) -> None:
-        input_nodes = [(0, 1), (2, 3), (2, 1)]
+        input_nodes = [(0, 1), (0, 0), (0,-1)]
         lamda_dist = 2.5
         lamda_cnstrt = 4
         num_vehicles = 1
@@ -88,7 +87,15 @@ class TestMatrixGen(unittest.TestCase):
             lamda_cnstrt=lamda_cnstrt
         ).matrix
         Q_dist_test = distance.cdist(input_nodes, input_nodes, "euclidean")
-        Q_dist_blck_test = np.kron(np.eye(3), Q_dist_test)
+        Q_dist_scaled_test = np.array([[0, 0, 0, 0, 1, 2, 0, 1, 2],
+                                       [0, 0, 0, 1, 0, 1, 1, 0, 1],
+                                       [0, 0, 0, 2, 1, 0, 2, 1, 0],
+                                       [0, 1, 2, 0, 0, 0, 0, 1, 2],
+                                       [1, 0, 1, 0, 0, 0, 1, 0, 1],
+                                       [2, 1, 0, 0, 0, 0, 2, 1, 0],
+                                       [0, 1, 2, 0, 1, 2, 0, 0, 0],
+                                       [1, 0, 1, 1, 0, 1, 0, 0, 0],
+                                       [2, 1, 0, 2, 1, 0, 0, 0, 0]])
         Q_cnstrnts_test = 2*np.array([[-1, 1, 1, 1, 0, 0, 1, 0, 0],
                                       [1, -1, 1, 0, 1, 0, 0, 1, 0],
                                       [1, 1, -1, 0, 0, 1, 0, 0, 1],
@@ -99,8 +106,7 @@ class TestMatrixGen(unittest.TestCase):
                                       [0, 1, 0, 0, 1, 0, 1, -1, 1],
                                       [0, 0, 1, 0, 0, 1, 1, 1, -1]])
         
-        Q_test = lamda_dist*Q_dist_blck_test + lamda_cnstrt*Q_cnstrnts_test
-        
+        Q_test = lamda_dist*Q_dist_scaled_test + lamda_cnstrt*Q_cnstrnts_test
         self.assertEqual(np.all(Q_tsp_fltg_pt == Q_test), True)
 
         # testing fixed point Q matrix

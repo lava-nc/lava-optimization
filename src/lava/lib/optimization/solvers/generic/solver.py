@@ -13,13 +13,6 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
 from lava.lib.optimization.solvers.generic.read_gate.models import (
     ReadGatePyModel,
 )
-try:
-    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
-        ReadGateCModel
-    )
-except ImportError:
-    class ReadGateCModel:
-        pass
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.scif.models import (
     PyModelQuboScifFixed,
@@ -27,6 +20,12 @@ from lava.lib.optimization.solvers.generic.scif.models import (
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.lib.optimization.solvers.generic.nebm.process import NEBM
+from lava.lib.optimization.solvers.generic.cost_integrator.process import (
+    CostIntegrator
+)
+from lava.lib.optimization.solvers.generic.nebm.process import (
+    NEBMSimulatedAnnealing
+)
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     NEBMAbstractModel,
     NEBMSimulatedAnnealingAbstractModel,
@@ -45,6 +44,32 @@ from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
 from lava.proc.monitor.process import Monitor
 from lava.utils.profiler import Profiler
+
+try:
+    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
+        ReadGateCModel
+    )
+    from lava.proc.dense.ncmodels import NcModelDense
+    from lava.lib.optimization.solvers.generic.nebm.ncmodels import (
+        NEBMNcModel, NEBMSimulatedAnnealingNcModel
+    )
+    from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels \
+        import CostIntegratorNcModel
+except ImportError:
+    class ReadGateCModel:
+        pass
+
+    class NcModelDense:
+        pass
+
+    class NEBMNcModel:
+        pass
+
+    class NEBMSimulatedAnnealingNcModel:
+        pass
+
+    class CostIntegratorNcModel:
+        pass
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -298,9 +323,14 @@ class OptimizationSolver:
             pdict = {
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGateCModel,
+                Dense: NcModelDense,
                 NEBMAbstract: NEBMAbstractModel,
+                NEBM: NEBMNcModel,
                 NEBMSimulatedAnnealingAbstract:
                     NEBMSimulatedAnnealingAbstractModel,
+                NEBMSimulatedAnnealing:
+                    NEBMSimulatedAnnealingNcModel,
+                CostIntegrator: CostIntegratorNcModel
             }
             return Loihi2HwCfg(
                 exception_proc_model_map=pdict,

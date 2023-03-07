@@ -460,4 +460,9 @@ class TestQuboScifModels(unittest.TestCase):
         sig_pos_spk_idxs = wta_pos_spk_idxs + 1
         self.assertTrue(np.all(v_scif[spk_idxs_post_inj] == on_tau))
         self.assertTrue(np.all(v_lif_wta[wta_pos_spk_idxs] == 1))
-        self.assertTrue(np.all(v_lif_sig[sig_pos_spk_idxs] == cost_diag_coeff))
+        self.assertTrue(np.all(
+            v_lif_sig[sig_pos_spk_idxs] == cost_diag_coeff))
+
+
+if __name__ == "__main__":
+    unittest.main()

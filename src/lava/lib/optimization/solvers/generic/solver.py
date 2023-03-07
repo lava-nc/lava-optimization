@@ -13,7 +13,13 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
 from lava.lib.optimization.solvers.generic.read_gate.models import (
     ReadGatePyModel,
 )
-from lava.lib.optimization.solvers.generic.read_gate.ncmodels import ReadGateCModel
+try:
+    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
+        ReadGateCModel
+    )
+except ImportError:
+    class ReadGateCModel:
+        pass
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.scif.models import (
     PyModelQuboScifFixed,

@@ -241,7 +241,7 @@ class OptimizationSolver:
         if config.probe_cost:
             if config.backend in NEUROCORES:
                 # from lava.utils.loihi2_state_probes import StateProbe
-                # self._cost_tracker = StateProbe(self.solver_process.optimality)
+                # self._cost_tracker = StateProbe(self.solver_process.optimum)
                 raise NotImplementedError
             if config.backend in CPUS:
                 self._cost_tracker = Monitor()

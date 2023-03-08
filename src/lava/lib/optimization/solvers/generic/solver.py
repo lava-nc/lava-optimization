@@ -158,15 +158,6 @@ class SolverReport:
     solver_config: SolverConfig = None
     profiler: Profiler = None
 
-    def plot_cost_timeseries(self, filename: str = None) -> None:
-        if self.cost_timeseries is None:
-            return NotImplemented  # what to do?
-        from matplotlib import pyplot as plt
-        plt.plot(self.cost_timeseries, "ro")
-        if filename is None:
-            plt.show()
-        else:
-            plt.savefig(filename)
 
 def solve(
     problem: OptimizationProblem, config: SolverConfig = SolverConfig()
@@ -246,18 +237,11 @@ class OptimizationSolver:
         )
 
     def _prepare_solver(self, config: SolverConfig):
-        if config.probe_cost:
-            if config.backend == "Loihi2":
-                self._cost_tracker = StateProbe(self.solver_process.optimality)
-            if config.backend == "CPU":
-                self._cost_tracker = Monitor()
-                self._cost_tracker.probe(target=self.solver_process.optimality,
-                                         num_steps=config.timeout)
         self._create_solver_process(config=config)
         if config.probe_cost:
             if config.backend in NEUROCORES:
                 # from lava.utils.loihi2_state_probes import StateProbe
-                # self._cost_tracker = StateProbe()
+                # self._cost_tracker = StateProbe(self.solver_process.optimality)
                 raise NotImplementedError
             if config.backend in CPUS:
                 self._cost_tracker = Monitor()

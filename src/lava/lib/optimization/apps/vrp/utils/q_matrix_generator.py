@@ -77,7 +77,7 @@ class QMatrixVRP:
             the Q matrix generator for clustering
 
             lamda_dist (float, optional): penalty term for the distances between 
-            nodes in the Q matrix generator for tsp (weighted graphs)
+            nodes in the Q matrix generator.
 
             lamda_cnstrt (float, optional): penalty term for the constraint 
             between nodes in the Q matrix generator for tsp problem. This also 
@@ -140,25 +140,29 @@ class QMatrixVRP:
         # TSP distance encoding
         # Distance encoding based on manual calculations that scale to problems
         # of any size
-        num_wypts_sq = num_wypts**2
+        num_wypts_sq = num_wypts ** 2
         Q_dist_mtrx = np.zeros((num_wypts_sq, num_wypts_sq))
         for k in range(num_wypts):
             for l in range(num_wypts):
                 # Sufficent to traverse only lower triangle
-                if (k==l):
+                if k == l:
                     break
                 else:
                     q_inter_matrx = np.zeros((num_wypts_sq, num_wypts_sq))
                     u, v = k, l
                     for i in range(num_wypts):
-                        for j  in range(num_wypts-1):
-                            v_ind_row = (v+ (j+1)*num_wypts)%num_wypts_sq
-                            u_ind_row = (u+ (j+1)*num_wypts)%num_wypts_sq
-                            q_inter_matrx[v_ind_row, u]=1
-                            q_inter_matrx[u_ind_row, v]=1
-                        v = (v+num_wypts)%num_wypts_sq
-                        u = (u+num_wypts)%num_wypts_sq
-                    Q_dist_mtrx += Dist[k,l] * q_inter_matrx
+                        for j in range(num_wypts - 1):
+                            v_ind_row = (
+                                v + (j + 1) * num_wypts
+                            ) % num_wypts_sq
+                            u_ind_row = (
+                                u + (j + 1) * num_wypts
+                            ) % num_wypts_sq
+                            q_inter_matrx[v_ind_row, u] = 1
+                            q_inter_matrx[u_ind_row, v] = 1
+                        v = (v + num_wypts) % num_wypts_sq
+                        u = (u + num_wypts) % num_wypts_sq
+                    Q_dist_mtrx += Dist[k, l] * q_inter_matrx
         # TSP constraint encoding
         # Only one vrtx can be selected at a time instant
         # Off-diagonal elements are two, populating matrix with 2
@@ -200,16 +204,15 @@ class QMatrixVRP:
         Q_cnstrnts_blck_mtrx = vrtx_constraints + seq_constraints
 
         # Q_cnstrnts
-        Q = (
-            lamda_dist * Q_dist_mtrx
-            + lamda_cnstrnt * Q_cnstrnts_blck_mtrx
-        )
+        Q = lamda_dist * Q_dist_mtrx + lamda_cnstrnt * Q_cnstrnts_blck_mtrx
 
         if self.fixed_pt:
             Q = self._stochastic_rounding(Q)
         return Q
 
-    def _gen_clustering_Q_matrix(self, input_nodes, lamda_wypts, lamda_vhcles):
+    def _gen_clustering_Q_matrix(
+        self, input_nodes, lamda_dist, lamda_wypts, lamda_vhcles
+    ):
         """Return the Q matrix that sets up the QUBO for the 
         clustering problem. The cluster centers are assumed to be uniformly 
         distributed across the graph.
@@ -218,7 +221,10 @@ class QMatrixVRP:
             input_nodes (list[tuples]): Input to matrix generator functions 
             containing a list of nodes specifed as tuples. First `num_vehicles`
             tuples correspond to the vehicle nodes.
-            
+
+            lamda_dist (float, optional): penalty term for the euclidean 
+            distance between all nodes for the clustering Q matrix generator.
+
             lamda_wypts (float, optional): penalty term for the wypt nodes in 
             the Q matrix generator for clustering.
 
@@ -230,8 +236,12 @@ class QMatrixVRP:
             n*n
         """
         Dist = distance.cdist(input_nodes, input_nodes, "euclidean")
+        num_nodes = Dist.shape[0]
+
         # TODO: Introduce cut-off distancing later to sparsify distance matrix
         # later
+        # Distance matrix for the encoding
+        dist_mtrx = np.kron(np.eye(self.num_vehicles), Dist)
 
         # Vehicles can only belong to one cluster
         # Off-diagonal elements are two, populating matrix with 2
@@ -247,28 +257,75 @@ class QMatrixVRP:
         vhcle_mat = vhcle_mat_off_diag + vhcle_mat_diag
 
         # Only vehicle waypoints get affected by this constraint
-        Cnstrnt_vhcles = np.pad(
+        cnstrnt_vhcles = np.pad(
             vhcle_mat,
             (
-                (0, Dist.shape[0] - self.num_vehicles),
-                (0, Dist.shape[1] - self.num_vehicles),
+                (0, num_nodes - self.num_vehicles),
+                (0, num_nodes - self.num_vehicles),
             ),
             "constant",
             constant_values=(0),
         )
+        cnstrnt_vhcles_blck = np.kron(
+            np.eye(self.num_vehicles), cnstrnt_vhcles
+        )
 
         # waypoints can only belong to one cluster
         # Off-diagonal elements are two, populating matrix with 2
-        wypt_mat_off_diag = 2 * np.ones(Dist.shape)
+
+        qubo_encdng_size = num_nodes * self.num_vehicles
+        wypnt_cnstrnt_diag = np.eye(qubo_encdng_size, qubo_encdng_size)
+
+        # construct fundamental column that encodes waypoint constraints
+        wypnt_cnstrnt_vector = []
+        one_counter = 0
+        for i in range(qubo_encdng_size):
+            if (i % num_nodes) == 0 and (one_counter != self.num_vehicles):
+                wypnt_cnstrnt_vector.append(1)
+                one_counter += 1
+            else:
+                wypnt_cnstrnt_vector.append(0)
+        wypnt_cnstrnt_vector = np.array(wypnt_cnstrnt_vector)
+        
+        # repeating fundamental unit constructed
+        wypnt_cnstrnt_off_diag_unit = wypnt_cnstrnt_vector
+        for i in range(self.num_vehicles - 1):
+            wypnt_cnstrnt_off_diag_unit = np.vstack(
+                (wypnt_cnstrnt_off_diag_unit, np.roll(wypnt_cnstrnt_vector, 1))
+            )
+        wypnt_cnstrnt_off_diag_unit = wypnt_cnstrnt_off_diag_unit.T
+        # zero valued columns part of the repeating fundamental unit
+        for i in range(num_nodes - self.num_vehicles):
+            wypnt_cnstrnt_off_diag_unit = np.hstack(
+                (
+                    wypnt_cnstrnt_off_diag_unit,
+                    np.zeros((wypnt_cnstrnt_vector.shape[0], 1)),
+                )
+            )
+        wypnt_cnstrnt_off_diag_mtrx = wypnt_cnstrnt_off_diag_unit
+
+        # num vehicles gives num of clusters for which the block needs to be
+        # repeated
+        for i in range(self.num_vehicles - 1):
+            wypnt_cnstrnt_off_diag_mtrx = np.hstack(
+                (wypnt_cnstrnt_off_diag_mtrx, wypnt_cnstrnt_off_diag_unit)
+            )
 
         # Diag elements of -3 to subtract from earlier matrix and get -1 in the
         # diagonal later
-        wypt_mat_diag = -3 * np.eye(Dist.shape[0], Dist.shape[1])
+        wypt_mat_diag = np.diag(np.diag(wypnt_cnstrnt_off_diag_mtrx))
 
         # Off-diag elements are two, diagonal elements are -1
-        Cnstrnt_wypts = wypt_mat_off_diag + wypt_mat_diag
+        cnstrnt_wypts_blck = (
+            2 * wypnt_cnstrnt_off_diag_mtrx + -3 * wypt_mat_diag
+        )
         # Combine all matrices to get final Q matrix
-        Q = Dist + lamda_vhcles * Cnstrnt_vhcles + lamda_wypts * Cnstrnt_wypts
+
+        Q = (
+            lamda_dist * dist_mtrx
+            + lamda_vhcles * cnstrnt_vhcles_blck
+            + lamda_wypts * cnstrnt_wypts_blck
+        )
         if self.fixed_pt:
             Q = self._stochastic_rounding(Q)
         return Q

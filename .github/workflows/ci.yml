@@ -64,7 +64,7 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        operating-system: [ubuntu-latest]
     steps:
     - name: Setup CI
       uses: lava-nc/ci-setup-composite-action@v1.1

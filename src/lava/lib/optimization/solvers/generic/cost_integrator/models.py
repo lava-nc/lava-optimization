@@ -38,3 +38,4 @@ class CostIntegratorModel(PyLoihiProcessModel):
             self.update_buffer.send(cost)
         else:
             self.update_buffer.send(np.asarray([0]))
+        self.cost[:]=cost

@@ -352,7 +352,7 @@ class OptimizationSolver:
 
     def _get_results(self):
         best_state = self.solver_process.variable_assignment.aliased_var.get()
-        best_cost = self.solver_process.optimality.aliased_var.get()
+        best_cost = self.solver_process.optimum.aliased_var.get()
         best_cost = (best_cost.astype(np.int32) << 8) >> 8
         best_timestep = self.solver_process.solution_step.aliased_var.get()
         return best_state, int(best_cost), int(best_timestep)

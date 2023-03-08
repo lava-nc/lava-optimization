@@ -32,3 +32,7 @@ class TestQuboScifProcess(unittest.TestCase):
         self.assertEqual(scif.shape, (10,))
         self.assertEqual(scif.theta.init, 8)
         self.assertTrue(np.all(scif.cost_diagonal.init == np.arange(1, 11)))
+
+
+if __name__ == "__main__":
+    unittest.main()

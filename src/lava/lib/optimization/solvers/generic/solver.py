@@ -1,20 +1,34 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
-import typing as ty
-from dataclasses import dataclass
-from lava.proc.monitor.process import Monitor
-from lava.utils.profiler import Profiler
-
-import numpy.typing as npt
 import numpy as np
+import typing as ty
+
+from dataclasses import dataclass
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    BoltzmannAbstract,
+    NEBMAbstract, NEBMSimulatedAnnealingAbstract
+)
+from lava.lib.optimization.solvers.generic.read_gate.models import (
+    ReadGatePyModel,
+)
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
+from lava.lib.optimization.solvers.generic.scif.models import (
+    PyModelQuboScifFixed,
+)
+from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
+from lava.lib.optimization.solvers.generic.scif.process import QuboScif
+from lava.lib.optimization.solvers.generic.nebm.process import NEBM
+from lava.lib.optimization.solvers.generic.cost_integrator.process import (
+    CostIntegrator
+)
+from lava.lib.optimization.solvers.generic.nebm.process import (
+    NEBMSimulatedAnnealing
 )
 from lava.lib.optimization.solvers.generic.sub_process_models import (
-    BoltzmannAbstractModel,
+    NEBMAbstractModel,
+    NEBMSimulatedAnnealingAbstractModel,
 )
 from lava.magma.core.resources import (
     AbstractComputeResource,
@@ -28,15 +42,34 @@ from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
-from lava.utils.loihi2_state_probes import StateProbe
+from lava.proc.monitor.process import Monitor
+from lava.utils.profiler import Profiler
 
-from lava.lib.optimization.solvers.generic.read_gate.models import \
-    ReadGatePyModel
-from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.scif.models import BoltzmannFixed, \
-    PyModelQuboScifFixed
-from lava.lib.optimization.solvers.generic.scif.process import Boltzmann, \
-    QuboScif
+try:
+    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
+        ReadGateCModel
+    )
+    from lava.proc.dense.ncmodels import NcModelDense
+    from lava.lib.optimization.solvers.generic.nebm.ncmodels import (
+        NEBMNcModel, NEBMSimulatedAnnealingNcModel
+    )
+    from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels \
+        import CostIntegratorNcModel
+except ImportError:
+    class ReadGateCModel:
+        pass
+
+    class NcModelDense:
+        pass
+
+    class NEBMNcModel:
+        pass
+
+    class NEBMSimulatedAnnealingNcModel:
+        pass
+
+    class CostIntegratorNcModel:
+        pass
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -77,6 +110,8 @@ class SolverConfig:
         step_size and init_value. All but the last are integers, the initial
         value is an array-like of initial values for the variables defining
         the problem.
+    probe_cost: bool
+        A boolean flag to request cost tracking through time.
     probe_time: bool
         A boolean flag to request time profiling, available only on "Loihi2"
         backend.
@@ -86,6 +121,7 @@ class SolverConfig:
     log_level: int
         Select log verbosity (40: default, 20: verbose).
     """
+
     timeout: int = 1e3
     target_cost: int = 0
     backend: BACKENDS = CPU
@@ -114,6 +150,7 @@ class SolverReport:
     profiler: Profiler
         Profiler instance containing time, energy and activity measurements.
     """
+
     best_cost: int = None
     best_state: np.ndarray = None
     best_timestep: int = None
@@ -131,8 +168,9 @@ class SolverReport:
         else:
             plt.savefig(filename)
 
-def solve(problem: OptimizationProblem,
-          config: SolverConfig = SolverConfig()) -> np.ndarray:
+def solve(
+    problem: OptimizationProblem, config: SolverConfig = SolverConfig()
+) -> np.ndarray:
     """
     Solve the given optimization problem using the passed configuration, and
     returns the best candidate solution.
@@ -196,18 +234,16 @@ class OptimizationSolver:
         run_condition, run_cfg = self._prepare_solver(config)
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         best_state, best_cost, best_timestep = self._get_results()
-        self.solver_process.stop()
         cost_timeseries = self._get_cost_tracking()
-        report = SolverReport(
+        self.solver_process.stop()
+        return SolverReport(
             best_cost=best_cost,
             best_state=best_state,
             best_timestep=best_timestep,
             solver_config=config,
             profiler=self._profiler,
-            cost_timeseries=cost_timeseries
+            cost_timeseries=cost_timeseries,
         )
-
-        return report
 
     def _prepare_solver(self, config: SolverConfig):
         if config.probe_cost:
@@ -218,8 +254,21 @@ class OptimizationSolver:
                 self._cost_tracker.probe(target=self.solver_process.optimality,
                                          num_steps=config.timeout)
         self._create_solver_process(config=config)
-        run_cfg = self._get_run_config(backend=config.backend,
-                                       probes=[self._cost_tracker])
+        if config.probe_cost:
+            if config.backend in NEUROCORES:
+                # from lava.utils.loihi2_state_probes import StateProbe
+                # self._cost_tracker = StateProbe()
+                raise NotImplementedError
+            if config.backend in CPUS:
+                self._cost_tracker = Monitor()
+                self._cost_tracker.probe(
+                    target=self.solver_process.optimality,
+                    num_steps=config.timeout,
+                )
+        run_cfg = self._get_run_config(
+            backend=config.backend,
+            probes=[self._cost_tracker] if self._cost_tracker else None,
+        )
         run_condition = RunSteps(num_steps=config.timeout)
         self._prepare_profiler(config=config, run_cfg=run_cfg)
         return run_condition, run_cfg
@@ -238,19 +287,19 @@ class OptimizationSolver:
         )
         self._process_builder.create_solver_process(
             problem=self.problem,
-            hyperparameters=config.hyperparameters or dict()
+            hyperparameters=config.hyperparameters or dict(),
         )
         self._process_builder.create_solver_model(
             target_cost=config.target_cost,
             requirements=requirements,
-            protocol=protocol
+            protocol=protocol,
         )
         self.solver_process = self._process_builder.solver_process
         self.solver_model = self._process_builder.solver_model
         self.solver_process._log_config.level = config.log_level
 
     def _get_requirements_and_protocol(
-            self, backend: BACKENDS
+        self, backend: BACKENDS
     ) -> ty.Tuple[AbstractComputeResource, AbstractSyncProtocol]:
         """
         Figure out requirements and protocol for a given backend.
@@ -264,33 +313,46 @@ class OptimizationSolver:
         return [CPU] if backend in CPUS else [Loihi2NeuroCore], LoihiProtocol
 
     def _get_cost_tracking(self):
-        if type(self._cost_tracker) is Monitor:
+        if self._cost_tracker is None:
+            return None
+        if isinstance(self._cost_tracker, Monitor):
             return self._cost_tracker.get_data()[self.solver_process.name][
-                self.solver_process.optimality.name].T.astype(np.int32)
-        elif type(self._cost_tracker) is StateProbe:
+                self.solver_process.optimality.name
+            ].T.astype(np.int32)
+        else:
             return self._cost_tracker.time_series
 
     def _get_run_config(self, backend: BACKENDS, probes=None):
         if backend in CPUS:
-            pdict = {self.solver_process: self.solver_model,
-                     ReadGate: ReadGatePyModel,
-                     Dense: PyDenseModelFloat,
-                     BoltzmannAbstract:
-                         BoltzmannAbstractModel,
-                     Boltzmann: BoltzmannFixed,
-                     QuboScif: PyModelQuboScifFixed
-                     }
-            return Loihi1SimCfg(exception_proc_model_map=pdict,
-                                select_sub_proc_model=True)
+            pdict = {
+                self.solver_process: self.solver_model,
+                ReadGate: ReadGatePyModel,
+                Dense: PyDenseModelFloat,
+                NEBMAbstract: NEBMAbstractModel,
+                NEBM: NEBMPyModel,
+                QuboScif: PyModelQuboScifFixed,
+            }
+            return Loihi1SimCfg(
+                exception_proc_model_map=pdict, select_sub_proc_model=True
+            )
         elif backend in NEUROCORES:
-            pdict = {self.solver_process: self.solver_model,
-                     BoltzmannAbstract:
-                         BoltzmannAbstractModel,
-                     }
-            return Loihi2HwCfg(exception_proc_model_map=pdict,
-                               select_sub_proc_model=True,
-                               callback_fxs=probes
-                               )
+            pdict = {
+                self.solver_process: self.solver_model,
+                ReadGate: ReadGateCModel,
+                Dense: NcModelDense,
+                NEBMAbstract: NEBMAbstractModel,
+                NEBM: NEBMNcModel,
+                NEBMSimulatedAnnealingAbstract:
+                    NEBMSimulatedAnnealingAbstractModel,
+                NEBMSimulatedAnnealing:
+                    NEBMSimulatedAnnealingNcModel,
+                CostIntegrator: CostIntegratorNcModel
+            }
+            return Loihi2HwCfg(
+                exception_proc_model_map=pdict,
+                select_sub_proc_model=True,
+                callback_fxs=probes,
+            )
         else:
             raise NotImplementedError(str(backend) + BACKEND_MSG)
 

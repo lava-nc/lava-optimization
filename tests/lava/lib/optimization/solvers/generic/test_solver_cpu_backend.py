@@ -20,7 +20,6 @@ from lava.lib.optimization.utils.generators.mis import MISProblem
 
 class TestOptimizationSolver(unittest.TestCase):
     def setUp(self) -> None:
-        print("SETUP")
         self.problem = QUBO(
             np.array([[-5, 2, 4, 0],
                       [2, -3, 1, 0],
@@ -156,6 +155,7 @@ class TestOptimizationSolver(unittest.TestCase):
         )
 
     def test_cost_tracking(self):
+        np.random.seed(77)
         print("test_cost_tracking")
         config = SolverConfig(
             timeout=50,
@@ -165,8 +165,8 @@ class TestOptimizationSolver(unittest.TestCase):
         )
         report = self.solver.solve(config=config)
         self.assertIsInstance(report.cost_timeseries, np.ndarray)
-        self.assertEqual(report.cost_timeseries[0][report.best_timestep],
-                         report.best_cost)
+        self.assertEqual(report.best_cost,
+                         report.cost_timeseries[0][report.best_timestep])
 
 
 def solve_workload(problem, reference_solution, noise_precision=3,

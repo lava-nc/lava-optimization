@@ -177,6 +177,7 @@ class SolverProcessBuilder:
                 shape=(problem.variables.num_variables,)
             )
             self.optimality = Var(shape=(1,))
+            self.optimum = Var(shape=(1,))
             self.feasibility = Var(shape=(1,))
             self.solution_step = Var(shape=(1,))
             self.cost_monitor = Var(shape=(1,))
@@ -240,7 +241,8 @@ class SolverProcessBuilder:
                     shape=proc.variable_assignment.shape)
                 macrostate_reader.cost_convergence_check = c
                 variables.local_cost.connect(macrostate_reader.cost_in)
-                proc.vars.optimality.alias(macrostate_reader.min_cost)
+                proc.vars.optimality.alias(macrostate_reader.cost)
+                proc.vars.optimum.alias(macrostate_reader.min_cost)
 
             # Variable aliasing
             proc.vars.variable_assignment.alias(macrostate_reader.solution)

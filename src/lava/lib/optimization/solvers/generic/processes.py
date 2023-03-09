@@ -4,17 +4,10 @@
 import typing as ty
 
 import numpy as np
-from lava.magma.core.process.interfaces import AbstractProcessMember
-from lava.magma.core.process.ports.ports import InPort, OutPort, RefPort
-from lava.magma.core.process.process import AbstractProcess, LogConfig
-from lava.magma.core.process.variable import Var
-
 from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
-from lava.lib.optimization.problems.problems import OptimizationProblem
-from lava.lib.optimization.problems.variables import (
-    DiscreteVariables,
-    ContinuousVariables,
-)
+from lava.magma.core.process.interfaces import AbstractProcessMember
+from lava.magma.core.process.ports.ports import InPort
+from lava.magma.core.process.variable import Var
 
 
 def _vars_from_coefficients(

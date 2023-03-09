@@ -4,7 +4,7 @@
 import numpy as np
 import typing as ty
 
-from lava.magma.core.process.ports.ports import InPort, OutPort
+from lava.magma.core.process.ports.ports import InPort
 from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
 
@@ -35,19 +35,23 @@ class SolutionReadout(AbstractProcess):
 
     """
 
-    def __init__(self,
-                 shape: ty.Tuple[int, ...],
-                 target_cost=None,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None, ) -> None:
-        super().__init__(shape=shape,
-                         target_cost=target_cost,
-                         name=name,
-                         log_config=log_config)
+    def __init__(
+        self,
+        shape: ty.Tuple[int, ...],
+        target_cost=None,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(
+            shape=shape,
+            target_cost=target_cost,
+            name=name,
+            log_config=log_config,
+        )
         self.solution = Var(shape=shape, init=-1)
         self.solution_step = Var(shape=(1,), init=-1)
-        self.min_cost = Var(shape=(1,), init=np.array([-1]))
+        self.min_cost = Var(shape=(2,), init=-1)
         self.target_cost = Var(shape=(1,), init=target_cost)
         self.read_solution = InPort(shape=shape)
-        self.cost_in = InPort(shape=(1,))
+        self.cost_in = InPort(shape=(2,))
         self.timestep_in = InPort(shape=(1,))

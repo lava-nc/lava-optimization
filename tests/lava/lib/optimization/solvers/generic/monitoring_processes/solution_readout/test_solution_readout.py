@@ -3,15 +3,17 @@
 # See: https://spdx.org/licenses/
 
 import unittest
-import numpy as np
-from lava.magma.core.run_conditions import RunSteps, RunContinuous
-from lava.magma.core.run_configs import Loihi2SimCfg
 
+import numpy as np
+
+from lava.lib.optimization.solvers.generic.monitoring_processes \
+    .solution_readout.process import \
+    SolutionReadout
 from lava.lib.optimization.solvers.generic.read_gate.models import \
-    ReadGatePyModel
+    get_read_gate_model_class
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.monitoring_processes\
-    .solution_readout.process import SolutionReadout
+from lava.magma.core.run_conditions import RunContinuous
+from lava.magma.core.run_configs import Loihi2SimCfg
 from lava.proc.spiker.models import SpikerModel
 from lava.proc.spiker.process import Spiker
 
@@ -25,13 +27,14 @@ class TestSolutionReadout(unittest.TestCase):
         self.readout = SolutionReadout(shape=(4,), target_cost=-3)
 
         # Connect processes.
-        integrator.s_out.connect(readgate.cost_in)
+        integrator.s_out.connect(readgate.cost_in_0)
         readgate.solution_reader.connect_var(spiker.payload)
         readgate.solution_out.connect(self.readout.read_solution)
         readgate.cost_out.connect(self.readout.cost_in)
         readgate.send_pause_request.connect(self.readout.timestep_in)
 
         # Execution configurations.
+        ReadGatePyModel = get_read_gate_model_class(1)
         pdict = {ReadGate: ReadGatePyModel, Spiker: SpikerModel}
         self.run_cfg = Loihi2SimCfg(exception_proc_model_map=pdict)
         self.readout._log_config.level = 20

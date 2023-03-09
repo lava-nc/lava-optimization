@@ -6,8 +6,14 @@ from abc import abstractmethod
 
 import numpy as np
 import networkx as ntx
+from dataclasses import dataclass
 from pprint import pprint
+from vrpy import VehicleRoutingProblem
+from lava.lib.optimization.problems.problems import QUBO
+from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
 from lava.lib.optimization.apps.vrp.problems import VRP
+from lava.lib.optimization.apps.vrp.utils.q_matrix_generator import \
+    ProblemType, QMatrixVRP
 
 from lava.magma.core.resources import (
     CPU,
@@ -31,7 +37,7 @@ backend = NeuroCoreS
 The explicit resource classes can be imported from
 lava.magma.core.resources"""
 
-
+@dataclass
 class VRPConfig(SolverConfig):
     """Solver configuration for VRP solver.
 
@@ -84,7 +90,6 @@ class VRPSolver:
             graph_to_solve = _prepare_graph_for_vrpy(graph_to_solve)
 
             # 2. Call VRPy.solve
-            from vrpy import VehicleRoutingProblem
             vrpy_sol = VehicleRoutingProblem(
                 graph_to_solve,
                 load_capacity=
@@ -106,11 +111,62 @@ class VRPSolver:
             return routes
         elif "lava-qubo" in scfg.core_solver:
             # 1. Generate Q matrix for clustering
+            node_list_for_clustering = self.problem.vehicle_init_coords + \
+                self.problem.node_coords
+            pprint(node_list_for_clustering)
+            # number of binary variables = total_num_nodes * num_clusters
+            mat_size = len(node_list_for_clustering) * self.problem.num_vehicles
+            Q_clust = QMatrixVRP(node_list_for_clustering,
+                                 num_vehicles=self.problem.num_vehicles,
+                                 problem_type=ProblemType.RANDOM,
+                                 mat_size_for_random=mat_size,
+                                 lamda_dist=1,
+                                 lamda_cnstrnt=2**14,
+                                 fixed_pt=True).matrix.astype(int)
             # 2. Call Lava QUBO solvers
+            prob = QUBO(q=Q_clust)
+            solver = OptimizationSolver(problem=prob)
+            report = solver.solve(config=scfg)
             # 3. Post process the clustering solution
+            clustering_solution = \
+                report.best_state.reshape((self.problem.num_vehicles,
+                                           len(node_list_for_clustering))).T
             # 4. In a loop, generate Q matrices for TSPs
+            tsp_routes = []
+            for col in clustering_solution.T:
+                # number of binary variables = num nodes * num steps
+                matsize = np.count_nonzero(col[self.problem.num_vehicles:])**2
+                node_idxs = np.nonzero(col)
+                node_idxs = node_idxs[0][
+                    node_idxs[0] >= self.problem.num_vehicles]
+                nodes_to_pass = np.array(node_list_for_clustering)[node_idxs, :]
+                nodes_to_pass = [tuple(node) for node in nodes_to_pass.tolist()]
+                pprint(nodes_to_pass)
+                Q_VRP = QMatrixVRP(nodes_to_pass,
+                                   num_vehicles=1,
+                                   problem_type=ProblemType.RANDOM,
+                                   mat_size_for_random=matsize,
+                                   lamda_dist=1,
+                                   lamda_cnstrnt=2 ** 14,
+                                   fixed_pt=True).matrix.astype(int)
+                tsp = QUBO(q=Q_VRP)
+                tsp_solver = OptimizationSolver(problem=tsp)
+                report = tsp_solver.solve(config=scfg)
+                solution = \
+                    report.best_state.reshape((len(nodes_to_pass),
+                                               len(nodes_to_pass))).T
+                print(solution)
+                node_idxs = np.nonzero(solution)
+                node_idxs = list(zip(node_idxs[0].tolist(),
+                                     node_idxs[1].tolist()))
+                node_idxs.sort(key=lambda x: x[1])
+                route = [nodes_to_pass[node_id[0]] for node_id in node_idxs]
+                tsp_routes.append(route)
+
+            pprint(clustering_solution)
+            pprint(tsp_routes)
+
             # 5. Call parallel instances of Lava QUBO solvers
-            raise NotImplementedError
         else:
             raise ValueError("Incorrect core solver. Should be one of "
                              "'vrpy-cpu', 'lava-qubo-cpu', or "

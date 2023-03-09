@@ -12,9 +12,17 @@
 # This software and the related documents are provided as is, with
 # no express or implied warranties, other than those that are
 # expressly stated in the License.
+import enum
+
 import numpy as np
 from scipy.spatial import distance
 # import typing as ty
+
+
+class ProblemType(enum.IntEnum):
+    RANDOM = 0
+    CLUSTER = 1
+    TSP = 2
 
 
 class QMatrixVRP:
@@ -28,16 +36,18 @@ class QMatrixVRP:
         self,
         input_nodes,
         num_vehicles=1,
-        problem_type="None",
+        problem_type=ProblemType.RANDOM,
+        mat_size_for_random=1,
         lamda_dist=1,
         lamda_cnstrnt=1,
         fixed_pt=False,
         fixed_pt_range=(0, 127),
+
     ) -> None:
         """constructor of the class generates Q matrices depending on the type 
         of problem specified by the user and assings it the class variables for 
         the matrix. Calls private functions to initialize Q. Nonetype will raise 
-        an exception asking for the correct problem type to be specified. The 
+        an exception asking for the correct problem type to be specified. The
         matrix Q is considered to have all-to-all connectivity between the nodes 
         that are specified. 
 
@@ -73,17 +83,21 @@ class QMatrixVRP:
         self.max_fixed_pt_mant = fixed_pt_range[1]
         self.problem_type = problem_type
         self.num_vehicles = num_vehicles
-        if self.problem_type == "tsp":
-            self.matrix = self._gen_tsp_Q_matrix(
+        if self.problem_type == ProblemType.RANDOM:
+            self.matrix = np.random.randint(-128, 127, size=(
+                mat_size_for_random, mat_size_for_random))
+        elif self.problem_type == ProblemType.CLUSTER:
+            self.matrix = self._gen_clustering_Q_matrix(
                 input_nodes, lamda_dist, lamda_cnstrnt
             )
-        elif self.problem_type == "clustering":
-            self.matrix = self._gen_clustering_Q_matrix(
+        elif self.problem_type == ProblemType.TSP:
+            self.matrix = self._gen_tsp_Q_matrix(
                 input_nodes, lamda_dist, lamda_cnstrnt
             )
         else:
             raise ValueError(
-                "problem_type cannot be None or argument passed cannot be serviced"
+                "problem_type cannot be None or argument passed cannot be "
+                "serviced"
             )
 
     def _gen_tsp_Q_matrix(self, input_nodes, lamda_dist, lamda_cnstrnt):

@@ -23,11 +23,17 @@ class testVRPSolver(unittest.TestCase):
         solver = VRPSolver(vrp=self.vrp_instance_natural_edges)
         self.assertIsInstance(solver, VRPSolver)
 
-    def test_solve(self):
+    def test_solve_vrpy(self):
         solver = VRPSolver(vrp=self.vrp_instance_user_edges)
         result = solver.solve()
         gold = {1: [3], 2: [1, 4, 5], 3: [2, 7, 6, 8]}
         self.assertDictEqual(gold, result)
+
+    def test_solve_lava_qubo(self):
+        solver = VRPSolver(vrp=self.vrp_instance_user_edges)
+        scfg = VRPConfig(backend="Loihi2", log_level=20,
+                         core_solver="lava-qubo-cpu")
+        report = solver.solve(scfg=scfg)
 
 
 if __name__ == '__main__':

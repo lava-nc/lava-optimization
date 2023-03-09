@@ -104,7 +104,6 @@ def get_read_gate_model_class(num_in_ports: int):
 ReadGatePyModel = get_read_gate_model_class(num_in_ports=1)
 
 
-
 @implements(ReadGate, protocol=LoihiProtocol)
 @requires(CPU)
 class ReadGatePyModelD(PyLoihiProcessModel):

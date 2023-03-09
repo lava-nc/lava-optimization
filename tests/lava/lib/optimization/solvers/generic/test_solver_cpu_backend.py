@@ -29,7 +29,6 @@ class TestOptimizationSolver(unittest.TestCase):
                       [0, 0, 5, -6]]))
         self.solution = np.asarray([1, 0, 0, 1]).astype(int)
         self.solver = OptimizationSolver(problem=self.problem)
-        self.solution_cost = self.solution @ q @ self.solution
 
     def test_create_obj(self):
         self.assertIsInstance(self.solver, OptimizationSolver)

@@ -179,7 +179,7 @@ class SolverProcessBuilder:
                 shape=(problem.variables.num_variables,)
             )
             self.optimality = Var(shape=(1,))
-            self.optimum = Var(shape=(1,))
+            self.optimum = Var(shape=(2,))
             self.feasibility = Var(shape=(1,))
             self.solution_step = Var(shape=(1,))
             self.cost_monitor = Var(shape=(1,))
@@ -240,7 +240,7 @@ class SolverProcessBuilder:
             proc.finders = finders
             # Variable aliasing
             if hasattr(proc, "cost_coefficients"):
-                proc.vars.optimality.alias(self.solution_reader.min_cost)
+                proc.vars.optimum.alias(self.solution_reader.min_cost)
             proc.vars.variable_assignment.alias(self.solution_reader.solution)
             proc.vars.solution_step.alias(self.solution_reader.solution_step)
 

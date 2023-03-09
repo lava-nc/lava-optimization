@@ -32,4 +32,5 @@ class SolutionFinder(AbstractProcess):
             log_config=log_config,
         )
         self.variables_assignment = Var(shape=discrete_var_shape, init=(1,))
+        self.cost = Var(shape=(1,), init=(1,))
         self.cost_out = OutPort(shape=(1,))

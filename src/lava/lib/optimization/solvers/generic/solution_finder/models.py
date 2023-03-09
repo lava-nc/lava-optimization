@@ -77,6 +77,9 @@ class SolutionFinderModel(AbstractSubProcessModel):
         proc.vars.variables_assignment.alias(
             self.variables.variables_assignment
         )
+        proc.vars.cost.alias(
+            self.cost_convergence_check.cost
+        )
         self.cost_convergence_check.update_buffer.connect(
             proc.out_ports.cost_out
         )

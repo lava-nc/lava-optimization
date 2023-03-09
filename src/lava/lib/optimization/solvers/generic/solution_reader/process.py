@@ -29,6 +29,7 @@ class SolutionReader(AbstractProcess):
         self.solution = Var(shape=var_shape, init=-1)
         self.solution_step = Var(shape=(1,), init=-1)
         self.min_cost = Var(shape=(2,), init=min_cost)
+        self.cost = Var(shape=(1,), init=min_cost)
         self.satisfaction = Var(shape=(1,), init=0)
         self.ref_port = RefPort(shape=var_shape)
         for id in range(num_in_ports):

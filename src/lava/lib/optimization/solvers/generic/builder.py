@@ -241,6 +241,7 @@ class SolverProcessBuilder:
             # Variable aliasing
             if hasattr(proc, "cost_coefficients"):
                 proc.vars.optimum.alias(self.solution_reader.min_cost)
+                proc.vars.optimality.alias(proc.finders[0].cost)
             proc.vars.variable_assignment.alias(self.solution_reader.solution)
             proc.vars.solution_step.alias(self.solution_reader.solution_step)
 

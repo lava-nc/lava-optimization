@@ -54,7 +54,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             if cost[0] < 0:
                 print(
                     f"Host: better solution found by network {min_cost_id} at "
-                    f"step {abs(timestep)} "
+                    f"step {abs(timestep)-2} "
                     f"with cost {cost[0]}: {self.solution}"
                 )
 

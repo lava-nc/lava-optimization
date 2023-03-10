@@ -35,19 +35,26 @@ class ReadGate(AbstractProcess):
     send_pause_request: Notifies upstream process to request execution to pause.
     """
 
-    def __init__(self,
-                 shape: ty.Tuple[int, ...],
-                 target_cost=None,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None) -> None:
-        super().__init__(shape=shape,
-                         target_cost=target_cost,
-                         name=name,
-                         log_config=log_config)
+    def __init__(
+            self,
+            shape: ty.Tuple[int, ...],
+            target_cost=None,
+            num_in_ports=1,
+            name: ty.Optional[str] = None,
+            log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(
+            shape=shape,
+            target_cost=target_cost,
+            num_in_ports=num_in_ports,
+            name=name,
+            log_config=log_config,
+        )
         self.target_cost = Var(shape=(1,), init=target_cost)
-        self.cost_in = InPort(shape=(1,))
-        self.acknowledgement = InPort(shape=(1,))
-        self.cost_out = OutPort(shape=(1,))
+        self.best_solution = Var(shape=shape, init=-1)
+        for id in range(num_in_ports):
+            setattr(self, f"cost_in_{id}", InPort(shape=(1,)))
+        self.cost_out = OutPort(shape=(2,))
         self.send_pause_request = OutPort(shape=(1,))
         self.solution_out = OutPort(shape=shape)
         self.solution_reader = RefPort(shape=shape)

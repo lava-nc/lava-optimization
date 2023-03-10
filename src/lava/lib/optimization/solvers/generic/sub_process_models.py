@@ -5,33 +5,25 @@
 try:
     from lava.magma.core.model.nc.net import NetL2
 except ImportError:
+
     class NetL2:
         pass
 
 import numpy as np
-from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    CostConvergenceChecker,
-    DiscreteVariablesProcess,
-    StochasticIntegrateAndFire)
-from lava.magma.core.decorator import implements, requires
-from lava.magma.core.model.sub.model import AbstractSubProcessModel
-from lava.magma.core.model.py.model import PyLoihiProcessModel
-from lava.magma.core.model.py.type import LavaPyType
-from lava.magma.core.resources import CPU
-from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.lib.optimization.solvers.generic.cost_integrator.process import \
     CostIntegrator
-from lava.proc.dense.process import Dense
-from lava.magma.core.resources import Loihi2NeuroCore
-import numpy as np
-from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
-from lava.magma.core.model.py.ports import PyInPort, PyOutPort
-from lava.magma.core.model.py.type import LavaPyType
-from lava.magma.core.resources import CPU
-from lava.magma.core.decorator import implements, requires, tag
-from lava.magma.core.model.py.model import PyLoihiProcessModel
+from lava.lib.optimization.solvers.generic.hierarchical_processes import \
+    CostConvergenceChecker, DiscreteVariablesProcess, \
+    StochasticIntegrateAndFire, NEBMAbstract, NEBMSimulatedAnnealingAbstract
 
+from lava.lib.optimization.solvers.generic.nebm.process import NEBM, \
+    NEBMSimulatedAnnealing
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
+from lava.magma.core.decorator import implements, requires
+from lava.magma.core.model.sub.model import AbstractSubProcessModel
+from lava.magma.core.resources import Loihi2NeuroCore, CPU
+from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
+from lava.proc.dense.process import Dense
 
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
@@ -55,20 +47,62 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             wta_weight
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
-        step_size = proc.hyperparameters.get("step_size", 10)
-        noise_amplitude = proc.hyperparameters.get("noise_amplitude", 1)
-        noise_precision = proc.hyperparameters.get("noise_precision", 8)
-        steps_to_fire = proc.hyperparameters.get("steps_to_fire", 10)
-        init_value = proc.hyperparameters.get("init_value", np.zeros(shape))
-        init_state = proc.hyperparameters.get("init_value", np.zeros(shape))
-        self.s_bit = StochasticIntegrateAndFire(step_size=step_size,
-                                                init_state=init_state,
-                                                shape=shape,
-                                                noise_amplitude=noise_amplitude,
-                                                noise_precision=noise_precision,
-                                                steps_to_fire=steps_to_fire,
-                                                cost_diagonal=diagonal,
-                                                init_value=init_value)
+        neuron_model = proc.hyperparameters.get("neuron_model", "nebm")
+        if neuron_model == "nebm":
+            temperature = proc.hyperparameters.get("temperature", 1)
+            refract = proc.hyperparameters.get("refract", 0)
+            init_value = proc.hyperparameters.get("init_value",
+                                                  np.zeros(shape, dtype=int))
+            init_state = proc.hyperparameters.get("init_state",
+                                                  np.zeros(shape, dtype=int))
+
+            self.s_bit = NEBMAbstract(temperature=temperature,
+                                      refract=refract,
+                                      init_state=init_state,
+                                      shape=shape,
+                                      cost_diagonal=diagonal,
+                                      init_value=init_value)
+        elif neuron_model == 'scif':
+            noise_amplitude = proc.hyperparameters.get("noise_amplitude", 1)
+            noise_precision = proc.hyperparameters.get("noise_precision", 5)
+            init_value = proc.hyperparameters.get("init_value", np.zeros(shape))
+            init_state = proc.hyperparameters.get("init_value", np.zeros(shape))
+            on_tau = proc.hyperparameters.get("sustained_on_tau", (-3))
+            self.s_bit = \
+                StochasticIntegrateAndFire(shape=shape,
+                                           step_size=diagonal,
+                                           init_state=init_state,
+                                           init_value=init_value,
+                                           noise_amplitude=noise_amplitude,
+                                           noise_precision=noise_precision,
+                                           sustained_on_tau=on_tau,
+                                           cost_diagonal=diagonal)
+        elif neuron_model == 'nebm-sa':
+            max_temperature = proc.hyperparameters.get("max_temperature", 10)
+            min_temperature = proc.hyperparameters.get("min_temperature", 0)
+            delta_temperature = proc.hyperparameters.get("delta_temperature", 1)
+            steps_per_temperature = proc.hyperparameters.get(
+                "steps_per_temperature", 100)
+            refract_scaling = proc.hyperparameters.get("refract_scaling", 14)
+            refract = proc.hyperparameters.get("refract", 0)
+            init_value = proc.hyperparameters.get("init_value",
+                                                  np.zeros(shape, dtype=int))
+            init_state = proc.hyperparameters.get("init_state",
+                                                  np.zeros(shape, dtype=int))
+            self.s_bit = \
+                NEBMSimulatedAnnealingAbstract(
+                    shape=shape,
+                    max_temperature=max_temperature,
+                    min_temperature=min_temperature,
+                    delta_temperature=delta_temperature,
+                    steps_per_temperature=steps_per_temperature,
+                    refract=refract,
+                    refract_scaling=refract_scaling,
+                    init_value=init_value,
+                    init_state=init_state
+                )
+        else:
+            AssertionError("Unknown neuron model specified")
         if weights.shape != (0, 0):
             self.dense = Dense(weights=weights)
             self.s_bit.out_ports.messages.connect(self.dense.in_ports.s_in)
@@ -79,9 +113,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         # Connect the OutPort of the LIF child-Process to the OutPort of the
         # parent Process.
         self.s_bit.out_ports.messages.connect(proc.out_ports.s_out)
-        self.s_bit.out_ports.local_cost.connect(
-            proc.out_ports.local_cost
-        )
+        self.s_bit.out_ports.local_cost.connect(proc.out_ports.local_cost)
         proc.vars.variable_assignment.alias(self.s_bit.prev_assignment)
 
 
@@ -112,15 +144,16 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
         # Connect the OutPort of the LIF child-Process to the OutPort of the
         # parent Process.
         self.cost_integrator.out_ports.update_buffer.connect(
-            proc.out_ports.update_buffer)
+            proc.out_ports.update_buffer
+        )
         proc.vars.min_cost.alias(self.cost_integrator.vars.min_cost)
+        proc.vars.cost.alias(self.cost_integrator.vars.cost)
 
 
 @implements(proc=StochasticIntegrateAndFire, protocol=LoihiProtocol)
 @requires(Loihi2NeuroCore)
 class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
     """Model for the StochasticIntegrateAndFire process.
-
     The process is just a wrapper over the QuboScif process.
     # Todo deprecate in favour of QuboScif.
     """
@@ -128,17 +161,19 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
     def __init__(self, proc):
         shape = proc.proc_params.get("shape", (1,))
         step_size = proc.proc_params.get("step_size", (1,))
-        theta = proc.proc_params.get("steps_to_fire", (1,)) * step_size
+        theta = proc.proc_params.get("threshold", (1,))
         cost_diagonal = proc.proc_params.get("cost_diagonal", (1,))
         noise_amplitude = proc.proc_params.get("noise_amplitude", (1,))
-        noise_precision = proc.proc_params.get("noise_precision", (1,))
-        noise_shift = 16 - noise_precision
-        self.scif = QuboScif(shape=shape,
-                             step_size=step_size,
-                             theta=theta,
-                             cost_diag=cost_diagonal,
-                             noise_amplitude=noise_amplitude,
-                             noise_shift=noise_shift)
+        noise_precision = proc.proc_params.get("noise_precision", (3,))
+        sustained_on_tau = proc.proc_params.get("sustained_on_tau", (-5,))
+        self.scif = QuboScif(
+            shape=shape,
+            cost_diag=cost_diagonal,
+            theta=theta,
+            sustained_on_tau=sustained_on_tau,
+            noise_amplitude=noise_amplitude,
+            noise_precision=noise_precision,
+        )
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)
@@ -147,69 +182,71 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
         proc.vars.state.alias(self.scif.vars.state)
         proc.vars.cost_diagonal.alias(self.scif.vars.cost_diagonal)
         proc.vars.noise_amplitude.alias(self.scif.vars.noise_ampl)
+        proc.vars.noise_precision.alias(self.scif.vars.noise_prec)
 
 
-@implements(proc=StochasticIntegrateAndFire, protocol=LoihiProtocol)
-@requires(CPU)
-class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
-    """CPU Model for the StochasticIntegrateAndFire process.
+@implements(proc=NEBMAbstract, protocol=LoihiProtocol)
+@requires(Loihi2NeuroCore)
+class NEBMAbstractModel(AbstractSubProcessModel):
+    """Model for the StochasticIntegrateAndFire process.
 
-    The model computes stochastic gradient and local cost both based on
-    the input received from the recurrent connectivity ot other units.
-    # Todo deprecate in favour of QuboScif.
+    The process is just a wrapper over the Boltzmann process.
+    # Todo deprecate in favour of Boltzmann.
     """
-    added_input: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
-    messages: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
-    local_cost: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
 
-    integration: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    step_size: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    state: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    noise_amplitude: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    noise_precision: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    input_duration: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    min_state: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    min_integration: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    steps_to_fire: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    refractory_period: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    firing: np.ndarray = LavaPyType(np.ndarray, bool)
-    prev_assignment: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    cost_diagonal: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    assignment: np.ndarray = LavaPyType(np.ndarray, int, 32)
-    min_cost: np.ndarray = LavaPyType(np.ndarray, int, 32)
+    def __init__(self, proc):
+        shape = proc.proc_params.get("shape", (1,))
+        temperature = proc.proc_params.get("temperature", (1,))
+        refract = proc.proc_params.get("refract", (1,))
+        init_value = proc.proc_params.get("init_value", np.zeros(shape))
+        init_state = proc.proc_params.get("init_state", np.zeros(shape))
+        self.scif = NEBM(shape=shape,
+                         temperature=temperature,
+                         refract=refract,
+                         init_value=init_value,
+                         init_state=init_state)
+        proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
+        self.scif.s_wta_out.connect(proc.out_ports.messages)
+        self.scif.s_sig_out.connect(proc.out_ports.local_cost)
 
-    def reset_state(self, firing_vector: np.ndarray):
-        self.state[firing_vector] = 0
+        proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
+        proc.vars.state.alias(self.scif.vars.state)
 
-    def _update_buffers(self):
-        self.prev_assignment[:] = self.assignment[:]
-        self.assignment[:] = self.firing[:]
 
-    def run_spk(self):
-        self._update_buffers()
-        added_input = self.added_input.recv()
-        self.state = self.iterate_dynamics(added_input, self.state)
-        local_cost = self.firing * (added_input + self.cost_diagonal
-                                    * self.firing)
-        self.firing[:] = self.do_fire(self.state)
-        self.reset_state(firing_vector=self.firing[:])
-        self.messages.send(self.firing[:])
-        self.local_cost.send(local_cost)
+@implements(proc=NEBMSimulatedAnnealingAbstract, protocol=LoihiProtocol)
+@requires(Loihi2NeuroCore)
+class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
+    """Model for the StochasticIntegrateAndFire process.
 
-    def iterate_dynamics(self, added_input: np.ndarray, state: np.ndarray):
-        integration_decay = 1
-        state_decay = 0
-        noise = self.noise_amplitude * np.random.randint(0, 2 * self.step_size,
-                                                         self.integration.shape)
-        self.integration[:] = self.integration * (1 - integration_decay)
-        self.integration[:] += added_input.astype(int)
-        decayed_state = state * (1 - state_decay)
-        state[:] = decayed_state + self.integration + self.step_size + noise
-        return state
+    The process is just a wrapper over the Boltzmann process.
+    # Todo deprecate in favour of Boltzmann.
+    """
 
-    def do_fire(self, state):
-        threshold = self.step_size * self.steps_to_fire
-        return state > threshold
+    def __init__(self, proc):
+        shape = proc.proc_params.get("shape", (1,))
+        max_temperature = proc.proc_params.get("max_temperature", 10)
+        min_temperature = proc.proc_params.get("min_temperature", 0)
+        delta_temperature = proc.proc_params.get("delta_temperature", 1)
+        steps_per_temperature = proc.proc_params.get(
+            "steps_per_temperature", 100)
+        refract_scaling = proc.proc_params.get("refract_scaling", 14)
+        refract = proc.proc_params.get("refract", (1,))
+        init_value = proc.proc_params.get("init_value", np.zeros(shape))
+        init_state = proc.proc_params.get("init_state", np.zeros(shape))
+        self.scif = NEBMSimulatedAnnealing(
+            shape=shape,
+            max_temperature=max_temperature,
+            min_temperature=min_temperature,
+            delta_temperature=delta_temperature,
+            steps_per_temperature=steps_per_temperature,
+            refract_scaling=refract_scaling,
+            refract=refract,
+            init_value=init_value,
+            init_state=init_state
+        )
+        proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
+        self.scif.s_wta_out.connect(proc.out_ports.messages)
+        self.scif.s_sig_out.connect(proc.out_ports.local_cost)
 
-    def is_satisfied(self, prev_assignment, integration):
-        return np.logical_and(prev_assignment, np.logical_not(integration))
+        proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
+        proc.vars.state.alias(self.scif.vars.state)

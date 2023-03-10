@@ -4,14 +4,14 @@
 from dataclasses import dataclass
 
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    AugmentedTermsProcess, ContinuousConstraintsProcess,
-    ContinuousVariablesProcess, CostConvergenceChecker,
-    DiscreteConstraintsProcess, DiscreteVariablesProcess,
-    MixedConstraintsProcess, SatConvergenceChecker)
-from lava.lib.optimization.solvers.generic.monitoring_processes \
-    .solution_readout.process import SolutionReadout
+    AugmentedTermsProcess,
+    ContinuousConstraintsProcess,
+    ContinuousVariablesProcess,
+    DiscreteConstraintsProcess,
+    DiscreteVariablesProcess,
+    MixedConstraintsProcess,
+)
 from lava.proc.dense.process import Dense
-from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 
 
 @dataclass
@@ -59,11 +59,11 @@ class VariablesImplementation:
 
     @property
     def importances(self):
-        return self.discrete.step_size
+        return self.discrete.cost_diagonal
 
     @importances.setter
     def importances(self, value):
-        self.discrete.step_size = value
+        self.discrete.cost_diagonal = value
 
     @property
     def local_cost(self):
@@ -77,78 +77,3 @@ class VariablesImplementation:
 @dataclass
 class ProximalGradientMinimizer:
     augmented_terms: AugmentedTermsProcess
-
-
-@dataclass
-class MacroStateReader:
-    """Processes for checking convergence and reading network state encoding
-    the solution ."""
-
-    read_gate: ReadGate
-    solution_readout: SolutionReadout
-    cost_convergence_check: CostConvergenceChecker = None
-    sat_convergence_check: SatConvergenceChecker = None
-
-    @property
-    def solution_step(self):
-        return self.solution_readout.solution_step
-
-    @property
-    def cost_in(self):
-        return self.cost_convergence_check.cost_components
-
-    @property
-    def update_buffer(self):
-        return self.cost_convergence_check.update_buffer
-
-    @property
-    def ref_port(self):
-        return self.read_gate.solution_reader
-
-    @property
-    def min_cost(self):
-        return self.solution_readout.min_cost
-
-    @property
-    def satisfaction(self):
-        return self.sat_convergence_check.satisfaction
-
-    @property
-    def solution(self):
-        return self.solution_readout.solution
-
-    @property
-    def read_gate_in_port(self):
-        return self.read_gate.cost_in
-
-    @property
-    def read_gate_cost_out(self):
-        return self.read_gate.cost_out
-
-    @property
-    def read_gate_req_stop(self):
-        return self.read_gate.send_pause_request
-
-    @property
-    def read_gate_solution_out(self):
-        return self.read_gate.solution_out
-
-    @property
-    def read_gate_ack(self):
-        return self.read_gate.acknowledgement
-
-    @property
-    def solution_readout_solution_in(self):
-        return self.solution_readout.read_solution
-
-    @property
-    def solution_readout_cost_in(self):
-        return self.solution_readout.cost_in
-
-    @property
-    def solution_readout_req_stop_in(self):
-        return self.solution_readout.req_stop_in
-
-    @property
-    def solution_readout_ack(self):
-        return self.solution_readout.acknowledgement

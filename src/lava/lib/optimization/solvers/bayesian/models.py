@@ -95,14 +95,15 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
         space description int scikit-optimize format compatible with all
         lower-level processes. Your search space should consist of three
         types of parameters:
-            1) ("continuous", <min_value>, <max_value>, np.nan, <name>)
-            2) ("integer", <min_value>, <max_value>, np.nan, <name>)
-            3) ("categorical", np.nan, np.nan, <choices>, <name>)
+
+        1) ("continuous", <min_value>, <max_value>, np.nan, <name>)
+        2) ("integer", <min_value>, <max_value>, np.nan, <name>)
+        3) ("categorical", np.nan, np.nan, <choices>, <name>)
 
         Returns
         -------
         search_space : list[Union[Real, Integer]]
-            a collection of continuous and discrete dimensions that represent
+            A collection of continuous and discrete dimensions that represent
             the entirety of the problem search space
         """
         search_space: list[Union[Real, Integer]] = []
@@ -141,7 +142,7 @@ class PyBayesianOptimizerModel(PyLoihiProcessModel):
         Parameters
         ----------
         vec : np.ndarray
-            a single array of data from the black-box process containing
+            A single array of data from the black-box process containing
             all parameters and objectives for a total length of num_params
             + num_objectives
         """

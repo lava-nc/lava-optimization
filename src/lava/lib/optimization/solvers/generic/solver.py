@@ -1,17 +1,31 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
+import numpy as np
 import typing as ty
 
-import numpy.typing as npt
-import numpy as np
+from dataclasses import dataclass
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    StochasticIntegrateAndFire,
+    NEBMAbstract, NEBMSimulatedAnnealingAbstract
+)
+
+from lava.lib.optimization.solvers.generic.scif.models import (
+    PyModelQuboScifFixed,
+)
+from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
+from lava.lib.optimization.solvers.generic.scif.process import QuboScif
+from lava.lib.optimization.solvers.generic.nebm.process import NEBM
+from lava.lib.optimization.solvers.generic.cost_integrator.process import (
+    CostIntegrator
+)
+from lava.lib.optimization.solvers.generic.nebm.process import (
+    NEBMSimulatedAnnealing
 )
 from lava.lib.optimization.solvers.generic.sub_process_models import (
-    StochasticIntegrateAndFireModelSCIF,
+    NEBMAbstractModel,
+    NEBMSimulatedAnnealingAbstractModel,
 )
 from lava.magma.core.resources import (
     AbstractComputeResource,
@@ -19,21 +33,46 @@ from lava.magma.core.resources import (
     Loihi2NeuroCore,
     NeuroCore,
 )
-from lava.magma.core.run_conditions import RunContinuous, RunSteps
+from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg, Loihi2HwCfg
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
 from lava.proc.dense.process import Dense
+from lava.proc.monitor.process import Monitor
+from lava.utils.profiler import Profiler
+
+try:
+    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
+        ReadGateCModel
+    )
+    from lava.proc.dense.ncmodels import NcModelDense
+    from lava.lib.optimization.solvers.generic.nebm.ncmodels import (
+        NEBMNcModel, NEBMSimulatedAnnealingNcModel
+    )
+    from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels \
+        import CostIntegratorNcModel
+except ImportError:
+    class ReadGateCModel:
+        pass
+
+    class NcModelDense:
+        pass
+
+    class NEBMNcModel:
+        pass
+
+    class NEBMSimulatedAnnealingNcModel:
+        pass
+
+    class CostIntegratorNcModel:
+        pass
+
 from lava.lib.optimization.solvers.generic.read_gate.models import \
     ReadGatePyModel
-from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.scif.models import \
-    PyModelQuboScifFixed
-from lava.lib.optimization.solvers.generic.scif.process import QuboScif
-from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
+HP_TYPE = ty.Union[ty.Dict, ty.List[ty.Dict]]
 CPUS = [CPU, "CPU"]
 NEUROCORES = [Loihi2NeuroCore, NeuroCore, "Loihi2"]
 
@@ -49,39 +88,102 @@ The explicit resource classes can be imported from
 lava.magma.core.resources"""
 
 
-def solve(
-        problem: OptimizationProblem,
-        timeout: int,
-        target_cost: int = None,
-        backend: BACKENDS = Loihi2NeuroCore,
-) -> npt.ArrayLike:
-    """Create solver from problem spec and run until target_cost or timeout.
+@dataclass
+class SolverConfig:
+    """
+    Dataclass to store and validate OptimizationSolver configurations.
 
     Parameters
     ----------
-    problem: Optimization problem to be solved.
-    timeout: Maximum number of iterations (timesteps) to be run. If set to
-    -1 then the solver will run continuously in non-blocking mode until a
-     solution is found.
-    target_cost: A cost value provided by the user as a target for the
-    solution to be found by the solver, when a solution with such cost is
-    found and read, execution ends.
-    backend: Specifies the backend where the main solver network will be
-    deployed.
+    timeout: int
+        Maximum number of iterations (timesteps) to be run. If set to -1
+        then the solver will run continuously in non-blocking mode until a
+        solution is found.
+    target_cost: int, optional
+        A cost value provided by the user as a target for the solution to be
+        found by the solver, when a solution with such cost is found and
+        read, execution ends.
+    backend: BACKENDS, optional
+        Specifies the backend where the main solver network will be
+        deployed.
+    hyperparameters:
+        ty.Union[ty.Dict, ty.Dict[str, ty.Union[int, npt.ArrayLike]]],
+        optional.
+        A dictionary specifying values for steps_to_fire, noise_amplitude,
+        step_size and init_value. All but the last are integers, the initial
+        value is an array-like of initial values for the variables defining
+        the problem.
+    probe_cost: bool
+        A boolean flag to request cost tracking through time.
+    probe_time: bool
+        A boolean flag to request time profiling, available only on "Loihi2"
+        backend.
+    probe_energy: bool
+        A boolean flag to request time profiling, available only on "Loihi2"
+        backend.
+    log_level: int
+        Select log verbosity (40: default, 20: verbose).
+    """
 
-    Returns
+    timeout: int = 1e3
+    target_cost: int = 0
+    backend: BACKENDS = CPU
+    hyperparameters: HP_TYPE = None
+    probe_cost: bool = False
+    probe_time: bool = False
+    probe_energy: bool = False
+    log_level: int = 40
+
+
+@dataclass(frozen=True)
+class SolverReport:
+    """
+    Dataclass to store OptimizationSolver results.
+
+    Parameters
     ----------
-    solution: candidate solution to the input optimization problem.
+    best_cost: int
+        Best cost found during the execution.
+    best_state: np.ndarray
+        Candidate solution associated to the best cost.
+    best_timestep: int
+        Execution timestep during which the best solution was found.
+    solver_config: SolverConfig
+        Solver configuraiton used. Refers to SolverConfig documentation.
+    profiler: Profiler
+        Profiler instance containing time, energy and activity measurements.
+    """
+
+    best_cost: int = None
+    best_state: np.ndarray = None
+    best_timestep: int = None
+    cost_timeseries: np.ndarray = None
+    solver_config: SolverConfig = None
+    profiler: Profiler = None
+
+
+def solve(
+    problem: OptimizationProblem, config: SolverConfig = SolverConfig()
+) -> np.ndarray:
+    """
+    Solve the given optimization problem using the passed configuration, and
+    returns the best candidate solution.
+
+    Parameters
+    ----------
+    problem: OptimizationProblem
+        Optimization problem to be solved.
+    config: SolverConfig, optional
+        Solver configuraiton used. Refers to SolverConfig documentation.
     """
     solver = OptimizationSolver(problem)
-    solution = solver.solve(
-        timeout=timeout, target_cost=target_cost, backend=backend
-    )
-    return solution
+    report = solver.solve(config=config)
+    return report.best_state
 
 
 class OptimizationSolver:
-    """Generic solver for constrained optimization problems defined by
+    """
+    Generic solver for constrained optimization problems defined by
     variables, cost and constraints.
 
     The problem should behave according to the OptimizationProblem's
@@ -91,261 +193,189 @@ class OptimizationSolver:
     be created from the problem specification. The dynamics of such process
     implements the algorithms that search a solution to the problem and
     reports it to the user.
-
-    Parameters
-    ----------
-    problem: Optimization problem to be solved.
-    run_cfg: Run configuration for the OptimizationSolverProcess.0
-
     """
 
-    def __init__(self, problem: OptimizationProblem, run_cfg=None):
+    def __init__(self, problem: OptimizationProblem):
+        """
+        Constructor for the OptimizationSolver class.
+
+        Parameters
+        ----------
+        problem: OptimizationProblem
+            Optimization problem to be solved.
+        """
         self.problem = problem
-        self._run_cfg = run_cfg
         self._process_builder = SolverProcessBuilder()
         self.solver_process = None
         self.solver_model = None
-        self._hyperparameters = dict(step_size=10,
-                                     steps_to_fire=10,
-                                     noise_amplitude=1,
-                                     init_value=0,
-                                     init_state=0)
-        self._report = dict(solved=None,
-                            best_state=None,
-                            cost=None,
-                            target_cost=None,
-                            steps_to_solution=None,
-                            time_to_solution=None)
         self._profiler = None
+        self._cost_tracker = None
 
-    @property
-    def run_cfg(self):
-        """Run configuration for process model selection."""
-        return self._run_cfg
-
-    @run_cfg.setter
-    def run_cfg(self, value):
-        self._run_cfg = value
-
-    @property
-    def hyperparameters(self):
-        return self._hyperparameters
-
-    @hyperparameters.setter
-    def hyperparameters(self,
-                        value: ty.Dict[str, ty.Union[int, npt.ArrayLike]]):
-        self._hyperparameters = value
-
-    @property
-    def last_run_report(self):
-        return self._report
-
-    def solve(self,
-              timeout: int,
-              target_cost: int = 0,
-              backend: BACKENDS = CPU,
-              hyperparameters: ty.Dict[
-                  str, ty.Union[int, npt.ArrayLike]] = None) \
-            -> npt.ArrayLike:
-        """Create solver from problem spec and run until target_cost or timeout.
+    def solve(self, config: SolverConfig = SolverConfig()) -> SolverReport:
+        """
+        Create solver from problem spec and run until target_cost or timeout.
 
         Parameters
         ----------
-        timeout: Maximum number of iterations (timesteps) to be run. If set to
-        -1 then the solver will run continuously in non-blocking mode until a
-         solution is found.
-        target_cost: A cost value provided by the user as a target for the
-        solution to be found by the solver, when a solution with such cost is
-        found and read, execution ends.
-        backend: Specifies the backend where the main solver network will be
-        deployed.
-        hyperparameters: A dictionary specifying values for steps_to_fire,
-        noise_amplitude, step_size and init_value. All but the last are
-        integers, the initial value is an array-like of initial values for the
-        variables defining the problem.
+        config: SolverConfig, optional
+            Solver configuration used. Refers to SolverConfig documentation.
 
         Returns
         ----------
-        solution: candidate solution to the input optimization problem.
-
+        report: SolverReport
+            An object containing all the data generated by the execution.
         """
-        target_cost = self._validated_cost(target_cost)
-        hyperparameters = hyperparameters or self.hyperparameters
-        self._create_solver_process(self.problem,
-                                    target_cost,
-                                    backend,
-                                    hyperparameters)
-        run_cfg = self._get_run_config(backend)
-        run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 40
-        self.solver_process.run(condition=run_condition,
-                                run_cfg=run_cfg)
-        if timeout == -1:
-            self.solver_process.wait()
-        self._update_report(target_cost=target_cost)
+        run_condition, run_cfg = self._prepare_solver(config)
+        self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
+        best_state, best_cost, best_timestep = self._get_results(config)
+        cost_timeseries = self._get_cost_tracking()
         self.solver_process.stop()
-        return self._report["best_state"]
+        return SolverReport(
+            best_cost=best_cost,
+            best_state=best_state,
+            best_timestep=best_timestep,
+            solver_config=config,
+            profiler=self._profiler,
+            cost_timeseries=cost_timeseries,
+        )
 
-    def measure_solving_time(
-            self,
-            timeout: int,
-            target_cost: int,
-            backend: BACKENDS,
-            hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
-    ):
-        if timeout == -1:
-            raise ValueError("For time measurements timeout " "cannot be -1")
-        if backend not in NEUROCORES:
-            raise ValueError(f"Time measurement can only be performed on "
-                             "Loihi2 backend, got {backend}.")
+    def _prepare_solver(self, config: SolverConfig):
+        self._create_solver_process(config=config)
+        hps = config.hyperparameters
+        num_in_ports = len(hps) if isinstance(hps, list) else 1
+        if config.probe_cost:
+            if config.backend in NEUROCORES:
+                # from lava.utils.loihi2_state_probes import StateProbe
+                # self._cost_tracker = StateProbe(self.solver_process.optimality
+                # )
+                raise NotImplementedError
+            if config.backend in CPUS:
+                self._cost_tracker = Monitor()
+                self._cost_tracker.probe(
+                    target=self.solver_process.optimality,
+                    num_steps=config.timeout,
+                )
+        run_cfg = self._get_run_config(
+            backend=config.backend,
+            probes=[self._cost_tracker] if self._cost_tracker else None,
+            num_in_ports=num_in_ports
+        )
+        run_condition = RunSteps(num_steps=config.timeout)
+        self._prepare_profiler(config=config, run_cfg=run_cfg)
+        return run_condition, run_cfg
 
-        from lava.utils.profiler import Profiler
-        self._profiler = Loihi2HWProfiler()
-        target_cost = self._validated_cost(target_cost)
-        hyperparameters = hyperparameters or self.hyperparameters
-        if not self.solver_process:
-            self._create_solver_process(self.problem,
-                                        target_cost,
-                                        backend,
-                                        hyperparameters)
-        run_cfg = self._get_run_config(backend)
-        run_condition = self._get_run_condition(timeout)
-        self.solver_process._log_config.level = 40
-
-        self._profiler = Profiler.init(run_cfg)
-        self._profiler.execution_time_probe()
-
-        self.solver_process.run(condition=run_condition,
-                                run_cfg=run_cfg)
-        if timeout == -1:
-            self.solver_process.wait()
-        self._update_report(target_cost=target_cost)
-        self.solver_process.stop()
-        return self._report["best_state"]
-
-    def _update_report(self, target_cost=None):
-        self._report["target_cost"] = target_cost
-        best_state = self.solver_process.variable_assignment.aliased_var.get()
-        self._report["best_state"] = best_state
-        raw_cost = self.solver_process.optimality.aliased_var.get()
-        cost = (raw_cost.astype(np.int32) << 8) >> 8
-        self._report["cost"] = cost
-        self._report["solved"] = cost == target_cost
-        steps_to_solution = self.solver_process.solution_step.aliased_var.get()
-        self._report["steps_to_solution"] = steps_to_solution
-        self._report["time_to_solution"] = None if \
-            self._profiler is None else np.mean(self._profiler.execution_time)
-        print(self._report)
-
-    def _create_solver_process(self,
-                               problem: OptimizationProblem,
-                               target_cost: ty.Optional[int] = None,
-                               backend: BACKENDS = None,
-                               hyperparameters: ty.Dict[
-                                   str, ty.Union[int, npt.ArrayLike]] = None):
-        """Create process and model class as solver for the given problem.
+    def _create_solver_process(self, config: SolverConfig) -> None:
+        """
+        Create process and model class as solver for the given problem.
 
         Parameters
         ----------
-        problem: Optimization problem defined by cost and constraints which
-        will be used to build the process and its model.
-        target_cost: A cost value provided by the user as a target for the
-        solution to be found by the solver, when a solution with such cost is
-        found and read, execution ends.
-        backend: Specifies the backend where the main solver network will be
-        deployed.
+        config: SolverConfig
+            Solver configuraiton used. Refers to SolverConfig documentation.
         """
-        requirements, protocol = self._get_requirements_and_protocol(backend)
+        requirements, protocol = self._get_requirements_and_protocol(
+            backend=config.backend
+        )
         self._process_builder.create_solver_process(
-            problem, hyperparameters or dict()
+            problem=self.problem,
+            hyperparameters=config.hyperparameters or dict(),
         )
         self._process_builder.create_solver_model(
-            target_cost, requirements, protocol
+            target_cost=config.target_cost,
+            requirements=requirements,
+            protocol=protocol,
         )
         self.solver_process = self._process_builder.solver_process
         self.solver_model = self._process_builder.solver_model
+        self.solver_process._log_config.level = config.log_level
 
     def _get_requirements_and_protocol(
-            self, backend: BACKENDS
+        self, backend: BACKENDS
     ) -> ty.Tuple[AbstractComputeResource, AbstractSyncProtocol]:
-        """Figure out requirements and protocol for a given backend.
+        """
+        Figure out requirements and protocol for a given backend.
 
         Parameters
         ----------
-        backend: Specifies the backend for which requirements and protocol
-        classes will be returned.
-
+        backend: BACKENDS
+            Specifies the backend for which requirements and protocol classes
+            will be returned.
         """
-        protocol = LoihiProtocol
+        return [CPU] if backend in CPUS else [Loihi2NeuroCore], LoihiProtocol
+
+    def _get_cost_tracking(self):
+        if self._cost_tracker is None:
+            return None
+        if isinstance(self._cost_tracker, Monitor):
+            return self._cost_tracker.get_data()[self.solver_process.name][
+                self.solver_process.optimality.name
+            ].T.astype(np.int32)
+        else:
+            return self._cost_tracker.time_series
+
+    def _get_run_config(self, backend: BACKENDS, probes=None,
+                        num_in_ports: int = None):
         if backend in CPUS:
-            return [CPU], protocol
+            from lava.lib.optimization.solvers.generic.read_gate.process \
+                import ReadGate
+            from lava.lib.optimization.solvers.generic.read_gate.models import \
+                get_read_gate_model_class
+            ReadGatePyModel = get_read_gate_model_class(num_in_ports)
+            pdict = {
+                self.solver_process: self.solver_model,
+                ReadGate: ReadGatePyModel,
+                Dense: PyDenseModelFloat,
+                NEBMAbstract: NEBMAbstractModel,
+                NEBM: NEBMPyModel,
+                QuboScif: PyModelQuboScifFixed,
+            }
+            return Loihi1SimCfg(
+                exception_proc_model_map=pdict, select_sub_proc_model=True
+            )
         elif backend in NEUROCORES:
-            return [Loihi2NeuroCore], protocol
+            pdict = {
+                self.solver_process: self.solver_model,
+                ReadGate: ReadGateCModel,
+                Dense: NcModelDense,
+                NEBMAbstract: NEBMAbstractModel,
+                NEBM: NEBMNcModel,
+                NEBMSimulatedAnnealingAbstract:
+                    NEBMSimulatedAnnealingAbstractModel,
+                NEBMSimulatedAnnealing:
+                    NEBMSimulatedAnnealingNcModel,
+                CostIntegrator: CostIntegratorNcModel
+            }
+            return Loihi2HwCfg(
+                exception_proc_model_map=pdict,
+                select_sub_proc_model=True,
+                callback_fxs=probes,
+            )
         else:
             raise NotImplementedError(str(backend) + BACKEND_MSG)
 
-    def _get_run_config(self, backend):
-        if backend in CPUS:
-            pdict = {self.solver_process: self.solver_model,
-                     ReadGate: ReadGatePyModel,
-                     Dense: PyDenseModelFloat,
-                     StochasticIntegrateAndFire:
-                         StochasticIntegrateAndFireModelSCIF,
-                     QuboScif: PyModelQuboScifFixed
-                     }
-            run_cfg = Loihi1SimCfg(exception_proc_model_map=pdict,
-                                   select_sub_proc_model=True)
-        elif backend in NEUROCORES:
-            pdict = {self.solver_process: self.solver_model,
-                     StochasticIntegrateAndFire:
-                         StochasticIntegrateAndFireModelSCIF,
-                     }
-            pre_run_fxs, post_run_fxs = [], []
-            run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
-                                  select_sub_proc_model=True,
-                                  pre_run_fxs=pre_run_fxs,
-                                  post_run_fxs=post_run_fxs
-                                  )
+    def _prepare_profiler(self, config: SolverConfig, run_cfg) -> None:
+        if config.probe_time or config.probe_energy:
+            self._profiler = Profiler.init(run_cfg)
+            if config.probe_time:
+                self._profiler.execution_time_probe(num_steps=config.timeout)
+            if config.probe_energy:
+                self._profiler.energy_probe(num_steps=config.timeout)
         else:
-            raise NotImplementedError(str(backend) + BACKEND_MSG)
-        return run_cfg
+            self._profiler = None
 
-    def _validated_cost(self, target_cost):
-        if target_cost != int(target_cost):
-            raise ValueError(f"target_cost has to be an integer, received "
-                             f"{target_cost}")
-        return int(target_cost)
+    def _get_results(self, config: SolverConfig):
+        best_cost, idx = self.solver_process.optimum.get()
+        best_cost = (np.asarray([best_cost]).astype(np.int32) << 8) >> 8
+        best_state = self._get_best_state(config, idx)
+        best_timestep = self.solver_process.solution_step.aliased_var.get() - 2
+        return best_state, int(best_cost), int(best_timestep)
 
-    def _get_run_condition(self, timeout):
-        if timeout == -1:
-            return RunContinuous()
+    def _get_best_state(self, config: SolverConfig, idx: int):
+        if isinstance(config.hyperparameters, list):
+            raw_solution = np.asarray(
+                self.solver_process.finders[int(idx)].variables_assignment.get()
+            ).astype(np.int32)
+            raw_solution &= 0x3F
+            return raw_solution.astype(np.int8) >> 5
         else:
-            return RunSteps(num_steps=timeout + 1)
-
-    def tune(self, params_grid: ty.Dict,
-             timeout: int,
-             target_cost: int = 0,
-             backend: BACKENDS = CPU,
-             stopping_condition: ty.Callable[[float, int], bool] = None) -> \
-            ty.Tuple[ty.Dict, bool]:
-        """
-        Provides an interface to SolverTuner to search hyperparameters on the
-        specififed grid. Returns the optimized hyperparameters.
-        """
-        solver_tuner = SolverTuner(params_grid)
-        solver_parameters = {"timeout": timeout,
-                             "target_cost": target_cost,
-                             "backend": backend}
-        hyperparameters, success = solver_tuner.tune(self,
-                                                     solver_parameters,
-                                                     stopping_condition)
-        if success:
-            self.hyperparameters = hyperparameters
-        return hyperparameters, success
-
-    def _add_time_to_run_config(self, run_cfg, timeout):
-        pre_run_fxs, post_run_fxs = self._benchmarker.get_time_measurement_cfg(
-            num_steps=timeout + 1
-        )
-        run_cfg.pre_run_fxs += pre_run_fxs
-        run_cfg.post_run_fxs += post_run_fxs
+            return self.solver_process.variable_assignment.aliased_var.get()

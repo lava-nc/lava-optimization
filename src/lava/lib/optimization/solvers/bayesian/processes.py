@@ -19,15 +19,16 @@ class BayesianOptimizer(AbstractProcess):
                  search_space: np.ndarray, est_config: str, ip_gen_config: dict,
                  num_ips: int, num_objectives: int, seed: int,
                  **kwargs) -> None:
-        """initialize the BayesianOptimizer process
+        """
+        Initialize the BayesianOptimizer process
 
         Parameters
         ----------
         acq_func_config : dict
-            a series of key-value pairs specifying the runtime configuration
+            A series of key-value pairs specifying the runtime configuration
             of the acquisition function
         acq_opt_config : dict
-            a series of key-value pairs specifying the runtime configuration
+            A series of key-value pairs specifying the runtime configuration
             of the acquisition optimizer
         search_space : np.ndarray
             A list of parameters that describe the multi-dimensional search
@@ -36,35 +37,30 @@ class BayesianOptimizer(AbstractProcess):
             space with object at each index ( dimensions[idx] ) describing
             the range or discrete choices for the idx-th parameters. Your
             search space should consist of two types of parameters:
-                1) continuous: (<min_value>, <max_value>, np.inf)
-                2) discrete: (<min_value>, <max_value>, <float>)
-
+            1) continuous: (<min_value>, <max_value>, np.inf)
+            2) discrete: (<min_value>, <max_value>, <float>)
             The following represents the three main types of parameters:
-                1) a continuous variable from -1000.0 to 256
-                3) a discrete set of categorical variable, the best way to
-                    convert your categorical variables to this format is to
-                    exploit the discretization of enumerations or parse your
-                    list possible selections using array indexing.
-
-            search_space: list = np.ndarray([
-                [-1000, 256, np.inf],
-                [0, <num_categories>, 1],
-            ])
+            1) a continuous variable from -1000.0 to 256
+            3) a discrete set of categorical variable, the best way to
+                convert your categorical variables to this format is to
+                exploit the discretization of enumerations or parse your
+                list possible selections using array indexing.
+        search_space: np.ndarray
         est_config : dict
-            a series of key-value pairs specifying the runtime configuration
+            A series of key-value pairs specifying the runtime configuration
             of the surrogate function estimator
         ip_gen_config : dict
-            a series of key-value pairs specifying the runtime configuration
+            A series of key-value pairs specifying the runtime configuration
             of the initial point generator
         num_ips : int
-            an integer specifying the number of points to sample from the
+            An integer specifying the number of points to sample from the
             parameter search space before using the surrogate gradients to
             exploit the search space
         num_objectives : int
-            an integer specifying the number of qualitative attributes used
+            An integer specifying the number of qualitative attributes used
             to measure the black-box function
         seed : int
-            an integer specifying the random state of all random number
+            An integer specifying the random state of all random number
             generators
         """
         super().__init__(**kwargs)

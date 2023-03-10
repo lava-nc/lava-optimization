@@ -41,10 +41,14 @@ class CostIntegrator(AbstractProcess):
         Current minimum cost, i.e., the lowest reported cost so far.
     """
 
-    def __init__(self, *, shape: ty.Tuple[int, ...] = (1,),
-                 min_cost: int = 2**24,
-                 name: ty.Optional[str] = None,
-                 log_config: ty.Optional[LogConfig] = None) -> None:
+    def __init__(
+        self,
+        *,
+        shape: ty.Tuple[int, ...] = (1,),
+        min_cost: int = 2**24,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
         super().__init__(shape=shape, name=name, log_config=log_config)
         self.cost_in = InPort(shape=shape)
         self.update_buffer = OutPort(shape=shape)

@@ -10,8 +10,9 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
-from lava.lib.optimization.solvers.generic.cost_integrator.process import \
-    CostIntegrator
+from lava.lib.optimization.solvers.generic.cost_integrator.process import (
+    CostIntegrator,
+)
 
 
 @implements(proc=CostIntegrator, protocol=LoihiProtocol)
@@ -24,6 +25,7 @@ class CostIntegratorModel(PyLoihiProcessModel):
     cost seen so far, if the new cost is better, the minimum cost is updated
     and send as an output spike to an upstream process.
     """
+
     cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
     update_buffer: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
     min_cost: np.ndarray = LavaPyType(np.ndarray, int, 32)
@@ -38,3 +40,4 @@ class CostIntegratorModel(PyLoihiProcessModel):
             self.update_buffer.send(cost)
         else:
             self.update_buffer.send(np.asarray([0]))
+        self.cost[:] = cost

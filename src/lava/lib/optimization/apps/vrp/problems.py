@@ -36,6 +36,12 @@ class VRP:
             An optional list of edges connecting nodes, given as a list of
             node ID pairs. If None provided, assume all-to-all connectivity
             between nodes.
+
+        Notes
+        -----
+        The vehicle IDs and node IDs are assigned serially. The IDs 1 to M
+        correspond to vehicles and (M+1) to (M+N) correspond to nodes to be
+        visited by the vehicles.
         """
         super().__init__()
         self._node_coords = node_coords

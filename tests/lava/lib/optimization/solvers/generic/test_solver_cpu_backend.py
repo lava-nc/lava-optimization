@@ -4,10 +4,12 @@
 import unittest
 
 import numpy as np
-
 from lava.lib.optimization.problems.problems import QUBO
-from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    CostConvergenceChecker,
+from lava.lib.optimization.solvers.generic.solution_finder.process import (
+    SolutionFinder,
+)
+from lava.lib.optimization.solvers.generic.solution_reader.process import (
+    SolutionReader,
 )
 from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import SolutionReadout
@@ -29,7 +31,6 @@ class TestOptimizationSolver(unittest.TestCase):
         self.solver = OptimizationSolver(problem=self.problem)
 
     def test_create_obj(self):
-        print("test_create_obj")
         self.assertIsInstance(self.solver, OptimizationSolver)
 
     def test_solution_has_expected_shape(self):
@@ -38,13 +39,12 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertEqual(report.best_state.shape, self.solution.shape)
 
     def test_solve_method_nebm(self):
-        print("test_solve_method")
         np.random.seed(2)
         config = SolverConfig(
             timeout=200,
             target_cost=-11,
             backend="CPU",
-            hyperparameters={"neuron_model": "nebm"}
+            hyperparameters={"neuron_model": "nebm"},
         )
         report = self.solver.solve(config=config)
         print(report)
@@ -53,14 +53,14 @@ class TestOptimizationSolver(unittest.TestCase):
             report.best_state))
 
     def test_solve_method_scif(self):
-        print("test_solve_method")
         np.random.seed(2)
-        report = self.solver.solve(config=SolverConfig(
-            timeout=200,
-            target_cost=-11,
-            hyperparameters={"neuron_model": "scif",
-                             "noise_precision": 5}
-        ))
+        report = self.solver.solve(
+            config=SolverConfig(
+                timeout=200,
+                target_cost=-11,
+                hyperparameters={"neuron_model": "scif", "noise_precision": 5},
+            )
+        )
         print(report)
         self.assertTrue((report.best_state == self.solution).all())
         self.assertEqual(report.best_cost, self.problem.evaluate_cost(
@@ -71,88 +71,41 @@ class TestOptimizationSolver(unittest.TestCase):
         class_name = type(self.solver.solver_process).__name__
         self.assertEqual(class_name, "OptimizationSolverProcess")
 
-    def test_solves_creates_macrostate_reader_processes(self):
+    def test_solves_creates_subprocesses(self):
         self.assertIsNone(self.solver.solver_process)
         self.solver.solve(config=SolverConfig(timeout=1))
-        mr = self.solver.solver_process.model_class(
-            self.solver.solver_process
-        ).macrostate_reader
-        self.assertIsInstance(mr.read_gate, ReadGate)
-        self.assertIsInstance(mr.solution_readout, SolutionReadout)
-        self.assertEqual(
-            mr.solution_readout.solution.shape,
-            (self.problem.variables.num_variables,),
-        )
-        self.assertIsInstance(mr.cost_convergence_check, CostConvergenceChecker)
+        pm = self.solver.solver_process.model_class(self.solver.solver_process)
+        self.assertIsInstance(pm.finder_0, SolutionFinder)
+        self.assertIsInstance(pm.solution_reader, SolutionReader)
 
-    def test_macrostate_reader_processes_connections(self):
+    def test_subprocesses_connections(self):
+        # TODO split into a test for SolutionReader and one for SolutionFinder
         self.assertIsNone(self.solver.solver_process)
         self.solver.solve(config=SolverConfig(timeout=1))
-        mr = self.solver.solver_process.model_class(
-            self.solver.solver_process
-        ).macrostate_reader
+        pm = self.solver.solver_process.model_class(self.solver.solver_process)
+        solution_finder = pm.finder_0
+        solution_reader = pm.solution_reader
         self.assertIs(
-            mr.cost_convergence_check.update_buffer.out_connections[0].process,
-            mr.read_gate,
-        )
-        self.assertIs(
-            mr.read_gate.cost_out.out_connections[0].process,
-            mr.solution_readout,
+            solution_finder.cost_out.out_connections[0].process,
+            solution_reader,
         )
         self.assertIs(
             self.solver.solver_process.variable_assignment.aliased_var,
-            mr.solution_readout.solution,
+            solution_reader.solution,
         )
         self.assertIs(
             self.solver.solver_process.variable_assignment.aliased_var.process,
-            mr.solution_readout,
-        )
-
-    def test_cost_checker_is_connected_to_variables_population(self):
-        self.assertIsNone(self.solver.solver_process)
-        self.solver.solve(config=SolverConfig(timeout=1))
-        pm = self.solver.solver_process.model_class(
-            self.solver.solver_process
-        )
-        mr = pm.macrostate_reader
-        self.assertIs(
-            mr.cost_convergence_check.cost_components.in_connections[0].process,
-            pm.variables.discrete,
+            solution_reader,
         )
 
     def test_qubo_cost_defines_weights(self):
         self.solver.solve(config=SolverConfig(timeout=1))
-        pm = self.solver.solver_process.model_class(
-            self.solver.solver_process
-        )
+        pm = self.solver.solver_process.model_class(self.solver.solver_process)
         q_no_diag = np.copy(self.problem.cost.get_coefficient(2))
         np.fill_diagonal(q_no_diag, 0)
-        wgts = pm.cost_minimizer.coefficients_2nd_order.weights
-        condition = (wgts.init == q_no_diag).all()
+        wgts = pm.finder_0.proc_params.get("cost_coefficients")[2].init
+        condition = (wgts == q_no_diag).all()
         self.assertTrue(condition)
-
-    def test_qubo_cost_defines_biases(self):
-        self.solver.solve(config=SolverConfig(timeout=1))
-        pm = self.solver.solver_process.model_class(
-            self.solver.solver_process
-        )
-        condition = (pm.variables.discrete.cost_diagonal == self.problem.cost
-                     .get_coefficient(2).diagonal()).all()
-        self.assertTrue(condition)
-
-    def test_qubo_cost_defines_num_vars_in_discrete_variables_process(self):
-        self.solver.solve(config=SolverConfig(timeout=1))
-        pm = self.solver.solver_process.model_class(
-            self.solver.solver_process
-        )
-        self.assertEqual(
-            pm.variables.discrete.num_variables,
-            self.problem.variables.num_variables,
-        )
-        self.assertEqual(
-            self.solver.solver_process.variable_assignment.size,
-            self.problem.variables.num_variables,
-        )
 
     def test_cost_tracking(self):
         np.random.seed(77)
@@ -169,7 +122,7 @@ class TestOptimizationSolver(unittest.TestCase):
                          report.cost_timeseries[0][report.best_timestep])
 
 
-def solve_workload(problem, reference_solution, noise_precision=3,
+def solve_workload(problem, reference_solution, noise_precision=5,
                    noise_amplitude=1, on_tau=-3):
     expected_cost = problem.evaluate_cost(reference_solution)
     np.random.seed(2)
@@ -186,7 +139,6 @@ def solve_workload(problem, reference_solution, noise_precision=3,
 
 
 class TestWorkloads(unittest.TestCase):
-
     def test_solve_polynomial_minimization(self):
         """Polynomial minimization with y=-5x_1 -3x_2 -8x_3 -6x_4 +
         4x_1x_2+8x_1x_3+2x_2x_3+10x_3x_4

@@ -5,36 +5,25 @@
 try:
     from lava.magma.core.model.nc.net import NetL2
 except ImportError:
+
     class NetL2:
         pass
 
 import numpy as np
-from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    CostConvergenceChecker,
-    DiscreteVariablesProcess,
-    StochasticIntegrateAndFire,
-    NEBMAbstract, NEBMSimulatedAnnealingAbstract)
-from lava.magma.core.decorator import implements, requires
-from lava.magma.core.model.sub.model import AbstractSubProcessModel
-from lava.magma.core.model.py.model import PyLoihiProcessModel
-from lava.magma.core.model.py.type import LavaPyType
-from lava.magma.core.resources import CPU
-from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.lib.optimization.solvers.generic.cost_integrator.process import \
     CostIntegrator
-from lava.proc.dense.process import Dense
-from lava.magma.core.resources import Loihi2NeuroCore
-import numpy as np
-from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
-from lava.magma.core.model.py.ports import PyInPort, PyOutPort
-from lava.magma.core.model.py.type import LavaPyType
-from lava.magma.core.resources import CPU
-from lava.magma.core.decorator import implements, requires, tag
-from lava.magma.core.model.py.model import PyLoihiProcessModel
+from lava.lib.optimization.solvers.generic.hierarchical_processes import \
+    CostConvergenceChecker, DiscreteVariablesProcess, \
+    StochasticIntegrateAndFire, NEBMAbstract, NEBMSimulatedAnnealingAbstract
 
-from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.lib.optimization.solvers.generic.nebm.process import NEBM, \
     NEBMSimulatedAnnealing
+from lava.lib.optimization.solvers.generic.scif.process import QuboScif
+from lava.magma.core.decorator import implements, requires
+from lava.magma.core.model.sub.model import AbstractSubProcessModel
+from lava.magma.core.resources import Loihi2NeuroCore, CPU
+from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
+from lava.proc.dense.process import Dense
 
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
@@ -58,8 +47,8 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             wta_weight
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
-        neuron_model = proc.hyperparameters.get("neuron_model", 'nebm')
-        if neuron_model == 'nebm':
+        neuron_model = proc.hyperparameters.get("neuron_model", "nebm")
+        if neuron_model == "nebm":
             temperature = proc.hyperparameters.get("temperature", 1)
             refract = proc.hyperparameters.get("refract", 0)
             init_value = proc.hyperparameters.get("init_value",
@@ -124,9 +113,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         # Connect the OutPort of the LIF child-Process to the OutPort of the
         # parent Process.
         self.s_bit.out_ports.messages.connect(proc.out_ports.s_out)
-        self.s_bit.out_ports.local_cost.connect(
-            proc.out_ports.local_cost
-        )
+        self.s_bit.out_ports.local_cost.connect(proc.out_ports.local_cost)
         proc.vars.variable_assignment.alias(self.s_bit.prev_assignment)
 
 
@@ -157,7 +144,8 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
         # Connect the OutPort of the LIF child-Process to the OutPort of the
         # parent Process.
         self.cost_integrator.out_ports.update_buffer.connect(
-            proc.out_ports.update_buffer)
+            proc.out_ports.update_buffer
+        )
         proc.vars.min_cost.alias(self.cost_integrator.vars.min_cost)
         proc.vars.cost.alias(self.cost_integrator.vars.cost)
 
@@ -178,12 +166,14 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
         noise_amplitude = proc.proc_params.get("noise_amplitude", (1,))
         noise_precision = proc.proc_params.get("noise_precision", (3,))
         sustained_on_tau = proc.proc_params.get("sustained_on_tau", (-5,))
-        self.scif = QuboScif(shape=shape,
-                             cost_diag=cost_diagonal,
-                             theta=theta,
-                             sustained_on_tau=sustained_on_tau,
-                             noise_amplitude=noise_amplitude,
-                             noise_precision=noise_precision)
+        self.scif = QuboScif(
+            shape=shape,
+            cost_diag=cost_diagonal,
+            theta=theta,
+            sustained_on_tau=sustained_on_tau,
+            noise_amplitude=noise_amplitude,
+            noise_precision=noise_precision,
+        )
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)

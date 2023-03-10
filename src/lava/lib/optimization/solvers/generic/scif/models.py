@@ -20,6 +20,7 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
     """Abstract fixed point implementation of Stochastic Constraint
     Integrate and Fire (SCIF) neuron for solving QUBO and CSP problems.
     """
+
     a_in = LavaPyType(PyInPort.VEC_DENSE, int, precision=8)
     s_sig_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
     s_wta_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
@@ -51,7 +52,7 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         4. The number `S` is used in the SCIF dynamics.
         """
         super(PyModelAbstractScifFixed, self).__init__(proc_params)
-        self.a_in_data = np.zeros(proc_params['shape'])
+        self.a_in_data = np.zeros(proc_params["shape"])
 
     @staticmethod
     def _get_precision(vn_in: npty.NDArray) -> ty.Union[npty.NDArray, int]:
@@ -60,8 +61,10 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         """
         vn = vn_in.copy()
         if np.any(vn < 0):
-            AssertionError("_get_precision() is implemented only for "
-                           "non-negative integers")
+            AssertionError(
+                "_get_precision() is implemented only for "
+                "non-negative integers"
+            )
         prec = np.zeros_like(vn)
         while np.any(vn):
             prec[vn != 0] += 1
@@ -70,23 +73,21 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         return prec.item() if prec.size == 1 else prec
 
     def _prng(self):
-        """Pseudo-random number generator.
-        """
+        """Pseudo-random number generator."""
 
         # ToDo: Choosing a 24-bit unsigned random integer. For bit-accuracy,
         #   need to replace it with Loihi-conformant LFSR function
-        prand = np.random.randint(0, 2 ** 24 - 1, size=self.state.size)
+        prand = np.random.randint(0, 2**24 - 1, size=self.state.size)
         ampl_prec = self._get_precision(self.noise_ampl)
-        prand = \
-            self.noise_ampl * (
-                ((prand << (24 - self.noise_prec + ampl_prec)
-                  ) & 0xFFFFFF) >> (24 - self.noise_prec + ampl_prec))
+        prand = self.noise_ampl * (
+            ((prand << (24 - self.noise_prec + ampl_prec)) & 0xFFFFFF)
+            >> (24 - self.noise_prec + ampl_prec)
+        )
         # AND with 0xFFFFFF -> retains 24 LSBs
         return prand
 
     def _update_buffers(self):
-        """Update spiking history from previous time-step.
-        """
+        """Update spiking history from previous time-step."""
         # !! Side effect: Changes self.spk_hist !!
 
         # Populate the buffer for local computation
@@ -117,7 +118,8 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
             Boolean array with True corresponding to a conflict
         """
         return np.ones_like(self.cnstr_intg).astype(bool), np.zeros_like(
-            self.cnstr_intg).astype(bool)
+            self.cnstr_intg
+        ).astype(bool)
 
     # This method is overloaded for CSP and QUBO
     def _gen_sig_spks(self, spk_hist_status, local_validity):
@@ -162,10 +164,10 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         lfsr = self._prng()
         lfsr_to_intg = lfsr[intg_idx]
 
-        state_to_intg = state_to_intg + lfsr_to_intg + cnstr_to_intg + \
-            step_size_to_intg
-        np.clip(state_to_intg, a_min=0, a_max=2 ** 24 - 1,
-                out=state_to_intg)
+        state_to_intg = (
+            state_to_intg + lfsr_to_intg + cnstr_to_intg + step_size_to_intg
+        )
+        np.clip(state_to_intg, a_min=0, a_max=2**24 - 1, out=state_to_intg)
 
         # Assign all temporary states to state Vars
         self.state[intg_idx] = state_to_intg
@@ -218,8 +220,11 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
 
         # Second set of unsatisfied WTA indices based on refractory
         wta_enter_off_state = np.where(
-            np.logical_or(state_proxy_for_rfct == 0, np.logical_and(
-                spk_hist_proxy & 1, local_conflict)))
+            np.logical_or(
+                state_proxy_for_rfct == 0,
+                np.logical_and(spk_hist_proxy & 1, local_conflict),
+            )
+        )
 
         # Assign all temporary states to state Vars
         self.state[rfct_idx] = state_in_rfct
@@ -256,13 +261,16 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         # Indices of WTA neurons that will spike and enter refractory
         wta_enter_on_state = self._integration_dynamics(intg_idx)
 
-        wta_enter_off_state = np.where(np.logical_and(spk_hist_status & 1,
-                                                      local_conflict))
+        wta_enter_off_state = np.where(
+            np.logical_and(spk_hist_status & 1, local_conflict)
+        )
         # Indices of WTA neurons coming out of refractory or those signifying
         # unsatisfied constraints
-        wta_enter_off_state_2 = self._refractory_dynamics(rfct_idx,
-                                                          local_conflict)\
-            if self.sustained_on_tau != 0 else (np.array([], dtype=np.int32),)
+        wta_enter_off_state_2 = (
+            self._refractory_dynamics(rfct_idx, local_conflict)
+            if self.sustained_on_tau != 0
+            else (np.array([], dtype=np.int32),)
+        )
 
         s_wta = np.zeros_like(self.state)
         s_wta[wta_enter_on_state] = 1
@@ -276,8 +284,12 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         self.a_in_data = self.a_in.recv()
 
         # Add the incoming activation and saturate to min-max limits
-        np.clip(self.cnstr_intg + self.a_in_data, a_min=-2 ** 23,
-                a_max=2 ** 23 - 1, out=self.cnstr_intg)
+        np.clip(
+            self.cnstr_intg + self.a_in_data,
+            a_min=-(2**23),
+            a_max=2**23 - 1,
+            out=self.cnstr_intg,
+        )
 
         # !! Side effect: Changes self.beta !!
         # State history status:
@@ -285,15 +297,14 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
         spk_hist_status = self._update_buffers()
 
         local_validity, local_conflict = self._get_local_validity_conflict(
-            spk_hist_status)
+            spk_hist_status
+        )
 
         # Generate Sigma spikes
-        s_sig = self._gen_sig_spks(spk_hist_status,
-                                   local_validity)
+        s_sig = self._gen_sig_spks(spk_hist_status, local_validity)
 
         # Generate WTA spikes
-        s_wta = self._gen_wta_spks(spk_hist_status,
-                                   local_conflict)
+        s_wta = self._gen_wta_spks(spk_hist_status, local_conflict)
 
         # Send out spikes
         self.s_sig_out.send(s_sig)
@@ -302,7 +313,7 @@ class PyModelAbstractScifFixed(PyLoihiProcessModel):
 
 @implements(proc=CspScif, protocol=LoihiProtocol)
 @requires(CPU)
-@tag('fixed_pt')
+@tag("fixed_pt")
 class PyModelCspScifFixed(PyModelAbstractScifFixed):
     """Concrete implementation of Stochastic Constraint Integrate and
     Fire (SCIF) neuron for solving CSP problems.
@@ -312,7 +323,7 @@ class PyModelCspScifFixed(PyModelAbstractScifFixed):
 
     def __init__(self, proc_params):
         super(PyModelCspScifFixed, self).__init__(proc_params)
-        self.a_in_data = np.zeros(proc_params['shape'])
+        self.a_in_data = np.zeros(proc_params["shape"])
 
     def _get_local_validity_conflict(self, spk_hist_status):
         local_validity = self.cnstr_intg == 0
@@ -324,8 +335,9 @@ class PyModelCspScifFixed(PyModelAbstractScifFixed):
         s_sig = np.zeros_like(self.state)
         # Gather spike and unsatisfied indices for summation axons
         sig_unsat_idx = np.where(spk_hist_status == 2)
-        sig_spk_idx = np.where(np.logical_and(spk_hist_status == 1,
-                                              local_validity))
+        sig_spk_idx = np.where(
+            np.logical_and(spk_hist_status == 1, local_validity)
+        )
 
         # Assign sigma spikes (+/- 1)
         s_sig[sig_unsat_idx] = -1
@@ -336,7 +348,7 @@ class PyModelCspScifFixed(PyModelAbstractScifFixed):
 
 @implements(proc=QuboScif, protocol=LoihiProtocol)
 @requires(CPU)
-@tag('fixed_pt')
+@tag("fixed_pt")
 class PyModelQuboScifFixed(PyModelAbstractScifFixed):
     """Concrete implementation of Stochastic Constraint Integrate and
     Fire (SCIF) neuron for solving QUBO problems.
@@ -348,27 +360,30 @@ class PyModelQuboScifFixed(PyModelAbstractScifFixed):
 
     def __init__(self, proc_params):
         super(PyModelQuboScifFixed, self).__init__(proc_params)
-        self.a_in_data = np.zeros(proc_params['shape'])
+        self.a_in_data = np.zeros(proc_params["shape"])
 
     def _gen_sig_spks(self, spk_hist_status, local_validity):
         s_sig = np.zeros_like(self.state)
 
-        sig_spk_idx = np.where(np.logical_and(spk_hist_status & 1,
-                                              local_validity))
+        sig_spk_idx = np.where(
+            np.logical_and(spk_hist_status & 1, local_validity)
+        )
         # Compute the local cost
-        s_sig[sig_spk_idx] = self.cnstr_intg[sig_spk_idx] + \
-            self.cost_diagonal[sig_spk_idx]
+        s_sig[sig_spk_idx] = (
+            self.cnstr_intg[sig_spk_idx] + self.cost_diagonal[sig_spk_idx]
+        )
 
         return s_sig
 
 
 @implements(proc=QuboScif, protocol=LoihiProtocol)
 @requires(CPU)
-@tag('fixed_pt')
+@tag("fixed_pt")
 class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
     """***Deprecated*** Concrete implementation of Stochastic Constraint
     Integrate and Fire (SCIF) neuron for solving QUBO problems.
     """
+
     a_in = LavaPyType(PyInPort.VEC_DENSE, int, precision=8)
     s_sig_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
     s_wta_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
@@ -387,21 +402,20 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
 
     def __init__(self, proc_params):
         super(PyModelQuboScifRefracFixed, self).__init__(proc_params)
-        self.a_in_data = np.zeros(proc_params['shape'])
+        self.a_in_data = np.zeros(proc_params["shape"])
 
     def _prng(self):
-        """Pseudo-random number generator
-        """
+        """Pseudo-random number generator"""
 
         # ToDo: Choosing a 16-bit signed random integer. For bit-accuracy,
         #   need to replace it with Loihi-conformant LFSR function
         prand = np.zeros(shape=self.state.shape)
         if prand.size > 0:
-            rand_nums = \
-                np.random.randint(0, (2 ** 16) - 1, size=prand.size)
+            rand_nums = np.random.randint(0, (2**16) - 1, size=prand.size)
             # Assign random numbers only to neurons, for which noise is enabled
-            prand = np.right_shift((rand_nums * self.noise_ampl).astype(int),
-                                   self.noise_shift)
+            prand = np.right_shift(
+                (rand_nums * self.noise_ampl).astype(int), self.noise_shift
+            )
 
         return prand
 
@@ -428,15 +442,18 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         lfsr_to_intg = lfsr[intg_idx]
 
         state_to_intg += lfsr_to_intg + cost_diag_intg + a_in_to_intg
-        np.clip(state_to_intg, a_min=-(2 ** 23), a_max=2 ** 23 - 1,
-                out=state_to_intg)
+        np.clip(
+            state_to_intg,
+            a_min=-(2**23),
+            a_max=2**23 - 1,
+            out=state_to_intg,
+        )
         self.state[intg_idx] = state_to_intg
 
         # WTA spike indices when threshold is exceeded
         wta_spk_idx = np.where(self.state >= self.theta)  # Exceeds threshold
         # Spiking neuron voltages go in refractory (if sustained_on_tau < 0)
-        self.state[wta_spk_idx] = \
-            self.sustained_on_tau + self.sustained_off_tau
+        self.state[wta_spk_idx] = self.sustained_on_tau + self.sustained_off_tau
         self.spk_hist[wta_spk_idx] |= 1
 
         return wta_spk_idx
@@ -452,13 +469,15 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         # Neurons with sustained_on + sustained_off <= state < sustained_off
         # need to keep on spiking, those with sustained_off <= state < 0 need
         # to be silent
-        wta_keep_on_idx = \
-            np.where(np.logical_and(
+        wta_keep_on_idx = np.where(
+            np.logical_and(
                 self.sustained_on_tau + self.sustained_off_tau <= self.state,
-                self.state < self.sustained_off_tau))
-        wta_keep_off_idx = \
-            np.where(np.logical_and(self.sustained_off_tau <= self.state,
-                                    self.state < 0))
+                self.state < self.sustained_off_tau,
+            )
+        )
+        wta_keep_off_idx = np.where(
+            np.logical_and(self.sustained_off_tau <= self.state, self.state < 0)
+        )
         # Need to update history for neurons which will keep on spiking
         self.spk_hist[wta_keep_on_idx] |= 1
 
@@ -470,13 +489,13 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         # cost now, i.e., when spk_hist_buffer == 1
         sig_spk_idx = np.where(spk_hist_buffer == 1)
         # Compute the local cost
-        s_sig[sig_spk_idx] = self.cost_diagonal[sig_spk_idx] + \
-            self.a_in_data[sig_spk_idx]
+        s_sig[sig_spk_idx] = (
+            self.cost_diagonal[sig_spk_idx] + self.a_in_data[sig_spk_idx]
+        )
 
         return s_sig
 
     def _gen_wta_spks(self):
-
         # indices of neurons to be integrated:
         intg_idx = np.where(self.state >= 0)
         # indices of neurons in refractory:
@@ -487,10 +506,11 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
 
         # Indices of WTA neurons coming out of refractory or those signifying
         # unsatisfied constraints
-        wta_keep_on_idx, wta_keep_off_idx = self._refractory_dynamics(
-            rfct_idx) if \
-            self.sustained_on_tau != 0 or self.sustained_off_tau != 0 \
+        wta_keep_on_idx, wta_keep_off_idx = (
+            self._refractory_dynamics(rfct_idx)
+            if self.sustained_on_tau != 0 or self.sustained_off_tau != 0
             else (np.array([], dtype=np.int32), np.array([], dtype=np.int32))
+        )
 
         s_wta = np.zeros_like(self.state)
         s_wta[wta_spk_idx] = 1
@@ -500,7 +520,6 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         return s_wta
 
     def run_spk(self) -> None:
-
         # Receive synaptic input
         self.a_in_data = self.a_in.recv().astype(int)
 

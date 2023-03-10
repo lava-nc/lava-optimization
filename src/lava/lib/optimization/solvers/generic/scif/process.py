@@ -18,16 +18,17 @@ class AbstractScif(AbstractProcess):
     """
 
     def __init__(
-            self,
-            *,
-            shape: ty.Tuple[int, ...],
-            step_size: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
-            theta: ty.Optional[int] = 4,
-            sustained_on_tau: ty.Optional[int] = 0,
-            noise_amplitude: ty.Optional[int] = 0,
-            noise_precision: ty.Optional[int] = 0,
-            init_value: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
-            init_state: ty.Optional[ty.Union[int, npty.NDArray]] = 0) -> None:
+        self,
+        *,
+        shape: ty.Tuple[int, ...],
+        step_size: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
+        theta: ty.Optional[int] = 4,
+        sustained_on_tau: ty.Optional[int] = 0,
+        noise_amplitude: ty.Optional[int] = 0,
+        noise_precision: ty.Optional[int] = 0,
+        init_value: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
+        init_state: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
+    ) -> None:
         """
         Stochastic Constraint Integrate and Fire neuron Process.
 
@@ -63,18 +64,21 @@ class AbstractScif(AbstractProcess):
         super().__init__(shape=shape)
 
         if sustained_on_tau > 0:
-            AssertionError("Sustained ON period for SCIF neurons cannot "
-                           "be positive (sustained_on_tau should be "
-                           "negative). The Timer 'counts up' from "
-                           "sustained_on_tau to 0.")
+            AssertionError(
+                "Sustained ON period for SCIF neurons cannot "
+                "be positive (sustained_on_tau should be "
+                "negative). The Timer 'counts up' from "
+                "sustained_on_tau to 0."
+            )
 
         self.a_in = InPort(shape=shape)
         self.s_sig_out = OutPort(shape=shape)
         self.s_wta_out = OutPort(shape=shape)
 
         self.state = Var(shape=shape, init=init_state)
-        self.cnstr_intg = Var(shape=shape, init=np.zeros(shape=shape).astype(
-            int))
+        self.cnstr_intg = Var(
+            shape=shape, init=np.zeros(shape=shape).astype(int)
+        )
         self.spk_hist = Var(shape=shape, init=init_value)
         self.noise_ampl = Var(shape=shape, init=noise_amplitude)
         self.noise_prec = Var(shape=shape, init=noise_precision)
@@ -85,28 +89,30 @@ class AbstractScif(AbstractProcess):
 
     @property
     def shape(self) -> ty.Tuple[int, ...]:
-        return self.proc_params['shape']
+        return self.proc_params["shape"]
 
 
 class CspScif(AbstractScif):
-    """Stochastic Constraint Integrate-and-Fire neurons to solve CSPs.
-    """
+    """Stochastic Constraint Integrate-and-Fire neurons to solve CSPs."""
 
-    def __init__(self,
-                 *,
-                 shape: ty.Tuple[int, ...],
-                 step_size: ty.Optional[int] = 1,
-                 theta: ty.Optional[int] = 4,
-                 sustained_on_tau: ty.Optional[int] = -5,
-                 noise_amplitude: ty.Optional[int] = 0,
-                 noise_precision: ty.Optional[int] = 8):
-
-        super(CspScif, self).__init__(shape=shape,
-                                      step_size=step_size,
-                                      theta=theta,
-                                      sustained_on_tau=sustained_on_tau,
-                                      noise_amplitude=noise_amplitude,
-                                      noise_precision=noise_precision)
+    def __init__(
+        self,
+        *,
+        shape: ty.Tuple[int, ...],
+        step_size: ty.Optional[int] = 1,
+        theta: ty.Optional[int] = 4,
+        sustained_on_tau: ty.Optional[int] = -5,
+        noise_amplitude: ty.Optional[int] = 0,
+        noise_precision: ty.Optional[int] = 8,
+    ):
+        super(CspScif, self).__init__(
+            shape=shape,
+            step_size=step_size,
+            theta=theta,
+            sustained_on_tau=sustained_on_tau,
+            noise_amplitude=noise_amplitude,
+            noise_precision=noise_precision,
+        )
 
 
 class QuboScif(AbstractScif):
@@ -114,20 +120,23 @@ class QuboScif(AbstractScif):
     problems.
     """
 
-    def __init__(self,
-                 *,
-                 shape: ty.Tuple[int, ...],
-                 cost_diag: npty.NDArray,
-                 theta: ty.Optional[int] = 4,
-                 sustained_on_tau: ty.Optional[int] = 0,
-                 noise_amplitude: ty.Optional[int] = 0,
-                 noise_precision: ty.Optional[int] = 8):
-
-        super(QuboScif, self).__init__(shape=shape,
-                                       step_size=cost_diag,
-                                       theta=theta,
-                                       sustained_on_tau=sustained_on_tau,
-                                       noise_amplitude=noise_amplitude,
-                                       noise_precision=noise_precision)
+    def __init__(
+        self,
+        *,
+        shape: ty.Tuple[int, ...],
+        cost_diag: npty.NDArray,
+        theta: ty.Optional[int] = 4,
+        sustained_on_tau: ty.Optional[int] = 0,
+        noise_amplitude: ty.Optional[int] = 0,
+        noise_precision: ty.Optional[int] = 8,
+    ):
+        super(QuboScif, self).__init__(
+            shape=shape,
+            step_size=cost_diag,
+            theta=theta,
+            sustained_on_tau=sustained_on_tau,
+            noise_amplitude=noise_amplitude,
+            noise_precision=noise_precision,
+        )
 
         self.cost_diagonal = Var(shape=shape, init=cost_diag)

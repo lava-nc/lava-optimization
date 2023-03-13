@@ -27,6 +27,7 @@ from lava.lib.optimization.solvers.generic.sub_process_models import (
     NEBMAbstractModel,
     NEBMSimulatedAnnealingAbstractModel,
 )
+
 from lava.magma.core.resources import (
     AbstractComputeResource,
     CPU,
@@ -315,41 +316,41 @@ class OptimizationSolver:
 
     def _get_run_config(self, backend: BACKENDS, probes=None,
                         num_in_ports: int = None):
+        from lava.lib.optimization.solvers.generic.read_gate.process \
+            import ReadGate
+        from lava.lib.optimization.solvers.generic.read_gate.models import \
+            get_read_gate_model_class
         if backend in CPUS:
-            from lava.lib.optimization.solvers.generic.read_gate.process \
-                import ReadGate
-            from lava.lib.optimization.solvers.generic.read_gate.models import \
-                get_read_gate_model_class
             ReadGatePyModel = get_read_gate_model_class(num_in_ports)
             pdict = {
-                self.solver_process: self.solver_model,
-                ReadGate: ReadGatePyModel,
-                Dense: PyDenseModelFloat,
-                NEBMAbstract: NEBMAbstractModel,
-                NEBM: NEBMPyModel,
-                QuboScif: PyModelQuboScifFixed,
-            }
+                    self.solver_process: self.solver_model,
+                    ReadGate: ReadGatePyModel,
+                    Dense: PyDenseModelFloat,
+                    NEBMAbstract: NEBMAbstractModel,
+                    NEBM: NEBMPyModel,
+                    QuboScif: PyModelQuboScifFixed,
+                    }
             return Loihi1SimCfg(
-                exception_proc_model_map=pdict, select_sub_proc_model=True
-            )
+                    exception_proc_model_map=pdict, select_sub_proc_model=True
+                    )
         elif backend in NEUROCORES:
             pdict = {
-                self.solver_process: self.solver_model,
-                ReadGate: ReadGateCModel,
-                Dense: NcModelDense,
-                NEBMAbstract: NEBMAbstractModel,
-                NEBM: NEBMNcModel,
-                NEBMSimulatedAnnealingAbstract:
-                    NEBMSimulatedAnnealingAbstractModel,
-                NEBMSimulatedAnnealing:
-                    NEBMSimulatedAnnealingNcModel,
-                CostIntegrator: CostIntegratorNcModel
-            }
+                    self.solver_process: self.solver_model,
+                    ReadGate: ReadGateCModel,
+                    Dense: NcModelDense,
+                    NEBMAbstract: NEBMAbstractModel,
+                    NEBM: NEBMNcModel,
+                    NEBMSimulatedAnnealingAbstract:
+                        NEBMSimulatedAnnealingAbstractModel,
+                    NEBMSimulatedAnnealing:
+                        NEBMSimulatedAnnealingNcModel,
+                    CostIntegrator: CostIntegratorNcModel
+                    }
             return Loihi2HwCfg(
-                exception_proc_model_map=pdict,
-                select_sub_proc_model=True,
-                callback_fxs=probes,
-            )
+                    exception_proc_model_map=pdict,
+                    select_sub_proc_model=True,
+                    callback_fxs=probes,
+                    )
         else:
             raise NotImplementedError(str(backend) + BACKEND_MSG)
 

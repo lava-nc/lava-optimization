@@ -8,7 +8,8 @@ from dataclasses import dataclass
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    NEBMAbstract, NEBMSimulatedAnnealingAbstract
+    NEBMAbstract,
+    NEBMSimulatedAnnealingAbstract,
 )
 
 from lava.lib.optimization.solvers.generic.scif.models import (
@@ -18,10 +19,10 @@ from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.lib.optimization.solvers.generic.nebm.process import NEBM
 from lava.lib.optimization.solvers.generic.cost_integrator.process import (
-    CostIntegrator
+    CostIntegrator,
 )
 from lava.lib.optimization.solvers.generic.nebm.process import (
-    NEBMSimulatedAnnealing
+    NEBMSimulatedAnnealing,
 )
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     NEBMAbstractModel,
@@ -45,15 +46,18 @@ from lava.utils.profiler import Profiler
 
 try:
     from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
-        ReadGateCModel
+        ReadGateCModel,
     )
     from lava.proc.dense.ncmodels import NcModelDense
     from lava.lib.optimization.solvers.generic.nebm.ncmodels import (
-        NEBMNcModel, NEBMSimulatedAnnealingNcModel
+        NEBMNcModel,
+        NEBMSimulatedAnnealingNcModel,
     )
-    from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels \
-        import CostIntegratorNcModel
+    from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels import (
+        CostIntegratorNcModel,
+    )
 except ImportError:
+
     class ReadGateCModel:
         pass
 
@@ -69,8 +73,10 @@ except ImportError:
     class CostIntegratorNcModel:
         pass
 
-from lava.lib.optimization.solvers.generic.read_gate.models import \
-    ReadGatePyModel
+
+from lava.lib.optimization.solvers.generic.read_gate.models import (
+    ReadGatePyModel,
+)
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 HP_TYPE = ty.Union[ty.Dict, ty.List[ty.Dict]]
@@ -259,7 +265,7 @@ class OptimizationSolver:
         run_cfg = self._get_run_config(
             backend=config.backend,
             probes=[self._cost_tracker] if self._cost_tracker else None,
-            num_in_ports=num_in_ports
+            num_in_ports=num_in_ports,
         )
         run_condition = RunSteps(num_steps=config.timeout)
         self._prepare_profiler(config=config, run_cfg=run_cfg)
@@ -314,43 +320,45 @@ class OptimizationSolver:
         else:
             return self._cost_tracker.time_series
 
-    def _get_run_config(self, backend: BACKENDS, probes=None,
-                        num_in_ports: int = None):
-        from lava.lib.optimization.solvers.generic.read_gate.process \
-            import ReadGate
-        from lava.lib.optimization.solvers.generic.read_gate.models import \
-            get_read_gate_model_class
+    def _get_run_config(
+        self, backend: BACKENDS, probes=None, num_in_ports: int = None
+    ):
+        from lava.lib.optimization.solvers.generic.read_gate.process import (
+            ReadGate,
+        )
+        from lava.lib.optimization.solvers.generic.read_gate.models import (
+            get_read_gate_model_class,
+        )
+
         if backend in CPUS:
             ReadGatePyModel = get_read_gate_model_class(num_in_ports)
             pdict = {
-                    self.solver_process: self.solver_model,
-                    ReadGate: ReadGatePyModel,
-                    Dense: PyDenseModelFloat,
-                    NEBMAbstract: NEBMAbstractModel,
-                    NEBM: NEBMPyModel,
-                    QuboScif: PyModelQuboScifFixed,
-                    }
+                self.solver_process: self.solver_model,
+                ReadGate: ReadGatePyModel,
+                Dense: PyDenseModelFloat,
+                NEBMAbstract: NEBMAbstractModel,
+                NEBM: NEBMPyModel,
+                QuboScif: PyModelQuboScifFixed,
+            }
             return Loihi1SimCfg(
-                    exception_proc_model_map=pdict, select_sub_proc_model=True
-                    )
+                exception_proc_model_map=pdict, select_sub_proc_model=True
+            )
         elif backend in NEUROCORES:
             pdict = {
-                    self.solver_process: self.solver_model,
-                    ReadGate: ReadGateCModel,
-                    Dense: NcModelDense,
-                    NEBMAbstract: NEBMAbstractModel,
-                    NEBM: NEBMNcModel,
-                    NEBMSimulatedAnnealingAbstract:
-                        NEBMSimulatedAnnealingAbstractModel,
-                    NEBMSimulatedAnnealing:
-                        NEBMSimulatedAnnealingNcModel,
-                    CostIntegrator: CostIntegratorNcModel
-                    }
+                self.solver_process: self.solver_model,
+                ReadGate: ReadGateCModel,
+                Dense: NcModelDense,
+                NEBMAbstract: NEBMAbstractModel,
+                NEBM: NEBMNcModel,
+                NEBMSimulatedAnnealingAbstract: NEBMSimulatedAnnealingAbstractModel,
+                NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
+                CostIntegrator: CostIntegratorNcModel,
+            }
             return Loihi2HwCfg(
-                    exception_proc_model_map=pdict,
-                    select_sub_proc_model=True,
-                    callback_fxs=probes,
-                    )
+                exception_proc_model_map=pdict,
+                select_sub_proc_model=True,
+                callback_fxs=probes,
+            )
         else:
             raise NotImplementedError(str(backend) + BACKEND_MSG)
 

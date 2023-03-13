@@ -350,7 +350,8 @@ class OptimizationSolver:
                 Dense: NcModelDense,
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMNcModel,
-                NEBMSimulatedAnnealingAbstract: NEBMSimulatedAnnealingAbstractModel,
+                NEBMSimulatedAnnealingAbstract:
+                    NEBMSimulatedAnnealingAbstractModel,
                 NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
                 CostIntegrator: CostIntegratorNcModel,
             }

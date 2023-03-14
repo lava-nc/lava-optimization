@@ -1,40 +1,38 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
-import numpy as np
 import typing as ty
-
 from dataclasses import dataclass
+
+import numpy as np
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     NEBMAbstract,
     NEBMSimulatedAnnealingAbstract,
-)
-
+    )
+from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
+from lava.lib.optimization.solvers.generic.nebm.process import (
+    NEBM,
+    NEBMSimulatedAnnealing
+    )
 from lava.lib.optimization.solvers.generic.scif.models import (
     PyModelQuboScifFixed,
-)
-from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
+    )
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
-from lava.lib.optimization.solvers.generic.nebm.process import NEBM
-from lava.lib.optimization.solvers.generic.cost_integrator.process import (
-    CostIntegrator,
-)
-from lava.lib.optimization.solvers.generic.nebm.process import (
-    NEBMSimulatedAnnealing,
-)
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     NEBMAbstractModel,
     NEBMSimulatedAnnealingAbstractModel,
-)
-
+    )
+from lava.lib.optimization.solvers.generic.types_optim import (
+    BACKENDS_TYPE, HP_TYPE,
+    CPUS, NEUROCORES, BACKEND_MSG
+    )
 from lava.magma.core.resources import (
     AbstractComputeResource,
     CPU,
     Loihi2NeuroCore,
-    NeuroCore,
-)
+    )
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg, Loihi2HwCfg
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
@@ -72,27 +70,6 @@ except ImportError:
 
     class CostIntegratorNcModel:
         pass
-
-
-from lava.lib.optimization.solvers.generic.read_gate.models import (
-    ReadGatePyModel,
-)
-
-BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
-HP_TYPE = ty.Union[ty.Dict, ty.List[ty.Dict]]
-CPUS = [CPU, "CPU"]
-NEUROCORES = [Loihi2NeuroCore, NeuroCore, "Loihi2"]
-
-BACKEND_MSG = f""" was requested as backend. However,
-the solver currently supports only Loihi 2 and CPU backends.
-These can be specified by calling solve with any of the following:
-backend = "CPU"
-backend = "Loihi2"
-backend = CPU
-backend = Loihi2NeuroCore
-backend = NeuroCoreS
-The explicit resource classes can be imported from
-lava.magma.core.resources"""
 
 
 @dataclass
@@ -134,7 +111,7 @@ class SolverConfig:
 
     timeout: int = 1e3
     target_cost: int = 0
-    backend: BACKENDS = CPU
+    backend: BACKENDS_TYPE = CPU
     hyperparameters: HP_TYPE = None
     probe_cost: bool = False
     probe_time: bool = False
@@ -297,14 +274,14 @@ class OptimizationSolver:
         self.solver_process._log_config.level = config.log_level
 
     def _get_requirements_and_protocol(
-        self, backend: BACKENDS
+        self, backend: BACKENDS_TYPE
     ) -> ty.Tuple[AbstractComputeResource, AbstractSyncProtocol]:
         """
         Figure out requirements and protocol for a given backend.
 
         Parameters
         ----------
-        backend: BACKENDS
+        backend: BACKENDS_TYPE
             Specifies the backend for which requirements and protocol classes
             will be returned.
         """
@@ -321,17 +298,17 @@ class OptimizationSolver:
             return self._cost_tracker.time_series
 
     def _get_run_config(
-        self, backend: BACKENDS, probes=None, num_in_ports: int = None
+        self, backend: BACKENDS_TYPE, probes=None, num_in_ports: int = None
     ):
         from lava.lib.optimization.solvers.generic.read_gate.process import (
             ReadGate,
         )
-        from lava.lib.optimization.solvers.generic.read_gate.models import (
-            get_read_gate_model_class,
-        )
-
         if backend in CPUS:
-            ReadGatePyModel = get_read_gate_model_class(num_in_ports)
+            from lava.lib.optimization.solvers.generic.read_gate.models import (
+                get_read_gate_py_model_class,
+                )
+            ReadGatePyModel = get_read_gate_py_model_class(num_in_ports,
+                                                           backend)
             pdict = {
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGatePyModel,
@@ -344,16 +321,20 @@ class OptimizationSolver:
                 exception_proc_model_map=pdict, select_sub_proc_model=True
             )
         elif backend in NEUROCORES:
+            from lava.lib.optimization.solvers.generic.read_gate.ncmodels \
+                import (
+                get_read_gate_c_model_class,
+                )
+            ReadGateCModel = get_read_gate_c_model_class(num_in_ports, backend)
             pdict = {
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGateCModel,
-                Dense: NcModelDense,
+                # Dense: NcModelDense,
                 NEBMAbstract: NEBMAbstractModel,
-                NEBM: NEBMNcModel,
+                # NEBM: NEBMNcModel,
                 NEBMSimulatedAnnealingAbstract:
                     NEBMSimulatedAnnealingAbstractModel,
                 NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
-                CostIntegrator: CostIntegratorNcModel,
             }
             return Loihi2HwCfg(
                 exception_proc_model_map=pdict,

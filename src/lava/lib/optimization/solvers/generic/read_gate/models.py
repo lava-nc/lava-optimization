@@ -101,7 +101,8 @@ def get_read_gate_py_model_class(num_in_ports: int, backend: BACKENDS):
 	out to
 	the upstream process the new payload (cost) and the network state.
 	"""
-	assert (backend in BACKENDS)
+	if backend not in BACKENDS:
+		raise ValueError(BACKEND_MSG)
 	super_class = PyLoihiProcessModel if backend in CPUS else CLoihiProcessModel
 	resource = CPU if backend in CPUS else LMT
 	ReadGateModelBase = type(

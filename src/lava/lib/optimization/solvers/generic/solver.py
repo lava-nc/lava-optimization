@@ -59,6 +59,7 @@ try:
         CostIntegratorNcModel,
     )
 except ImportError:
+
     class NcModelDense:
         pass
 

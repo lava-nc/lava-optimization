@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.read_gate.models import \
-    get_read_gate_model_class
+    get_read_gate_py_model_class
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.solution_finder.process import (
     SolutionFinder,
@@ -47,7 +47,7 @@ class TestSolutionFinder(unittest.TestCase):
         )
 
         # Execution configurations.
-        ReadGatePyModel = get_read_gate_model_class(1)
+        ReadGatePyModel = get_read_gate_py_model_class(1)
         pdict = {ReadGate: ReadGatePyModel}
         self.run_cfg = Loihi2SimCfg(exception_proc_model_map=pdict)
         self.solution_finder._log_config.level = 20

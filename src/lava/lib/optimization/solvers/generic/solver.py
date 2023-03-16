@@ -10,29 +10,32 @@ from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     NEBMAbstract,
     NEBMSimulatedAnnealingAbstract,
-    )
+)
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.nebm.process import (
     NEBM,
-    NEBMSimulatedAnnealing
-    )
+    NEBMSimulatedAnnealing,
+)
 from lava.lib.optimization.solvers.generic.scif.models import (
     PyModelQuboScifFixed,
-    )
+)
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     NEBMAbstractModel,
     NEBMSimulatedAnnealingAbstractModel,
-    )
+)
 from lava.lib.optimization.solvers.generic.types_optim import (
-    BACKENDS_TYPE, HP_TYPE,
-    CPUS, NEUROCORES, BACKEND_MSG
-    )
+    BACKENDS_TYPE,
+    HP_TYPE,
+    CPUS,
+    NEUROCORES,
+    BACKEND_MSG,
+)
 from lava.magma.core.resources import (
     AbstractComputeResource,
     CPU,
     Loihi2NeuroCore,
-    )
+)
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg, Loihi2HwCfg
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
@@ -303,12 +306,15 @@ class OptimizationSolver:
         from lava.lib.optimization.solvers.generic.read_gate.process import (
             ReadGate,
         )
+
         if backend in CPUS:
             from lava.lib.optimization.solvers.generic.read_gate.models import (
                 get_read_gate_py_model_class,
-                )
-            ReadGatePyModel = get_read_gate_py_model_class(num_in_ports,
-                                                           backend)
+            )
+
+            ReadGatePyModel = get_read_gate_py_model_class(
+                num_in_ports, backend
+            )
             pdict = {
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGatePyModel,
@@ -321,10 +327,10 @@ class OptimizationSolver:
                 exception_proc_model_map=pdict, select_sub_proc_model=True
             )
         elif backend in NEUROCORES:
-            from lava.lib.optimization.solvers.generic.read_gate.ncmodels \
-                import (
+            from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
                 get_read_gate_c_model_class,
-                )
+            )
+
             ReadGateCModel = get_read_gate_c_model_class(num_in_ports, backend)
             pdict = {
                 self.solver_process: self.solver_model,
@@ -332,8 +338,7 @@ class OptimizationSolver:
                 # Dense: NcModelDense,
                 NEBMAbstract: NEBMAbstractModel,
                 # NEBM: NEBMNcModel,
-                NEBMSimulatedAnnealingAbstract:
-                    NEBMSimulatedAnnealingAbstractModel,
+                NEBMSimulatedAnnealingAbstract: NEBMSimulatedAnnealingAbstractModel,
                 NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
             }
             return Loihi2HwCfg(

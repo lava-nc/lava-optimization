@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 from lava.lib.optimization.problems.problems import OptimizationProblem, QUBO
 from lava.lib.optimization.solvers.generic.read_gate.models import \
-    get_read_gate_model_class
+    get_read_gate_py_model_class
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.solution_finder.process import (
     SolutionFinder,
@@ -24,7 +24,7 @@ from lava.magma.core.run_configs import Loihi2SimCfg
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from numpy import typing as npt
 
-ReadGatePyModel = get_read_gate_model_class(1)
+ReadGatePyModel = get_read_gate_py_model_class(1)
 
 
 class Mock:

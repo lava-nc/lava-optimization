@@ -52,6 +52,8 @@ class NEBM(AbstractProcess):
 
         self.refract = Var(shape=shape, init=refract)
 
+        self.refract_counter = Var(shape=shape, init=int(0))
+
         # Initial state determined in DiscreteVariables
         self.state = Var(shape=shape, init=init_state.astype(int))
 
@@ -116,7 +118,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
 
         self.temperature = Var(shape=shape, init=int(max_temperature))
 
-        self.refract_counter = Var(shape=shape, init=refract)
+        self.refract_counter = Var(shape=shape, init=int(0))
 
         # Initial state determined in DiscreteVariables
         self.state = Var(

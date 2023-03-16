@@ -62,7 +62,7 @@ def readgate_run_post_mgmt(self):
 
 
 def get_readgate_members(num_in_ports, backend: BACKENDS):
-    if not backend in BACKENDS:
+    if backend not in BACKENDS:
         raise ValueError(BACKEND_MSG)
 
     readgate_members = dict(min_cost=None, min_cost_id=None, solution=None)

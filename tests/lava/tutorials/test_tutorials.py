@@ -9,7 +9,7 @@ import tempfile
 import typing as ty
 import subprocess  # noqa: S404
 import unittest
-# from test import support
+from test import support
 import nbformat
 
 import lava
@@ -186,5 +186,4 @@ class TestTutorials(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
-    # support.run_unittest(TestTutorials)
+    support.run_unittest(TestTutorials)

@@ -7,32 +7,20 @@ from dataclasses import dataclass
 import numpy as np
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
-from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    NEBMAbstract,
-    NEBMSimulatedAnnealingAbstract,
-    )
+from lava.lib.optimization.solvers.generic.hierarchical_processes import \
+    NEBMAbstract, NEBMSimulatedAnnealingAbstract
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
-from lava.lib.optimization.solvers.generic.nebm.process import (
-    NEBM,
+from lava.lib.optimization.solvers.generic.nebm.process import NEBM, \
     NEBMSimulatedAnnealing
-    )
-from lava.lib.optimization.solvers.generic.scif.models import (
-    PyModelQuboScifFixed,
-    )
+from lava.lib.optimization.solvers.generic.scif.models import \
+    PyModelQuboScifFixed
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
-from lava.lib.optimization.solvers.generic.sub_process_models import (
-    NEBMAbstractModel,
-    NEBMSimulatedAnnealingAbstractModel,
-    )
-from lava.lib.optimization.solvers.generic.types_optim import (
-    BACKENDS_TYPE, HP_TYPE,
-    CPUS, NEUROCORES, BACKEND_MSG
-    )
-from lava.magma.core.resources import (
-    AbstractComputeResource,
-    CPU,
-    Loihi2NeuroCore,
-    )
+from lava.lib.optimization.solvers.generic.sub_process_models import \
+    NEBMAbstractModel, NEBMSimulatedAnnealingAbstractModel
+from lava.lib.optimization.solvers.generic.types_optim import BACKENDS_TYPE, \
+    HP_TYPE, CPUS, NEUROCORES, BACKEND_MSG
+from lava.magma.core.resources import AbstractComputeResource, CPU, \
+    Loihi2NeuroCore
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg, Loihi2HwCfg
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
@@ -43,17 +31,13 @@ from lava.proc.monitor.process import Monitor
 from lava.utils.profiler import Profiler
 
 try:
-    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
-        ReadGateCModel,
-    )
+    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import \
+        ReadGateCModel
     from lava.proc.dense.ncmodels import NcModelDense
-    from lava.lib.optimization.solvers.generic.nebm.ncmodels import (
-        NEBMNcModel,
-        NEBMSimulatedAnnealingNcModel,
-    )
-    from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels import (
-        CostIntegratorNcModel,
-    )
+    from lava.lib.optimization.solvers.generic.nebm.ncmodels import \
+        NEBMNcModel, NEBMSimulatedAnnealingNcModel
+    from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels \
+        import CostIntegratorNcModel
 except ImportError:
 
     class ReadGateCModel:

@@ -267,8 +267,8 @@ class OptimizationSolver:
         Parameters
         ----------
         backend: BACKENDS_TYPE
-                Specifies the backend for which requirements and protocol classes
-                will be returned.
+                Specifies the backend for which requirements and protocol
+                classes will be returned.
         """
         return [CPU] if backend in CPUS else [Loihi2NeuroCore], LoihiProtocol
 
@@ -307,9 +307,7 @@ class OptimizationSolver:
             )
         elif backend in NEUROCORES:
             from lava.lib.optimization.solvers.generic.read_gate.ncmodels \
-                import (
-                get_read_gate_c_model_class,
-                )
+                import get_read_gate_c_model_class
             ReadGateCModel = get_read_gate_c_model_class(num_in_ports, backend)
             pdict = {
                 self.solver_process: self.solver_model,

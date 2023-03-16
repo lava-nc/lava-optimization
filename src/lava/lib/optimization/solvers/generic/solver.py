@@ -289,9 +289,8 @@ class OptimizationSolver:
             ReadGate,
         )
         if backend in CPUS:
-            from lava.lib.optimization.solvers.generic.read_gate.models import (
-                get_read_gate_py_model_class,
-                )
+            from lava.lib.optimization.solvers.generic.read_gate.models \
+                import get_read_gate_py_model_class
             ReadGatePyModel = get_read_gate_py_model_class(num_in_ports,
                                                            backend)
             pdict = {

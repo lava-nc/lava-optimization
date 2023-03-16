@@ -95,7 +95,7 @@ def get_readgate_members(num_in_ports, backend: BACKENDS):
     return readgate_members
 
 
-def get_read_gate_py_model_class(num_in_ports: int = CPU):
+def get_read_gate_py_model_class(num_in_ports: int, backend: BACKENDS=CPU):
     """Produce CPU model for the ReadGate process.
 
     The model verifies if better payload (cost) has been notified by the

@@ -11,10 +11,13 @@ from lava.proc.io import sink
 
 from lava.lib.optimization.solvers.lca.process import LCA1Layer, LCA2Layer
 from lava.lib.optimization.solvers.lca.lca_neuron.process import LCANeuron
-from lava.lib.optimization.solvers.lca.accumulator.process import AccumulatorNeuron
+from lava.lib.optimization.solvers.lca.accumulator.process import \
+    AccumulatorNeuron
 from lava.lib.optimization.solvers.lca.models import LCA1LayerModelFixed
-from lava.lib.optimization.solvers.lca.accumulator.models import PyAccumulatorFixed
-from lava.lib.optimization.solvers.lca.lca_neuron.models import PyLCANeuronFixed
+from lava.lib.optimization.solvers.lca.accumulator.models import \
+    PyAccumulatorFixed
+from lava.lib.optimization.solvers.lca.lca_neuron.models import \
+    PyLCANeuronFixed
 
 
 class TestLCAFixed(unittest.TestCase):
@@ -25,7 +28,7 @@ class TestLCAFixed(unittest.TestCase):
         threshold = 1
         lca = LCA2Layer(weights=weights, weights_exp=weight_exp,
                         input_vec=input_val, threshold=threshold)
-        
+
         v1_output = sink.RingBuffer(shape=(5,), buffer=1)
         res_output = sink.RingBuffer(shape=(5,), buffer=1)
         lca.v1.connect(v1_output.a_in)
@@ -36,7 +39,7 @@ class TestLCAFixed(unittest.TestCase):
                                   exception_proc_model_map={
                                       LCANeuron: PyLCANeuronFixed,
                                       AccumulatorNeuron: PyAccumulatorFixed})
-        
+
         v1_output.run(condition=RunSteps(num_steps=1000), run_cfg=run_config)
 
         self.assertTrue(
@@ -64,22 +67,23 @@ class TestLCAFixed(unittest.TestCase):
                                   exception_proc_model_map={
                                       LCANeuron: PyLCANeuronFixed,
                                       AccumulatorNeuron: PyAccumulatorFixed})
-    
+
         v1_output.run(condition=RunSteps(num_steps=1000), run_cfg=run_config)
 
         self.assertTrue(
             np.allclose(input_val, v1_output.data.get()[:, 0], atol=600,
                         rtol=1e-2),
             f"Expected: {input_val} Actual: {v1_output.data.get()[:, 0]}")
-        
+
         v1_output.stop()
-    
+
     def test_2_layer_competition(self):
-        weights = np.array([[0, np.sqrt(1/2), np.sqrt(1/2)], 
-                            [np.sqrt(1/3), np.sqrt(1/3), np.sqrt(1/3)]]) * 2**8
+        weights = np.array([[0, np.sqrt(1 / 2), np.sqrt(1 / 2)],
+                            [np.sqrt(1 / 3), np.sqrt(1 / 3), np.sqrt(1 / 3)]])
+        weights *= 2**8
         weight_exp = -8
         input_val = np.array([0, 2**14, 2**14])
-        expected = np.array([2**14 / np.sqrt(1/2), 0])
+        expected = np.array([2**14 / np.sqrt(1 / 2), 0])
 
         threshold = 1
         lca = LCA2Layer(weights=weights, weights_exp=weight_exp,
@@ -95,22 +99,22 @@ class TestLCAFixed(unittest.TestCase):
                                   exception_proc_model_map={
                                       LCANeuron: PyLCANeuronFixed,
                                       AccumulatorNeuron: PyAccumulatorFixed})
- 
+
         v1_output.run(condition=RunSteps(num_steps=1000), run_cfg=run_config)
 
         self.assertTrue(
             np.allclose(expected, v1_output.data.get()[:, 0], atol=600,
                         rtol=1e-2),
             f"Expected: {expected} Actual: {v1_output.data.get()[:, 0]}")
-        
+
         v1_output.stop()
 
     def test_2_layer_excitation(self):
-        weights = np.array([[-np.sqrt(1/3), np.sqrt(1/3), np.sqrt(1/3)],
+        weights = np.array([[-np.sqrt(1 / 3), np.sqrt(1 / 3), np.sqrt(1 / 3)],
                             [1, 0, 0]]) * 2**8
         weight_exp = -8
         input_val = np.array([0, 2**14, 2**14])
-        expected = np.array([2**14 / np.sqrt(1/3), 2**14])
+        expected = np.array([2**14 / np.sqrt(1 / 3), 2**14])
 
         threshold = 1
         lca = LCA2Layer(weights=weights, weights_exp=weight_exp,
@@ -126,7 +130,7 @@ class TestLCAFixed(unittest.TestCase):
                                   exception_proc_model_map={
                                       LCANeuron: PyLCANeuronFixed,
                                       AccumulatorNeuron: PyAccumulatorFixed})
- 
+
         v1_output.run(condition=RunSteps(num_steps=1000), run_cfg=run_config)
 
         # TODO: this is a generous tolerance for the solution,
@@ -135,7 +139,7 @@ class TestLCAFixed(unittest.TestCase):
             np.allclose(expected, v1_output.data.get()[:, 0], atol=600,
                         rtol=1e-1),
             f"Expected: {expected} Actual: {v1_output.data.get()[:, 0]}")
-        
+
         v1_output.stop()
 
     def test_boundary_check(self):
@@ -143,7 +147,7 @@ class TestLCAFixed(unittest.TestCase):
         i16info = np.iinfo(np.int16)
         input_val = np.array([i16info.max + 1, 0])
         threshold = 1
-        
+
         with self.assertRaises(AssertionError):
             lca = LCA2Layer(weights=weights, input_vec=input_val,
                             threshold=threshold)
@@ -158,7 +162,7 @@ class TestLCAFixed(unittest.TestCase):
                                           LCANeuron: PyLCANeuronFixed,
                                           AccumulatorNeuron:
                                               PyAccumulatorFixed})
-        
+
             v1_output.run(condition=RunSteps(num_steps=1), run_cfg=run_config)
 
         input_val = np.array([0, i16info.min - 1])
@@ -175,7 +179,7 @@ class TestLCAFixed(unittest.TestCase):
                                           LCANeuron: PyLCANeuronFixed,
                                           AccumulatorNeuron:
                                               PyAccumulatorFixed})
-        
+
             v1_output.run(condition=RunSteps(num_steps=1), run_cfg=run_config)
 
     def test_1_layer_competition(self):

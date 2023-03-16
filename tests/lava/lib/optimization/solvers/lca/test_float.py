@@ -11,8 +11,10 @@ from lava.proc.io import sink
 
 from lava.lib.optimization.solvers.lca.process import LCA1Layer, LCA2Layer
 from lava.lib.optimization.solvers.lca.lca_neuron.process import LCANeuron
-from lava.lib.optimization.solvers.lca.accumulator.process import AccumulatorNeuron
-from lava.lib.optimization.solvers.lca.accumulator.models import PyAccumulatorFloat
+from lava.lib.optimization.solvers.lca.accumulator.process import \
+    AccumulatorNeuron
+from lava.lib.optimization.solvers.lca.accumulator.models import \
+    PyAccumulatorFloat
 from lava.lib.optimization.solvers.lca.lca_neuron.models import PyLCANeuronFloat
 
 
@@ -22,8 +24,8 @@ class TestLCAFloat(unittest.TestCase):
         input_val = np.array([0.99203318, 0.53107722, 0.84873413,
                               0.15441692, 0.60863695])
         threshold = 0.001
-        lca = LCA2Layer(weights=weights, input_vec=input_val, threshold=threshold,
-                        spike_height=0)
+        lca = LCA2Layer(weights=weights, input_vec=input_val,
+                        threshold=threshold, spike_height=0)
         v1_output = sink.RingBuffer(shape=(5,), buffer=1)
         res_output = sink.RingBuffer(shape=(5,), buffer=1)
         lca.v1.connect(v1_output.a_in)
@@ -48,8 +50,8 @@ class TestLCAFloat(unittest.TestCase):
         input_val = np.array([0.48474121, 1.384066, -0.074854,
                               -0.03878497, 0.50936179])
         threshold = 0.001
-        lca = LCA2Layer(weights=weights, input_vec=input_val, threshold=threshold,
-                        spike_height=0)
+        lca = LCA2Layer(weights=weights, input_vec=input_val,
+                        threshold=threshold, spike_height=0)
         v1_output = sink.RingBuffer(shape=(5,), buffer=1)
         res_output = sink.RingBuffer(shape=(5,), buffer=1)
         lca.v1.connect(v1_output.a_in)
@@ -75,8 +77,8 @@ class TestLCAFloat(unittest.TestCase):
         expected = np.array([1 / np.sqrt(1 / 2), 0])
 
         threshold = 0.001
-        lca = LCA2Layer(weights=weights, input_vec=input_val, threshold=threshold,
-                        spike_height=0)
+        lca = LCA2Layer(weights=weights, input_vec=input_val,
+                        threshold=threshold, spike_height=0)
         v1_output = sink.RingBuffer(shape=(2,), buffer=1)
         res_output = sink.RingBuffer(shape=(3,), buffer=1)
         lca.v1.connect(v1_output.a_in)
@@ -103,8 +105,8 @@ class TestLCAFloat(unittest.TestCase):
         expected = np.array([1 / np.sqrt(1 / 3), 1])
 
         threshold = 0.001
-        lca = LCA2Layer(weights=weights, input_vec=input_val, threshold=threshold,
-                        spike_height=0)
+        lca = LCA2Layer(weights=weights, input_vec=input_val,
+                        threshold=threshold, spike_height=0)
         v1_output = sink.RingBuffer(shape=(2,), buffer=1)
         res_output = sink.RingBuffer(shape=(3,), buffer=1)
         lca.v1.connect(v1_output.a_in)

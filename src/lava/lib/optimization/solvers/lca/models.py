@@ -12,7 +12,8 @@ from lava.proc.dense.process import Dense
 
 from lava.lib.optimization.solvers.lca.process import LCA1Layer, LCA2Layer
 from lava.lib.optimization.solvers.lca.lca_neuron.process import LCANeuron
-from lava.lib.optimization.solvers.lca.accumulator.process import AccumulatorNeuron
+from lava.lib.optimization.solvers.lca.accumulator.process import \
+    AccumulatorNeuron
 
 
 @implements(proc=LCA2Layer, protocol=LoihiProtocol)

@@ -10,7 +10,8 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
-from lava.lib.optimization.solvers.lca.accumulator.process import AccumulatorNeuron
+from lava.lib.optimization.solvers.lca.accumulator.process import \
+    AccumulatorNeuron
 
 
 @implements(proc=AccumulatorNeuron, protocol=LoihiProtocol)

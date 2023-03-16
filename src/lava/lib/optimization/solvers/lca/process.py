@@ -55,8 +55,8 @@ class LCA1Layer(AbstractProcess):
 
 class LCA2Layer(AbstractProcess):
     """Implements of 2-Layer LCA based on https://arxiv.org/abs/2205.15386
-    LCA minimizes |a|_1 such that Φa ≈ s for some dictionary Φ and vector to 
-    reconstruct s. In two layer LCA, the reconstruction error Φa is separated 
+    LCA minimizes |a|_1 such that Φa ≈ s for some dictionary Φ and vector to
+    reconstruct s. In two layer LCA, the reconstruction error Φa is separated
     out into its own layer r=s-Φa. This residual is made spiking by accumulating
     the error and spiking if it exceeds some spike_height.
 
@@ -107,5 +107,3 @@ class LCA2Layer(AbstractProcess):
         self.spike_height = Var(shape=(1,), init=spike_height)
         self.input = Var(shape=input_vec.shape, init=input_vec)
         self.input_exp = Var(shape=input_vec.shape, init=input_exp)
-
-

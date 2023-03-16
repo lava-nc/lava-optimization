@@ -97,8 +97,8 @@ class LCA2LayerModelFixed(AbstractSubProcessModel):
         input_val = proc.input.get()
         spike_height = proc.spike_height.get()
 
-        assert np.issubdtype(input_val.dtype, np.integer),\
-            "Input must be an integer"
+        if not np.issubdtype(input_val.dtype, np.integer):
+            raise AssertionError("Input must be an integer")
 
         self.v1 = LCANeuron(shape=(weights.shape[0],), tau=T_int, vth=threshold,
                             two_layer=True)
@@ -138,7 +138,8 @@ class LCA1LayerModelFixed(AbstractSubProcessModel):
         weights_exp = proc.weights_exp.get()
         bias = proc.bias.get()
 
-        assert np.issubdtype(bias.dtype, np.integer), "Bias must be an integer"
+        if not np.issubdtype(bias.dtype, np.integer):
+            raise AssertionError("Bias must be an integer")
 
         self.v1 = LCANeuron(shape=(weights.shape[0],), tau=T_int, vth=threshold,
                             bias=bias, two_layer=False)

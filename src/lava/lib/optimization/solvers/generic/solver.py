@@ -31,6 +31,10 @@ from lava.lib.optimization.solvers.generic.types_optim import (
     NEUROCORES,
     BACKEND_MSG,
 )
+from lava.lib.optimization.solvers.generic.cost_integrator.process import (
+    CostIntegrator,
+)
+
 from lava.magma.core.resources import (
     AbstractComputeResource,
     CPU,
@@ -46,9 +50,6 @@ from lava.proc.monitor.process import Monitor
 from lava.utils.profiler import Profiler
 
 try:
-    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
-        ReadGateCModel,
-    )
     from lava.proc.dense.ncmodels import NcModelDense
     from lava.lib.optimization.solvers.generic.nebm.ncmodels import (
         NEBMNcModel,
@@ -58,10 +59,6 @@ try:
         CostIntegratorNcModel,
     )
 except ImportError:
-
-    class ReadGateCModel:
-        pass
-
     class NcModelDense:
         pass
 
@@ -340,6 +337,7 @@ class OptimizationSolver:
                 # NEBM: NEBMNcModel,
                 NEBMSimulatedAnnealingAbstract: NEBMSimulatedAnnealingAbstractModel,
                 NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
+                CostIntegrator: CostIntegratorNcModel,
             }
             return Loihi2HwCfg(
                 exception_proc_model_map=pdict,

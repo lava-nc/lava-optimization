@@ -38,8 +38,6 @@ class QMatrixVRP:
         num_vehicles=1,
         problem_type=ProblemType.RANDOM,
         mat_size_for_random=1,
-        lamda_dist=1,
-        lamda_cnstrnt=1,
         lamda_wypts=1,
         lamda_vhcles=1,
         fixed_pt=False,
@@ -105,7 +103,7 @@ class QMatrixVRP:
             )
         elif self.problem_type == ProblemType.TSP:
             self.matrix = self._gen_tsp_Q_matrix(
-                input_nodes, lamda_dist, lamda_cnstrnt
+                input_nodes, lamda_dist, lamda_cnstrt
             )
         else:
             raise ValueError(

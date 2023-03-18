@@ -34,7 +34,7 @@ class testVRPSolver(unittest.TestCase):
 
     def test_solve_lava_qubo(self):
         solver = VRPSolver(vrp=self.vrp_instance_natural_edges)
-        scfg = VRPConfig(backend="CPU", log_level=20,
+        scfg = VRPConfig(backend="Loihi2", log_level=20,
                          core_solver=CoreSolver.LAVA_QUBO, timeout=10000)
         report = solver.solve(scfg=scfg)
 

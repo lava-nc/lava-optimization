@@ -3,18 +3,8 @@
 # See: https://spdx.org/licenses/
 import numpy as np
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
-from lava.lib.optimization.solvers.generic.types_optim import (
-    BACKENDS,
-    CPUS,
-    NEUROCORES,
-    BACKEND_MSG,
-)
-from lava.magma.core.model.spike_type import SpikeType
 
 from lava.magma.core.decorator import implements, requires
-from lava.magma.core.model.c.model import CLoihiProcessModel
-from lava.magma.core.model.c.ports import CInPort, COutPort, CRefPort
-from lava.magma.core.model.c.type import LavaCDataType, LavaCType
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.py.ports import PyInPort, PyOutPort, PyRefPort
 from lava.magma.core.model.py.type import LavaPyType
@@ -61,10 +51,7 @@ def readgate_run_post_mgmt(self):
     self.solution = self.solution_reader.read()
 
 
-def get_readgate_members(num_in_ports, backend: BACKENDS):
-    if backend not in BACKENDS:
-        raise ValueError(BACKEND_MSG)
-
+def get_readgate_members(num_in_ports):
     readgate_members = dict(min_cost=None, min_cost_id=None, solution=None)
 
     in_ports_py = {
@@ -95,7 +82,7 @@ def get_readgate_members(num_in_ports, backend: BACKENDS):
     return readgate_members
 
 
-def get_read_gate_py_model_class(num_in_ports: int, backend: BACKENDS = CPU):
+def get_read_gate_py_model_class(num_in_ports: int):
     """Produce CPU model for the ReadGate process.
 
     The model verifies if better payload (cost) has been notified by the
@@ -103,14 +90,12 @@ def get_read_gate_py_model_class(num_in_ports: int, backend: BACKENDS = CPU):
     out to
     the upstream process the new payload (cost) and the network state.
     """
-    if backend not in BACKENDS:
-        raise ValueError(BACKEND_MSG)
-    super_class = PyLoihiProcessModel if backend in CPUS else CLoihiProcessModel
-    resource = CPU if backend in CPUS else LMT
+    super_class = PyLoihiProcessModel
+    resource = CPU
     ReadGateModelBase = type(
         "ReadGateModel",
         (super_class,),
-        get_readgate_members(num_in_ports, backend),
+        get_readgate_members(num_in_ports),
     )
     ReadGateModelImpl = implements(ReadGate, protocol=LoihiProtocol)(
         ReadGateModelBase

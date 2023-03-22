@@ -27,11 +27,11 @@ class NEBMPyModel(PyLoihiProcessModel):
     temperature: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
     refract: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
+    refract_counter: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
+
     def __init__(self, proc_params):
         super().__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])
-
-        self.refract_buffer = np.zeros(proc_params['shape']).astype(int)
 
     def _prng(self):
         """Pseudo-random number generator
@@ -88,7 +88,7 @@ class NEBMPyModel(PyLoihiProcessModel):
                 lfsr, (2 * self.temperature + self.state)))
 
         # Neurons can only switch states outside their refractory period
-        wta_spk_idx = np.array([wta_spk_idx[ii] if self.refract_buffer[ii] <= 0
+        wta_spk_idx = np.array([wta_spk_idx[ii] if self.refract_counter[ii] <= 0
                                 else wta_spk_idx_prev[ii]
                                 for ii in range(wta_spk_idx.shape[0])])
 
@@ -105,8 +105,8 @@ class NEBMPyModel(PyLoihiProcessModel):
         s_wta[np.logical_and(wta_spk_idx_prev, np.logical_not(wta_spk_idx))] \
             = -1
 
-        self.refract_buffer = np.maximum(
-            self.refract_buffer - 1,
+        self.refract_counter = np.maximum(
+            self.refract_counter - 1,
             np.multiply(self.refract, (s_wta != 0)))
 
         # s_wta[wta_spk_idx] = 1

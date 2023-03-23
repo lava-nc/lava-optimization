@@ -343,7 +343,8 @@ class OptimizationSolver:
         return best_state, int(best_cost), int(best_timestep)
 
     def _get_best_state(self, config: SolverConfig, idx: int):
-        if isinstance(config.hyperparameters, list):
+        if isinstance(config.hyperparameters, list) and len(
+                config.hyperparameters) > 1:
             raw_solution = np.asarray(
                 self.solver_process.finders[int(idx)].variables_assignment.get()
             ).astype(np.int32)

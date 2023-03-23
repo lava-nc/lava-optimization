@@ -10,7 +10,7 @@ from lava.lib.optimization.solvers.generic.monitoring_processes \
     .solution_readout.process import \
     SolutionReadout
 from lava.lib.optimization.solvers.generic.read_gate.models import \
-    get_read_gate_model_class
+    get_read_gate_py_model_class
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.magma.core.run_conditions import RunContinuous
 from lava.magma.core.run_configs import Loihi2SimCfg
@@ -34,7 +34,7 @@ class TestSolutionReadout(unittest.TestCase):
         readgate.send_pause_request.connect(self.readout.timestep_in)
 
         # Execution configurations.
-        ReadGatePyModel = get_read_gate_model_class(1)
+        ReadGatePyModel = get_read_gate_py_model_class(1)
         pdict = {ReadGate: ReadGatePyModel, Spiker: SpikerModel}
         self.run_cfg = Loihi2SimCfg(exception_proc_model_map=pdict)
         self.readout._log_config.level = 20

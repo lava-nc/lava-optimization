@@ -126,13 +126,12 @@ class VRPSolver:
             graph_to_solve = _prepare_graph_for_vrpy(graph_to_solve)
 
             # 2. Call VRPy.solve
-            vrpy_sol = VehicleRoutingProblem(
-                graph_to_solve,
-                load_capacity=
-                self.problem.num_nodes * self.problem.num_vehicles,
-                num_vehicles=self.problem.num_vehicles,
-                use_all_vehicles=True
-            )
+            load_cap = self.problem.num_nodes * self.problem.num_vehicles
+            vrpy_sol = \
+                VehicleRoutingProblem(graph_to_solve,
+                                      load_capacity=load_cap,
+                                      num_vehicles=self.problem.num_vehicles,
+                                      use_all_vehicles=True)
             vrpy_sol.solve(max_iter=1000)
 
             # 3. Post process the solution

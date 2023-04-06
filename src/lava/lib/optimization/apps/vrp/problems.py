@@ -142,7 +142,7 @@ class VRP:
         #  and then assign the distances as attributes
         for edge in gph.edges.keys():
             gph.edges[edge]["cost"] = np.linalg.norm(
-                np.array(gph.nodes[edge[1]]["Coordinates"]) -
-                np.array(gph.nodes[edge[0]]["Coordinates"]))
+                np.array(gph.nodes[edge[1]]["Coordinates"]) - np.array(
+                    gph.nodes[edge[0]]["Coordinates"]))
 
         return gph

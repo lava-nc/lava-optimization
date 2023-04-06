@@ -27,68 +27,67 @@ class ProblemType(enum.IntEnum):
 
 
 class QMatrixVRP:
-    """Class to generate Q matrix for VRP framed as QUBO problems. Currently 
-    supports generation of Q matrices for TSP and clustering problems. The 
-    matrix values are computed based on the Euclidean distance between the nodes 
-    assuming all-to-all connectivity. 
-    """
+    """Class to generate Q matrix for VRP framed as QUBO problems. Currently,
+    supports generation of Q matrices for TSP and clustering problems. The
+    matrix values are computed based on the Euclidean distance between the
+    nodes assuming all-to-all connectivity."""
 
     def __init__(
-        self,
-        input_nodes,
-        num_vehicles=1,
-        problem_type=ProblemType.RANDOM,
-        mat_size_for_random=1,
-        lamda_wypts=1,
-        lamda_vhcles=1,
-        lamda_dist=1,
-        lamda_cnstrt=1,
-        fixed_pt=False,
-        fixed_pt_range=(0, 127),
-        profile_mat_gen=False
+            self,
+            input_nodes,
+            num_vehicles=1,
+            problem_type=ProblemType.RANDOM,
+            mat_size_for_random=1,
+            lamda_wypts=1,
+            lamda_vhcles=1,
+            lamda_dist=1,
+            lamda_cnstrt=1,
+            fixed_pt=False,
+            fixed_pt_range=(0, 127),
+            profile_mat_gen=False
     ) -> None:
-        """constructor of the class generates Q matrices depending on the type 
-        of problem specified by the user and assings it the class variables for 
-        the matrix. Calls private functions to initialize Q. Nonetype will raise 
-        an exception asking for the correct problem type to be specified. The
-        matrix Q is considered to have all-to-all connectivity between the nodes 
-        that are specified. 
+        """The Constructor of the class generates Q matrices depending on the
+        type of problem specified by the user and assigns it the class
+        variables for the matrix. Calls private functions to initialize Q.
+        None-type will raise an exception asking for the correct problem
+        type to be specified. The matrix Q is considered to have all-to-all
+        connectivity between the nodes that are specified.
 
         Args:
-            input_nodes (list<tuples>): Input to matrix generator functions 
-            containing a list of nodes specifed as tuples. 
+            input_nodes (list<tuples>): Input to matrix generator functions
+            containing a list of nodes specified as tuples.
 
-            num_vehicles (int): Number of vehicles in the Vehicle Routing 
-            Problem. The first `num_vehicles` nodes in the `input_nodes` 
-            variable correspond to positions of vehicles and the rest waypoints.
-            Defaults to 1 
+            num_vehicles (int): Number of vehicles in the Vehicle Routing
+            Problem. The first `num_vehicles` nodes in the `input_nodes`
+            variable correspond to positions of vehicles and the rest
+            waypoints. Defaults to 1
 
-            problem_type (str, optional): Specifies for the type of problem for 
-            which Q matrix has to be generated. Currently support for 
+            problem_type (str, optional): Specifies for the type of problem
+            for which Q matrix has to be generated. Currently support for
             1. `tsp` : Travelling salesman problem
-            2. `clustering` : Clustering problem framed as a QUBO.
-            Defaults to 'None'.
-            
-            lamda_wypts (float, optional): penalty term for the wypt nodes in 
-            the Q matrix generator for clustering.
+            2. `clustering` : Clustering problem framed as a QUBO. Defaults
+            to 'None'.
 
-            lamda_vhcles (float, optional): penalty term for the vhcle nodes in 
-            the Q matrix generator for clustering
+            lamda_wypts (float, optional): penalty term for the wypt nodes
+            in the Q matrix generator for clustering.
 
-            lamda_dist (float, optional): penalty term for the distances between 
-            nodes in the Q matrix generator.
+            lamda_vhcles (float, optional): penalty term for the vhcle nodes
+            in the Q matrix generator for clustering
 
-            lamda_cnstrt (float, optional): penalty term for the constraint 
-            between nodes in the Q matrix generator for tsp problem. This also 
-            corresponds to the unweighted part of the tsp problem.
+            lamda_dist (float, optional): penalty term for the distances
+            between nodes in the Q matrix generator.
+
+            lamda_cnstrt (float, optional): penalty term for the constraint
+            between nodes in the Q matrix generator for tsp problem. This
+            also corresponds to the unweighted part of the tsp problem.
 
             fixed_pt (bool, optional): Specifies if the Q matrix should
-            ultimately be rounded down to integer. If `True`, stochastic 
-            rounding to integer range of Loihi 2 is performed. Defaults to 
+            ultimately be rounded down to integer. If `True`, stochastic
+            rounding to integer range of Loihi 2 is performed. Defaults to
             `False`.
 
-            fixed_pt_range (tuple<int>, optional): Specifies the absolute value 
-            of  min and max values that the Q matrix can have if 
+            fixed_pt_range (tuple<int>, optional): Specifies the absolute
+            value of  min and max values that the Q matrix can have if
             `fixed_pt =True`.
 
             profile_mat_gen (bool, optional): Specifies if Q matrix
@@ -119,7 +118,7 @@ class QMatrixVRP:
             )
             if profile_mat_gen:
                 time_taken_tsp = time.time() - start_time
-                pprint(f"TSP Q matrix {j} generated in {time_taken_tsp} s")
+                pprint(f"TSP Q matrix generated in {time_taken_tsp} s")
         else:
             raise ValueError(
                 "problem_type cannot be None or argument passed cannot be "
@@ -127,19 +126,19 @@ class QMatrixVRP:
             )
 
     def _gen_tsp_Q_matrix(self, input_nodes, lamda_dist, lamda_cnstrnt):
-        """Return the Q matrix that sets up the QUBO for the 
-        clustering problem. The cluster centers are assumed to be uniformly 
-        distributed across the graph.
+        """Return the Q matrix that sets up the QUBO for the clustering
+        problem. The cluster centers are assumed to be uniformly distributed
+        across the graph.
 
         Args:
-            input_nodes (list[tuples]): Input to matrix generator functions 
-            containing a list of nodes specifed as tuples. All the nodes 
-            correspond to waypoints relevant to the tsp problem. The distance 
-            between nodes is assumed to be symmetric i.e. A->B = B->A
+            input_nodes (list[tuples]): Input to matrix generator functions
+            containing a list of nodes specified as tuples. All the nodes
+            correspond to waypoints relevant to the tsp problem. The
+            distance between nodes is assumed to be symmetric i.e. A->B =
+            B->A
 
-            
         Returns:
-            np.ndarray: Returns a 2 dimension connectivity matrix of size 
+            np.ndarray: Returns a 2 dimension connectivity matrix of size
             n^2 * n^2
         """
         # Euclidean distances between all nodes input to the graph
@@ -154,26 +153,24 @@ class QMatrixVRP:
         num_wypts_sq = num_wypts ** 2
         Q_dist_mtrx = np.zeros((num_wypts_sq, num_wypts_sq))
         for k in range(num_wypts):
-            for l in range(num_wypts):
+            for m in range(num_wypts):
                 # Sufficent to traverse only lower triangle
-                if k == l:
+                if k == m:
                     break
                 else:
                     q_inter_matrx = np.zeros((num_wypts_sq, num_wypts_sq))
-                    u, v = k, l
+                    u, v = k, m
                     for i in range(num_wypts):
                         for j in range(num_wypts - 1):
-                            v_ind_row = (
-                                v + (j + 1) * num_wypts
-                            ) % num_wypts_sq
-                            u_ind_row = (
-                                u + (j + 1) * num_wypts
-                            ) % num_wypts_sq
+                            v_ind_row = \
+                                (v + (j + 1) * num_wypts) % num_wypts_sq
+                            u_ind_row = \
+                                (u + (j + 1) * num_wypts) % num_wypts_sq
                             q_inter_matrx[v_ind_row, u] = 1
                             q_inter_matrx[u_ind_row, v] = 1
                         v = (v + num_wypts) % num_wypts_sq
                         u = (u + num_wypts) % num_wypts_sq
-                    Q_dist_mtrx += Dist[k, l] * q_inter_matrx
+                    Q_dist_mtrx += Dist[k, m] * q_inter_matrx
         # TSP constraint encoding
         # Only one vrtx can be selected at a time instant
         # Off-diagonal elements are two, populating matrix with 2
@@ -207,9 +204,8 @@ class QMatrixVRP:
             )
 
         # Off-diag elements are two, diagonal elements are -1
-        seq_constraints = (
-            -3 * seq_constraint_diag + 2 * seq_constraint_off_diag
-        )
+        seq_constraints = \
+            (-3 * seq_constraint_diag + 2 * seq_constraint_off_diag)
 
         # matrix should contain non-zero elements with only value 2 now.
         Q_cnstrnts_blck_mtrx = vrtx_constraints + seq_constraints
@@ -222,29 +218,28 @@ class QMatrixVRP:
         return Q
 
     def _gen_clustering_Q_matrix(
-        self, input_nodes, lamda_dist, lamda_wypts, lamda_vhcles
+            self, input_nodes, lamda_dist, lamda_wypts, lamda_vhcles
     ):
-        """Return the Q matrix that sets up the QUBO for the 
-        clustering problem. The cluster centers are assumed to be uniformly 
-        distributed across the graph.
+        """Return the Q matrix that sets up the QUBO for the clustering
+        problem. The cluster centers are assumed to be uniformly distributed
+        across the graph.
 
         Args:
-            input_nodes (list[tuples]): Input to matrix generator functions 
-            containing a list of nodes specifed as tuples. First `num_vehicles`
-            tuples correspond to the vehicle nodes.
+            input_nodes (list[tuples]): Input to matrix generator functions
+            containing a list of nodes specified as tuples. First
+            `num_vehicles` tuples correspond to the vehicle nodes.
 
-            lamda_dist (float, optional): penalty term for the euclidean 
+            lamda_dist (float, optional): penalty term for the Euclidean
             distance between all nodes for the clustering Q matrix generator.
 
-            lamda_wypts (float, optional): penalty term for the wypt nodes in 
-            the Q matrix generator for clustering.
+            lamda_wypts (float, optional): penalty term for the wypt nodes
+            in the Q matrix generator for clustering.
 
-            lamda_vhcles (float, optional): penalty term for the vhcle nodes in 
+            lamda_vhcles (float, optional): penalty term for the vhcle nodes in
             the Q matrix generator for clustering
-        
+
         Returns:
-            np.ndarray: Returns a 2 dimension connectivity matrix of size 
-            n*n
+            np.ndarray: Returns a 2 dimension connectivity matrix of size n*n
         """
         Dist = distance.cdist(input_nodes, input_nodes, "euclidean")
         num_nodes = Dist.shape[0]
@@ -302,27 +297,25 @@ class QMatrixVRP:
         for i in range(qubo_encdng_size - 1):
             wypt_constraint_off_diag = np.vstack(
                 (wypt_constraint_off_diag, np.roll(wypt_cnstrnt_vector,
-                                                   i + 1), ))
+                                                   i + 1),))
 
         cnstrnt_wypts_blck = \
             -3 * wypnt_cnstrnt_diag + 2 * wypt_constraint_off_diag
 
         # Combine all matrices to get final Q matrix
-        Q = (
-            lamda_dist * dist_mtrx
-            + lamda_vhcles * cnstrnt_vhcles_blck
-            + lamda_wypts * cnstrnt_wypts_blck
-        )
+        Q = (lamda_dist * dist_mtrx
+             + lamda_vhcles * cnstrnt_vhcles_blck
+             + lamda_wypts * cnstrnt_wypts_blck)
         if self.fixed_pt:
             Q = self._stochastic_rounding(Q)
         return Q
 
     def _stochastic_rounding(self, tensor):
-        """function to rescale and stochastically round tensor to fixed point 
-        values compatiable with Unsigned Mode on Loihi 2.
+        """A function to rescale and stochastically round tensor to fixed
+        point values compatible with Unsigned Mode on Loihi 2.
 
         Args:
-            tensor (np.ndarray): floating-point tensor 
+            tensor (np.ndarray): floating-point tensor
 
         Returns:
             (np.ndarray): fixed-point version of tensor that is passed as input
@@ -332,13 +325,12 @@ class QMatrixVRP:
 
         # Get sign mask of tensor to furnish signs for matrix later
         tensor_sign_mask = np.sign(tensor)
-        scaled_tensor = (
-            (self.max_fixed_pt_mant - self.min_fixed_pt_mant)
-            * (np.abs(tensor) - tensor_min)
-            / (tensor_max - tensor_min)
-        )
-        stchstc_rnded_tensor = np.floor(
-            scaled_tensor + np.random.rand(tensor.shape[0], tensor.shape[1])
-        )
+        scaled_tensor = \
+            ((self.max_fixed_pt_mant - self.min_fixed_pt_mant)
+                * (np.abs(tensor) - tensor_min)
+                / (tensor_max - tensor_min))
+        stchstc_rnded_tensor = \
+            np.floor(scaled_tensor
+                     + np.random.rand(tensor.shape[0], tensor.shape[1]))
         stchstc_rnded_tensor *= tensor_sign_mask
         return stchstc_rnded_tensor

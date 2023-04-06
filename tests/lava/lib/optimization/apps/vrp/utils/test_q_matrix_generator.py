@@ -15,7 +15,9 @@
 import unittest
 import numpy as np
 from scipy.spatial import distance
-from lava.lib.optimization.apps.vrp.utils.q_matrix_generator import QMatrixVRP
+from lava.lib.optimization.apps.vrp.utils.q_matrix_generator import \
+    QMatrixVRP, ProblemType
+
 
 class TestMatrixGen(unittest.TestCase):
     def test_cluster_Q_gen(self) -> None:
@@ -28,7 +30,7 @@ class TestMatrixGen(unittest.TestCase):
         Q_clustering_fltg_pt = QMatrixVRP(
             input_nodes,
             num_vehicles=num_vehicles,
-            problem_type="clustering",
+            problem_type=ProblemType.CLUSTER,
             lamda_dist=lamda_dist,
             lamda_vhcles=lamda_vhcles,
             lamda_wypts=lamda_wypts,
@@ -38,14 +40,14 @@ class TestMatrixGen(unittest.TestCase):
 
         Q_wypt_cnst_test = np.array(
             [
-                [-1.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0],
-                [0.0, -1.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                [2.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0],
-                [0.0, 2.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                [-1.,  0.,  0.,  0.,  2.,  0.,  0.,  0.],
+                [0., -1.,  0.,  0.,  0.,  2.,  0.,  0.],
+                [0.,  0., -1.,  0.,  0.,  0.,  2.,  0.],
+                [0.,  0.,  0., -1.,  0.,  0.,  0.,  2.],
+                [2.,  0.,  0.,  0., -1.,  0.,  0.,  0.],
+                [0.,  2.,  0.,  0.,  0., -1.,  0.,  0.],
+                [0.,  0.,  2.,  0.,  0.,  0., -1.,  0.],
+                [0.,  0.,  0.,  2.,  0.,  0.,  0., -1.]
             ]
         )
 
@@ -74,7 +76,7 @@ class TestMatrixGen(unittest.TestCase):
         Q_clustering_fixed_pt = QMatrixVRP(
             input_nodes,
             num_vehicles=2,
-            problem_type="clustering",
+            problem_type=ProblemType.CLUSTER,
             fixed_pt=True,
         ).matrix
         fixed_pt_Q_max = np.max(np.abs(Q_clustering_fixed_pt))
@@ -88,7 +90,7 @@ class TestMatrixGen(unittest.TestCase):
         lamda_cnstrt = 4  # testing floating point Q matrix
         Q_tsp_fltg_pt = QMatrixVRP(
             input_nodes,
-            problem_type="tsp",
+            problem_type=ProblemType.TSP,
             lamda_dist=lamda_dist,
             lamda_cnstrt=lamda_cnstrt,
         ).matrix
@@ -128,7 +130,8 @@ class TestMatrixGen(unittest.TestCase):
         # individual values not really testsed since the rounding
         # is stochastic
         Q_tsp_fixed_pt = QMatrixVRP(
-            input_nodes, num_vehicles=2, problem_type="tsp", fixed_pt=True
+            input_nodes, num_vehicles=2, problem_type=ProblemType.TSP,
+            fixed_pt=True
         ).matrix
         fixed_pt_Q_max = np.max(np.abs(Q_tsp_fixed_pt))
         fixed_pt_Q_min = np.min(np.abs(Q_tsp_fixed_pt))

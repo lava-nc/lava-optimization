@@ -306,7 +306,8 @@ class OptimizationSolver:
         elif backend in NEUROCORES:
             # from lava.lib.optimization.solvers.generic.read_gate.ncmodels \
             #     import get_read_gate_c_model_class
-            # ReadGateCModel = get_read_gate_c_model_class(num_in_ports, backend)
+            # ReadGateCModel = \
+            # get_read_gate_c_model_class(num_in_ports, backend)
             pdict = {
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGateCModel,

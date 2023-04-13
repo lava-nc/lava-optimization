@@ -103,7 +103,7 @@ class QUBO(OptimizationProblem):
         return None
 
     def evaluate_cost(self, solution: np.ndarray) -> int:
-        return solution.T @ self._q_cost.coefficients[2] @ solution
+        return int(self._q_cost(solution))
 
     def validate_input(self, q):
         """Validate the cost coefficient is a square matrix.
@@ -122,22 +122,6 @@ class QUBO(OptimizationProblem):
 
     def verify_solution(self, solution):
         raise NotImplementedError
-
-    def compute_cost(self, state_vector):
-        """Based on a given solution, returns the value of the cost function.
-
-        Parameters
-        ----------
-        state_vector : Array[binary]
-            Array containing an assignment to the problem variables.
-
-        Returns
-        -------
-        int
-            Cost of the given state vector.
-        """
-
-        return state_vector.T @ self.q @ state_vector
 
 
 DType = ty.Union[ty.List[int], ty.List[ty.Tuple]]
@@ -312,3 +296,80 @@ class QP:
     @property
     def num_variables(self) -> int:
         return len(self._linear_offset)
+
+
+class ILP(OptimizationProblem):
+    """
+    Class to instantiate an Integer Linear Programming problem.
+    """
+
+    def __init__(
+        self,
+        c: np.ndarray,
+        A: np.ndarray,
+        b: np.ndarray,
+    ):
+        """
+        Constructor for the ILP class.
+
+        Parameters
+        ----------
+        c : 1-D np.array
+            Linear term of the cost function with integer coefficients.
+        A : 2-D or 1-D np.array
+            Equality constrainting hyperplanes.
+        b : 1-D np.array
+            Eqaulity constraints offsets.
+        """
+        super().__init__()
+        self._validate_input(c, A, b)
+
+        # TODO : Define domains
+        self._variables = DiscreteVariables(domains=[])
+        self._cost = Cost(c)
+        # TODO : Define linear & box constraints
+        self._constraints = ArithmeticConstraints()
+
+    @property
+    def variables(self):
+        """Discrete variables over which the problem is specified."""
+        return self._variables
+
+    @property
+    def cost(self):
+        """Constant cost function, CSPs require feasibility not minimization."""
+        return self._cost
+
+    @property
+    def constraints(self):
+        """Specification of mutually allowed values between variables."""
+        return self._constraints
+
+    def _validate_input(
+        self,
+        c: np.ndarray,
+        A: np.ndarray,
+        b: np.ndarray
+    ) -> None:
+        if not isinstance(c.flat[0], np.int32):
+            raise ValueError(
+                f"c coefficients have to be in np.int32 dtype, got {c.dtype}"
+            )
+        if not isinstance(A.flat[0], np.int32):
+            raise ValueError(
+                f"A coefficients have to be in np.int32 dtype, got {A.dtype}"
+            )
+        if not isinstance(b.flat[0], np.int32):
+            raise ValueError(
+                f"b have to be in np.int32 dtype, got {b.dtype}"
+            )
+        if c.shape[0] != A.shape[1]:
+            raise ValueError(f"")
+        if A.shape[1] != b.shape[0]:
+            raise ValueError(f"")
+
+    def evaluate_cost(self, x: np.ndarray) -> int:
+        return self._cost(x)
+
+    def evaluate_constraints_violation(self, x: np.ndarray) -> np.ndarray:
+        return NotImplementedError

@@ -53,3 +53,16 @@ class CoefficientTensorsMixin:
     def max_degree(self):
         """Maximum order among the coefficients' ranks."""
         return max(self.coefficients.keys())
+
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        result = 0
+        for rank, coeff in self._coefficients.items():
+            if rank == 0:
+                result += coeff
+            elif rank == 1:
+                result += coeff @ x
+            elif rank == 2:
+                result += x.T @ coeff @ x
+            else:
+                raise NotImplementedError
+        return result

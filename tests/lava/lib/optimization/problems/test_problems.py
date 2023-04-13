@@ -11,8 +11,8 @@ from lava.lib.optimization.problems.constraints import (
     DiscreteConstraints,
 )
 from lava.lib.optimization.problems.cost import Cost
-from lava.lib.optimization.problems.problems import (CSP, OptimizationProblem,
-                                                     QUBO)
+from lava.lib.optimization.problems.problems import \
+    OptimizationProblem, CSP, QUBO, ILP
 from lava.lib.optimization.problems.variables import (DiscreteVariables,
                                                       Variables)
 
@@ -195,6 +195,33 @@ class TestCSP(unittest.TestCase):
             self.csp.validate_input(np.eye(10))
         except AssertionError:
             self.fail("Assertion failed with correct input!")
+
+
+class TestILP(unittest.TestCase):
+
+    def setUp(self):
+        c = np.array([0, 1, 2, 3], dtype=np.int32).T
+        A = np.array([[0, 4, 2, 1],
+                      [2, 0, 1, 1],
+                      [1, 1, 0, 1]], dtype=np.int32)
+        b = np.array([1, 1, 1, 1], dtype=np.int32).T
+        self.ilp = ILP(
+            c=c,
+            A=A,
+            b=b
+        )
+
+    def test_create_obj(self):
+        self.assertIsInstance(self.ilp, ILP)
+
+    def test_variables_class(self):
+        self.assertIsInstance(self.ilp.variables, DiscreteVariables)
+
+    def test_cost_class(self):
+        self.assertIsInstance(self.ilp.cost, Cost)
+
+    def test_cost_is_linear(self):
+        self.assertEqual(self.ilp.cost.max_degree, 1)
 
 
 if __name__ == "__main__":

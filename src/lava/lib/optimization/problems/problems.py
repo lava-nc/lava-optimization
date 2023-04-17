@@ -300,7 +300,14 @@ class QP:
 
 class ILP(OptimizationProblem):
     """
-    Class to instantiate an Integer Linear Programming problem.
+    Class to instantiate an Integer Linear Programming problem in the standard
+    form as:
+
+    .. math::               # TODO : Fix equation representation
+        min c^Tx \\\\
+        Ax >= b \\\\
+        x >= 0 \\\\
+        x in Z
     """
 
     def __init__(
@@ -323,6 +330,9 @@ class ILP(OptimizationProblem):
         """
         super().__init__()
         self._validate_input(c, A, b)
+        self._c = c
+        self._A = A
+        self._b = b
 
         # TODO : Define domains
         self._variables = DiscreteVariables(domains=[])
@@ -337,7 +347,7 @@ class ILP(OptimizationProblem):
 
     @property
     def cost(self):
-        """Constant cost function, CSPs require feasibility not minimization."""
+        """Linear cost function."""
         return self._cost
 
     @property
@@ -361,15 +371,17 @@ class ILP(OptimizationProblem):
             )
         if not isinstance(b.flat[0], np.int32):
             raise ValueError(
-                f"b have to be in np.int32 dtype, got {b.dtype}"
+                f"b coefficients have to be in np.int32 dtype, got {b.dtype}"
             )
         if c.shape[0] != A.shape[1]:
             raise ValueError(f"")
-        if A.shape[1] != b.shape[0]:
+        if A.shape[0] != b.shape[0]:
             raise ValueError(f"")
 
     def evaluate_cost(self, x: np.ndarray) -> int:
+        """Evaluate cost of provided solution as $c^Tx$."""
         return self._cost(x)
 
-    def evaluate_constraints_violation(self, x: np.ndarray) -> np.ndarray:
-        return NotImplementedError
+    def evaluate_constraints(self, x: np.ndarray) -> np.ndarray:
+        """Evaluate constraints at provided solution as $Ax-b$."""
+        return self._A @ x - self._b

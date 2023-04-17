@@ -11,10 +11,16 @@ from lava.lib.optimization.problems.constraints import (
     DiscreteConstraints,
 )
 from lava.lib.optimization.problems.cost import Cost
-from lava.lib.optimization.problems.problems import \
-    OptimizationProblem, CSP, QUBO, ILP
-from lava.lib.optimization.problems.variables import (DiscreteVariables,
-                                                      Variables)
+from lava.lib.optimization.problems.problems import (
+    OptimizationProblem,
+    CSP,
+    QUBO,
+    ILP,
+)
+from lava.lib.optimization.problems.variables import (
+    DiscreteVariables,
+    Variables,
+)
 
 
 class CompliantInterfaceInheritance(OptimizationProblem):
@@ -198,18 +204,13 @@ class TestCSP(unittest.TestCase):
 
 
 class TestILP(unittest.TestCase):
-
     def setUp(self):
-        c = np.array([0, 1, 2, 3], dtype=np.int32).T
-        A = np.array([[0, 4, 2, 1],
-                      [2, 0, 1, 1],
-                      [1, 1, 0, 1]], dtype=np.int32)
-        b = np.array([1, 1, 1, 1], dtype=np.int32).T
-        self.ilp = ILP(
-            c=c,
-            A=A,
-            b=b
+        self.c = np.array([0, 1, 2, 3], dtype=np.int32).T
+        self.A = np.array(
+            [[0, 4, 2, 1], [2, 0, 1, 1], [1, 1, 0, 1]], dtype=np.int32
         )
+        self.b = np.array([1, 1, 1], dtype=np.int32).T
+        self.ilp = ILP(c=self.c, A=self.A, b=self.b)
 
     def test_create_obj(self):
         self.assertIsInstance(self.ilp, ILP)
@@ -222,6 +223,18 @@ class TestILP(unittest.TestCase):
 
     def test_cost_is_linear(self):
         self.assertEqual(self.ilp.cost.max_degree, 1)
+
+    def test_evaluate_cost(self):
+        self.assertEqual(
+            self.ilp.evaluate_cost(np.array([0, 1, 0, 0])), self.c[1]
+        )
+
+    def test_evaluate_constraints(self):
+        self.assertTrue(
+            np.all(
+                self.ilp.evaluate_constraints(np.array([0, 0, 0, 0])) == -self.b
+            )
+        )
 
 
 if __name__ == "__main__":

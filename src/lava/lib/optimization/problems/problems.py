@@ -385,3 +385,105 @@ class ILP(OptimizationProblem):
     def evaluate_constraints(self, x: np.ndarray) -> np.ndarray:
         """Evaluate constraints at provided solution as $Ax-b$."""
         return self._A @ x - self._b
+
+
+class IQP(OptimizationProblem):
+    """
+    Class to instantiate an Integer Quadratic Programming problem in the
+    standard form as:
+
+    .. math::               # TODO : Fix equation representation
+        min x^THx+c^Tx \\\\
+        Ax >= b \\\\
+        x >= 0 \\\\
+        x in Z
+    """
+
+    def __init__(
+        self,
+        H: np.ndarray,
+        c: np.ndarray,
+        A: np.ndarray,
+        b: np.ndarray,
+    ):
+        """
+        Constructor for the IQP class.
+
+        Parameters
+        ----------
+        H : 2-D np.array
+            Quadratic term of the cost function with integer coefficients.
+        c : 1-D np.array
+            Linear term of the cost function with integer coefficients.
+        A : 2-D or 1-D np.array
+            Equality constrainting hyperplanes.
+        b : 1-D np.array
+            Eqaulity constraints offsets.
+        """
+        super().__init__()
+        self._validate_input(H, c, A, b)
+        self._H = H
+        self._c = c
+        self._A = A
+        self._b = b
+
+        # TODO : Define domains
+        self._variables = DiscreteVariables(domains=[])
+        self._cost = Cost(H, c)
+        # TODO : Define linear & box constraints
+        self._constraints = ArithmeticConstraints()
+
+    @property
+    def variables(self):
+        """Discrete variables over which the problem is specified."""
+        return self._variables
+
+    @property
+    def cost(self):
+        """Linear cost function."""
+        return self._cost
+
+    @property
+    def constraints(self):
+        """Specification of mutually allowed values between variables."""
+        return self._constraints
+
+    def _validate_input(
+        self,
+        H: np.ndarray,
+        c: np.ndarray,
+        A: np.ndarray,
+        b: np.ndarray
+    ) -> None:
+        if not isinstance(H.flat[0], np.int32):
+            raise ValueError(
+                f"H coefficients have to be in np.int32 dtype, got {c.dtype}"
+            )
+        if not isinstance(c.flat[0], np.int32):
+            raise ValueError(
+                f"c coefficients have to be in np.int32 dtype, got {c.dtype}"
+            )
+        if not isinstance(A.flat[0], np.int32):
+            raise ValueError(
+                f"A coefficients have to be in np.int32 dtype, got {A.dtype}"
+            )
+        if not isinstance(b.flat[0], np.int32):
+            raise ValueError(
+                f"b coefficients have to be in np.int32 dtype, got {b.dtype}"
+            )
+        if H.shape[0] != H.shape[1]:
+            raise ValueError(f"")
+        if c.shape[0] != H.shape[0]:
+            raise ValueError(f"")
+        if c.shape[0] != A.shape[1]:
+            raise ValueError(f"")
+        if A.shape[0] != b.shape[0]:
+            raise ValueError(f"")
+
+    def evaluate_cost(self, x: np.ndarray) -> int:
+        """Evaluate cost of provided solution as $c^Tx$."""
+        return self._cost(x)
+
+    def evaluate_constraints(self, x: np.ndarray) -> np.ndarray:
+        """Evaluate constraints at provided solution as $Ax-b$."""
+        return self._A @ x - self._b

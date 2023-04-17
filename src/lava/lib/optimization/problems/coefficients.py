@@ -54,7 +54,7 @@ class CoefficientTensorsMixin:
         """Maximum order among the coefficients' ranks."""
         return max(self.coefficients.keys())
 
-    def __call__(self, x: np.ndarray) -> np.ndarray:
+    def evaluate(self, x: np.ndarray) -> np.ndarray:
         """Evaluate the polynomial at the given point."""
         result = 0
         for rank, coeff in self._coefficients.items():

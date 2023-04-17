@@ -68,6 +68,12 @@ class TestCoefficientsTensors(unittest.TestCase):
         self.coefficients_np.coefficients = new_coefficients
         self.assertIs(self.coefficients_np.coefficients, new_coefficients)
 
+    def test_evaluate_method(self):
+        ctm = CoefficientTensorsMixin(
+            1, [1, 1], [[1, 1], [1, 1]]
+        )
+        self.assertEqual(ctm.evaluate(np.array([1, 1])), 7)
+
 
 if __name__ == "__main__":
     unittest.main()

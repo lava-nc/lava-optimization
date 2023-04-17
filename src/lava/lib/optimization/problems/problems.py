@@ -339,7 +339,7 @@ class IQP(OptimizationProblem):
 
         # TODO : Define domains
         self._variables = DiscreteVariables(domains=[])
-        self._cost = Cost(H, c)
+        self._cost = Cost(*[coeff for coeff in [H, c] if coeff is not None])
         # TODO : Define linear & box constraints
         self._constraints = ArithmeticConstraints()
 
@@ -361,33 +361,22 @@ class IQP(OptimizationProblem):
     def _validate_input(
         self, H: np.ndarray, c: np.ndarray, A: np.ndarray, b: np.ndarray
     ) -> None:
-        if not isinstance(H.flat[0], np.int32):
-            raise ValueError(
-                f"H coefficients have to be in np.int32 dtype, got {c.dtype}"
-            )
-        if not isinstance(c.flat[0], np.int32):
-            raise ValueError(
-                f"c coefficients have to be in np.int32 dtype, got {c.dtype}"
-            )
-        if not isinstance(A.flat[0], np.int32):
-            raise ValueError(
-                f"A coefficients have to be in np.int32 dtype, got {A.dtype}"
-            )
-        if not isinstance(b.flat[0], np.int32):
-            raise ValueError(
-                f"b coefficients have to be in np.int32 dtype, got {b.dtype}"
-            )
-        if H.shape[0] != H.shape[1]:
-            raise ValueError(f"")
-        if c.shape[0] != H.shape[0]:
-            raise ValueError(f"")
-        if c.shape[0] != A.shape[1]:
-            raise ValueError(f"")
-        if A.shape[0] != b.shape[0]:
-            raise ValueError(f"")
+        for coeff in [H, c, A, b]:
+            if H is not None and not isinstance(coeff.flat[0], np.int32):
+                raise ValueError(
+                    f"Coefficients have to be np.int32 type, got {coeff.dtype}"
+                )
+        if H is not None and H.shape[0] != H.shape[1]:
+            raise ValueError
+        if c is not None and H is not None and c.shape[0] != H.shape[0]:
+            raise ValueError
+        if c is not None and A is not None and c.shape[0] != A.shape[1]:
+            raise ValueError
+        if A is not None and b is not None and A.shape[0] != b.shape[0]:
+            raise ValueError
 
     def evaluate_cost(self, x: np.ndarray) -> int:
-        """Evaluate cost of provided solution as $c^Tx$."""
+        """Evaluate cost of provided solution."""
         return self._cost(x)
 
     def evaluate_constraints(self, x: np.ndarray) -> np.ndarray:

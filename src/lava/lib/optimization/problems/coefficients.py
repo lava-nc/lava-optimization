@@ -55,6 +55,7 @@ class CoefficientTensorsMixin:
         return max(self.coefficients.keys())
 
     def __call__(self, x: np.ndarray) -> np.ndarray:
+        """Evaluate the polynomial at the given point."""
         result = 0
         for rank, coeff in self._coefficients.items():
             if rank == 0:
@@ -64,5 +65,7 @@ class CoefficientTensorsMixin:
             elif rank == 2:
                 result += x.T @ coeff @ x
             else:
-                raise NotImplementedError
+                raise NotImplementedError(
+                    "__call__ not implemented for polynomials with degree > 2."
+                )
         return result

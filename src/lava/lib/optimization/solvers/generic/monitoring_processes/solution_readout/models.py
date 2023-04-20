@@ -63,5 +63,5 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
                 and self.min_cost[0] <= self.target_cost
             ):
                 print(f"Host: network reached target cost {self.target_cost}.")
-            if timestep > 0 or timestep==-1:
+            if timestep > 0 or timestep == -1:
                 self.stop = True

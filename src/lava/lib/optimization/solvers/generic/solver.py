@@ -31,12 +31,17 @@ from lava.proc.monitor.process import Monitor
 from lava.utils.profiler import Profiler
 
 try:
+    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import \
+        ReadGateCModel
     from lava.proc.dense.ncmodels import NcModelDense
     from lava.lib.optimization.solvers.generic.nebm.ncmodels import \
         NEBMNcModel, NEBMSimulatedAnnealingNcModel
     from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels \
         import CostIntegratorNcModel
 except ImportError:
+
+    class ReadGateCModel:
+        pass
 
     class NcModelDense:
         pass

@@ -1704,7 +1704,7 @@ files = [
 
 [[package]]
 name = "lava-nc"
-version = "0.6.0"
+version = "0.7.0"
 description = "A Software Framework for Neuromorphic Computing"
 category = "main"
 optional = false
@@ -1721,8 +1721,8 @@ scipy = "^1.8.0"
 [package.source]
 type = "git"
 url = "https://github.com/lava-nc/lava.git"
-reference = "main"
-resolved_reference = "efb49ce94498ddea5bf314dd4c7762de07df212f"
+reference = "v0.7.0"
+resolved_reference = "82a044a6cc55d78c4ed80c3ec61aea84dba6c282"
 
 [[package]]
 name = "linecache2"
@@ -2021,14 +2021,14 @@ test = ["ipykernel", "ipython", "ipywidgets", "nbconvert (>=7.0.0)", "pytest (>=
 
 [[package]]
 name = "nbconvert"
-version = "7.2.9"
+version = "7.2.10"
 description = "Converting Jupyter Notebooks"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "nbconvert-7.2.9-py3-none-any.whl", hash = "sha256:495638c5e06005f4a5ce828d8a81d28e34f95c20f4384d5d7a22254b443836e7"},
-    {file = "nbconvert-7.2.9.tar.gz", hash = "sha256:a42c3ac137c64f70cbe4d763111bf358641ea53b37a01a5c202ed86374af5234"},
+    {file = "nbconvert-7.2.10-py3-none-any.whl", hash = "sha256:e41118f81698d3d59b3c7c2887937446048f741aba6c367c1c1a77810b3e2d08"},
+    {file = "nbconvert-7.2.10.tar.gz", hash = "sha256:8eed67bd8314f3ec87c4351c2f674af3a04e5890ab905d6bd927c05aec1cf27d"},
 ]
 
 [package.dependencies]
@@ -3642,4 +3642,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8, <3.11"
-content-hash = "001a2fc4dbe0d9b6a2101932904acd04ec32f3e10a45e18ed77de57fc7b928df"
+content-hash = "40aea9b809170a2b8ba39b8a8f4761e9bf87208666b6c3ae438a50c47fcd89af"

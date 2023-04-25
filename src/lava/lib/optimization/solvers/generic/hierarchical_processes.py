@@ -404,6 +404,7 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
             init_value: npt.ArrayLike = 0,
+            neuron_model: str,
     ) -> None:
         """
 
@@ -447,6 +448,7 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             name=name,
             log_config=log_config,
             init_value=init_value,
+            neuron_model=neuron_model,
         )
         self.added_input = InPort(shape=shape)
         self.messages = OutPort(shape=shape)

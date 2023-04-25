@@ -147,7 +147,7 @@ class MISProblem:
         Creates an undirected graph with random connectivity between nodes
         and returns its adjacency matrix.
         """
-        np.random.seed(self.seed)
+        #np.random.seed(self.seed)
 
         random_matrix = np.random.rand(self.num_vertices, self.num_vertices)
         adjacency = (random_matrix < self.connection_prob).astype(int)

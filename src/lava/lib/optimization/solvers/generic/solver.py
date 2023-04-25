@@ -1,6 +1,7 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
+import logging
 import typing as ty
 from dataclasses import dataclass
 
@@ -285,9 +286,7 @@ class OptimizationSolver:
     def _get_run_config(
         self, backend: BACKENDS_TYPE, probes=None, num_in_ports: int = None
     ):
-        from lava.lib.optimization.solvers.generic.read_gate.process import (
-            ReadGate,
-        )
+        from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
         if backend in CPUS:
             from lava.lib.optimization.solvers.generic.read_gate.models \
                 import get_read_gate_py_model_class
@@ -300,9 +299,8 @@ class OptimizationSolver:
                 NEBM: NEBMPyModel,
                 QuboScif: PyModelQuboScifFixed,
             }
-            return Loihi1SimCfg(
-                exception_proc_model_map=pdict, select_sub_proc_model=True
-            )
+            return Loihi1SimCfg(exception_proc_model_map=pdict,
+                                select_sub_proc_model=True)
         elif backend in NEUROCORES:
             from lava.lib.optimization.solvers.generic.read_gate.ncmodels \
                 import get_read_gate_c_model_class

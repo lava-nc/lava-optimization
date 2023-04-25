@@ -18,6 +18,7 @@ class NEBM(AbstractProcess):
         shape: ty.Tuple[int, ...],
         temperature: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
         refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
+        refract_counter: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
         init_value=0,
         init_state=0,
     ):
@@ -49,10 +50,8 @@ class NEBM(AbstractProcess):
         )
 
         self.temperature = Var(shape=shape, init=int(temperature))
-
         self.refract = Var(shape=shape, init=refract)
-
-        self.refract_counter = Var(shape=shape, init=int(0))
+        self.refract_counter = Var(shape=shape, init=refract_counter)
 
         # Initial state determined in DiscreteVariables
         self.state = Var(shape=shape, init=init_state.astype(int))

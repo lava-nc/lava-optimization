@@ -88,6 +88,7 @@ class SatelliteScheduleProblem:
         self.requests = None
         self.netx_solution = None
         self.lava_backend = None
+        self.probe_cost = None
         self.qubo_problem = None
         self.solver_report = None
         self.lava_solution = None
@@ -146,13 +147,16 @@ class SatelliteScheduleProblem:
         self.netx_solution = np.array([row for row in solution])
         self.netx_solution = self.netx_solution[np.argsort(self.netx_solution[:,0])]
     
-    def select_lava_backend(self, use_loihi2=True, partition='oheogulch'):
+    def select_lava_backend(self, use_loihi2=True, partition='kp'):
         """ Select a hardware backend for Lava. """
         if use_loihi2 and Loihi2.is_loihi2_available:
             self.lava_backend = 'Loihi2'
             Loihi2.preferred_partition = partition
+            Loihi2.set_environ_settings(partition)
+            self.probe_cost = False
         else:
             self.lava_backend = 'CPU'
+            self.probe_cost = True
     
     def set_qubo_hyperparameters(self, t=8, rmin=64, rmax=127):
         """ Set the hyperparameters to use for the QUBO solver. """
@@ -176,7 +180,7 @@ class SatelliteScheduleProblem:
                 hyperparameters=self.hyperparameters,
                 target_cost=self.target_cost,
                 backend=self.lava_backend,
-                probe_cost=True
+                probe_cost=self.probe_cost,
             )
         )
         qubo_state = self.solver_report.best_state
@@ -211,31 +215,33 @@ class SatelliteScheduleProblem:
 
     def plot_solutions(self):
         """ Plot the solutions using pyplot. """
-        if self.netx_solution is None:
-            self.netx_solution = np.array([(0, 0, self.requests[0,0], self.requests[0,1])])
-        self.netx_solution_nodes = np.zeros(self.num_nodes, dtype=int)
-        self.netx_solution_nodes[self.netx_solution[:,0].astype(int)] = 1
         plt.figure(figsize=(12,4), dpi=120)
-        plt.subplot(131)
-        plt.scatter(self.requests[:,0], self.requests[:,1], s=2, c='C1')
-        for i in self.satellites:
-            sat_plan = self.netx_solution[:,1] == i
-            plt.plot(self.netx_solution[sat_plan,2], self.netx_solution[sat_plan,3], 'C0o-', markersize=2, lw=0.75)
-        plt.title(f'The optimal solution satisfies {self.netx_solution.shape[0]} requests.')
-        plt.xticks([])
-        plt.yticks([])
-        plt.subplot(132)
+        if self.netx_solution is not None:
+            plt.subplot(131)
+            plt.scatter(self.requests[:,0], self.requests[:,1], s=2, c='C1')
+            for i in self.satellites:
+                sat_plan = self.netx_solution[:,1] == i
+                plt.plot(self.netx_solution[sat_plan,2], self.netx_solution[sat_plan,3], 'C0o-', markersize=2, lw=0.75)
+            plt.title(f'NetworkX schedule satisfies {self.netx_solution.shape[0]} requests.')
+            plt.xticks([])
+            plt.yticks([])
+            plt.subplot(132)
+        else:
+            plt.subplot(121)
         plt.scatter(self.requests[:,0], self.requests[:,1], s=2, c='C1')
         for i in self.satellites:
             sat_plan = self.lava_solution[:,1] == i
             plt.plot(self.lava_solution[sat_plan,2], self.lava_solution[sat_plan,3], 'C0o-', markersize=2, lw=0.75)
-        plt.title(f'The lava solution satisfies {self.lava_solution.shape[0]} requests.')
+        plt.title(f'Lava schedule satisfies {self.lava_solution.shape[0]} requests.')
         plt.xticks([])
         plt.yticks([])
-        plt.subplot(233)
-        plt.plot(self.solver_report.cost_timeseries.T, lw=0.75)
-        plt.title(f'Optimal solution cost is {self.qubo_problem.evaluate_cost(self.netx_solution_nodes)}\nQUBO Solution cost is {self.solver_report.best_cost}')
-        plt.subplot(236)
+        if self.solver_report.cost_timeseries is not None:
+            plt.subplot(233)
+            plt.plot(self.solver_report.cost_timeseries.T, lw=0.75)
+            plt.title(f'QUBO solution cost is {self.solver_report.best_cost}')
+            plt.subplot(236)
+        else:
+            plt.subplot(133)
         longest_plan = 1
         for i in self.satellites:
             sat_plan = self.lava_solution[:,1] == i

@@ -52,16 +52,12 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             self.solution_step = abs(timestep)
             self.min_cost[:] = np.asarray([cost[0], min_cost_id])
             if cost[0] < 0:
-                print(
+                self.log.info(msg=
                     f"Host: better solution found by network {min_cost_id} at "
                     f"step {abs(timestep)-2} "
                     f"with cost {cost[0]}: {self.solution}"
                 )
-
-            if (
-                self.min_cost[0] is not None
-                and self.min_cost[0] <= self.target_cost
-            ):
+            if (self.min_cost[0] is not None and self.min_cost[0] <= self.target_cost):
                 print(f"Host: network reached target cost {self.target_cost}.")
             if timestep > 0 or timestep == -1:
                 self.stop = True

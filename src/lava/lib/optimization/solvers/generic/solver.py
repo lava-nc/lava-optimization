@@ -137,6 +137,7 @@ class SolverConfig:
     backend: BACKENDS = CPU
     hyperparameters: HP_TYPE = None
     probe_cost: bool = False
+    probe_state: bool = False
     probe_time: bool = False
     probe_energy: bool = False
     log_level: int = 40
@@ -165,6 +166,7 @@ class SolverReport:
     best_state: np.ndarray = None
     best_timestep: int = None
     cost_timeseries: np.ndarray = None
+    state_timeseries: np.ndarray = None
     solver_config: SolverConfig = None
     profiler: Profiler = None
 
@@ -217,6 +219,7 @@ class OptimizationSolver:
         self.solver_model = None
         self._profiler = None
         self._cost_tracker = None
+        self._state_tracker = None
 
     def solve(self, config: SolverConfig = SolverConfig()) -> SolverReport:
         """
@@ -235,7 +238,10 @@ class OptimizationSolver:
         run_condition, run_cfg = self._prepare_solver(config)
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         best_state, best_cost, best_timestep = self._get_results(config)
-        cost_timeseries = self._get_cost_tracking()
+        cost_timeseries = self._get_probed_data(self._cost_tracker,
+                                                'optimality')
+        state_timeseries = self._get_probed_data(self._state_tracker,
+                                                 'variable_assignment')
         self.solver_process.stop()
         return SolverReport(
             best_cost=best_cost,
@@ -244,25 +250,40 @@ class OptimizationSolver:
             solver_config=config,
             profiler=self._profiler,
             cost_timeseries=cost_timeseries,
+            state_timeseries=state_timeseries,
         )
 
     def _prepare_solver(self, config: SolverConfig):
         self._create_solver_process(config=config)
         hps = config.hyperparameters
         num_in_ports = len(hps) if isinstance(hps, list) else 1
-        if config.probe_cost:
-            if config.backend in NEUROCORES:
-                from lava.utils.loihi2_state_probes import StateProbe
+        probes = []
+        if config.backend in NEUROCORES:
+            from lava.utils.loihi2_state_probes import StateProbe
+            if config.probe_cost:
                 self._cost_tracker = StateProbe(self.solver_process.optimality)
-            if config.backend in CPUS:
+                probes.append(self._cost_tracker)
+            if config.probe_state:
+                self._state_tracker = StateProbe(self.solver_process.variable_assignment)
+                probes.append(self._state_tracker)
+        elif config.backend in CPUS:
+            if config.probe_cost:
                 self._cost_tracker = Monitor()
                 self._cost_tracker.probe(
                     target=self.solver_process.optimality,
                     num_steps=config.timeout,
                 )
+                probes.append(self._cost_tracker)
+            if config.probe_state:
+                self._state_tracker = Monitor()
+                self._state_tracker.probe(
+                    target=self.solver_process.variable_assignment,
+                    num_steps=config.timeout,
+                )
+                probes.append(self._state_tracker)
         run_cfg = self._get_run_config(
             backend=config.backend,
-            probes=[self._cost_tracker] if self._cost_tracker else None,
+            probes= probes,
             num_in_ports=num_in_ports,
         )
         run_condition = RunSteps(num_steps=config.timeout)
@@ -308,15 +329,15 @@ class OptimizationSolver:
         """
         return [CPU] if backend in CPUS else [Loihi2NeuroCore], LoihiProtocol
 
-    def _get_cost_tracking(self):
-        if self._cost_tracker is None:
+    def _get_probed_data(self, tracker, var_name):
+        if tracker is None:
             return None
-        if isinstance(self._cost_tracker, Monitor):
-            return self._cost_tracker.get_data()[self.solver_process.name][
-                self.solver_process.optimality.name
-            ].T.astype(np.int32)
+        if isinstance(tracker, Monitor):
+            return tracker.get_data()[self.solver_process.name][
+                getattr(self.solver_process, var_name).name
+            ].astype(np.int32)
         else:
-            return self._cost_tracker.time_series
+            return tracker.time_series
 
     def _get_run_config(
         self, backend: BACKENDS, probes=None, num_in_ports: int = None

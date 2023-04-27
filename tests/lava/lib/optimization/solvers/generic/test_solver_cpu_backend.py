@@ -126,9 +126,11 @@ class TestOptimizationSolver(unittest.TestCase):
             probe_state=True
         )
         report = self.solver.solve(config=config)
-        self.assertIsInstance(report.state_timeseries, np.ndarray)
-        self.assertTrue(np.all(report.best_state,
-                        report.state_timeseries[report.best_timestep]))
+        states = report.state_timeseries
+        self.assertIsInstance(states, np.ndarray)
+        self.assertTrue(
+            np.all(report.best_state == states[report.best_timestep])
+        )
 
 
 def solve_workload(problem, reference_solution, noise_precision=5,

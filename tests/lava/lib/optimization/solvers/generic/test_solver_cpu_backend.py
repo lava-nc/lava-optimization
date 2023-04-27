@@ -34,7 +34,6 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertIsInstance(self.solver, OptimizationSolver)
 
     def test_solution_has_expected_shape(self):
-        print("test_solution_has_expected_shape")
         report = self.solver.solve(config=SolverConfig(timeout=3000))
         self.assertEqual(report.best_state.shape, self.solution.shape)
 
@@ -47,7 +46,6 @@ class TestOptimizationSolver(unittest.TestCase):
             hyperparameters={"neuron_model": "nebm"},
         )
         report = self.solver.solve(config=config)
-        print(report)
         self.assertTrue((report.best_state == self.solution).all())
         self.assertEqual(report.best_cost, self.problem.evaluate_cost(
             report.best_state))
@@ -61,7 +59,6 @@ class TestOptimizationSolver(unittest.TestCase):
                 hyperparameters={"neuron_model": "scif", "noise_precision": 5},
             )
         )
-        print(report)
         self.assertTrue((report.best_state == self.solution).all())
         self.assertEqual(report.best_cost, self.problem.evaluate_cost(
             report.best_state))
@@ -109,7 +106,6 @@ class TestOptimizationSolver(unittest.TestCase):
 
     def test_cost_tracking(self):
         np.random.seed(77)
-        print("test_cost_tracking")
         config = SolverConfig(
             timeout=50,
             target_cost=-20,
@@ -120,6 +116,19 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertIsInstance(report.cost_timeseries, np.ndarray)
         self.assertEqual(report.best_cost,
                          report.cost_timeseries[0][report.best_timestep])
+
+    def test_state_tracking(self):
+        np.random.seed(77)
+        config = SolverConfig(
+            timeout=50,
+            target_cost=-20,
+            backend="CPU",
+            probe_state=True
+        )
+        report = self.solver.solve(config=config)
+        self.assertIsInstance(report.state_timeseries, np.ndarray)
+        self.assertEqual(report.best_state,
+                         report.state_timeseries[report.best_timestep])
 
 
 def solve_workload(problem, reference_solution, noise_precision=5,

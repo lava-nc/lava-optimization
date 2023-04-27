@@ -403,10 +403,12 @@ class OptimizationSolver:
 
     def _get_best_state(self, config: SolverConfig, idx: int):
         if isinstance(config.hyperparameters, list):
+            idx = int(idx)
             raw_solution = np.asarray(
-                self.solver_process.finders[int(idx)].variables_assignment.get()
+                self.solver_process.finders[idx].variables_assignment.get()
             ).astype(np.int32)
             raw_solution &= 0x3F
             return raw_solution.astype(np.int8) >> 5
         else:
-            return self.solver_process.best_variable_assignment.aliased_var.get()
+            best_assignment = self.solver_process.best_variable_assignment
+            return best_assignment.aliased_var.get()

@@ -82,16 +82,14 @@ class TestOptimizationSolver(unittest.TestCase):
         pm = self.solver.solver_process.model_class(self.solver.solver_process)
         solution_finder = pm.finder_0
         solution_reader = pm.solution_reader
+        best_assignment = self.solver.solver_process.best_variable_assignment
         self.assertIs(
             solution_finder.cost_out.out_connections[0].process,
             solution_reader,
         )
+        self.assertIs(best_assignment.aliased_var, solution_reader.solution)
         self.assertIs(
-            self.solver.solver_process.variable_assignment.aliased_var,
-            solution_reader.solution,
-        )
-        self.assertIs(
-            self.solver.solver_process.variable_assignment.aliased_var.process,
+            best_assignment.aliased_var.process,
             solution_reader,
         )
 

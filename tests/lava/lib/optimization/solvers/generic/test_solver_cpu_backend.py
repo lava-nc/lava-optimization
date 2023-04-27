@@ -115,7 +115,7 @@ class TestOptimizationSolver(unittest.TestCase):
         report = self.solver.solve(config=config)
         self.assertIsInstance(report.cost_timeseries, np.ndarray)
         self.assertEqual(report.best_cost,
-                         report.cost_timeseries[0][report.best_timestep])
+                         report.cost_timeseries.T[0][report.best_timestep])
 
     def test_state_tracking(self):
         np.random.seed(77)
@@ -127,8 +127,8 @@ class TestOptimizationSolver(unittest.TestCase):
         )
         report = self.solver.solve(config=config)
         self.assertIsInstance(report.state_timeseries, np.ndarray)
-        self.assertEqual(report.best_state,
-                         report.state_timeseries[report.best_timestep])
+        self.assertTrue(np.all(report.best_state,
+                        report.state_timeseries[report.best_timestep]))
 
 
 def solve_workload(problem, reference_solution, noise_precision=5,

@@ -409,4 +409,4 @@ class OptimizationSolver:
             raw_solution &= 0x3F
             return raw_solution.astype(np.int8) >> 5
         else:
-            return self.solver_process.variable_assignment.aliased_var.get()
+            return self.solver_process.best_variable_assignment.aliased_var.get()

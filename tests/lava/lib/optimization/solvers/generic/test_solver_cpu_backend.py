@@ -129,7 +129,7 @@ class TestOptimizationSolver(unittest.TestCase):
         states = report.state_timeseries
         self.assertIsInstance(states, np.ndarray)
         self.assertTrue(
-            np.all(report.best_state == states[report.best_timestep])
+            np.all(report.best_state == states[report.best_timestep + 1])
         )
 
 

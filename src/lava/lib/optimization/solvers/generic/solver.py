@@ -264,7 +264,9 @@ class OptimizationSolver:
                 self._cost_tracker = StateProbe(self.solver_process.optimality)
                 probes.append(self._cost_tracker)
             if config.probe_state:
-                self._state_tracker = StateProbe(self.solver_process.variable_assignment)
+                self._state_tracker = StateProbe(
+                    self.solver_process.variable_assignment
+                )
                 probes.append(self._state_tracker)
         elif config.backend in CPUS:
             if config.probe_cost:
@@ -283,7 +285,7 @@ class OptimizationSolver:
                 probes.append(self._state_tracker)
         run_cfg = self._get_run_config(
             backend=config.backend,
-            probes= probes,
+            probes=probes,
             num_in_ports=num_in_ports,
         )
         run_condition = RunSteps(num_steps=config.timeout)

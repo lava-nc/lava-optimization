@@ -52,11 +52,10 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             self._printout_if_converged()
             self._stop_if_requested(timestep, min_cost_id)
 
-
     def _receive_data(self):
         timestep = self.timestep_in.recv()[0]
         raw_solution = self.read_solution.recv()
-        return  timestep, raw_solution
+        return timestep, raw_solution
 
     def _decode_cost(self, raw_cost):
         # The following casts cost as a signed 24-bit value (8 = 32 - 24)
@@ -69,10 +68,10 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 
     def _printout_new_solution(self, cost, min_cost_id, timestep):
         print(
-                f"Host: better solution found by network {min_cost_id} at "
-                f"step {abs(timestep) - 2} "
-                f"with cost {cost[0]}: {self.solution}"
-                )
+            f"Host: better solution found by network {min_cost_id} at "
+            f"step {abs(timestep) - 2} "
+            f"with cost {cost[0]}: {self.solution}"
+        )
 
     def _printout_if_converged(self):
         if (

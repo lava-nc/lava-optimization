@@ -48,7 +48,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             self.solution[:] = self._decode_solution(raw_solution)
             self.min_cost[:] = np.asarray([cost[0], min_cost_id])
             if cost[0] < 0:
-                self._printout_new_solution(min_cost_id, timestep)
+                self._printout_new_solution(cost, min_cost_id, timestep)
             self._printout_if_converged()
             self._stop_if_requested(timestep, min_cost_id)
 

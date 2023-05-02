@@ -238,10 +238,7 @@ class OptimizationSolver:
         run_condition, run_cfg = self._prepare_solver(config)
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         best_state, best_cost, best_timestep = self._get_results(config)
-        cost_timeseries = self._get_probed_data(self._cost_tracker,
-                                                'optimality')
-        state_timeseries = self._get_probed_data(self._state_tracker,
-                                                 'variable_assignment')
+        cost_timeseries, state_timeseries = self._get_probing(config)
         self.solver_process.stop()
         return SolverReport(
             best_cost=best_cost,
@@ -330,6 +327,28 @@ class OptimizationSolver:
             will be returned.
         """
         return [CPU] if backend in CPUS else [Loihi2NeuroCore], LoihiProtocol
+
+    def _get_probing(
+        self, config: SolverConfig()
+    ) -> ty.Tuple[np.ndarray, np.ndarray]:
+        """
+        Return the cost and state timeseries if probed.
+
+        Parameters
+        ----------
+        config: SolverConfig
+            Solver configuraiton used. Refers to SolverConfig documentation.
+        """
+        cost_timeseries = self._get_probed_data(
+            tracker=self._cost_tracker, var_name="optimality"
+        )
+        state_timeseries = self._get_probed_data(
+            tracker=self._state_tracker, var_name="variable_assignment"
+        )
+        if state_timeseries is not None:
+            state_timeseries &= 0x1F
+            state_timeseries = state_timeseries.astype(np.int8) >> 4
+        return cost_timeseries, state_timeseries
 
     def _get_probed_data(self, tracker, var_name):
         if tracker is None:

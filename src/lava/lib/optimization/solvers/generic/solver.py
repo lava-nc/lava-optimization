@@ -1,37 +1,13 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
-import numpy as np
 import typing as ty
-
 from dataclasses import dataclass
-from lava.lib.optimization.problems.problems import OptimizationProblem
-from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
-from lava.lib.optimization.solvers.generic.hierarchical_processes import (
-    NEBMAbstract,
-    NEBMSimulatedAnnealingAbstract,
-)
 
-from lava.lib.optimization.solvers.generic.scif.models import (
-    PyModelQuboScifFixed,
-)
-from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
-from lava.lib.optimization.solvers.generic.scif.process import QuboScif
-from lava.lib.optimization.solvers.generic.nebm.process import NEBM
-from lava.lib.optimization.solvers.generic.cost_integrator.process import (
-    CostIntegrator,
-)
-from lava.lib.optimization.solvers.generic.nebm.process import (
-    NEBMSimulatedAnnealing,
-)
-from lava.lib.optimization.solvers.generic.sub_process_models import (
-    NEBMAbstractModel,
-    NEBMSimulatedAnnealingAbstractModel,
-)
-
+import numpy as np
 from lava.magma.core.resources import (
-    AbstractComputeResource,
     CPU,
+    AbstractComputeResource,
     Loihi2NeuroCore,
     NeuroCore,
 )
@@ -44,17 +20,44 @@ from lava.proc.dense.process import Dense
 from lava.proc.monitor.process import Monitor
 from lava.utils.profiler import Profiler
 
+from lava.lib.optimization.problems.problems import OptimizationProblem
+from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
+from lava.lib.optimization.solvers.generic.cost_integrator.process import (
+    CostIntegrator,
+)
+from lava.lib.optimization.solvers.generic.hierarchical_processes import (
+    NEBMAbstract,
+    NEBMSimulatedAnnealingAbstract,
+)
+from lava.lib.optimization.solvers.generic.monitoring_processes.solution_readout.models import (
+    SolutionReadoutPyModel,
+)
+from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
+from lava.lib.optimization.solvers.generic.nebm.process import (
+    NEBM,
+    NEBMSimulatedAnnealing,
+)
+from lava.lib.optimization.solvers.generic.scif.models import (
+    PyModelQuboScifFixed,
+)
+from lava.lib.optimization.solvers.generic.scif.process import QuboScif
+from lava.lib.optimization.solvers.generic.sub_process_models import (
+    NEBMAbstractModel,
+    NEBMSimulatedAnnealingAbstractModel,
+)
+
 try:
-    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
-        ReadGateCModel,
-    )
     from lava.proc.dense.ncmodels import NcModelDense
+
+    from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels import (
+        CostIntegratorNcModel,
+    )
     from lava.lib.optimization.solvers.generic.nebm.ncmodels import (
         NEBMNcModel,
         NEBMSimulatedAnnealingNcModel,
     )
-    from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels import (
-        CostIntegratorNcModel,
+    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
+        ReadGateCModel,
     )
 except ImportError:
 
@@ -257,6 +260,7 @@ class OptimizationSolver:
         probes = []
         if config.backend in NEUROCORES:
             from lava.utils.loihi2_state_probes import StateProbe
+
             if config.probe_cost:
                 self._cost_tracker = StateProbe(self.solver_process.optimality)
                 probes.append(self._cost_tracker)
@@ -346,8 +350,9 @@ class OptimizationSolver:
             tracker=self._state_tracker, var_name="variable_assignment"
         )
         if state_timeseries is not None:
-            state_timeseries &= 0x1F
-            state_timeseries = state_timeseries.astype(np.int8) >> 4
+            state_timeseries = SolutionReadoutPyModel.decode_solution(
+                state_timeseries
+            )
         return cost_timeseries, state_timeseries
 
     def _get_probed_data(self, tracker, var_name):
@@ -363,11 +368,11 @@ class OptimizationSolver:
     def _get_run_config(
         self, backend: BACKENDS, probes=None, num_in_ports: int = None
     ):
-        from lava.lib.optimization.solvers.generic.read_gate.process import (
-            ReadGate,
-        )
         from lava.lib.optimization.solvers.generic.read_gate.models import (
             get_read_gate_model_class,
+        )
+        from lava.lib.optimization.solvers.generic.read_gate.process import (
+            ReadGate,
         )
 
         if backend in CPUS:
@@ -390,8 +395,7 @@ class OptimizationSolver:
                 Dense: NcModelDense,
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMNcModel,
-                NEBMSimulatedAnnealingAbstract:
-                    NEBMSimulatedAnnealingAbstractModel,
+                NEBMSimulatedAnnealingAbstract: NEBMSimulatedAnnealingAbstractModel,
                 NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
                 CostIntegrator: CostIntegratorNcModel,
             }
@@ -415,7 +419,7 @@ class OptimizationSolver:
 
     def _get_results(self, config: SolverConfig):
         best_cost, idx = self.solver_process.optimum.get()
-        best_cost = (np.asarray([best_cost]).astype(np.int32) << 8) >> 8
+        best_cost = SolutionReadoutPyModel.decode_cost(best_cost)
         best_state = self._get_best_state(config, idx)
         best_timestep = self.solver_process.solution_step.aliased_var.get() - 2
         return best_state, int(best_cost), int(best_timestep)

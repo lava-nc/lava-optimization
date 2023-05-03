@@ -43,9 +43,9 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
         raw_cost, min_cost_id = self.cost_in.recv()
         if raw_cost != 0:
             timestep, raw_solution = self._receive_data()
-            cost = self._decode_cost(raw_cost)
+            cost = self.decode_cost(raw_cost)
             self.solution_step = abs(timestep)
-            self.solution[:] = self._decode_solution(raw_solution)
+            self.solution[:] = self.decode_solution(raw_solution)
             self.min_cost[:] = np.asarray([cost[0], min_cost_id])
             if cost[0] < 0:
                 self._printout_new_solution(cost, min_cost_id, timestep)
@@ -57,11 +57,13 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
         raw_solution = self.read_solution.recv()
         return timestep, raw_solution
 
-    def _decode_cost(self, raw_cost):
+    @staticmethod
+    def decode_cost(raw_cost) -> np.ndarray:
         # The following casts cost as a signed 24-bit value (8 = 32 - 24)
         return (np.array([raw_cost]).astype(np.int32) << 8) >> 8
 
-    def _decode_solution(self, raw_solution):
+    @staticmethod
+    def decode_solution(raw_solution) -> np.ndarray:
         raw_solution &= 0x1F  # AND with 0x1F (=0b11111) retains 5 LSBs
         # The binary solution was attained 2 steps ago. Shift down by 4.
         return raw_solution.astype(np.int8) >> 4

@@ -29,9 +29,8 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     NEBMAbstract,
     NEBMSimulatedAnnealingAbstract,
 )
-from lava.lib.optimization.solvers.generic.monitoring_processes.solution_readout.models import (
-    SolutionReadoutPyModel,
-)
+from lava.lib.optimization.solvers.generic.monitoring_processes.\
+    solution_readout.models import SolutionReadoutPyModel
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.nebm.process import (
     NEBM,
@@ -395,7 +394,8 @@ class OptimizationSolver:
                 Dense: NcModelDense,
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMNcModel,
-                NEBMSimulatedAnnealingAbstract: NEBMSimulatedAnnealingAbstractModel,
+                NEBMSimulatedAnnealingAbstract:
+                    NEBMSimulatedAnnealingAbstractModel,
                 NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
                 CostIntegrator: CostIntegratorNcModel,
             }

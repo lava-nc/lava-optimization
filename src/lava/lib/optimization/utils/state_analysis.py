@@ -117,5 +117,16 @@ class StateAnalysis:
         )
         self._show_or_save(ax, filename)
 
-    def plot_successive_states_distance(self, filename: str = None) -> None:
-        return NotImplementedError
+    def plot_successive_states_distance(
+        self, report: SolverReport, filename: str = None
+    ) -> None:
+        states = self._extract_states_or_warn(report)
+        if states is None:
+            return
+        distance = np.sum(np.abs(states[1:] - states[:-1]), axis=1)
+        ax = self._line_plot(
+            x=list(range(len(states) - 1)),
+            y=distance,
+            title="Hamming Distance Between Successive States",
+        )
+        self._show_or_save(ax, filename)

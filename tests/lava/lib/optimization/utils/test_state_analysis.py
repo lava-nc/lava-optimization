@@ -71,6 +71,11 @@ class TestStateAnalysis(unittest.TestCase):
         self.assertTrue(os.path.exists(filename))
         os.remove(filename)
 
+    def test_plot_successive_states_distance(self) -> None:
+        filename = "plot_successive_states_distance.png"
+        self.analysis.plot_successive_states_distance(
+            report=self.report, filename=filename
+        )
         self.assertTrue(os.path.exists(filename))
         os.remove(filename)
 

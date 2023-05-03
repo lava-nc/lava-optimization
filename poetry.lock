@@ -1721,8 +1721,8 @@ scipy = "^1.8.0"
 [package.source]
 type = "git"
 url = "https://github.com/lava-nc/lava.git"
-reference = "v0.7.0"
-resolved_reference = "82a044a6cc55d78c4ed80c3ec61aea84dba6c282"
+reference = "main"
+resolved_reference = "ae45028ae1c04d8ab56988a77d3af67caf9fd488"
 
 [[package]]
 name = "linecache2"

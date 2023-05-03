@@ -12,9 +12,8 @@ import numpy as np
 
 
 class StateAnalysis:
-    def __init__(self, problem: QUBO, report: SolverReport = None) -> None:
+    def __init__(self, problem: QUBO) -> None:
         self.problem = problem
-        self.report = report
 
     def _line_plot(
         self,
@@ -37,64 +36,72 @@ class StateAnalysis:
         ax.set_title(title)
         return ax
 
-    def _extract_cost_timeseries(self) -> np.ndarray:
-        if self.report.cost_timeseries is not None:
-            return np.array(self.report.cost_timeseries)
-        elif self.report.state_timeseries is not None:
+    def _extract_costs_or_warn(self, report: SolverReport) -> np.ndarray:
+        if report.cost_timeseries is not None:
+            return np.array(report.cost_timeseries)
+        elif self.problem is not None and report.state_timeseries is not None:
             return np.array(
-                map(self.problem.evaluate_cost, self.report.state_timeseries)
+                map(self.problem.evaluate_cost, report.state_timeseries)
             )
         else:
             warnings.warn("Cost timeseries is not available.")
-            return None
 
-    def _extract_state_timeseries(self) -> np.ndarray:
-        if self.report.state_timeseries is not None:
-            return np.array(self.report.state_timeseries)
+    def _extract_states_or_warn(self, report: SolverReport) -> np.ndarray:
+        if report.state_timeseries is not None:
+            return np.array(report.state_timeseries)
         else:
             warnings.warn("State timeseries is not available.")
-            return None
 
-    def _plot_or_show(self, ax: plt.Axes, filename: str = None) -> None:
+    def _show_or_save(self, ax: plt.Axes, filename: str = None) -> None:
         if filename is None:
             ax.get_figure().show()
         else:
             ax.get_figure().savefig(filename)
 
-    def plot_cost_timeseries(self, filename: str = None) -> None:
-        cost = self._extract_cost_timeseries()
+    def plot_cost_timeseries(
+        self, report: SolverReport, filename: str = None
+    ) -> None:
+        cost = self._extract_costs_or_warn(report)
         if cost is None:
             return
         ax = self._line_plot(x=list(range(len(cost))), y=cost, title="Cost")
-        self._plot_or_show(ax, filename)
+        self._show_or_save(ax, filename)
 
-    def plot_min_cost_timeseries(self, filename: str = None) -> None:
-        cost = self._extract_cost_timeseries()
+    def plot_min_cost_timeseries(
+        self, report: SolverReport, filename: str = None
+    ) -> None:
+        cost = self._extract_costs_or_warn(report)
         if cost is None:
             return
         min_cost = np.minimum.accumulate(cost, axis=0)
         ax = self._line_plot(
             x=list(range(len(min_cost))), y=min_cost, title="Minimum Cost"
         )
-        self._plot_or_show(ax, filename)
+        self._show_or_save(ax, filename)
 
-    def plot_cost_distribution(self, filename: str = None) -> None:
-        cost = self._extract_cost_timeseries()
+    def plot_cost_distribution(
+        self, report: SolverReport, filename: str = None
+    ) -> None:
+        cost = self._extract_costs_or_warn(report)
         if cost is None:
             return
         ax = self._hist_plot(y=cost, title="Cost Distribution")
-        self._plot_or_show(ax, filename)
+        self._show_or_save(ax, filename)
 
-    def plot_delta_cost_distribution(self, filename: str = None) -> None:
-        cost = self._extract_cost_timeseries()
+    def plot_delta_cost_distribution(
+        self, report: SolverReport, filename: str = None
+    ) -> None:
+        cost = self._extract_costs_or_warn(report)
         if cost is None:
             return
         delta_cost = cost[1:] - cost[:-1]
         ax = self._hist_plot(y=delta_cost, title="Delta-Cost Distribution")
-        self._plot_or_show(ax, filename)
+        self._show_or_save(ax, filename)
 
-    def plot_unique_state_visits(self, filename: str = None) -> None:
-        states = self._extract_state_timeseries()
+    def plot_unique_state_visits(
+        self, report: SolverReport, filename: str = None
+    ) -> None:
+        states = self._extract_states_or_warn(report)
         if states is None:
             return
         num_unique_states = list(
@@ -108,7 +115,7 @@ class StateAnalysis:
             y=num_unique_states,
             title="Cumulative Number of Unique States Visited",
         )
-        self._plot_or_show(ax, filename)
+        self._show_or_save(ax, filename)
 
     def plot_successive_states_distance(self, filename: str = None) -> None:
         return NotImplementedError

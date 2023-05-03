@@ -26,38 +26,51 @@ def prepare_problem_and_report():
 class TestStateAnalysis(unittest.TestCase):
     def setUp(self) -> None:
         self.problem, self.report = prepare_problem_and_report()
-        self.analysis = StateAnalysis(problem=self.problem, report=self.report)
+        self.analysis = StateAnalysis(problem=self.problem)
 
     def test_create_obj(self) -> None:
         self.assertIsInstance(self.analysis, StateAnalysis)
 
     def test_plot_cost_timeseries(self) -> None:
         filename = "plot_cost_timeseries.png"
-        self.analysis.plot_cost_timeseries(filename=filename)
+        self.analysis.plot_cost_timeseries(
+            report=self.report, filename=filename
+        )
         self.assertTrue(os.path.exists(filename))
         os.remove(filename)
 
     def test_plot_min_cost_timeseries(self) -> None:
         filename = "plot_min_cost_timseries.png"
-        self.analysis.plot_min_cost_timeseries(filename=filename)
+        self.analysis.plot_min_cost_timeseries(
+            report=self.report, filename=filename
+        )
         self.assertTrue(os.path.exists(filename))
         os.remove(filename)
 
     def test_plot_cost_distribution(self) -> None:
         filename = "plot_cost_distribution.png"
-        self.analysis.plot_cost_distribution(filename=filename)
+        self.analysis.plot_cost_distribution(
+            report=self.report, filename=filename
+        )
         self.assertTrue(os.path.exists(filename))
         os.remove(filename)
 
     def test_plot_delta_cost_distribution(self) -> None:
         filename = "plot_delta_cost_distribution.png"
-        self.analysis.plot_delta_cost_distribution(filename=filename)
+        self.analysis.plot_delta_cost_distribution(
+            report=self.report, filename=filename
+        )
         self.assertTrue(os.path.exists(filename))
         os.remove(filename)
 
     def test_plot_unique_state_visits(self) -> None:
         filename = "plot_unique_state_visits.png"
-        self.analysis.plot_unique_state_visits(filename=filename)
+        self.analysis.plot_unique_state_visits(
+            report=self.report, filename=filename
+        )
+        self.assertTrue(os.path.exists(filename))
+        os.remove(filename)
+
         self.assertTrue(os.path.exists(filename))
         os.remove(filename)
 

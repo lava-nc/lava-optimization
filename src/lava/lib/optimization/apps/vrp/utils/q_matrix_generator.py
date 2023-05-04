@@ -44,6 +44,7 @@ class QMatrixVRP:
             lamda_cnstrt=1,
             fixed_pt=False,
             fixed_pt_range=(0, 127),
+            max_dist_cutoff_fraction=1.0,
             profile_mat_gen=False
     ) -> None:
         """The Constructor of the class generates Q matrices depending on the
@@ -90,6 +91,11 @@ class QMatrixVRP:
             value of  min and max values that the Q matrix can have if
             `fixed_pt =True`.
 
+            max_dist_cutoff_fraction (float, optional) : Specifies the
+            fraction of maximum distance in the distance matrix at which
+            distances are cut-off. Helps in sparsifying the distance matrix.
+            Default is 1.0, which means no cut-off.
+
             profile_mat_gen (bool, optional): Specifies if Q matrix
             generation needs to be timed using python's time.time()
         """
@@ -98,15 +104,18 @@ class QMatrixVRP:
         self.max_fixed_pt_mant = fixed_pt_range[1]
         self.problem_type = problem_type
         self.num_vehicles = num_vehicles
+        self.max_cutoff_frac = max_dist_cutoff_fraction
+        self.dist_sparsity = 0.
+        self.dist_proxy_sparsity = 0.
 
         if self.problem_type == ProblemType.RANDOM:
             self.matrix = np.random.randint(-128, 127, size=(
                 mat_size_for_random, mat_size_for_random))
         elif self.problem_type == ProblemType.CLUSTER:
             start_time = time.time()
-            self.matrix = self._gen_clustering_Q_matrix(
-                input_nodes, lamda_dist, lamda_wypts, lamda_vhcles
-            )
+            self.matrix, self.dist_sparsity, self.dist_proxy_sparsity = \
+                self._gen_clustering_Q_matrix(input_nodes, lamda_dist,
+                                              lamda_wypts, lamda_vhcles)
             if profile_mat_gen:
                 time_taken_clustering = time.time() - start_time
                 pprint(f"Clustering Q matrix generated in"
@@ -251,11 +260,20 @@ class QMatrixVRP:
         # Dist_proxy[Dist <= 1] = Dist[Dist <= 1]
         # Dist_proxy[Dist > 1] = 2 - log_dist_mtrx[Dist > 1]
         # Dist_proxy = 100 * (1 - np.exp(-Dist/100))
+        max_dist_cutoff = self.max_cutoff_frac * np.max(Dist)
+        Dist_proxy = Dist.copy()
+        Dist_proxy[Dist_proxy >= max_dist_cutoff] = max_dist_cutoff
+        Dist_proxy = np.around(Dist_proxy - max_dist_cutoff, 2)
+        dist_sparsity = 1 - (np.count_nonzero(Dist) / np.prod(Dist.shape))
+        dist_proxy_sparsity = 1 - (
+                np.count_nonzero(Dist_proxy) / np.prod(Dist_proxy.shape)
+        )
+        print(f"{dist_sparsity=}\t{dist_proxy_sparsity=}")
 
         # TODO: Introduce cut-off distancing later to sparsify distance
         #  matrix later using one of the proxies above.
         # Distance matrix for the encoding
-        dist_mtrx = np.kron(np.eye(self.num_vehicles), Dist)
+        dist_mtrx = np.kron(np.eye(self.num_vehicles), Dist_proxy)
 
         # Vehicles can only belong to one cluster
         # Off-diagonal elements are two, populating matrix with 2
@@ -308,7 +326,7 @@ class QMatrixVRP:
              + lamda_wypts * cnstrnt_wypts_blck)
         if self.fixed_pt:
             Q = self._stochastic_rounding(Q)
-        return Q
+        return Q, dist_sparsity, dist_proxy_sparsity
 
     def _stochastic_rounding(self, tensor):
         """A function to rescale and stochastically round tensor to fixed

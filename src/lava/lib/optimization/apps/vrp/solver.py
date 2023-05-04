@@ -73,6 +73,7 @@ class VRPConfig(SolverConfig):
     """
 
     core_solver: CoreSolver = CoreSolver.VRPY_CPU
+    max_dist_cutoff_fraction: float = 1.0
 
 
 class VRPSolver:
@@ -80,6 +81,8 @@ class VRPSolver:
     """
     def __init__(self, vrp: VRP):
         self.problem = vrp
+        self.dist_sparsity = 0.
+        self.dist_proxy_sparsity = 0.
 
     def solve(self, scfg: VRPConfig = VRPConfig()) -> \
             Tuple[npty.NDArray, Dict[int, List[int]]]:
@@ -127,9 +130,11 @@ class VRPSolver:
                     g.add_edge("Source", n, cost=cost_src_to_nod)
                     g.add_edge(n, "Sink", cost=cost_nod_to_snk)
             return g
-        vrp = VehicleRoutingProblem(self.problem.problem_graph)
-        vrpy_is_installed = not hasattr(vrp, "vrpy_not_installed")
-        if scfg.core_solver == CoreSolver.VRPY_CPU and vrpy_is_installed:
+        if scfg.core_solver == CoreSolver.VRPY_CPU:
+            vrp = VehicleRoutingProblem(self.problem.problem_graph)
+            vrpy_is_installed = not hasattr(vrp, "vrpy_not_installed")
+            if not vrpy_is_installed:
+                raise ImportError("VRPy is not installed.")
             # 1. Prepare problem for VRPy
             graph_to_solve = self.problem.problem_graph.copy()
             graph_to_solve = _prepare_graph_for_vrpy(graph_to_solve)
@@ -162,17 +167,22 @@ class VRPSolver:
                 self.problem.node_coords
             # number of binary variables = total_num_nodes * num_clusters
             mat_size = len(node_list_for_clustering) * self.problem.num_vehicles
-            Q_clust = QMatrixVRP(node_list_for_clustering,
-                                 num_vehicles=self.problem.num_vehicles,
-                                 problem_type=ProblemType.CLUSTER,
-                                 mat_size_for_random=mat_size,
-                                 lamda_dist=1,
-                                 lamda_wypts=100,
-                                 lamda_vhcles=100,
-                                 lamda_cnstrt=1,
-                                 fixed_pt=True,
-                                 fixed_pt_range=(-128, 127),
-                                 profile_mat_gen=False).matrix.astype(int)
+            q_clust_obj = QMatrixVRP(
+                node_list_for_clustering,
+                num_vehicles=self.problem.num_vehicles,
+                problem_type=ProblemType.CLUSTER,
+                mat_size_for_random=mat_size,
+                lamda_dist=1,
+                lamda_wypts=100,
+                lamda_vhcles=100,
+                lamda_cnstrt=1,
+                fixed_pt=True,
+                fixed_pt_range=(-128, 127),
+                max_dist_cutoff_fraction=scfg.max_dist_cutoff_fraction,
+                profile_mat_gen=False)
+            Q_clust = q_clust_obj.matrix.astype(int)
+            self.dist_sparsity = q_clust_obj.dist_sparsity
+            self.dist_proxy_sparsity = q_clust_obj.dist_proxy_sparsity
             # 2. Call Lava QUBO solvers
             prob = QUBO(q=Q_clust)
             solver = OptimizationSolver(problem=prob)
@@ -203,17 +213,18 @@ class VRPSolver:
                     node_idxs[0] >= self.problem.num_vehicles]
                 nodes_to_pass = np.array(node_list_for_clustering)[node_idxs, :]
                 nodes_to_pass = [tuple(node) for node in nodes_to_pass.tolist()]
-                Q_VRP = QMatrixVRP(nodes_to_pass,
-                                   num_vehicles=1,
-                                   problem_type=ProblemType.TSP,
-                                   mat_size_for_random=matsize,
-                                   lamda_dist=1,
-                                   lamda_wypts=1,
-                                   lamda_vhcles=1,
-                                   lamda_cnstrt=100,
-                                   fixed_pt=True,
-                                   fixed_pt_range=(-128, 127),
-                                   profile_mat_gen=False).matrix.astype(int)
+                Q_VRP = QMatrixVRP(
+                    nodes_to_pass,
+                    num_vehicles=1,
+                    problem_type=ProblemType.TSP,
+                    mat_size_for_random=matsize,
+                    lamda_dist=1,
+                    lamda_wypts=1,
+                    lamda_vhcles=1,
+                    lamda_cnstrt=100,
+                    fixed_pt=True,
+                    fixed_pt_range=(-128, 127),
+                    profile_mat_gen=False).matrix.astype(int)
                 tsp = QUBO(q=Q_VRP)
                 tsp_solver = OptimizationSolver(problem=tsp)
                 scfg.hyperparameters.update({

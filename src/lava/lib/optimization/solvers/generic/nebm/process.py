@@ -79,9 +79,10 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
         init_value=0,
         init_state=None,
+        neuron_model: str,
     ):
         """
-        NEBM Process.
+        SA Process.
 
         Parameters
         ----------
@@ -106,6 +107,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
             steps_per_temperature=steps_per_temperature,
             refract=refract,
             refract_scaling=refract_scaling,
+            neuron_model=neuron_model,
         )
 
         self.a_in = InPort(shape=shape)

@@ -24,6 +24,7 @@ class V1Neuron(AbstractProcess):
     def __init__(self,
                  vth: float,
                  tau: float,
+                 tau_exp: int,
                  shape: ty.Optional[tuple] = (1,),
                  bias: ty.Optional[ty.Union[int, np.ndarray]] = 0,
                  two_layer: ty.Optional[bool] = True,
@@ -32,11 +33,13 @@ class V1Neuron(AbstractProcess):
         super().__init__(shape=shape,
                          vth=vth,
                          tau=tau,
+                         tau_exp=tau_exp,
                          two_layer=two_layer,
                          **kwargs)
 
         self.vth = Var(shape=(1,), init=vth)
         self.tau = Var(shape=(1,), init=tau)
+        self.tau_exp = Var(shape=(1,), init=tau_exp)
         self.a_in = InPort(shape=shape)
         self.s_out = OutPort(shape=shape)
         self.v = Var(shape=shape)

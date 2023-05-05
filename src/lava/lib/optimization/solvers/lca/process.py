@@ -19,7 +19,7 @@ class LCA1Layer(AbstractProcess):
 
     V1 Dynamics
     -----------
-    dv = -v + (Φ^T*Φ-I)
+    dv = -v + a(-Φ^T*Φ+I) + Φ^T*s
     a = soft_threshold(v)
 
     Parameters
@@ -62,7 +62,7 @@ class LCA2Layer(AbstractProcess):
 
     V1 Layer Dynamics
     -----------------
-    dv = -v + ΦT + R_spike
+    dv = -v + Φ^T(R_spike) + a
     a = soft_threshold(v)
 
     Residual Layer Dynamics

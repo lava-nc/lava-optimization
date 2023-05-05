@@ -10,15 +10,6 @@ from lava.magma.core.run_conditions import RunSteps
 from lava.proc.io import sink
 
 from lava.lib.optimization.solvers.lca.process import LCA1Layer, LCA2Layer
-from lava.lib.optimization.solvers.lca.lca_neuron.process import LCANeuron
-from lava.lib.optimization.solvers.lca.accumulator.process import \
-    AccumulatorNeuron
-from lava.lib.optimization.solvers.lca.models import LCA1LayerModelFixed
-from lava.lib.optimization.solvers.lca.accumulator.models import \
-    PyAccumulatorFixed
-from lava.lib.optimization.solvers.lca.lca_neuron.models import \
-    PyLCANeuronFixed
-
 
 class TestLCAFixed(unittest.TestCase):
     def test_identity_matrix(self):
@@ -35,10 +26,7 @@ class TestLCAFixed(unittest.TestCase):
         lca.res.connect(res_output.a_in)
 
         run_config = Loihi1SimCfg(select_tag='fixed_pt',
-                                  select_sub_proc_model=True,
-                                  exception_proc_model_map={
-                                      LCANeuron: PyLCANeuronFixed,
-                                      AccumulatorNeuron: PyAccumulatorFixed})
+                                  select_sub_proc_model=True)
 
         v1_output.run(condition=RunSteps(num_steps=1000), run_cfg=run_config)
 
@@ -63,10 +51,7 @@ class TestLCAFixed(unittest.TestCase):
         lca.res.connect(res_output.a_in)
 
         run_config = Loihi1SimCfg(select_tag='fixed_pt',
-                                  select_sub_proc_model=True,
-                                  exception_proc_model_map={
-                                      LCANeuron: PyLCANeuronFixed,
-                                      AccumulatorNeuron: PyAccumulatorFixed})
+                                  select_sub_proc_model=True)
 
         v1_output.run(condition=RunSteps(num_steps=1000), run_cfg=run_config)
 
@@ -95,10 +80,7 @@ class TestLCAFixed(unittest.TestCase):
         lca.res.connect(res_output.a_in)
 
         run_config = Loihi1SimCfg(select_tag='fixed_pt',
-                                  select_sub_proc_model=True,
-                                  exception_proc_model_map={
-                                      LCANeuron: PyLCANeuronFixed,
-                                      AccumulatorNeuron: PyAccumulatorFixed})
+                                  select_sub_proc_model=True)
 
         v1_output.run(condition=RunSteps(num_steps=1000), run_cfg=run_config)
 
@@ -126,10 +108,7 @@ class TestLCAFixed(unittest.TestCase):
         lca.res.connect(res_output.a_in)
 
         run_config = Loihi1SimCfg(select_tag='fixed_pt',
-                                  select_sub_proc_model=True,
-                                  exception_proc_model_map={
-                                      LCANeuron: PyLCANeuronFixed,
-                                      AccumulatorNeuron: PyAccumulatorFixed})
+                                  select_sub_proc_model=True)
 
         v1_output.run(condition=RunSteps(num_steps=1000), run_cfg=run_config)
 
@@ -157,11 +136,7 @@ class TestLCAFixed(unittest.TestCase):
             lca.res.connect(res_output.a_in)
 
             run_config = Loihi1SimCfg(select_tag='fixed_pt',
-                                      select_sub_proc_model=True,
-                                      exception_proc_model_map={
-                                          LCANeuron: PyLCANeuronFixed,
-                                          AccumulatorNeuron:
-                                              PyAccumulatorFixed})
+                                      select_sub_proc_model=True)
 
             v1_output.run(condition=RunSteps(num_steps=1), run_cfg=run_config)
 
@@ -174,11 +149,7 @@ class TestLCAFixed(unittest.TestCase):
             lca.res.connect(res_output.a_in)
 
             run_config = Loihi1SimCfg(select_tag='fixed_pt',
-                                      select_sub_proc_model=True,
-                                      exception_proc_model_map={
-                                          LCANeuron: PyLCANeuronFixed,
-                                          AccumulatorNeuron:
-                                              PyAccumulatorFixed})
+                                      select_sub_proc_model=True)
 
             v1_output.run(condition=RunSteps(num_steps=1), run_cfg=run_config)
 
@@ -198,10 +169,7 @@ class TestLCAFixed(unittest.TestCase):
                         threshold=threshold)
 
         run_config = Loihi1SimCfg(select_tag='fixed_pt',
-                                  select_sub_proc_model=True,
-                                  exception_proc_model_map={
-                                      LCA1Layer: LCA1LayerModelFixed,
-                                      LCANeuron: PyLCANeuronFixed})
+                                  select_sub_proc_model=True)
 
         lca.run(condition=RunSteps(num_steps=1000), run_cfg=run_config)
 
@@ -228,10 +196,7 @@ class TestLCAFixed(unittest.TestCase):
                         threshold=threshold)
 
         run_config = Loihi1SimCfg(select_tag='fixed_pt',
-                                  select_sub_proc_model=True,
-                                  exception_proc_model_map={
-                                      LCA1Layer: LCA1LayerModelFixed,
-                                      LCANeuron: PyLCANeuronFixed})
+                                  select_sub_proc_model=True)
 
         lca.run(condition=RunSteps(num_steps=1000), run_cfg=run_config)
 

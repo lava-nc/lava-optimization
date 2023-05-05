@@ -10,13 +10,13 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
-from lava.lib.optimization.solvers.lca.lca_neuron.process import LCANeuron
+from lava.lib.optimization.solvers.lca.v1_neuron.process import V1Neuron
 
 
-@implements(proc=LCANeuron, protocol=LoihiProtocol)
+@implements(proc=V1Neuron, protocol=LoihiProtocol)
 @requires(CPU)
 @tag('floating_pt')
-class PyLCANeuronFloat(PyLoihiProcessModel):
+class PyV1NeuronFloat(PyLoihiProcessModel):
     # This model might spike too frequently. Implement an accumulator if so.
     vth: float = LavaPyType(float, float)
     tau: float = LavaPyType(float, float)
@@ -34,10 +34,10 @@ class PyLCANeuronFloat(PyLoihiProcessModel):
         self.s_out.send(activation)
 
 
-@implements(proc=LCANeuron, protocol=LoihiProtocol)
+@implements(proc=V1Neuron, protocol=LoihiProtocol)
 @requires(CPU)
 @tag('fixed_pt')
-class PyLCANeuronFixed(PyLoihiProcessModel):
+class PyV1NeuronFixed(PyLoihiProcessModel):
     vth: int = LavaPyType(int, int)
     tau: int = LavaPyType(int, int)
     a_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)

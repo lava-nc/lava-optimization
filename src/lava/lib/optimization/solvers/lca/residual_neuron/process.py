@@ -10,7 +10,7 @@ from lava.magma.core.process.process import AbstractProcess
 from lava.magma.core.process.variable import Var
 
 
-class AccumulatorNeuron(AbstractProcess):
+class ResidualNeuron(AbstractProcess):
     """Accumulates all input and bias into voltage until it exceeds
     spike_height, then fires and resets.
 

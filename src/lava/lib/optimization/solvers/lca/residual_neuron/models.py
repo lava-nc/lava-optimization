@@ -10,14 +10,14 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
-from lava.lib.optimization.solvers.lca.accumulator.process import \
-    AccumulatorNeuron
+from lava.lib.optimization.solvers.lca.residual_neuron.process import \
+    ResidualNeuron
 
 
-@implements(proc=AccumulatorNeuron, protocol=LoihiProtocol)
+@implements(proc=ResidualNeuron, protocol=LoihiProtocol)
 @requires(CPU)
 @tag('floating_pt')
-class PyAccumulatorFloat(PyLoihiProcessModel):
+class PyResidualFloat(PyLoihiProcessModel):
     spike_height: float = LavaPyType(float, float)
     a_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, float)
     s_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, float)
@@ -31,10 +31,10 @@ class PyAccumulatorFloat(PyLoihiProcessModel):
         self.v[activation] = 0
 
 
-@implements(proc=AccumulatorNeuron, protocol=LoihiProtocol)
+@implements(proc=ResidualNeuron, protocol=LoihiProtocol)
 @requires(CPU)
 @tag('fixed_pt')
-class PyAccumulatorFixed(PyLoihiProcessModel):
+class PyResidualFixed(PyLoihiProcessModel):
     spike_height: int = LavaPyType(int, int)
     a_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, int)
     s_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)

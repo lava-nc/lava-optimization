@@ -10,7 +10,7 @@ from lava.magma.core.process.process import AbstractProcess
 from lava.magma.core.process.variable import Var
 
 
-class LCANeuron(AbstractProcess):
+class V1Neuron(AbstractProcess):
     """V1 Neurons used in 1 layer and 2 layer LCA. See corresponding LCA
     processes for full dynamics.
 

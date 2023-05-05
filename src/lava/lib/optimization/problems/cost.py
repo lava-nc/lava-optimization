@@ -1,7 +1,7 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
-
+import numpy as np
 import typing as ty
 
 import numpy.typing as npt
@@ -46,3 +46,7 @@ class Cost(CoefficientTensorsMixin):
         if self.augmented_terms is None:
             return False
         return True
+
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        """Evaluate the cost at the given solution."""
+        return super().evaluate(x)

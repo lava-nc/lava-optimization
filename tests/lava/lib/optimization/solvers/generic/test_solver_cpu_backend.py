@@ -34,7 +34,6 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertIsInstance(self.solver, OptimizationSolver)
 
     def test_solution_has_expected_shape(self):
-        print("test_solution_has_expected_shape")
         report = self.solver.solve(config=SolverConfig(timeout=3000))
         self.assertEqual(report.best_state.shape, self.solution.shape)
 
@@ -47,7 +46,6 @@ class TestOptimizationSolver(unittest.TestCase):
             hyperparameters={"neuron_model": "nebm"},
         )
         report = self.solver.solve(config=config)
-        print(report)
         self.assertTrue((report.best_state == self.solution).all())
         self.assertEqual(report.best_cost, self.problem.evaluate_cost(
             report.best_state))
@@ -61,7 +59,6 @@ class TestOptimizationSolver(unittest.TestCase):
                 hyperparameters={"neuron_model": "scif", "noise_precision": 5},
             )
         )
-        print(report)
         self.assertTrue((report.best_state == self.solution).all())
         self.assertEqual(report.best_cost, self.problem.evaluate_cost(
             report.best_state))
@@ -85,16 +82,14 @@ class TestOptimizationSolver(unittest.TestCase):
         pm = self.solver.solver_process.model_class(self.solver.solver_process)
         solution_finder = pm.finder_0
         solution_reader = pm.solution_reader
+        best_assignment = self.solver.solver_process.best_variable_assignment
         self.assertIs(
             solution_finder.cost_out.out_connections[0].process,
             solution_reader,
         )
+        self.assertIs(best_assignment.aliased_var, solution_reader.solution)
         self.assertIs(
-            self.solver.solver_process.variable_assignment.aliased_var,
-            solution_reader.solution,
-        )
-        self.assertIs(
-            self.solver.solver_process.variable_assignment.aliased_var.process,
+            best_assignment.aliased_var.process,
             solution_reader,
         )
 
@@ -109,7 +104,6 @@ class TestOptimizationSolver(unittest.TestCase):
 
     def test_cost_tracking(self):
         np.random.seed(77)
-        print("test_cost_tracking")
         config = SolverConfig(
             timeout=50,
             target_cost=-20,
@@ -119,7 +113,22 @@ class TestOptimizationSolver(unittest.TestCase):
         report = self.solver.solve(config=config)
         self.assertIsInstance(report.cost_timeseries, np.ndarray)
         self.assertEqual(report.best_cost,
-                         report.cost_timeseries[0][report.best_timestep])
+                         report.cost_timeseries.T[0][report.best_timestep])
+
+    def test_state_tracking(self):
+        np.random.seed(77)
+        config = SolverConfig(
+            timeout=50,
+            target_cost=-20,
+            backend="CPU",
+            probe_state=True
+        )
+        report = self.solver.solve(config=config)
+        states = report.state_timeseries
+        self.assertIsInstance(states, np.ndarray)
+        self.assertTrue(
+            np.all(report.best_state == states[report.best_timestep])
+        )
 
 
 def solve_workload(problem, reference_solution, noise_precision=5,

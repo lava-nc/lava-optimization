@@ -103,7 +103,7 @@ class QUBO(OptimizationProblem):
         return None
 
     def evaluate_cost(self, solution: np.ndarray) -> int:
-        return solution.T @ self._q_cost.coefficients[2] @ solution
+        return int(self._q_cost(solution))
 
     def validate_input(self, q):
         """Validate the cost coefficient is a square matrix.
@@ -117,27 +117,12 @@ class QUBO(OptimizationProblem):
         if m != n:
             raise ValueError("q matrix is not a square matrix.")
         if not issubclass(q.dtype.type, np.integer):
-            raise NotImplementedError("Non integer q matrices are not "
-                                      "supported yet.")
+            raise NotImplementedError(
+                "Non integer q matrices are not supported yet."
+            )
 
     def verify_solution(self, solution):
         raise NotImplementedError
-
-    def compute_cost(self, state_vector):
-        """Based on a given solution, returns the value of the cost function.
-
-        Parameters
-        ----------
-        state_vector : Array[binary]
-            Array containing an assignment to the problem variables.
-
-        Returns
-        -------
-        int
-            Cost of the given state vector.
-        """
-
-        return state_vector.T @ self.q @ state_vector
 
 
 DType = ty.Union[ty.List[int], ty.List[ty.Tuple]]
@@ -234,9 +219,7 @@ class QP:
     ):
         if (
             constraint_hyperplanes is None and constraint_biases is not None
-        ) or (
-            constraint_hyperplanes is not None and constraint_biases is None
-        ):
+        ) or (constraint_hyperplanes is not None and constraint_biases is None):
             raise ValueError(
                 "Please properly define your Inequality constraints. Supply \
                 all A and k "
@@ -312,3 +295,135 @@ class QP:
     @property
     def num_variables(self) -> int:
         return len(self._linear_offset)
+
+
+class IQP(OptimizationProblem):
+    """
+    Class to instantiate an Integer Quadratic Programming (IQP) problem in the
+    standard form as:
+
+    .. math::
+        min x^THx+c^Tx \\\\
+        Ax >= b \\\\
+        x >= 0 \\\\
+        x in Z
+    """
+
+    def __init__(
+        self,
+        H: np.ndarray,
+        c: np.ndarray,
+        A: np.ndarray,
+        b: np.ndarray,
+    ):
+        """
+        Constructor for the IQP class.
+
+        Parameters
+        ----------
+        H : 2-D np.array
+            Quadratic term of the cost function with integer coefficients.
+        c : 1-D np.array
+            Linear term of the cost function with integer coefficients.
+        A : 2-D or 1-D np.array
+            Equality constraining hyperplanes.
+        b : 1-D np.array
+            Eqaulity constraints offsets.
+        """
+        super().__init__()
+        self._validate_input(H, c, A, b)
+        self._H = H
+        self._c = c
+        self._A = A
+        self._b = b
+
+        self._variables = DiscreteVariables(domains=[])
+        self._cost = Cost(*[coeff for coeff in [H, c] if coeff is not None])
+        self._constraints = ArithmeticConstraints()
+
+    @property
+    def variables(self):
+        """Discrete variables over which the problem is specified."""
+        return self._variables
+
+    @property
+    def cost(self):
+        """Cost function."""
+        return self._cost
+
+    @property
+    def constraints(self):
+        """Specification of mutually allowed values between variables."""
+        return self._constraints
+
+    def _validate_input(
+        self, H: np.ndarray, c: np.ndarray, A: np.ndarray, b: np.ndarray
+    ) -> None:
+        for coeff in [H, c, A, b]:
+            if H is not None and not isinstance(coeff.flat[0], np.int32):
+                raise ValueError(
+                    f"Coefficients have to be np.int32 type, got {coeff.dtype}"
+                )
+        if H is not None and H.shape[0] != H.shape[1]:
+            raise ValueError(
+                f"H has to be a square matrix, got shape {H.shape}"
+            )
+        if c is not None and H is not None and c.shape[0] != H.shape[0]:
+            error_msg = (
+                f"The number of rows in 'c' ({c.shape[0]}) does not "
+                + f"match the number of rows in 'H' ({H.shape[0]})."
+            )
+            raise ValueError(error_msg)
+        if c is not None and A is not None and c.shape[0] != A.shape[1]:
+            error_msg = (
+                f"The number of rows in 'c' ({c.shape[0]}) does not "
+                + f"match the number of columns in 'A' ({A.shape[1]})."
+            )
+            raise ValueError(error_msg)
+        if A is not None and b is not None and A.shape[0] != b.shape[0]:
+            error_msg = (
+                f"The number of rows in 'A' ({A.shape[0]}) does not "
+                + f"match the number of rows in 'b' ({b.shape[0]})."
+            )
+            raise ValueError(error_msg)
+
+    def evaluate_cost(self, x: np.ndarray) -> int:
+        """Evaluate cost of provided solution."""
+        return self._cost(x)
+
+    def evaluate_constraints(self, x: np.ndarray) -> np.ndarray:
+        """Evaluate constraints at provided solution as $Ax-b$."""
+        return self._A @ x - self._b
+
+
+class ILP(IQP):
+    """
+    Class to instantiate an Integer Linear Programming (ILP) problem in the
+    standard form as:
+
+    .. math::
+        min c^Tx \\\\
+        Ax >= b \\\\
+        x >= 0 \\\\
+        x in Z
+    """
+
+    def __init__(
+        self,
+        c: np.ndarray,
+        A: np.ndarray,
+        b: np.ndarray,
+    ):
+        """
+        Constructor for the ILP class.
+
+        Parameters
+        ----------
+        c : 1-D np.array
+            Linear term of the cost function with integer coefficients.
+        A : 2-D or 1-D np.array
+            Equality constraining hyperplanes.
+        b : 1-D np.array
+            Eqaulity constraints offsets.
+        """
+        super().__init__(H=None, c=c, A=A, b=b)

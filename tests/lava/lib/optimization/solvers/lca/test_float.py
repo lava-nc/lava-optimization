@@ -13,6 +13,10 @@ from lava.lib.optimization.solvers.lca.process import LCA1Layer, LCA2Layer
 
 class TestLCAFloat(unittest.TestCase):
     def test_identity_matrix(self):
+        """
+        Tests the sparse code is equal to the input when using the identity
+        matrix as a dictionary.
+        """
         weights = np.eye(5)
         input_val = np.array([0.99203318, 0.53107722, 0.84873413,
                               0.15441692, 0.60863695])
@@ -36,6 +40,9 @@ class TestLCAFloat(unittest.TestCase):
         v1_output.stop()
 
     def test_negative_residual(self):
+        """
+        Test that the input can be negative
+        """
         weights = np.eye(5)
         input_val = np.array([0.48474121, 1.384066, -0.074854,
                               -0.03878497, 0.50936179])
@@ -58,6 +65,10 @@ class TestLCAFloat(unittest.TestCase):
         v1_output.stop()
 
     def test_competition_2_layer(self):
+        """
+        Test that V1 neurons exhibit competition, where the first element of the
+        dictionary inhibits the second from being used.
+        """
         weights = np.array([[0, np.sqrt(1 / 2), np.sqrt(1 / 2)],
                             [np.sqrt(1 / 3), np.sqrt(1 / 3), np.sqrt(1 / 3)]])
         input_val = np.array([0, 1, 1])
@@ -83,6 +94,10 @@ class TestLCAFloat(unittest.TestCase):
         v1_output.stop()
 
     def test_excitation_2_layer(self):
+        """
+        Test that V1 neurons exhibit excitation, where the first element of the
+        dictionary excites the second into being used.
+        """
         weights = np.array([[-np.sqrt(1 / 3), np.sqrt(1 / 3), np.sqrt(1 / 3)],
                             [1, 0, 0]])
         input_val = np.array([0, 1, 1])
@@ -109,6 +124,10 @@ class TestLCAFloat(unittest.TestCase):
         v1_output.stop()
 
     def test_competition_1_layer(self):
+        """
+        Test that V1 neurons exhibit competition, where the first element of the
+        dictionary inhibits the second from being used.
+        """
         weights = np.array([[0, np.sqrt(1 / 2), np.sqrt(1 / 2)],
                             [np.sqrt(1 / 3), np.sqrt(1 / 3), np.sqrt(1 / 3)]])
         w = (np.einsum('bj,ij->bi', -weights, weights) + np.eye(
@@ -134,6 +153,10 @@ class TestLCAFloat(unittest.TestCase):
         v1_output.stop()
 
     def test_excitation_1_layer(self):
+        """
+        Test that V1 neurons exhibit excitation, where the first element of the
+        dictionary excites the second into being used.
+        """
         weights = np.array([[-np.sqrt(1 / 3), np.sqrt(1 / 3), np.sqrt(1 / 3)],
                             [1, 0, 0]])
         w = (np.einsum('bj,ij->bi', -weights, weights) + np.eye(

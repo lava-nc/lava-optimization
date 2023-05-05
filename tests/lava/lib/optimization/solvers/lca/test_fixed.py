@@ -13,6 +13,10 @@ from lava.lib.optimization.solvers.lca.process import LCA1Layer, LCA2Layer
 
 class TestLCAFixed(unittest.TestCase):
     def test_identity_matrix(self):
+        """
+        Tests the sparse code is equal to the input when using the identity
+        matrix as a dictionary.
+        """
         weights = np.eye(5, dtype=np.int8) * 2**8
         weight_exp = -8
         input_val = np.array([6502, 29847, 14746, 8168, 12989])
@@ -38,6 +42,9 @@ class TestLCAFixed(unittest.TestCase):
         v1_output.stop()
 
     def test_negative_residual(self):
+        """
+        Test that the input can be negative
+        """
         weights = np.eye(5) * 2**8
         weight_exp = -8
         input_val = np.array([26366, -18082, 5808, -10212, -25449])
@@ -63,6 +70,10 @@ class TestLCAFixed(unittest.TestCase):
         v1_output.stop()
 
     def test_2_layer_competition(self):
+        """
+        Test that V1 neurons exhibit competition, where the first element of the
+        dictionary inhibits the second from being used.
+        """
         weights = np.array([[0, np.sqrt(1 / 2), np.sqrt(1 / 2)],
                             [np.sqrt(1 / 3), np.sqrt(1 / 3), np.sqrt(1 / 3)]])
         weights *= 2**8
@@ -92,6 +103,10 @@ class TestLCAFixed(unittest.TestCase):
         v1_output.stop()
 
     def test_2_layer_excitation(self):
+        """
+        Test that V1 neurons exhibit excitation, where the first element of the
+        dictionary excites the second into being used.
+        """
         weights = np.array([[-np.sqrt(1 / 3), np.sqrt(1 / 3), np.sqrt(1 / 3)],
                             [1, 0, 0]]) * 2**8
         weight_exp = -8
@@ -122,6 +137,9 @@ class TestLCAFixed(unittest.TestCase):
         v1_output.stop()
 
     def test_boundary_check(self):
+        """
+        Test that input bound check works.
+        """
         weights = np.eye(2, dtype=np.int8)
         i16info = np.iinfo(np.int16)
         input_val = np.array([i16info.max + 1, 0])
@@ -154,6 +172,10 @@ class TestLCAFixed(unittest.TestCase):
             v1_output.run(condition=RunSteps(num_steps=1), run_cfg=run_config)
 
     def test_1_layer_competition(self):
+        """
+        Test that V1 neurons exhibit competition, where the first element of the
+        dictionary inhibits the second from being used.
+        """
         weights = np.array([[0, np.sqrt(1 / 2), np.sqrt(1 / 2)],
                             [np.sqrt(1 / 3), np.sqrt(1 / 3), np.sqrt(1 / 3)]])
         w = (np.einsum('bj,ij->bi', -weights, weights)
@@ -182,6 +204,10 @@ class TestLCAFixed(unittest.TestCase):
                         f"Expected: {expected} Actual: {actual}")
 
     def test_1_layer_excitation(self):
+        """
+        Test that V1 neurons exhibit excitation, where the first element of the
+        dictionary excites the second into being used.
+        """
         weights = np.array([[-np.sqrt(1 / 3), np.sqrt(1 / 3), np.sqrt(1 / 3)],
                             [1, 0, 0]])
         w = (np.einsum('bj,ij->bi', -weights, weights)

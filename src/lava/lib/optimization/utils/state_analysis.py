@@ -167,4 +167,3 @@ class StateAnalysis:
         )
         self._show_or_save(fig, filename)
 
-    def plot_variables_moving_average(

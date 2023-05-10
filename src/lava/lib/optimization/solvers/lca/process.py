@@ -12,10 +12,10 @@ from lava.magma.core.process.ports.ports import OutPort
 
 class LCA1Layer(AbstractProcess):
     """Implements LCA based on https://doi.org/10.1162/neco.2008.03-07-486
-    LCA minimizes |a|_1 such that Φa ≈ s for some dictionary Φ and vector to
-    reconstruct by using a set of neurons with voltage v and the dynamics below.
-    As LCA accounts for the response properties of V1 simple cells, we refer to
-    these neurons as v1.
+    LCA minimizes sparse coding |a|_1 such that Φa ≈ s for some dictionary 'Φ'
+    and vector to reconstruct 's' by using a set of neurons with voltage v and
+    the dynamics below. As LCA accounts for the response properties of V1 simple
+    cells, we refer to these neurons as v1.
 
     V1 Dynamics
     -----------
@@ -55,10 +55,10 @@ class LCA1Layer(AbstractProcess):
 
 class LCA2Layer(AbstractProcess):
     """Implements of 2-Layer LCA based on https://arxiv.org/abs/2205.15386
-    LCA minimizes |a|_1 such that Φa ≈ s for some dictionary Φ and vector to
-    reconstruct s. In two layer LCA, the reconstruction error Φa is separated
-    out into its own layer r=s-Φa. This residual is made spiking by accumulating
-    the error and spiking if it exceeds some spike_height.
+    LCA minimizes sparse coding |a|_1 such that Φa ≈ s for some dictionary 'Φ'
+    and vector to reconstruct 's'. In two layer LCA, the reconstruction error Φa
+    is separated out into its own layer r=s-Φa. This residual is made spiking by
+    accumulating the error and spiking if it exceeds some spike_height.
 
     V1 Layer Dynamics
     -----------------

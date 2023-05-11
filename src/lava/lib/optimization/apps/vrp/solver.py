@@ -73,6 +73,8 @@ class VRPConfig(SolverConfig):
     """
 
     core_solver: CoreSolver = CoreSolver.VRPY_CPU
+    do_distance_sparsification = False
+    sparsification_algo = "cutoff"
     max_dist_cutoff_fraction: float = 1.0
 
 
@@ -178,7 +180,10 @@ class VRPSolver:
                 lamda_cnstrt=1,
                 fixed_pt=True,
                 fixed_pt_range=(-128, 127),
-                max_dist_cutoff_fraction=scfg.max_dist_cutoff_fraction,
+                clust_dist_sparse_params={
+                    "do_sparse": scfg.do_distance_sparsification,
+                    "algo": scfg.sparsification_algo,
+                    "max_dist_cutoff_fraction": scfg.max_dist_cutoff_fraction},
                 profile_mat_gen=False)
             Q_clust = q_clust_obj.matrix.astype(int)
             self.dist_sparsity = q_clust_obj.dist_sparsity

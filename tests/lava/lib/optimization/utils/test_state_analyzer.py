@@ -2,18 +2,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
-import unittest
-from lava.lib.optimization.problems.problems import QUBO
-import numpy as np
-from lava.lib.optimization.solvers.generic.solver import SolverReport
-from lava.lib.optimization.utils.state_analysis import StateAnalysis
 import os
+import unittest
+
+import numpy as np
+from lava.lib.optimization.problems.problems import QUBO
+from lava.lib.optimization.solvers.generic.solver import SolverReport
+from lava.lib.optimization.utils.state_analyzer import StateAnalyzer
 
 
 def prepare_problem_and_report():
     np.random.seed(0)
     size = 5
-    timeout = 50
+    timeout = 100
     problem = QUBO(
         q=np.random.randint(0, 20, size=(size, size), dtype=np.int32)
     )
@@ -23,13 +24,13 @@ def prepare_problem_and_report():
     return problem, report
 
 
-class TestStateAnalysis(unittest.TestCase):
+class TestStateAnalyzer(unittest.TestCase):
     def setUp(self) -> None:
         self.problem, self.report = prepare_problem_and_report()
-        self.analysis = StateAnalysis(problem=self.problem)
+        self.analysis = StateAnalyzer(problem=self.problem)
 
     def test_create_obj(self) -> None:
-        self.assertIsInstance(self.analysis, StateAnalysis)
+        self.assertIsInstance(self.analysis, StateAnalyzer)
 
     def test_plot_cost_timeseries(self) -> None:
         filename = "plot_cost_timeseries.png"
@@ -37,7 +38,7 @@ class TestStateAnalysis(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        os.remove(filename)
+        # os.remove(filename)
 
     def test_plot_min_cost_timeseries(self) -> None:
         filename = "plot_min_cost_timseries.png"
@@ -45,7 +46,7 @@ class TestStateAnalysis(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        os.remove(filename)
+        # os.remove(filename)
 
     def test_plot_cost_distribution(self) -> None:
         filename = "plot_cost_distribution.png"
@@ -53,7 +54,7 @@ class TestStateAnalysis(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        os.remove(filename)
+        # os.remove(filename)
 
     def test_plot_delta_cost_distribution(self) -> None:
         filename = "plot_delta_cost_distribution.png"
@@ -61,15 +62,15 @@ class TestStateAnalysis(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        os.remove(filename)
+        # os.remove(filename)
 
-    def test_plot_unique_state_visits(self) -> None:
-        filename = "plot_unique_state_visits.png"
-        self.analysis.plot_unique_state_visits(
+    def test_plot_num_visited_states(self) -> None:
+        filename = "plot_num_visited_states.png"
+        self.analysis.plot_num_visited_states(
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        os.remove(filename)
+        # os.remove(filename)
 
     def test_plot_successive_states_distance(self) -> None:
         filename = "plot_successive_states_distance.png"
@@ -77,7 +78,23 @@ class TestStateAnalysis(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        os.remove(filename)
+        # os.remove(filename)
+
+    def test_plot_state_timeseries(self) -> None:
+        filename = "plot_state_timeseries.png"
+        self.analysis.plot_state_timeseries(
+            report=self.report, filename=filename
+        )
+        self.assertTrue(os.path.exists(filename))
+        # os.remove(filename)
+
+    def test_plot_state_analysis_summary(self) -> None:
+        filename = "plot_state_analysis_summary.png"
+        self.analysis.plot_state_analysis_summary(
+            report=self.report, filename=filename
+        )
+        self.assertTrue(os.path.exists(filename))
+        # os.remove(filename)
 
 
 if __name__ == "__main__":

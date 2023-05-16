@@ -16,48 +16,98 @@ class MISProblem:
     convert them to a QUBO formulation.
     """
 
-    def __init__(self, num_vertices: int, connection_prob: float,
-                 seed: int = None):
+    def __init__(self, adjacency_matrix: np.ndarray):
         """
-        Instantiate a new random MIS problem, with the given number of
-        vertices and connection probability.
+        Instantiate a new MIS problem, given the adjacency matrix of a graph.
 
         Parameters
         ----------
-        num_vertices: int
-            Number of vertices of the random graph
-        connection_prob: float
-            Connection probability
-        seed: int, optional
-            Seed for numpy random generator
+        adjacency_matrix:
+            Adjacency matrix of a graph.
         """
-        self._num_vertices = num_vertices
-        self._connection_prob = connection_prob
-        self._seed = seed
-        self._adjacency = self._get_random_graph_mtx()
+        if adjacency_matrix.shape[0] != adjacency_matrix.shape[1]:
+            raise ValueError("The adjacency matrix has to be a square matrix.")
+        self._adjacency = adjacency_matrix
+
+    @property
+    def adjacency_matrix(self) -> np.ndarray:
+        """Returns the adjacency matrix of the graph."""
+        return self._adjacency
 
     @property
     def num_vertices(self) -> int:
         """Returns the number of vertices in the graph."""
-        return self._num_vertices
+        return self._adjacency.shape[0]
 
     @property
-    def connection_prob(self) -> float:
-        """Returns the connection probability of the graph."""
-        return self._connection_prob
+    def num_edges(self) -> int:
+        """Returns the number of edges in the graph."""
+        return np.count_nonzero(self._adjacency)
 
-    @property
-    def seed(self):
-        """Returns the seed used for generating the graph."""
-        return self._seed
+    @classmethod
+    def from_random_uniform(cls, n: int, m: float, seed: int = 0) -> "MISProblem":
+        """
+        Instantiate a new MIS problem, given the adjacency matrix of a graph.
+
+        Parameters
+        ----------
+        n: int
+            
+        m: int
+
+        seed: int
+
+        """
+        np.random.seed(seed)
+        graph = netx.generators.gnm_random_graph(n=n, m=m, directed=False)
+        adjacency = np.array(netx.adjacency_matrix(graph).toarray())
+        return cls(adjacency_matrix=adjacency)
+
+    @classmethod
+    def from_erdos_renyi(cls, n: int, p: float, seed: int = 0) -> "MISProblem":
+        """
+        Instantiate a new MIS problem, given the adjacency matrix of a graph.
+
+        Parameters
+        ----------
+        n: int
+
+        p: float
+
+        seed: int
+
+        """
+        np.random.seed(seed)
+        graph = netx.generators.erdos_renyi_graph(n=n, p=p)
+        adjacency = np.array(netx.adjacency_matrix(graph).toarray())
+        return cls(adjacency_matrix=adjacency)
+
+    @classmethod
+    def from_watts_strogatz(cls, n: int, k: int, p: float, seed: int = 0) -> "MISProblem":
+        """
+        Instantiate a new MIS problem, given the adjacency matrix of a graph.
+
+        Parameters
+        ----------
+        n: int
+
+        k: int
+
+        p: float
+
+        seed: int
+
+        """
+        np.random.seed(seed)
+        graph = netx.generators.watts_strogatz_graph(n=n, k=k, p=p)
+        adjacency = np.array(netx.adjacency_matrix(graph).toarray())
+        return cls(adjacency_matrix=adjacency)
 
     @staticmethod
     def _get_graph_from_adjacency_matrix(adjacency_matrix):
         num_vertices = adjacency_matrix.shape[0]
-        # create Graph
         G = netx.Graph()
         G.add_nodes_from(range(num_vertices))
-
         for v1 in range(num_vertices):
             for v2 in range(v1 + 1, num_vertices):
                 if adjacency_matrix[v1, v2] == 1:
@@ -66,32 +116,17 @@ class MISProblem:
 
     @staticmethod
     def _get_adjacency_of_complement_graph(
-            adjacency_matrix: np.ndarray) -> np.ndarray:
+        adjacency_matrix: np.ndarray,
+    ) -> np.ndarray:
         adj_mc = np.logical_not(adjacency_matrix)
         adj_mc = adj_mc.astype(int)
         adj_mc = adj_mc - np.diag(adj_mc.diagonal())
         return adj_mc
 
-    @staticmethod
-    def _get_qubo_cost_from_adjacency(adjacency_matrix: np.ndarray,
-                                      w_diag: float,
-                                      w_off: float) -> np.ndarray:
-        if w_off <= 2 * w_diag:
-            raise ValueError(
-                "Off-diagonal weights must be > 2 x diagonal weights.")
-
-        num_variables = adjacency_matrix.shape[0]
-        q = - w_diag * np.eye(num_variables) + w_off / 2 * adjacency_matrix
-        return q.astype(int)
-
     def get_graph(self) -> netx.Graph:
         """Returns the graph in networkx format."""
         graph = self._get_graph_from_adjacency_matrix(self._adjacency)
         return graph
-
-    def get_graph_matrix(self) -> np.ndarray:
-        """Returns the adjacency matrix of the graph."""
-        return self._adjacency
 
     def get_complement_graph(self) -> netx.Graph:
         """Returns the complement graph in networkx format."""
@@ -106,7 +141,7 @@ class MISProblem:
         c_adjacency = c_adjacency - np.diag(c_adjacency.diagonal())
         return c_adjacency
 
-    def get_as_qubo(self, w_diag: float, w_off: float) -> QUBO:
+    def get_as_qubo(self, w_diag: int = 1, w_off: int = 4) -> QUBO:
         """
         Creates a QUBO whose solution corresponds to the maximum independent
         set (MIS) of the graph defined by the input adjacency matrix.
@@ -120,11 +155,11 @@ class MISProblem:
             Q_ii = w_diag
             Q_ij = w_off (for i!=j) .
         """
-        q = self._get_qubo_cost_from_adjacency(self._adjacency, w_diag, w_off)
+        q = self.get_qubo_matrix(w_diag, w_off)
         qubo = QUBO(q)
         return qubo
 
-    def get_qubo_matrix(self, w_diag: float, w_off: float) -> np.ndarray:
+    def get_qubo_matrix(self, w_diag: int = 1, w_off: int = 4) -> np.ndarray:
         """
         Creates a QUBO whose solution corresponds to the maximum independent
         set (MIS) of the graph defined by the input adjacency matrix.
@@ -138,27 +173,14 @@ class MISProblem:
             Q_ii = w_diag
             Q_ij = w_off (for i!=j) .
         """
-        return self._get_qubo_cost_from_adjacency(self._adjacency,
-                                                  w_diag,
-                                                  w_off)
+        if w_off <= 2 * w_diag:
+            raise ValueError(
+                "Off-diagonal weights must be > 2 x diagonal weights."
+            )
+        q = -w_diag * np.eye(self.num_vertices) + w_off / 2 * self._adjacency
+        return q.astype(int)
 
-    def _get_random_graph_mtx(self) -> np.ndarray:
-        """
-        Creates an undirected graph with random connectivity between nodes
-        and returns its adjacency matrix.
-        """
-        np.random.seed(self.seed)
-
-        random_matrix = np.random.rand(self.num_vertices, self.num_vertices)
-        adjacency = (random_matrix < self.connection_prob).astype(int)
-
-        adjacency = np.triu(adjacency)
-        adjacency += adjacency.T - 2 * np.diag(adjacency.diagonal())
-
-        return adjacency
-
-    def find_maximum_independent_set(self) -> \
-            npt.ArrayLike:
+    def find_maximum_independent_set(self) -> np.ndarray:
         """
         Find and return the maximum independent set of a graph based on its
         adjacency matrix.
@@ -184,8 +206,6 @@ class MISProblem:
         """
         c_graph = self.get_complement_graph()
         maximum_clique, weights = netx.max_weight_clique(c_graph, weight=None)
-
-        # convert array of indices to binary array
         mis = np.zeros((self.num_vertices,))
         mis[maximum_clique] = 1
         return mis

@@ -49,7 +49,7 @@ class MISProblem:
         cls, n: int, m: float, seed: int = 0
     ) -> "MISProblem":
         """
-        Instantiate a new MIS problem, based on a random graph sampled uniformly.
+        Instantiate a new MIS problem, based on a random graph.
 
         Parameters
         ----------

@@ -45,18 +45,20 @@ class MISProblem:
         return np.count_nonzero(self._adjacency)
 
     @classmethod
-    def from_random_uniform(cls, n: int, m: float, seed: int = 0) -> "MISProblem":
+    def from_random_uniform(
+        cls, n: int, m: float, seed: int = 0
+    ) -> "MISProblem":
         """
-        Instantiate a new MIS problem, given the adjacency matrix of a graph.
+        Instantiate a new MIS problem, based on a random graph sampled uniformly.
 
         Parameters
         ----------
         n: int
-            
+            Number of vertices of the random graph.
         m: int
-
+            Number of edges in the random graph.
         seed: int
-
+            Seed for random graph generation.
         """
         np.random.seed(seed)
         graph = netx.generators.gnm_random_graph(n=n, m=m, directed=False)
@@ -66,16 +68,16 @@ class MISProblem:
     @classmethod
     def from_erdos_renyi(cls, n: int, p: float, seed: int = 0) -> "MISProblem":
         """
-        Instantiate a new MIS problem, given the adjacency matrix of a graph.
+        Instantiate a new MIS problem, based on a random Erdos-Renyi graph.
 
         Parameters
         ----------
         n: int
-
+            Number of vertices of the random graph.
         p: float
-
+            Connection probability between different vertices.
         seed: int
-
+            Seed for random graph generation.
         """
         np.random.seed(seed)
         graph = netx.generators.erdos_renyi_graph(n=n, p=p)
@@ -83,20 +85,22 @@ class MISProblem:
         return cls(adjacency_matrix=adjacency)
 
     @classmethod
-    def from_watts_strogatz(cls, n: int, k: int, p: float, seed: int = 0) -> "MISProblem":
+    def from_watts_strogatz(
+        cls, n: int, k: int, p: float, seed: int = 0
+    ) -> "MISProblem":
         """
-        Instantiate a new MIS problem, given the adjacency matrix of a graph.
+        Instantiate a new MIS problem, based on a random Watts-Strogatz graph.
 
         Parameters
         ----------
         n: int
-
+            Number of vertices of the random graph.
         k: int
-
+            Each node is joined with its k nearest neighbors.
         p: float
-
+            Connection probability between different vertices.
         seed: int
-
+            Seed for random graph generation.
         """
         np.random.seed(seed)
         graph = netx.generators.watts_strogatz_graph(n=n, k=k, p=p)

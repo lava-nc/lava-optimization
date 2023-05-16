@@ -64,10 +64,10 @@ class TestMISProblem(unittest.TestCase):
         w_diag = 1
         w_off = 4
         qubo = self.problem.get_as_qubo(w_diag, w_off)
-        correct_matrix = np.array([[-1,  2,  2,  0],
-                                   [2, -1,  0,  0],
-                                   [2,  0, -1,  2],
-                                   [0,  0,  2, -1]])
+        correct_matrix = np.array([[-1, 2, 2, 0],
+                                   [2, -1, 0, 0],
+                                   [2, 0, -1, 2],
+                                   [0, 0, 2, -1]])
         self.assertTrue((correct_matrix == qubo.q).all())
 
     def test_find_maximum_independent_set(self):
@@ -97,8 +97,7 @@ class TestMISProblem(unittest.TestCase):
         self.assertEqual(qubo.evaluate_cost(report.best_state), optimal_cost)
 
     def test_qubo_solution_erdos_renyi(self):
-        """Tests that a solution with the optimal cost is found by
-        OptimizationSolver with the QUBO formulation."""
+        """Tests QUBO solution of MIS on random Erdos-Renyi graph."""
         problem = MISProblem.from_erdos_renyi(n=25, p=0.95, seed=4000)
         qubo = problem.get_as_qubo(w_diag=1, w_off=4)
         optimal_cost = - \
@@ -120,8 +119,7 @@ class TestMISProblem(unittest.TestCase):
         self.assertEqual(qubo.evaluate_cost(report.best_state), optimal_cost)
 
     def test_qubo_solution_watts_strogatz(self):
-        """Tests that a solution with the optimal cost is found by
-        OptimizationSolver with the QUBO formulation."""
+        """Tests QUBO solution of MIS on random Watts-Strotgatz graph."""
         problem = MISProblem.from_watts_strogatz(n=25, k=5, p=0.9, seed=0)
         qubo = problem.get_as_qubo(w_diag=1, w_off=4)
         optimal_cost = - \

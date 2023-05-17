@@ -5,16 +5,16 @@ import numpy as np
 from lava.lib.optimization.solvers.generic.monitoring_processes\
     .solution_readout.process import SolutionReadout
 from lava.magma.core.decorator import implements, requires
-from lava.magma.core.model.py.model import PyLoihiProcessModel
+from lava.magma.core.model.py.model import PyAsyncProcessModel
 from lava.magma.core.model.py.ports import PyInPort
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
-from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
+from lava.magma.core.sync.protocols.async_protocol import AsyncProtocol
 
 
-@implements(SolutionReadout, protocol=LoihiProtocol)
+@implements(SolutionReadout, protocol=AsyncProtocol)
 @requires(CPU)
-class SolutionReadoutPyModel(PyLoihiProcessModel):
+class SolutionReadoutPyModel(PyAsyncProcessModel):
     """CPU model for the SolutionReadout process.
     The process receives two types of messages, an updated cost and the
     state of
@@ -35,22 +35,22 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     )
     target_cost: int = LavaPyType(int, np.int32, 32)
     min_cost: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
-    stop = False
 
-    def run_spk(self):
-        if self.stop:
-            return
-        raw_cost, min_cost_id = self.cost_in.recv()
-        if raw_cost != 0:
-            timestep, raw_solution = self._receive_data()
-            cost = self.decode_cost(raw_cost)
-            self.solution_step = abs(timestep)
-            self.solution[:] = self.decode_solution(raw_solution)
-            self.min_cost[:] = np.asarray([cost[0], min_cost_id])
-            if cost[0] < 0:
-                self._printout_new_solution(cost, min_cost_id, timestep)
-            self._printout_if_converged()
-            self._stop_if_requested(timestep, min_cost_id)
+    def run_async(self):
+        while True:
+            raw_cost, min_cost_id = self.cost_in.recv()
+            if raw_cost != 0:
+                timestep, raw_solution = self._receive_data()
+                cost = self.decode_cost(raw_cost)
+                self.solution_step = abs(timestep)
+                self.solution[:] = self.decode_solution(raw_solution)
+                self.min_cost[:] = np.asarray([cost[0], min_cost_id])
+                if cost[0] < 0:
+                    self._printout_new_solution(cost, min_cost_id, timestep)
+                self._printout_if_converged()
+                if (timestep > 0) or (timestep == 0 and self.min_cost[0] == 1):
+                    self._req_pause = True
+                    return
 
     def _receive_data(self):
         timestep = self.timestep_in.recv()[0]
@@ -81,7 +81,3 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
                 and self.min_cost[0] <= self.target_cost
         ):
             print(f"Host: network reached target cost {self.target_cost}.")
-
-    def _stop_if_requested(self, timestep, min_cost_id):
-        if (timestep > 0 or timestep == -1) and min_cost_id != -1:
-            self.stop = True

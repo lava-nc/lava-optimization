@@ -21,16 +21,16 @@ class ReportAnalyzer:
     OptimizationSolver.
     """
 
-    def __init__(self, problem: QUBO) -> None:
+    def __init__(self, report: SolverReport) -> None:
         """
-        Constructor method for StateAnalyzer class.
+        Constructor method for ReportAnalyzer class.
 
         Parameters
         ----------
-        problem: QUBO
-            QUBO problem to be analyzed.
+        report: SolverReport
+            Optimization report to be analyzed.
         """
-        self.problem = problem
+        self.report = report
 
     def _line_plot(
         self,
@@ -70,17 +70,17 @@ class ReportAnalyzer:
         plt.tight_layout()
         return ax
 
-    def _extract_costs_or_warn(self, report: SolverReport) -> np.ndarray:
-        if report.cost_timeseries is not None:
-            return np.array(report.cost_timeseries)
+    def _extract_costs_or_warn(self) -> np.ndarray:
+        if self.report.cost_timeseries is not None:
+            return np.array(self.report.cost_timeseries)
         else:
             warnings.warn("Cost timeseries is not available.")
 
-    def _extract_states_or_warn(self, report: SolverReport) -> np.ndarray:
-        if report.state_timeseries is not None:
+    def _extract_states_or_warn(self) -> np.ndarray:
+        if self.report.state_timeseries is not None:
             return (
-                np.array(report.state_timeseries)
-                .reshape((self.problem.num_variables, -1))
+                np.array(self.report.state_timeseries)
+                .reshape((self.report.problem.num_variables, -1))
                 .T
             )
         else:
@@ -95,10 +95,10 @@ class ReportAnalyzer:
             ax.get_figure().savefig(filename, bbox_inches="tight", dpi=dpi)
 
     def plot_cost_timeseries(
-        self, report: SolverReport, filename: str = None, ax: plt.Axes = None
+        self, filename: str = None, ax: plt.Axes = None
     ) -> None:
         """Plot cost through time steps."""
-        cost = self._extract_costs_or_warn(report)
+        cost = self._extract_costs_or_warn()
         if cost is None:
             return
         ax = self._line_plot(
@@ -111,10 +111,10 @@ class ReportAnalyzer:
         self._show_or_save(ax=ax, filename=filename)
 
     def plot_min_cost_timeseries(
-        self, report: SolverReport, filename: str = None, ax: plt.Axes = None
+        self, filename: str = None, ax: plt.Axes = None
     ) -> None:
         """Plot cumulative min of cost through time steps."""
-        cost = self._extract_costs_or_warn(report)
+        cost = self._extract_costs_or_warn()
         if cost is None:
             return
         min_cost = np.minimum.accumulate(cost, axis=0)
@@ -128,20 +128,20 @@ class ReportAnalyzer:
         self._show_or_save(ax=ax, filename=filename)
 
     def plot_cost_distribution(
-        self, report: SolverReport, filename: str = None, ax: plt.Axes = None
+        self, filename: str = None, ax: plt.Axes = None
     ) -> None:
         """Plot distribution of cost."""
-        cost = self._extract_costs_or_warn(report)
+        cost = self._extract_costs_or_warn()
         if cost is None:
             return
         ax = self._hist_plot(y=cost, xlabel="Cost", ylim=(-4, 104), ax=ax)
         self._show_or_save(ax=ax, filename=filename)
 
     def plot_delta_cost_distribution(
-        self, report: SolverReport, filename: str = None, ax: plt.Axes = None
+        self, filename: str = None, ax: plt.Axes = None
     ) -> None:
         """Plot disribution of cost transitions."""
-        cost = self._extract_costs_or_warn(report)
+        cost = self._extract_costs_or_warn()
         if cost is None:
             return
         delta_cost = cost[1:] - cost[:-1]
@@ -151,10 +151,10 @@ class ReportAnalyzer:
         self._show_or_save(ax=ax, filename=filename)
 
     def plot_num_visited_states(
-        self, report: SolverReport, filename: str = None, ax: plt.Axes = None
+        self, filename: str = None, ax: plt.Axes = None
     ) -> None:
         """Plot the total number of unique states visited through time steps"""
-        states = self._extract_states_or_warn(report)
+        states = self._extract_states_or_warn()
         if states is None:
             return
         num_unique_states = list(
@@ -173,14 +173,14 @@ class ReportAnalyzer:
         self._show_or_save(ax=ax, filename=filename)
 
     def plot_successive_states_distance(
-        self, report: SolverReport, filename: str = None, ax: plt.Axes = None
+        self, filename: str = None, ax: plt.Axes = None
     ) -> None:
-        states = self._extract_states_or_warn(report)
+        states = self._extract_states_or_warn()
         if states is None:
             return
         distance = (
             np.sum(np.abs(states[1:] - states[:-1]), axis=1)
-            / self.problem.num_variables
+            / self.report.problem.num_variables
             * 100
         )
         ax = self._line_plot(
@@ -193,9 +193,9 @@ class ReportAnalyzer:
         self._show_or_save(ax=ax, filename=filename)
 
     def plot_state_timeseries(
-        self, report: SolverReport, filename: str = None, ax: plt.Axes = None
+        self, filename: str = None, ax: plt.Axes = None
     ) -> None:
-        states = self._extract_states_or_warn(report)
+        states = self._extract_states_or_warn()
         if states is None:
             return
         if ax is None:
@@ -207,18 +207,16 @@ class ReportAnalyzer:
         plt.tight_layout()
         self._show_or_save(ax=ax, filename=filename)
 
-    def plot_state_analysis_summary(
-        self, report: SolverReport, filename: str = None
-    ) -> None:
+    def plot_state_analysis_summary(self, filename: str = None) -> None:
         axs = plt.figure(figsize=(10, 8)).subplots(
             4, 1, sharex=True, gridspec_kw={"height_ratios": [1, 1, 2, 1]}
         )
-        self.plot_min_cost_timeseries(report=report, ax=axs[0])
+        self.plot_min_cost_timeseries(ax=axs[0])
         axs[0].set_xlabel("")
-        self.plot_cost_timeseries(report=report, ax=axs[1])
+        self.plot_cost_timeseries(ax=axs[1])
         axs[1].set_xlabel("")
-        self.plot_state_timeseries(report=report, ax=axs[2])
+        self.plot_state_timeseries(ax=axs[2])
         axs[2].set_xlabel("")
-        self.plot_num_visited_states(report=report, ax=axs[3])
+        self.plot_num_visited_states(ax=axs[3])
         axs[3].set_xticklabels(axs[3].get_xticklabels(), rotation=90)
         self._show_or_save(ax=axs[0], filename=filename, dpi=800)

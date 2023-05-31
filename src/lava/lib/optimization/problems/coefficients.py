@@ -53,3 +53,19 @@ class CoefficientTensorsMixin:
     def max_degree(self):
         """Maximum order among the coefficients' ranks."""
         return max(self.coefficients.keys())
+
+    def evaluate(self, x: np.ndarray) -> np.ndarray:
+        """Evaluate the polynomial at the given point."""
+        result = 0
+        for rank, coeff in self._coefficients.items():
+            if rank == 0:
+                result += coeff
+            elif rank == 1:
+                result += coeff @ x
+            elif rank == 2:
+                result += x.T @ coeff @ x
+            else:
+                raise NotImplementedError(
+                    "__call__ not implemented for polynomials with degree > 2."
+                )
+        return result

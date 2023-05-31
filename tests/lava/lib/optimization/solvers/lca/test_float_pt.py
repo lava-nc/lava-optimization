@@ -11,6 +11,7 @@ from lava.proc.io import sink
 
 from lava.lib.optimization.solvers.lca.process import LCA1Layer, LCA2Layer
 
+
 class TestLCAFloat(unittest.TestCase):
     def test_identity_matrix(self):
         """

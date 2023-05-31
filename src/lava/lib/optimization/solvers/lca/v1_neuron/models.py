@@ -11,6 +11,7 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
 from lava.lib.optimization.solvers.lca.v1_neuron.process import V1Neuron
+from lava.lib.optimization.solvers.lca.util import apply_activation
 
 
 @implements(proc=V1Neuron, protocol=LoihiProtocol)
@@ -33,9 +34,9 @@ class PyV1NeuronFloat(PyLoihiProcessModel):
 
     def run_spk(self):
         # Soft-threshold activation
-        activation = np.maximum(np.abs(self.v) - self.vth, 0) * np.sign(self.v)
-        bias = activation * self.tau_float if self.proc_params['two_layer'] else \
-            self.bias
+        activation = apply_activation(self.v, self.vth)
+        bias = activation * self.tau_float if self.proc_params['two_layer'] \
+            else self.bias
         self.v = self.v * (1 - self.tau_float) + self.a_in.recv() + bias
         self.s_out.send(activation)
 
@@ -59,7 +60,7 @@ class PyV1NeuronFixed(PyLoihiProcessModel):
 
     def run_spk(self):
         # Soft-threshold activation
-        activation = np.maximum(np.abs(self.v) - self.vth, 0) * np.sign(self.v)
+        activation = apply_activation(self.v, self.vth)
         bias = np.right_shift(activation * self.tau_int, 24) \
             if self.proc_params['two_layer'] else self.bias
         self.v = np.right_shift(self.v * (2 ** 24 - self.tau_int), 24) \

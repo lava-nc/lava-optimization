@@ -49,4 +49,3 @@ class PyResidualFixed(AbstractPyResidual):
     s_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, int)
     v: np.ndarray = LavaPyType(np.ndarray, int)
     bias: np.ndarray = LavaPyType(np.ndarray, int)
-

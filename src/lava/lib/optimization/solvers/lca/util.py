@@ -4,6 +4,7 @@
 
 import numpy as np
 
+
 def sign_extend_24bit(x):
     """
     Sign extends a signed 24-bit numpy array into a signed 32-bit array.
@@ -11,6 +12,7 @@ def sign_extend_24bit(x):
     x = x.astype(np.int32)
     mask = (np.right_shift(x, 23) > 0) * np.array([0xFF000000], dtype=np.int32)
     return np.bitwise_or(x, mask)
+
 
 def apply_activation(voltage, threshold):
     """
@@ -31,6 +33,7 @@ def get_1_layer_bias(dictionary, tau, input):
     Returns the floating-pt bias for 1 Layer LCA.
     """
     return (input @ dictionary.T) * tau
+
 
 def get_fixed_pt_scale(sparse_coding):
     """

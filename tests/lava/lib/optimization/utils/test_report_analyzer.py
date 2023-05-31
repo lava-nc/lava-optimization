@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.solver import SolverReport
-from lava.lib.optimization.utils.state_analyzer import StateAnalyzer
+from lava.lib.optimization.utils.report_analyzer import ReportAnalyzer
 
 
 def prepare_problem_and_report():
@@ -24,13 +24,13 @@ def prepare_problem_and_report():
     return problem, report
 
 
-class TestStateAnalyzer(unittest.TestCase):
+class TestReportAnalyzer(unittest.TestCase):
     def setUp(self) -> None:
         self.problem, self.report = prepare_problem_and_report()
-        self.analysis = StateAnalyzer(problem=self.problem)
+        self.analysis = ReportAnalyzer(problem=self.problem)
 
     def test_create_obj(self) -> None:
-        self.assertIsInstance(self.analysis, StateAnalyzer)
+        self.assertIsInstance(self.analysis, ReportAnalyzer)
 
     def test_plot_cost_timeseries(self) -> None:
         filename = "plot_cost_timeseries.png"
@@ -38,7 +38,7 @@ class TestStateAnalyzer(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        # os.remove(filename)
+        os.remove(filename)
 
     def test_plot_min_cost_timeseries(self) -> None:
         filename = "plot_min_cost_timseries.png"
@@ -46,7 +46,7 @@ class TestStateAnalyzer(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        # os.remove(filename)
+        os.remove(filename)
 
     def test_plot_cost_distribution(self) -> None:
         filename = "plot_cost_distribution.png"
@@ -54,7 +54,7 @@ class TestStateAnalyzer(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        # os.remove(filename)
+        os.remove(filename)
 
     def test_plot_delta_cost_distribution(self) -> None:
         filename = "plot_delta_cost_distribution.png"
@@ -62,7 +62,7 @@ class TestStateAnalyzer(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        # os.remove(filename)
+        os.remove(filename)
 
     def test_plot_num_visited_states(self) -> None:
         filename = "plot_num_visited_states.png"
@@ -70,7 +70,7 @@ class TestStateAnalyzer(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        # os.remove(filename)
+        os.remove(filename)
 
     def test_plot_successive_states_distance(self) -> None:
         filename = "plot_successive_states_distance.png"
@@ -78,7 +78,7 @@ class TestStateAnalyzer(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        # os.remove(filename)
+        os.remove(filename)
 
     def test_plot_state_timeseries(self) -> None:
         filename = "plot_state_timeseries.png"
@@ -86,7 +86,7 @@ class TestStateAnalyzer(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        # os.remove(filename)
+        os.remove(filename)
 
     def test_plot_state_analysis_summary(self) -> None:
         filename = "plot_state_analysis_summary.png"
@@ -94,7 +94,7 @@ class TestStateAnalyzer(unittest.TestCase):
             report=self.report, filename=filename
         )
         self.assertTrue(os.path.exists(filename))
-        # os.remove(filename)
+        os.remove(filename)
 
 
 if __name__ == "__main__":

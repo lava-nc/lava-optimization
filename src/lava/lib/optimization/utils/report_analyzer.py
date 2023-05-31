@@ -11,12 +11,11 @@ import seaborn as sns
 from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.solver import SolverReport
 from matplotlib import pyplot as plt
-from matplotlib.figure import Figure
 
 sns.set_style("whitegrid")
 
 
-class StateAnalyzer:
+class ReportAnalyzer:
     """
     Utility class to analyze and plots useful metrics on the execution of
     OptimizationSolver.

@@ -46,11 +46,11 @@ classifiers = [
 "Discussions" = "https://github.com/lava-nc/lava-optimization/discussions"
 
 [tool.poetry.dependencies]
-python = ">=3.8, <3.11"
+python = ">=3.8, <3.12"
 
 lava-nc = { git = "https://github.com/lava-nc/lava.git", branch = "main", develop = true }
 
-numpy = "1.23.1"
+numpy = "^1.23.1"
 networkx = "<=2.8"
 dsolve = "^0.0.5"
 schema = "^0.7.5"

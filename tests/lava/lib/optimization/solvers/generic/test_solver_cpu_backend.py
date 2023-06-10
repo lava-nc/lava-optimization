@@ -230,9 +230,9 @@ class TestWorkloads(unittest.TestCase):
         self.assertEqual(p.evaluate_cost(report.best_state), expected_cost)
 
     def test_solve_mis(self):
-        mis = MISProblem(
-            num_vertices=15,
-            connection_prob=0.9,
+        mis = MISProblem.from_random_uniform(
+            n=15,
+            m=0.9,
             seed=0
         )
         problem = mis.get_as_qubo(1, 8)

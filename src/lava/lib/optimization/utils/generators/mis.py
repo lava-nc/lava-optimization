@@ -60,7 +60,9 @@ class MISProblem:
         seed: int
             Seed for random graph generation.
         """
-        graph = netx.generators.gnm_random_graph(n=n, m=m, directed=False, seed=seed)
+        graph = netx.generators.gnm_random_graph(
+            n=n, m=m, directed=False, seed=seed
+        )
         adjacency = np.array(netx.adjacency_matrix(graph).toarray())
         return cls(adjacency_matrix=adjacency)
 

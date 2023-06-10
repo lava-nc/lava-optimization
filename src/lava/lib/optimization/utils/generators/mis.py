@@ -60,8 +60,7 @@ class MISProblem:
         seed: int
             Seed for random graph generation.
         """
-        np.random.seed(seed)
-        graph = netx.generators.gnm_random_graph(n=n, m=m, directed=False)
+        graph = netx.generators.gnm_random_graph(n=n, m=m, directed=False, seed=seed)
         adjacency = np.array(netx.adjacency_matrix(graph).toarray())
         return cls(adjacency_matrix=adjacency)
 
@@ -79,8 +78,7 @@ class MISProblem:
         seed: int
             Seed for random graph generation.
         """
-        np.random.seed(seed)
-        graph = netx.generators.erdos_renyi_graph(n=n, p=p)
+        graph = netx.generators.erdos_renyi_graph(n=n, p=p, seed=seed)
         adjacency = np.array(netx.adjacency_matrix(graph).toarray())
         return cls(adjacency_matrix=adjacency)
 
@@ -102,8 +100,7 @@ class MISProblem:
         seed: int
             Seed for random graph generation.
         """
-        np.random.seed(seed)
-        graph = netx.generators.watts_strogatz_graph(n=n, k=k, p=p)
+        graph = netx.generators.watts_strogatz_graph(n=n, k=k, p=p, seed=seed)
         adjacency = np.array(netx.adjacency_matrix(graph).toarray())
         return cls(adjacency_matrix=adjacency)
 

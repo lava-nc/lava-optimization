@@ -159,7 +159,7 @@ class SolverProcessBuilder:
                 problem.variables, ContinuousVariables
             ):
                 self.continuous_variables = Var(
-                    shape=(problem.variables.continuous.num_vars, 2)
+                    shape=(problem.variables.num_variables, 2)
                 )
             if hasattr(problem.variables, "discrete") or isinstance(
                 problem.variables, DiscreteVariables

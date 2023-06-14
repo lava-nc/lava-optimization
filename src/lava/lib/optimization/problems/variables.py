@@ -82,7 +82,8 @@ class ContinuousVariables:
     variable (by index) can take values.
     """
 
-    def __init__(self, bounds: ty.List[ty.Tuple] = None):
+    def __init__(self, num_variables=None, bounds: ty.List[ty.Tuple] = None):
+        self._num_variables = num_variables or len(bounds) if bounds is not None else None
         self._bounds = bounds
 
     @property
@@ -93,7 +94,7 @@ class ContinuousVariables:
     @property
     def num_variables(self):
         """Number of variables in this set."""
-        return len(self._bounds)
+        return self._num_variables
 
     @property
     def bounds(self):

@@ -19,6 +19,7 @@ from lava.lib.optimization.problems.variables import (
     ContinuousVariables,
     DiscreteVariables,
 )
+from scipy import sparse
 
 
 class OptimizationProblem(ABC):
@@ -210,19 +211,19 @@ class QP(OptimizationProblem):
         self,
         hessian: npt.ArrayLike,
         linear_offset: ty.Optional[np.ndarray] = None,
-        constraint_hyperplanes: ty.Optional[np.ndarray] = None,
-        constraint_biases: ty.Optional[np.ndarray] = None,
-        constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
-        constraint_biases_eq: ty.Optional[np.ndarray] = None,
+        inequality_constraints_weights: ty.Optional[np.ndarray] = None,
+        inequality_constraints_biases: ty.Optional[np.ndarray] = None,
+        equality_constraints_weights: ty.Optional[np.ndarray] = None,
+        equality_constraints_biases: ty.Optional[np.ndarray] = None,
     ):
         super().__init__()
-        self.c_variables = ContinuousVariables(hessian.shape[0])
+        self.c_variables = ContinuousVariables(num_variables=hessian.shape[0])
         self.q_cost = Cost(linear_offset, hessian)
         self._constraints.arithmetic = ArithmeticConstraints(
-            ineq=[constraint_biases, constraint_hyperplanes],
-            eq=[constraint_biases_eq, constraint_hyperplanes_eq],
+            ineq=[inequality_constraints_biases,  inequality_constraints_weights],
+            eq=[equality_constraints_biases,  equality_constraints_weights],
         )
-
+        self._postconditioner= None
     @property
     def variables(self):
         return self.c_variables
@@ -236,25 +237,86 @@ class QP(OptimizationProblem):
         return self._constraints.arithmetic
 
     @property
-    def get_hessian(self) -> np.ndarray:
+    def hessian(self) -> np.ndarray:
         return self.cost.get_coefficient(order=2)
 
     @property
-    def get_linear_offset(self) -> np.ndarray:
+    def linear_offset(self) -> np.ndarray:
         return self.cost.get_coefficient(order=1)
 
     @property
-    def get_constraint_hyperplanes(self) -> np.ndarray:
+    def constraint_hyperplanes_ineq(self) -> np.ndarray:
         return self.constraints.inequality.get_coefficient(order=2)
 
     @property
-    def get_constraint_biases(self) -> np.ndarray:
+    def constraint_biases_ineq(self) -> np.ndarray:
         return self.constraints.inequality.get_coefficient(order=1)
+
+    @property
+    def constraint_hyperplanes_eq(self) -> np.ndarray:
+        return self.constraints.equality.get_coefficient(order=2)
+
+    @property
+    def constraint_biases_eq(self) -> np.ndarray:
+        return self.constraints.equality.get_coefficient(order=1)
 
     @property
     def num_variables(self) -> int:
         return self.variables.num_variables
 
+    @property
+    def postconditioner(self) -> np.ndarray:
+        return self._postconditioner
+
+    def evaluate_cost(self, sol):
+        return sol.T@self.hessian@sol + sol@self.linear_offset
+            
+    
+    def evaluate_constraint_violations(self, sol):
+        return self.constraint_hyperplanes_eq@sol - self.constraint_biases_eq
+
+    def precondition_problem(self, type='ruiz'):
+        if type=='ruiz':
+            self._ruiz_precondition()
+        else:
+            raise NotImplementedError("Only Ruiz preconditioning is enabled \
+                                      for QP problems at the moment")
+
+    def _ruiz_precondition(self, iterations):
+        Q = self.hessian
+        p = self.linear_offset
+        pre_mat_Q, _, _ = self._ruiz_equilibriation(Q, iterations)
+        Q_pre = pre_mat_Q@Q@pre_mat_Q
+        p_pre = pre_mat_Q@p
+        self.cost.coefficients[2], self.cost.coefficients[1] = Q_pre, p_pre
+        A = self.constraint_hyperplanes_eq
+        k = self.constraint_biases_eq
+        pre_mat_A, _, _ = self._ruiz_equilibriation(A, iterations)
+        A_pre = pre_mat_A@A@pre_mat_Q
+        k_pre = pre_mat_A@k
+        self.constraints.equality.coefficients[2] = A_pre 
+        self.constraints.equality.coefficients[1] = k_pre
+        self._postconditioner = pre_mat_Q
+
+
+    def _ruiz_equilibriation(self, matrix, iterations):
+        m_bar = matrix 
+        left_preconditioner = sparse.csc_matrix(np.eye(matrix.shape[0]))
+        right_preconditioner = sparse.csc_matrix(np.eye(matrix.shape[1]))
+        row_del, col_del = 0, 0
+        for i in range(iterations):
+            D_l_inv = sparse.csc_matrix(np.diag(1/np.sqrt(np.linalg.norm(m_bar, ord=2, axis=1))))
+            if(m_bar.shape[0] != m_bar.shape[1]):
+                D_r_inv = sparse.csc_matrix(np.diag(1/np.sqrt(np.linalg.norm(m_bar, ord=2, axis=0))))
+            else:
+                D_r_inv = D_l_inv
+                
+            m_bar = D_l_inv@m_bar@D_r_inv
+            left_preconditioner = left_preconditioner@D_l_inv
+            #right_preconditioner = right_preconditioner@D_r_inv
+            row_del = np.max(np.abs(1-np.linalg.norm(m_bar, ord=2, axis=1))) 
+        return left_preconditioner, right_preconditioner, m_bar
+    
 # class QP:
 #     """A Rudimentary interface for the QP solver. Inequality Constraints
 #     should be of the form Ax<=k. Equality constraints are expressed as

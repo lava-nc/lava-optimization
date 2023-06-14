@@ -13,12 +13,14 @@ from lava.lib.optimization.problems.constraints import (
 from lava.lib.optimization.problems.cost import Cost
 from lava.lib.optimization.problems.problems import (
     IQP,
+    QP,
     OptimizationProblem,
     CSP,
     QUBO,
     ILP,
 )
 from lava.lib.optimization.problems.variables import (
+    ContinuousVariables,
     DiscreteVariables,
     Variables,
 )
@@ -238,6 +240,44 @@ class TestIQP(unittest.TestCase):
             )
         )
 
+class TestQP(unittest.TestCase):
+    def setUp(self):
+        self.H = np.zeros((4, 4), dtype=np.int32)
+        self.c = np.array([0, 1, 2, 3], dtype=np.int32).T
+        self.A = np.array(
+            [[0, 4, 2, 1], [2, 0, 1, 1], [1, 1, 0, 1]], dtype=np.int32
+        )
+        self.b = np.array([1, 1, 1], dtype=np.int32).T
+        self.qp = QP(hessian=self.H, 
+                     linear_offset=self.c, 
+                     equality_constraints_weights=self.A, 
+                     equality_constraints_biases=self.b)
+
+    def test_create_obj(self):
+        self.assertIsInstance(self.qp, QP)
+
+    def test_variables_class(self):
+        self.assertIsInstance(self.qp.variables, ContinuousVariables)
+
+    def test_cost_class(self):
+        self.assertIsInstance(self.qp.cost, Cost)
+
+    def test_cost_is_quadratic(self):
+        self.assertEqual(self.qp.cost.max_degree, 2)
+
+    def test_evaluate_cost(self):
+        sol = np.array([0, 1, 0, 0])
+        self.assertEqual(
+            self.qp.evaluate_cost(sol), sol.T@self.H@sol + sol@self.c 
+        )
+
+    def test_evaluate_constraint_violations(self):
+        sol = np.array([0, 0, 0, 0])
+        self.assertTrue(
+            np.all(
+                self.qp.evaluate_constraint_violations(sol) == self.A@sol - self.b
+            )
+        )
 
 class TestILP(unittest.TestCase):
     def setUp(self):

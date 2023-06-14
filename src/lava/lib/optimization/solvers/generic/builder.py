@@ -178,6 +178,9 @@ class SolverProcessBuilder:
             self.variable_assignment = Var(
                 shape=(problem.variables.num_variables,)
             )
+            self.best_variable_assignment = Var(
+                shape=(problem.variables.num_variables,)
+            )
             self.optimality = Var(shape=(1,))
             self.optimum = Var(shape=(2,))
             self.feasibility = Var(shape=(1,))
@@ -242,7 +245,12 @@ class SolverProcessBuilder:
             if hasattr(proc, "cost_coefficients"):
                 proc.vars.optimum.alias(self.solution_reader.min_cost)
                 proc.vars.optimality.alias(proc.finders[0].cost)
-            proc.vars.variable_assignment.alias(self.solution_reader.solution)
+            proc.vars.variable_assignment.alias(
+                proc.finders[0].variables_assignment
+            )
+            proc.vars.best_variable_assignment.alias(
+                self.solution_reader.solution
+            )
             proc.vars.solution_step.alias(self.solution_reader.solution_step)
 
             # Connect processes

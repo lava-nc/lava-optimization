@@ -14,7 +14,9 @@ from lava.lib.optimization.solvers.generic.cost_integrator.process import \
     CostIntegrator
 from lava.lib.optimization.solvers.generic.hierarchical_processes import \
     CostConvergenceChecker, DiscreteVariablesProcess, \
-    StochasticIntegrateAndFire, NEBMAbstract, NEBMSimulatedAnnealingAbstract
+    ContinuousVariablesProcess, ContinuousConstraintsProcess, \
+    StochasticIntegrateAndFire, NEBMAbstract, \
+    NEBMSimulatedAnnealingAbstract
 
 from lava.lib.optimization.solvers.generic.nebm.process import NEBM, \
     NEBMSimulatedAnnealing
@@ -24,7 +26,119 @@ from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.resources import Loihi2NeuroCore, CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.process import Dense
+from lava.lib.optimization.solvers.qp.models import (
+    ProjectedGradientNeuronsPIPGeq,
+    ProportionalIntegralNeuronsPIPGeq,
+)
+from lava.proc.sparse.process import Sparse
+from lava.lib.optimization.utils.qp_processing import convert_to_fp
 
+@implements(proc=ContinuousVariablesProcess, protocol=LoihiProtocol)
+@requires(CPU)
+class ContinuousVariablesModel(AbstractSubProcessModel):
+    """Model for the ContinuousVariables process.
+    """
+
+    def __init__(self, proc):
+        # Instantiate child processes
+        # The input shape is a 2D vector (shape of the weight matrix).
+        neuron_model = proc.hyperparameters.get("neuron_model", "qp/lp-pipg")
+        
+        if neuron_model == "qp/lp-pipg":
+            p_pre = proc.hyperparameters.get("p", 1)
+            A_pre = proc.hyperparameters.get("A", 0)
+            Q_pre = proc.hyperparameters.get("Q", 0)
+            init_state = proc.hyperparameters.get("init_state",
+                                                  np.zeros((p_pre.shape[0],), 
+                                                           dtype=int))
+            
+            alpha_man =  proc.hyperparameters.get("alpha_mantissa", 1)
+            alpha_exp =  proc.hyperparameters.get("alpha_exponent", 1)
+            decay_params = proc.hyperparameters.get("decay_schedule_parameters", 
+                                                    (100, 100, 0))
+            _, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
+            _, A_pre_fp_exp = convert_to_fp(A_pre, 8)
+            p_pre_fp_man, p_pre_fp_exp = convert_to_fp(p_pre, 24)
+            correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp)
+            self.ProjGrad = ProjectedGradientNeuronsPIPGeq(
+                        shape=init_state.shape,
+                        qp_neurons_init=init_state,
+                        da_exp=correction_exp,
+                        grad_bias=p_pre_fp_man,
+                        grad_bias_exp=p_pre_fp_exp,
+                        alpha=alpha_man,
+                        alpha_exp=alpha_exp,
+                        lr_decay_type="indices",
+                        alpha_decay_params=decay_params,
+                    )
+            # Connect the parent InPort to the InPort of the Dense child-Process.
+            proc.in_ports.a_in.connect(self.ProjGrad.in_ports.a_in_qc)
+            self.ProjGrad.out_ports.s_out.connect(proc.out_ports.s_out_qc)
+            proc.vars.variable_assignment.alias(self.ProjGrad.qp_neuron_state)
+        else:
+            AssertionError("Unknown neuron model specified")
+
+
+@implements(proc=ContinuousConstraintsProcess, protocol=LoihiProtocol)
+@requires(CPU)
+class ContinuousConstraintsModel(AbstractSubProcessModel):
+    """Model for the ContinuousConstraints process.
+    """
+
+    def __init__(self, proc):
+        # Instantiate child processes
+        # The input shape is a 2D vector (shape of the weight matrix).
+        neuron_model = proc.hyperparameters.get("neuron_model", "qp/lp-pipg")
+        
+        if neuron_model == "qp/lp-pipg":
+            # initialize weight processes A and A^T
+            A_pre = proc.hyperparameters.get("A", 0)
+            Q_pre = proc.hyperparameters.get("Q", 0)
+            k_pre = proc.hyperparameters.get("k", 0)
+            _, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
+            A_pre_fp_man, A_pre_fp_exp = convert_to_fp(A_pre, 8)
+            k_pre_fp_man, k_pre_fp_exp = convert_to_fp(k_pre, 24)
+            correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp)
+            
+            A_exp_new = -correction_exp + A_pre_fp_exp
+            init_constraints = proc.hyperparameters.get(
+                                                    "init_constraints",
+                                                  np.zeros((k_pre.shape[0],), 
+                                                           dtype=int))
+            beta_man =  proc.hyperparameters.get("beta_mantissa", 1)
+            beta_exp =  proc.hyperparameters.get("beta_exponent", 1)
+            growth_params = proc.hyperparameters.get("growth_schedule_parameters", (3, 2))
+            da_exp = proc.hyperparameters.get("da_exponent", 0)
+            
+            
+            self.sparse_A = Sparse(weights=A_pre_fp_man, num_message_bits=24,
+            )
+            
+            self.sparse_A_T = Sparse(
+                weights=A_pre_fp_man.T, weight_exp=A_exp_new, 
+                num_message_bits=24
+            )
+
+            # Neurons for Constraint Checking
+            self.ProInt = ProportionalIntegralNeuronsPIPGeq(
+                        shape=init_constraints.shape,
+                        constraint_neurons_init=init_constraints,
+                        da_exp=da_exp,
+                        thresholds=k_pre_fp_man,
+                        thresholds_exp=k_pre_fp_exp,
+                        beta=beta_man,
+                        beta_exp=beta_exp,
+                        lr_growth_type="indices",
+                        beta_growth_params=growth_params,
+                    )
+            proc.in_ports.a_in.connect(self.sparse_A.s_in)
+            self.sparse_A.a_out.connect(self.ProInt.a_in)
+            self.ProInt.s_out.connect(self.sparse_A_T.s_in)
+            self.sparse_A_T.a_out.connect(proc.out_ports.s_out)
+            proc.vars.constraint_assignment.alias(self.ProInt.constraint_neuron_state)
+        else:
+            AssertionError("Unknown neuron model specified")
+        
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
 @requires(CPU)

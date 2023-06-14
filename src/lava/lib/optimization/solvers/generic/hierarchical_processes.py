@@ -15,9 +15,26 @@ class ContinuousVariablesProcess(AbstractProcess):
     """Process which implementation holds the evolution of continuous
     variables on the solver of an optimization problem."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        raise NotImplementedError
+    def __init__(
+        self,
+        shape: ty.Tuple[int, ...],
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        
+        super().__init__(
+            shape=shape,
+            name=name,
+            log_config=log_config,
+        )
+
+        self.num_variables = np.prod(shape)
+        self.hyperparameters = hyperparameters
+        self.a_in = InPort(shape=shape)
+        self.s_out = OutPort(shape=shape)
+        self.variable_assignment = Var(shape=shape)
+        self.cost = OutPort(shape=shape)
 
 
 class DiscreteVariablesProcess(AbstractProcess):
@@ -139,10 +156,25 @@ class AugmentedTermsProcess(AbstractProcess):
 class ContinuousConstraintsProcess(AbstractProcess):
     """Process implementing continuous constraints via neurons and synapses."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        raise NotImplementedError
-
+    def __init__(
+        self,
+        shape: ty.Tuple[int, ...],
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        
+        super().__init__(
+            shape=shape,
+            name=name,
+            log_config=log_config,
+        )
+        
+        self.num_constraints = np.prod(shape)
+        self.hyperparameters = hyperparameters
+        self.a_in = InPort(shape=shape)
+        self.s_out = OutPort(shape=shape)
+        self.constraint_assignment = Var(shape=shape)
 
 class DiscreteConstraintsProcess(AbstractProcess):
     """Process implementing discrete constraints via synapses."""

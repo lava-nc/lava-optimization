@@ -3,6 +3,7 @@
 # See: https://spdx.org/licenses/
 import typing as ty
 from dataclasses import dataclass
+from lava.lib.optimization.problems.variables import ContinuousVariables, DiscreteVariables
 
 import numpy as np
 from lava.magma.core.resources import (
@@ -420,13 +421,29 @@ class OptimizationSolver:
     def _get_results(self, config: SolverConfig):
         best_cost, idx = self.solver_process.optimum.get()
         best_cost = SolutionReadoutPyModel.decode_cost(best_cost)
-        best_state = self._get_best_state(config, idx)
+        best_state = self._get_best_state(config, int(idx))
         best_timestep = self.solver_process.solution_step.aliased_var.get() - 2
         return best_state, int(best_cost), int(best_timestep)
-
+    
     def _get_best_state(self, config: SolverConfig, idx: int):
+        # overload this for continuos solvers
+        # maybe something else needs to be conditionalized to avoid need for 
+        # builders for continous variables
+        if self._is_problem_discrete():
+            discrete_values =  self._get_and_decode_discrete_vars(config, idx)
+            return discrete_values
+        
+        if self._is_problem_continuous():
+            continuous_values = self._get_and_decode_continuous_vars(config, idx)
+            return continuous_values
+        
+    def _is_problem_discrete(self):
+       return hasattr(self.problem.variables, "discrete") or isinstance(
+                self.problem.variables, DiscreteVariables
+            ) and self.variables.discrete.num_variables != 0
+
+    def _get_and_decode_discrete_vars(self, config: SolverConfig, idx: int):
         if isinstance(config.hyperparameters, list):
-            idx = int(idx)
             raw_solution = np.asarray(
                 self.solver_process.finders[idx].variables_assignment.get()
             ).astype(np.int32)
@@ -435,3 +452,14 @@ class OptimizationSolver:
         else:
             best_assignment = self.solver_process.best_variable_assignment
             return best_assignment.aliased_var.get()
+
+    def _is_problem_continuous(self):
+        return hasattr(self.problem.variables, "continuous") or isinstance(
+                self.problem.variables, ContinuousVariables
+            ) and self.variables.continuous.num_variables != 0
+
+    def _get_and_decode_continous_vars(self, idx: int):
+        solution = np.asarray(
+            self.solver_process.finders[idx].variables_assignment.get()
+        ).astype(np.int32)
+        return solution

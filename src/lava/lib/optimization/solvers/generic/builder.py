@@ -159,14 +159,14 @@ class SolverProcessBuilder:
                 problem.variables, ContinuousVariables
             ):
                 self.continuous_variables = Var(
-                    shape=(problem.variables.num_variables, 2)
+                    shape=(problem.variables.discrete.num_variables, 2)
                 )
             if hasattr(problem.variables, "discrete") or isinstance(
                 problem.variables, DiscreteVariables
             ):
                 self.discrete_variables = Var(
                     shape=(
-                        problem.variables.num_variables,
+                        problem.variables.discrete.num_variables,
                         # problem.variables.domain_sizes[0]
                     )
                 )
@@ -176,10 +176,10 @@ class SolverProcessBuilder:
                 self.cost_coefficients = mrcv(problem.cost.coefficients)
                 self.cost_diagonal = problem.cost.coefficients[2].diagonal()
             self.variable_assignment = Var(
-                shape=(problem.variables.num_variables,)
+                shape=(problem.variables.discrete.num_variables,)
             )
             self.best_variable_assignment = Var(
-                shape=(problem.variables.num_variables,)
+                shape=(problem.variables.discrete.num_variables,)
             )
             self.optimality = Var(shape=(1,))
             self.optimum = Var(shape=(2,))

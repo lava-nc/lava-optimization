@@ -440,7 +440,7 @@ class OptimizationSolver:
     def _is_problem_discrete(self):
        return hasattr(self.problem.variables, "discrete") or isinstance(
                 self.problem.variables, DiscreteVariables
-            ) and self.variables.discrete.num_variables != 0
+            ) and self.problem.variables.discrete.num_variables != 0
 
     def _get_and_decode_discrete_vars(self, config: SolverConfig, idx: int):
         if isinstance(config.hyperparameters, list):
@@ -456,7 +456,7 @@ class OptimizationSolver:
     def _is_problem_continuous(self):
         return hasattr(self.problem.variables, "continuous") or isinstance(
                 self.problem.variables, ContinuousVariables
-            ) and self.variables.continuous.num_variables != 0
+            ) and self.problem.variables.continuous.num_variables != 0
 
     def _get_and_decode_continous_vars(self, idx: int):
         solution = np.asarray(

@@ -72,16 +72,16 @@ class QUBO(OptimizationProblem):
         self.validate_input(q)
         self.q = q
         self._q_cost = Cost(q)
-        self._b_variables = DiscreteVariables(domains=[2] * q.shape[0])
+        self._variables._discrete = DiscreteVariables(domains=[2] * q.shape[0])
 
     @property
     def variables(self):
         """Binary variables of the QUBO problem."""
-        return self._b_variables
+        return self._variables
 
     @property
     def num_variables(self):
-        return self.variables.num_variables
+        return self.variables.discrete.num_variables
 
     @property
     def cost(self):
@@ -95,7 +95,7 @@ class QUBO(OptimizationProblem):
         q = Cost(value)
         if list(q.coefficients.keys()) != [2]:
             raise ValueError("Cost must be a quadratic " "matrix.")
-        self._b_variables = DiscreteVariables(domains=[2] * value.shape[0])
+        self._variables._discrete = DiscreteVariables(domains=[2] * value.shape[0])
         self._q_cost = q
 
     @property

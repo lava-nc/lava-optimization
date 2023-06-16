@@ -13,6 +13,7 @@
 # no express or implied warranties, other than those that are
 # expressly stated in the License.
 import enum
+import logging
 import time
 import copy
 from pprint import pprint
@@ -127,6 +128,8 @@ class QMatrixVRP:
             "max_dist_cutoff_fraction"]
         self.dist_sparsity = 0.
         self.dist_proxy_sparsity = 0.
+        self.time_clust_mat = 0.
+        self.time_tsp_mat = 0.
 
         if self.problem_type == ProblemType.RANDOM:
             self.matrix = np.random.randint(-128, 127, size=(
@@ -137,17 +140,17 @@ class QMatrixVRP:
                 self._gen_clustering_Q_matrix(input_nodes, lamda_dist,
                                               lamda_wypts, lamda_vhcles)
             if profile_mat_gen:
-                time_taken_clustering = time.time() - start_time
-                pprint(f"Clustering Q matrix generated in"
-                       f" {time_taken_clustering} s")
+                self.time_clust_mat = time.time() - start_time
+                # pprint(f"Clustering Q matrix generated in"
+                #        f" {self.time_clust_mat} s")
         elif self.problem_type == ProblemType.TSP:
             start_time = time.time()
             self.matrix = self._gen_tsp_Q_matrix(
                 input_nodes, lamda_dist, lamda_cnstrt
             )
             if profile_mat_gen:
-                time_taken_tsp = time.time() - start_time
-                pprint(f"TSP Q matrix generated in {time_taken_tsp} s")
+                self.time_tsp_mat = time.time() - start_time
+                # pprint(f"TSP Q matrix generated in {self.time_tsp_mat} s")
         else:
             raise ValueError(
                 "problem_type cannot be None or argument passed cannot be "
@@ -316,7 +319,6 @@ class QMatrixVRP:
         #  matrix later using one of the proxies above.
         # Distance matrix for the encoding
         dist_mtrx = np.kron(np.eye(self.num_vehicles), Dist)
-
         # Vehicles can only belong to one cluster
         # Off-diagonal elements are two, populating matrix with 2
         vhcle_mat_off_diag = 2 * np.ones(
@@ -358,10 +360,8 @@ class QMatrixVRP:
             wypt_constraint_off_diag = np.vstack(
                 (wypt_constraint_off_diag, np.roll(wypt_cnstrnt_vector,
                                                    i + 1),))
-
         cnstrnt_wypts_blck = \
             -3 * wypnt_cnstrnt_diag + 2 * wypt_constraint_off_diag
-
         # Combine all matrices to get final Q matrix
         Q = (lamda_dist * dist_mtrx
              + lamda_vhcles * cnstrnt_vhcles_blck

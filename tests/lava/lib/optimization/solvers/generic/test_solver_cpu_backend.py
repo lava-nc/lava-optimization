@@ -19,7 +19,6 @@ from lava.lib.optimization.solvers.generic.solver import (
 )
 from lava.lib.optimization.utils.generators.mis import MISProblem
 
-
 class TestOptimizationSolver(unittest.TestCase):
     def setUp(self) -> None:
         self.problem = QUBO(
@@ -74,7 +73,10 @@ class TestOptimizationSolver(unittest.TestCase):
         pm = self.solver.solver_process.model_class(self.solver.solver_process)
         self.assertIsInstance(pm.finder_0, SolutionFinder)
         self.assertIsInstance(pm.solution_reader, SolutionReader)
-
+    
+    def test_qp_sub_process_connections(self):
+        pass
+    
     def test_subprocesses_connections(self):
         # TODO split into a test for SolutionReader and one for SolutionFinder
         self.assertIsNone(self.solver.solver_process)
@@ -146,8 +148,15 @@ def solve_workload(problem, reference_solution, noise_precision=5,
     ))
     return report, expected_cost
 
-
+def solve_qp_workload(problem):
+    solver = OptimizationSolver(problem)
+    pass
 class TestWorkloads(unittest.TestCase):
+    
+    def test_solve_anymal_qp(self):
+        # does one test CPU/NcModel here?
+        pass
+    
     def test_solve_polynomial_minimization(self):
         """Polynomial minimization with y=-5x_1 -3x_2 -8x_3 -6x_4 +
         4x_1x_2+8x_1x_3+2x_2x_3+10x_3x_4

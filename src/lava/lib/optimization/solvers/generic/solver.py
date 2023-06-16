@@ -300,7 +300,7 @@ class OptimizationSolver:
         Parameters
         ----------
         config: SolverConfig
-            Solver configuraiton used. Refers to SolverConfig documentation.
+            Solver configuration used. Refers to SolverConfig documentation.
         """
         requirements, protocol = self._get_requirements_and_protocol(
             backend=config.backend
@@ -341,7 +341,7 @@ class OptimizationSolver:
         Parameters
         ----------
         config: SolverConfig
-            Solver configuraiton used. Refers to SolverConfig documentation.
+            Solver configuration used. Refers to SolverConfig documentation.
         """
         cost_timeseries = self._get_probed_data(
             tracker=self._cost_tracker, var_name="optimality"
@@ -426,9 +426,6 @@ class OptimizationSolver:
         return best_state, int(best_cost), int(best_timestep)
     
     def _get_best_state(self, config: SolverConfig, idx: int):
-        # overload this for continuos solvers
-        # maybe something else needs to be conditionalized to avoid need for 
-        # builders for continous variables
         if self._is_problem_discrete():
             discrete_values =  self._get_and_decode_discrete_vars(config, idx)
             return discrete_values

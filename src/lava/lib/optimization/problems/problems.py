@@ -217,7 +217,7 @@ class QP(OptimizationProblem):
         equality_constraints_biases: ty.Optional[np.ndarray] = None,
     ):
         super().__init__()
-        self.c_variables = ContinuousVariables(num_variables=hessian.shape[0])
+        self._variables._continuous = ContinuousVariables(num_variables=hessian.shape[0])
         self.q_cost = Cost(linear_offset, hessian)
         self._constraints.arithmetic = ArithmeticConstraints(
             ineq=[inequality_constraints_biases,  inequality_constraints_weights],
@@ -226,7 +226,7 @@ class QP(OptimizationProblem):
         self._postconditioner= None
     @property
     def variables(self):
-        return self.c_variables
+        return self._variables
 
     @property
     def cost(self):
@@ -262,7 +262,7 @@ class QP(OptimizationProblem):
 
     @property
     def num_variables(self) -> int:
-        return self.variables.num_variables
+        return self.variables.continuous.num_variables
 
     @property
     def postconditioner(self) -> np.ndarray:

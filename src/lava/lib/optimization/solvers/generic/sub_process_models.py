@@ -45,9 +45,13 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
         neuron_model = proc.hyperparameters.get("neuron_model", "qp/lp-pipg")
         
         if neuron_model == "qp/lp-pipg":
+            # these are part of the problem not hyperparams
+            # adding them here to show that they are need for the neurons models
+            # since some values are calculated based on these weights 
             p_pre = proc.hyperparameters.get("p", 1)
             A_pre = proc.hyperparameters.get("A", 0)
             Q_pre = proc.hyperparameters.get("Q", 0)
+            # legitimate hyperparameters
             init_state = proc.hyperparameters.get("init_state",
                                                   np.zeros((p_pre.shape[0],), 
                                                            dtype=int))
@@ -92,6 +96,9 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
         
         if neuron_model == "qp/lp-pipg":
             # initialize weight processes A and A^T
+              # these are part of the problem not hyperparams
+            # adding them here to show that they are need for the neurons models
+            # since some values are calculated based on these weights 
             A_pre = proc.hyperparameters.get("A", 0)
             Q_pre = proc.hyperparameters.get("Q", 0)
             k_pre = proc.hyperparameters.get("k", 0)
@@ -101,6 +108,7 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
             correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp)
             
             A_exp_new = -correction_exp + A_pre_fp_exp
+            # legitimate hyperparameters
             init_constraints = proc.hyperparameters.get(
                                                     "init_constraints",
                                                   np.zeros((k_pre.shape[0],), 
@@ -108,7 +116,6 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
             beta_man =  proc.hyperparameters.get("beta_mantissa", 1)
             beta_exp =  proc.hyperparameters.get("beta_exponent", 1)
             growth_params = proc.hyperparameters.get("growth_schedule_parameters", (3, 2))
-            da_exp = proc.hyperparameters.get("da_exponent", 0)
             
             
             self.sparse_A = Sparse(weights=A_pre_fp_man, num_message_bits=24,
@@ -123,7 +130,7 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
             self.ProInt = ProportionalIntegralNeuronsPIPGeq(
                         shape=init_constraints.shape,
                         constraint_neurons_init=init_constraints,
-                        da_exp=da_exp,
+                        da_exp=A_pre_fp_exp,
                         thresholds=k_pre_fp_man,
                         thresholds_exp=k_pre_fp_exp,
                         beta=beta_man,

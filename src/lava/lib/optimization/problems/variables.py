@@ -63,10 +63,11 @@ class DiscreteVariables:
         """List of discrete variables each an instance of the Variable class."""
         return [Variable(name=str(n)) for n in range(self.num_variables)]
 
+
     @property
     def num_variables(self):
         """Number of variables in this set."""
-        return len(self.domains)
+        return len(self.domains) if self.domains is not None else None
 
     @domains.setter
     def domains(self, value: DType):

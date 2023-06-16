@@ -11,9 +11,11 @@ try:
     from vrpy import VehicleRoutingProblem
 except ImportError:
     class VehicleRoutingProblem:
+
+        vrpy_not_installed: bool = True
+
         def __init__(self, graph):
             self.graph = graph
-            self.vrpy_not_installed = True
 
 from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.solver import OptimizationSolver, \
@@ -144,8 +146,8 @@ class VRPSolver:
                     g.add_edge(n, "Sink", cost=cost_nod_to_snk)
             return g
         if scfg.core_solver == CoreSolver.VRPY_CPU:
-            vrp = VehicleRoutingProblem(self.problem.problem_graph)
-            vrpy_is_installed = not hasattr(vrp, "vrpy_not_installed")
+            vrpy_is_installed = not hasattr(VehicleRoutingProblem,
+                                            "vrpy_not_installed")
             if not vrpy_is_installed:
                 raise ImportError("VRPy is not installed.")
             # 1. Prepare problem for VRPy

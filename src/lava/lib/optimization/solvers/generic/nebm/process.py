@@ -52,7 +52,7 @@ class NEBM(AbstractProcess):
 
         self.refract = Var(shape=shape, init=refract)
 
-        self.refract_counter = Var(shape=shape, init=int(0))
+        self.refract_counter = Var(shape=shape, init=refract)
 
         # Initial state determined in DiscreteVariables
         self.state = Var(shape=shape, init=init_state.astype(int))
@@ -79,9 +79,10 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
         init_value=0,
         init_state=None,
+        neuron_model: str,
     ):
         """
-        NEBM Process.
+        SA Process.
 
         Parameters
         ----------
@@ -106,6 +107,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
             steps_per_temperature=steps_per_temperature,
             refract=refract,
             refract_scaling=refract_scaling,
+            neuron_model=neuron_model,
         )
 
         self.a_in = InPort(shape=shape)
@@ -118,7 +120,13 @@ class NEBMSimulatedAnnealing(AbstractProcess):
 
         self.temperature = Var(shape=shape, init=int(max_temperature))
 
-        self.refract_counter = Var(shape=shape, init=int(0))
+        self.refract_counter = Var(
+            shape=shape,
+            init=(refract or 0)
+            + np.right_shift(
+                np.random.randint(0, 2**8, size=shape), (refract_scaling or 0)
+            ),
+        )
 
         # Initial state determined in DiscreteVariables
         self.state = Var(

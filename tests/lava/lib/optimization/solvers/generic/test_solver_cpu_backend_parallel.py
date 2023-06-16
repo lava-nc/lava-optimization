@@ -39,7 +39,6 @@ class TestParallelOptimizationSolver(unittest.TestCase):
             + [{"neuron_model": "nebm"}],
         )
         report = solver.solve(config=config)
-        print(report)
         self.assertEqual(report.best_cost, solution_cost)
 
 
@@ -81,7 +80,6 @@ class TestWorkloads(unittest.TestCase):
         solution, cost, expected_cost = solve_workload(
             q, reference_solution, noise_precision=5
         )
-        print(solution)
         self.assertEqual(cost, expected_cost)
 
     def test_solve_set_packing(self):

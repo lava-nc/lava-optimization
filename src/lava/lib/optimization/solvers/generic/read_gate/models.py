@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import numpy as np
-from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 
+from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.py.ports import PyInPort, PyOutPort, PyRefPort
 from lava.magma.core.model.py.type import LavaPyType
-from lava.magma.core.resources import CPU, LMT
+from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
 
@@ -52,37 +52,36 @@ def readgate_run_post_mgmt(self):
 
 
 def get_readgate_members(num_in_ports):
-    readgate_members = dict(min_cost=None, min_cost_id=None, solution=None)
-
-    in_ports_py = {
-        f"cost_in_{id}": LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
+    in_ports = {
+        f"cost_in_{id}": LavaPyType(PyInPort.VEC_DENSE, np.int32,
+                                    precision=32)
         for id in range(num_in_ports)
     }
-
-    class_members_py = dict(
-        target_cost=LavaPyType(int, np.int32, 32),
-        best_solution=LavaPyType(int, np.int32, 32),
-        cost_out=LavaPyType(PyOutPort.VEC_DENSE, np.int32, precision=32),
-        solution_out=LavaPyType(PyOutPort.VEC_DENSE, np.int32, precision=32),
-        send_pause_request=LavaPyType(
+    readgate_members = {
+        "target_cost": LavaPyType(int, np.int32, 32),
+        "best_solution": LavaPyType(int, np.int32, 32),
+        "cost_out": LavaPyType(PyOutPort.VEC_DENSE, np.int32,
+                               precision=32),
+        "solution_out": LavaPyType(PyOutPort.VEC_DENSE, np.int32,
+                                   precision=32),
+        "send_pause_request": LavaPyType(
             PyOutPort.VEC_DENSE, np.int32, precision=32
         ),
-        solution_reader=LavaPyType(PyRefPort.VEC_DENSE, np.int32, precision=32),
-    )
-
-    cpu_specific = dict(
-        post_guard=readgate_post_guard,
-        run_spk=readgate_run_spk,
-        run_post_mgmt=readgate_run_post_mgmt,
-    )
-
-    readgate_members.update(in_ports_py)
-    readgate_members.update(class_members_py)
-    readgate_members.update(cpu_specific)
+        "solution_reader": LavaPyType(
+            PyRefPort.VEC_DENSE, np.int32, precision=32
+        ),
+        "min_cost": None,
+        "min_cost_id": None,
+        "solution": None,
+        "post_guard": readgate_post_guard,
+        "run_spk": readgate_run_spk,
+        "run_post_mgmt": readgate_run_post_mgmt,
+    }
+    readgate_members.update(in_ports)
     return readgate_members
 
 
-def get_read_gate_py_model_class(num_in_ports: int):
+def get_read_gate_model_class(num_in_ports: int):
     """Produce CPU model for the ReadGate process.
 
     The model verifies if better payload (cost) has been notified by the
@@ -90,18 +89,19 @@ def get_read_gate_py_model_class(num_in_ports: int):
     out to
     the upstream process the new payload (cost) and the network state.
     """
-    super_class = PyLoihiProcessModel
-    resource = CPU
-    ReadGateModelBase = type(
-        "ReadGateModel",
-        (super_class,),
+    ReadGatePyModelBase = type(
+        "ReadGatePyModel",
+        (PyLoihiProcessModel,),
         get_readgate_members(num_in_ports),
     )
-    ReadGateModelImpl = implements(ReadGate, protocol=LoihiProtocol)(
-        ReadGateModelBase
+    ReadGatePyModelImpl = implements(ReadGate, protocol=LoihiProtocol)(
+        ReadGatePyModelBase
     )
-    ReadGateModel = requires(resource)(ReadGateModelImpl)
-    return ReadGateModel
+    ReadGatePyModel = requires(CPU)(ReadGatePyModelImpl)
+    return ReadGatePyModel
+
+
+ReadGatePyModel = get_read_gate_model_class(num_in_ports=1)
 
 
 @implements(ReadGate, protocol=LoihiProtocol)
@@ -110,14 +110,13 @@ class ReadGatePyModelD(PyLoihiProcessModel):
     """CPU model for the ReadGate process.
 
     The model verifies if better payload (cost) has been notified by the
-    downstream processes, if so, it reads those processes state and sends
-    out to
+    downstream processes, if so, it reads those processes state and sends out to
     the upstream process the new payload (cost) and the network state.
     """
-
     target_cost: int = LavaPyType(int, np.int32, 32)
     best_solution: int = LavaPyType(int, np.int32, 32)
-    cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, precision=32)
+    cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
+                                   precision=32)
     cost_out: PyOutPort = LavaPyType(
         PyOutPort.VEC_DENSE, np.int32, precision=32
     )
@@ -143,7 +142,7 @@ class ReadGatePyModelD(PyLoihiProcessModel):
             self.min_cost = cost[0]
             self.cost_out.send(np.array([0]))
         elif self.solution is not None:
-            timestep = -np.array([self.time_step])
+            timestep = - np.array([self.time_step])
             if self.min_cost <= self.target_cost:
                 self._req_pause = True
             self.cost_out.send(np.array([self.min_cost]))

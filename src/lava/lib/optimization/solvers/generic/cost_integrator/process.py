@@ -3,6 +3,7 @@
 # See: https://spdx.org/licenses/
 import typing as ty
 
+import numpy as np
 from lava.magma.core.process.ports.ports import InPort, OutPort
 from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
@@ -45,12 +46,22 @@ class CostIntegrator(AbstractProcess):
         self,
         *,
         shape: ty.Tuple[int, ...] = (1,),
-        min_cost: int = 2**24,
+        min_cost: int = 0, # trivial solution, where all variables are 0
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
         super().__init__(shape=shape, name=name, log_config=log_config)
         self.cost_in = InPort(shape=shape)
-        self.update_buffer = OutPort(shape=shape)
-        self.cost = Var(shape=shape, init=2**24)
-        self.min_cost = Var(shape=shape, init=min_cost)
+        self.cost_out_last = OutPort(shape=shape)
+        self.cost_out_first = OutPort(shape=shape)
+
+        # Note: Total min cost = cost_min_first << 24 + cost_min_last
+        # Extract first 8 bit
+        cost_min_first = np.right_shift(min_cost, 24)
+        cost_min_first = max(-2 ** 7, min(cost_min_first, 2 ** 7 - 1))
+        # Extract last 24 bit
+        cost_min_last = min_cost & 2 ** 24 - 1
+        # last 24 bit of cost
+        self.cost_min_last = Var(shape=shape, init=cost_min_last)
+        # first 8 bit of cost
+        self.cost_min_first = Var(shape=shape, init=cost_min_first)

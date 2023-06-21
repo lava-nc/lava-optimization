@@ -3,10 +3,12 @@
 # See: https://spdx.org/licenses/
 import numpy as np
 from lava.lib.optimization.solvers.generic.dataclasses import (
+    ConstraintEnforcing,
     VariablesImplementation,
     CostMinimizer,
 )
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
+    ContinuousConstraintsProcess,
     DiscreteVariablesProcess,
     ContinuousVariablesProcess,
     CostConvergenceChecker,
@@ -32,10 +34,11 @@ class SolutionFinderModel(AbstractSubProcessModel):
         hyperparameters = proc.proc_params.get("hyperparameters")
         discrete_var_shape = proc.proc_params.get("discrete_var_shape")
         continuous_var_shape = proc.proc_params.get("continuous_var_shape")
-
+        problem = proc.proc_params.get("problem")
+        
         # Subprocesses
         self.variables = VariablesImplementation()
-        if discrete_var_shape:
+        if discrete_var_shape[0]:
             hyperparameters.update(
                 dict(
                     init_state=self._get_init_state(
@@ -81,17 +84,24 @@ class SolutionFinderModel(AbstractSubProcessModel):
                     proc.out_ports.cost_out)
 
 
-        elif continuous_var_shape:
+        elif continuous_var_shape[0]:
+            self.constraints = ConstraintEnforcing()
+
             self.variables.continuous = ContinuousVariablesProcess(
                 shape=continuous_var_shape,
                 hyperparameters=hyperparameters,
+                problem=problem,
+            )
+
+            self.constraints.continuous = ContinuousConstraintsProcess(
+                shape=continuous_var_shape,
+                hyperparameters=hyperparameters,
+                problem=problem,
             )
             self.cost_minimizer = None
             # weights need to converted to fixed_pt first
-            # using hyperparameters to show these are needed but these 
-            # get passed as problem parameters (cost and constraints)
-            A_pre = hyperparameters.get("A", 0)
-            Q_pre = hyperparameters.get("Q", 0)
+            A_pre = proc.problem.constraint_hyperplanes_eq
+            Q_pre = proc.problem.hessian
             _, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
             _, A_pre_fp_exp = convert_to_fp(A_pre, 8)
             correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp) 
@@ -109,8 +119,8 @@ class SolutionFinderModel(AbstractSubProcessModel):
             # Connect processes
             self.cost_minimizer.gradient_out.connect(self.variables.gradient_in)
             self.variables.state_out.connect(self.cost_minimizer.state_in)
-
-
+            self.variables.state_out.connect(self.constraints.state_in)
+            self.constraints.state_out.connect(self.variables.gradient_in)
 
     def _get_init_state(
         self, hyperparameters, cost_coefficients, discrete_var_shape

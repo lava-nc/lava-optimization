@@ -260,7 +260,6 @@ class OptimizationSolver:
         probes = []
         if config.backend in NEUROCORES:
             from lava.utils.loihi2_state_probes import StateProbe
-
             if config.probe_cost:
                 self._cost_tracker = StateProbe(self.solver_process.optimality)
                 probes.append(self._cost_tracker)

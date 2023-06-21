@@ -48,9 +48,9 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
             # these are part of the problem not hyperparams
             # adding them here to show that they are need for the neurons models
             # since some values are calculated based on these weights 
-            p_pre = proc.hyperparameters.get("p", 1)
-            A_pre = proc.hyperparameters.get("A", 0)
-            Q_pre = proc.hyperparameters.get("Q", 0)
+            Q_pre = proc.problem.hessian
+            A_pre = proc.problem.constraint_hyperplanes_eq
+            p_pre = proc.problem.linear_offset
             # legitimate hyperparameters
             init_state = proc.hyperparameters.get("init_state",
                                                   np.zeros((p_pre.shape[0],), 
@@ -99,9 +99,9 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
               # these are part of the problem not hyperparams
             # adding them here to show that they are need for the neurons models
             # since some values are calculated based on these weights 
-            A_pre = proc.hyperparameters.get("A", 0)
-            Q_pre = proc.hyperparameters.get("Q", 0)
-            k_pre = proc.hyperparameters.get("k", 0)
+            Q_pre = proc.problem.hessian
+            A_pre = proc.problem.constraint_hyperplanes_eq
+            k_pre = proc.problem.constraint_biases_eq
             _, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
             A_pre_fp_man, A_pre_fp_exp = convert_to_fp(A_pre, 8)
             k_pre_fp_man, k_pre_fp_exp = convert_to_fp(k_pre, 24)

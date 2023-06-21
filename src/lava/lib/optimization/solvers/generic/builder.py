@@ -213,7 +213,7 @@ class SolverProcessBuilder:
             cost_coefficients = proc.cost_coefficients
             constraints = proc.problem.constraints
             hyperparameters = proc.hyperparameters
-
+            problem = proc.problem
             hps = (
                 hyperparameters
                 if isinstance(hyperparameters, list)
@@ -234,6 +234,7 @@ class SolverProcessBuilder:
                     hyperparameters=hp,
                     discrete_var_shape=discrete_var_shape,
                     continuous_var_shape=continuous_var_shape,
+                    problem=problem
                 )
                 setattr(self, f"finder_{idx}", finder)
                 finders.append(finder)

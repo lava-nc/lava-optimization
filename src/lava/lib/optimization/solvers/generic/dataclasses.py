@@ -31,7 +31,8 @@ class CostMinimizer:
         """Port sending gradient descent components to the dynamical systems."""
         return self.coefficients_2nd_order.a_out
 
-
+# how to handle continuous cases for Constraint Enforcing 
+# and VariablesImplementation?
 @dataclass
 class ConstraintEnforcing:
     """Processes implementing an optimization problem's constraints and their
@@ -40,7 +41,30 @@ class ConstraintEnforcing:
     continuous: ContinuousConstraintsProcess
     discrete: DiscreteConstraintsProcess
     mixed: MixedConstraintsProcess
+    
+    @property
+    def gradient_in(self):
+        return self.discrete.a_in
 
+    @property
+    def state_out(self):
+        return self.discrete.s_out
+
+    @property
+    def importances(self):
+        return self.discrete.cost_diagonal
+
+    @importances.setter
+    def importances(self, value):
+        self.discrete.cost_diagonal = value
+
+    @property
+    def local_cost(self):
+        return self.discrete.local_cost
+
+    @property
+    def variables_assignment(self):
+        return self.discrete.variable_assignment
 
 @dataclass()
 class VariablesImplementation:

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import typing as ty
+from lava.lib.optimization.problems.problems import OptimizationProblem
 from numpy import typing as npty
 
 import numpy as np
@@ -18,6 +19,7 @@ class ContinuousVariablesProcess(AbstractProcess):
     def __init__(
         self,
         shape: ty.Tuple[int, ...],
+        problem: OptimizationProblem,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
@@ -26,11 +28,13 @@ class ContinuousVariablesProcess(AbstractProcess):
         super().__init__(
             shape=shape,
             name=name,
+            problem=problem,
             log_config=log_config,
         )
 
         self.num_variables = np.prod(shape)
         self.hyperparameters = hyperparameters
+        self.problem = problem
         self.a_in = InPort(shape=shape)
         self.s_out = OutPort(shape=shape)
         self.variable_assignment = Var(shape=shape)
@@ -58,7 +62,6 @@ class DiscreteVariablesProcess(AbstractProcess):
         Holds the current value assigned to the variables by
         the solver network.
     """
-
     def __init__(
         self,
         shape: ty.Tuple[int, ...],
@@ -159,6 +162,7 @@ class ContinuousConstraintsProcess(AbstractProcess):
     def __init__(
         self,
         shape: ty.Tuple[int, ...],
+        problem: OptimizationProblem, 
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
@@ -166,11 +170,13 @@ class ContinuousConstraintsProcess(AbstractProcess):
         
         super().__init__(
             shape=shape,
+            problem=problem,
             name=name,
             log_config=log_config,
         )
         
         self.num_constraints = np.prod(shape)
+        self.problem = problem
         self.hyperparameters = hyperparameters
         self.a_in = InPort(shape=shape)
         self.s_out = OutPort(shape=shape)

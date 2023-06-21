@@ -18,6 +18,7 @@ class SolutionFinder(AbstractProcess):
         hyperparameters,
         discrete_var_shape,
         continuous_var_shape,
+        problem,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ):
@@ -28,6 +29,7 @@ class SolutionFinder(AbstractProcess):
             hyperparameters=hyperparameters,
             discrete_var_shape=discrete_var_shape,
             continuous_var_shape=continuous_var_shape,
+            problem=problem,
             name=name,
             log_config=log_config,
         )

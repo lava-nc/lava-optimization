@@ -29,17 +29,26 @@ class CostIntegrator(AbstractProcess):
 
     OutPorts
     --------
-    update_buffer
-        OutPort which notifies the next process about the
-        detection of a better cost.
+    cost_out_last: OutPort
+        Notifies the next process about the detection of a better cost.
+        Messages the last 3 byte of the new best cost.
+        Total cost = cost_out_first << 24 + cost_out_last.
+    cost_out_first: OutPort
+        Notifies the next process about the detection of a better cost.
+        Messages the first byte of the new best cost.
 
     Vars
     ----
     cost
         Holds current cost as addition of input spikes' payloads
 
-    min_cost
+    cost_min_last
         Current minimum cost, i.e., the lowest reported cost so far.
+        Saves the last 3 bytes.
+        cost_min = cost_min_first << 24 + cost_min_last
+    cost_min_first
+        Current minimum cost, i.e., the lowest reported cost so far.
+        Saves the first byte.
     """
 
     def __init__(
@@ -54,6 +63,12 @@ class CostIntegrator(AbstractProcess):
         self.cost_in = InPort(shape=shape)
         self.cost_out_last = OutPort(shape=shape)
         self.cost_out_first = OutPort(shape=shape)
+
+        # Current cost initiated to zero
+        # Note: Total cost = cost_first << 24 + cost_last
+        self.cost_last = Var(shape=shape, init=0)
+        # first 8 bit of cost
+        self.cost_first = Var(shape=shape, init=0)
 
         # Note: Total min cost = cost_min_first << 24 + cost_min_last
         # Extract first 8 bit

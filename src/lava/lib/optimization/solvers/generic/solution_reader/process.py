@@ -33,4 +33,7 @@ class SolutionReader(AbstractProcess):
         self.satisfaction = Var(shape=(1,), init=0)
         self.ref_port = RefPort(shape=var_shape)
         for id in range(num_in_ports):
-            setattr(self, f"read_gate_in_port_{id}", InPort(shape=(1,)))
+            setattr(self, f"read_gate_in_port_first_byte_{id}",
+                    InPort(shape=(1,)))
+            setattr(self, f"read_gate_in_port_last_bytes_{id}",
+                    InPort(shape=(1,)))

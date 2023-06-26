@@ -77,11 +77,18 @@ class SolutionFinderModel(AbstractSubProcessModel):
         proc.vars.variables_assignment.alias(
             self.variables.variables_assignment
         )
-        proc.vars.cost.alias(
-            self.cost_convergence_check.cost
+        # Note: Total min cost = cost_min_first << 24 + cost_min_last
+        proc.vars.cost_last.alias(
+            self.cost_convergence_check.cost_last
         )
-        self.cost_convergence_check.update_buffer.connect(
-            proc.out_ports.cost_out
+        proc.vars.cost_first.alias(
+            self.cost_convergence_check.cost_first
+        )
+        self.cost_convergence_check.cost_out_last.connect(
+            proc.out_ports.cost_out_last
+        )
+        self.cost_convergence_check.cost_out_first.connect(
+            proc.out_ports.cost_out_first
         )
 
     def _get_init_state(

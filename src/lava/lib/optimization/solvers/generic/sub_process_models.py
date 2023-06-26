@@ -144,11 +144,19 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
 
         # Connect the OutPort of the LIF child-Process to the OutPort of the
         # parent Process.
-        self.cost_integrator.out_ports.update_buffer.connect(
-            proc.out_ports.update_buffer
+        # Communicates the last 3 bytes, and the first byte
+        # Total cost = cost_min_first << 24 + cost_min_last
+        self.cost_integrator.out_ports.cost_out_last.connect(
+            proc.out_ports.cost_out_last
         )
-        proc.vars.min_cost.alias(self.cost_integrator.vars.min_cost)
-        proc.vars.cost.alias(self.cost_integrator.vars.cost)
+        self.cost_integrator.out_ports.cost_out_first.connect(
+            proc.out_ports.cost_out_first
+        )
+        # Note: Total min cost = cost_min_first << 24 + cost_min_last
+        proc.vars.cost_min_last.alias(self.cost_integrator.vars.cost_min_last)
+        proc.vars.cost_min_first.alias(self.cost_integrator.vars.cost_min_first)
+        proc.vars.cost_last.alias(self.cost_integrator.vars.cost_last)
+        proc.vars.cost_first.alias(self.cost_integrator.vars.cost_first)
 
 
 @implements(proc=StochasticIntegrateAndFire, protocol=LoihiProtocol)

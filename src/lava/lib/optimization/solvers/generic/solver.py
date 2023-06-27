@@ -282,7 +282,7 @@ class OptimizationSolver:
                 )
                 self._cost_tracker_last_bytes = Monitor()
                 self._cost_tracker_last_bytes.probe(
-                    target=self.solver_process.optimality_first_byte,
+                    target=self.solver_process.optimality_last_bytes,
                     num_steps=config.timeout,
                 )
                 probes.append(self._cost_tracker_first_byte)
@@ -455,4 +455,4 @@ class OptimizationSolver:
             return raw_solution.astype(np.int8) >> 5
         else:
             best_assignment = self.solver_process.best_variable_assignment
-            return best_assignment.aliased_var.get()
+            return best_assignment.aliased_var.get().astype(np.int8)

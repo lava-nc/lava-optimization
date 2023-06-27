@@ -13,7 +13,7 @@ class SolutionReader(AbstractProcess):
         self,
         var_shape,
         target_cost,
-        min_cost: int = 2**24,
+        min_cost: int = (1 << 31) - 1,
         num_in_ports: int = 1,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,

@@ -84,7 +84,7 @@ class TestOptimizationSolver(unittest.TestCase):
         solution_reader = pm.solution_reader
         best_assignment = self.solver.solver_process.best_variable_assignment
         self.assertIs(
-            solution_finder.cost_out.out_connections[0].process,
+            solution_finder.cost_out_last.out_connections[0].process,
             solution_reader,
         )
         self.assertIs(best_assignment.aliased_var, solution_reader.solution)

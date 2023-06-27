@@ -130,7 +130,6 @@ class CostConvergenceChecker(AbstractProcess):
         self.cost_components = InPort(shape=shape)
         self.cost_out_last = OutPort(shape=(1,))
         self.cost_out_first = OutPort(shape=(1,))
-        #self.update_buffer = OutPort(shape=(1,))
 
 
 class SatConvergenceChecker(AbstractProcess):

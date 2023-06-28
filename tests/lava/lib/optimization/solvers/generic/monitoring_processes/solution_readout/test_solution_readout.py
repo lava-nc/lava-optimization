@@ -22,12 +22,15 @@ class TestSolutionReadout(unittest.TestCase):
     def setUp(self) -> None:
         # Create processes.
         spiker = Spiker(shape=(4,), period=3, payload=7)
-        integrator = Spiker(shape=(1,), period=7, payload=-4)
+        # Together, these processes spike a cost of (-1<<24)+16777212 = -4
+        integrator_last_bytes = Spiker(shape=(1,), period=7, payload=16777212)
+        integrator_first_byte = Spiker(shape=(1,), period=7, payload=-1)
         readgate = ReadGate(shape=(4,), target_cost=-3)
         self.readout = SolutionReadout(shape=(4,), target_cost=-3)
 
         # Connect processes.
-        integrator.s_out.connect(readgate.cost_in_0)
+        integrator_last_bytes.s_out.connect(readgate.cost_in_last_0)
+        integrator_first_byte.s_out.connect(readgate.cost_in_first_0)
         readgate.solution_reader.connect_var(spiker.payload)
         readgate.solution_out.connect(self.readout.read_solution)
         readgate.cost_out.connect(self.readout.cost_in)

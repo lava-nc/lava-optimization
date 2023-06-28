@@ -253,8 +253,8 @@ class SolverProcessBuilder:
                 proc.vars.optimum.alias(self.solution_reader.min_cost)
                 # Cost = optimality_first_byte << 24 + optimality_last_bytes
                 proc.vars.optimality_last_bytes.alias(proc.finders[0].cost_last)
-                proc.vars.optimality_first_byte.alias(proc.finders[
-                                                           0].cost_first)
+                proc.vars.optimality_first_byte.alias(
+                    proc.finders[0].cost_first)
             proc.vars.variable_assignment.alias(
                 proc.finders[0].variables_assignment
             )

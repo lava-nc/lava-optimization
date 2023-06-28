@@ -363,7 +363,7 @@ class OptimizationSolver:
         )
         if self._cost_tracker_first_byte is not None:
             cost_timeseries = (cost_timeseries_first_byte << 24) + \
-                              cost_timeseries_last_bytes
+                cost_timeseries_last_bytes
         else:
             cost_timeseries = None
         state_timeseries = self._get_probed_data(

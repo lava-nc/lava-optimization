@@ -55,7 +55,7 @@ class CostIntegrator(AbstractProcess):
         self,
         *,
         shape: ty.Tuple[int, ...] = (1,),
-        min_cost: int = 0, # trivial solution, where all variables are 0
+        min_cost: int = 0,  # trivial solution, where all variables are 0
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:

@@ -132,7 +132,7 @@ class ReadGatePyModelD(PyLoihiProcessModel):
     cost_in_first: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                          precision=8)
     cost_in_last: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                         precision=24)
+                                        precision=24)
     cost_out: PyOutPort = LavaPyType(
         PyOutPort.VEC_DENSE, np.int32, precision=32
     )
@@ -156,7 +156,7 @@ class ReadGatePyModelD(PyLoihiProcessModel):
         cost_first = self.cost_in_first.recv()
         cost_last = self.cost_in_last.recv()
         cost = np.array(cost_first << 24).astype(np.int8).astype(np.int32) + \
-               cost_last
+            cost_last
         if cost[0]:
             self.min_cost = cost[0]
             self.cost_out.send(np.array([0]))

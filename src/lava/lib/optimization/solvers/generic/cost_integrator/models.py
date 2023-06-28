@@ -44,9 +44,9 @@ class CostIntegratorModel(PyLoihiProcessModel):
         np.clip(cost, -2 ** 31, 2 ** 31 - 1, out=cost)
         # Distribute into components
         cost = cost.astype(int)
-        cost_last = cost & (2**24 - 1) # maintain last 24 bit
-        cost_first = (cost & ((2**8 - 1) << 24)) >> 24 # maintain first 8 bit
-        cost_first = np.array(cost_first).astype(np.int8) # signed int8
+        cost_last = cost & (2**24 - 1)  # maintain last 24 bit
+        cost_first = (cost & ((2**8 - 1) << 24)) >> 24  # maintain first 8 bit
+        cost_first = np.array(cost_first).astype(np.int8)  # signed int8
         if cost < (self.cost_min_first << 24) + self.cost_min_last:
             self.cost_min_first[:] = cost_first
             self.cost_min_last[:] = cost_last

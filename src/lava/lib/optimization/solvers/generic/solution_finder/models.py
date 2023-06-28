@@ -55,14 +55,20 @@ class SolutionFinderModel(AbstractSubProcessModel):
             self.cost_minimizer = None
             self.cost_convergence_check = None
             if cost_coefficients is not None:
+                weights =  cost_coefficients[2].init*np.logical_not(
+                np.eye(*cost_coefficients[2].init.shape))
                 self.cost_minimizer = CostMinimizer(
                     Dense(
                         # todo just using the last coefficient for now
-                        weights=cost_coefficients[2].init,
+                        weights=weights,
                         num_message_bits=24,
                     )
                 )
-                self.variables.importances = cost_coefficients[1].init
+                if 1 in cost_coefficients.keys():
+                    q_diag = cost_coefficients[1].init + cost_coefficients[2].init.diagonal()
+                else:
+                    q_diag = cost_coefficients[2].init.diagonal()
+                self.variables.importances = q_diag
                 self.cost_convergence_check = CostConvergenceChecker(
                     shape=discrete_var_shape
                 )
@@ -131,50 +137,55 @@ class SolutionFinderModel(AbstractSubProcessModel):
         init_value = hyperparameters.get(
             "init_value", np.zeros(discrete_var_shape, dtype=int)
         )
-        q_off_diag = cost_coefficients[2].init
-        q_diag = cost_coefficients[1].init
+        q_off_diag = cost_coefficients[2].init * np.logical_not(
+                np.eye(*cost_coefficients[2].init.shape))
+        if 1 in cost_coefficients.keys():
+            q_diag = cost_coefficients[1].init + cost_coefficients[2].init.diagonal()
+        else:
+            q_diag = cost_coefficients[2].init.diagonal()
+
         return q_off_diag @ init_value + q_diag
 
-    @staticmethod
-    def _get_initial_value_for_var(
-        coefficient: npt.ArrayLike, rank: int
-    ) -> npt.ArrayLike:
-        """Get the value for initializing the coefficient's Var.
+    # @staticmethod
+    # def _get_initial_value_for_var(
+    #     coefficient: npt.ArrayLike, rank: int
+    # ) -> npt.ArrayLike:
+    #     """Get the value for initializing the coefficient's Var.
 
-        Parameters
-        ----------
-        coefficient: npt.ArrayLike
-            A tensor representing one of the coefficients of a cost or
-            constraints function.
-        rank: int
-            The rank of the tensor coefficient.
-        """
-        if rank == 1:
-            return coefficient
-        if rank == 2:
-            quadratic_component = coefficient * np.logical_not(
-                np.eye(*coefficient.shape)
-            )
-            return quadratic_component
+    #     Parameters
+    #     ----------
+    #     coefficient: npt.ArrayLike
+    #         A tensor representing one of the coefficients of a cost or
+    #         constraints function.
+    #     rank: int
+    #         The rank of the tensor coefficient.
+    #     """
+    #     if rank == 1:
+    #         return coefficient
+    #     if rank == 2:
+    #         quadratic_component = coefficient * np.logical_not(
+    #             np.eye(*coefficient.shape)
+    #         )
+    #         return quadratic_component
         
-    @staticmethod
-    def _update_linear_component_var(
-        vars: ty.Dict[int, AbstractProcessMember],
-        quadratic_coefficient: npt.ArrayLike,
-    ):
-        """Update a linear coefficient's Var given a quadratic coefficient.
+    # @staticmethod
+    # def _update_linear_component_var(
+    #     vars: ty.Dict[int, AbstractProcessMember],
+    #     quadratic_coefficient: npt.ArrayLike,
+    # ):
+    #     """Update a linear coefficient's Var given a quadratic coefficient.
 
-        Parameters
-        ----------
-        vars: ty.Dict[int, AbstractProcessMember]
-            A dictionary where keys are ranks and values are the Lava Vars
-            corresponding to ranks' coefficients.
-        quadratic_coefficient: npt.ArrayLike
-            An array-like tensor of rank 2, corresponds to the coefficient of
-            the quadratic term on a cost or constraint function.
-        """
-        linear_component = quadratic_coefficient.diagonal()
-        if 1 in vars.keys():
-            vars[1].init = vars[1].init + linear_component
-        else:
-            vars[1] = Var(shape=linear_component.shape, init=linear_component)
+    #     Parameters
+    #     ----------
+    #     vars: ty.Dict[int, AbstractProcessMember]
+    #         A dictionary where keys are ranks and values are the Lava Vars
+    #         corresponding to ranks' coefficients.
+    #     quadratic_coefficient: npt.ArrayLike
+    #         An array-like tensor of rank 2, corresponds to the coefficient of
+    #         the quadratic term on a cost or constraint function.
+    #     """
+    #     linear_component = quadratic_coefficient.diagonal()
+    #     if 1 in vars.keys():
+    #         vars[1].init = vars[1].init + linear_component
+    #     else:
+    #         vars[1] = Var(shape=linear_component.shape, init=linear_component)

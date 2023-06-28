@@ -157,16 +157,12 @@ class SolverProcessBuilder:
                 raise Exception(
                     "An optimization problem must contain " "variables."
                 )
-            if hasattr(problem.variables, "continuous") or isinstance(
-                problem.variables, ContinuousVariables
-            ):
+            if hasattr(problem.variables, "continuous") and problem.variables.continuous.num_variables is not None:
                 self.continuous_variables = Var(
                     shape=(problem.variables.continuous.num_variables, )
                 )
                 self.is_continuous=1
-            if hasattr(problem.variables, "discrete") or isinstance(
-                problem.variables, DiscreteVariables
-            ):
+            if hasattr(problem.variables, "discrete") and problem.variables.discrete.num_variables is not None:
                 self.discrete_variables = Var(
                     shape=(
                         problem.variables.discrete.num_variables,
@@ -209,9 +205,9 @@ class SolverProcessBuilder:
         """
 
         def constructor(self, proc):
-            var_shape = proc.variable_assignment.shape 
             discrete_var_shape = None
             if hasattr(proc, "discrete_variables"):
+                print(f"{proc.discrete_variables.shape=}")
                 discrete_var_shape = proc.discrete_variables.shape
             continuous_var_shape = None
             if hasattr(proc, "continuous_variables"):
@@ -283,12 +279,7 @@ class SolverProcessBuilder:
         """
         vars = dict()
         for rank, coefficient in coefficients.items():
-            initial_value = coefficient
-            if rank == 2:
-                SolverProcessBuilder._update_linear_component_var(
-                    vars, coefficient
-                )
-            vars[rank] = Var(shape=coefficient.shape, init=initial_value)
+            vars[rank] = Var(shape=coefficient.shape, init=coefficient)
         return vars
 
 

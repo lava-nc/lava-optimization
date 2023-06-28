@@ -251,7 +251,7 @@ class QP(OptimizationProblem):
     @property
     def constraint_biases_ineq(self) -> np.ndarray:
         return self.constraints.inequality.get_coefficient(order=1)
-
+    # needs to change
     @property
     def constraint_hyperplanes_eq(self) -> np.ndarray:
         return self.constraints.equality.get_coefficient(order=2)

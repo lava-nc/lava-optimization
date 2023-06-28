@@ -151,6 +151,8 @@ class SolverProcessBuilder:
             )
             self.problem = problem
             self.hyperparameters = hyperparameters
+            self.is_continuous=0
+            self.is_discrete = 0
             if not hasattr(problem, "variables"):
                 raise Exception(
                     "An optimization problem must contain " "variables."
@@ -159,8 +161,9 @@ class SolverProcessBuilder:
                 problem.variables, ContinuousVariables
             ):
                 self.continuous_variables = Var(
-                    shape=(problem.variables.continuous.num_variables, 2)
+                    shape=(problem.variables.continuous.num_variables, )
                 )
+                self.is_continuous=1
             if hasattr(problem.variables, "discrete") or isinstance(
                 problem.variables, DiscreteVariables
             ):
@@ -170,22 +173,26 @@ class SolverProcessBuilder:
                         # problem.variables.domain_sizes[0]
                     )
                 )
+                self.is_discrete=1
             self.cost_diagonal = None
             if hasattr(problem, "cost"):
                 mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
                 self.cost_coefficients = mrcv(problem.cost.coefficients)
-                self.cost_diagonal = problem.cost.coefficients[2].diagonal()
-            self.variable_assignment = Var(
-                shape=(problem.variables.discrete.num_variables,)
-            )
-            self.best_variable_assignment = Var(
-                shape=(problem.variables.discrete.num_variables,)
-            )
-            self.optimality = Var(shape=(1,))
-            self.optimum = Var(shape=(2,))
-            self.feasibility = Var(shape=(1,))
-            self.solution_step = Var(shape=(1,))
-            self.cost_monitor = Var(shape=(1,))
+                if self.is_discrete:
+                    self.cost_diagonal = problem.cost.coefficients[2].diagonal()
+            
+            if not self.is_continuous:
+                self.variable_assignment = Var(
+                    shape=(problem.variables.discrete.num_variables,)
+                )
+                self.best_variable_assignment = Var(
+                    shape=(problem.variables.discrete.num_variables,)
+                )
+                self.optimality = Var(shape=(1,))
+                self.optimum = Var(shape=(2,))
+                self.feasibility = Var(shape=(1,))
+                self.solution_step = Var(shape=(1,))
+                self.cost_monitor = Var(shape=(1,))
             self.finders = None
         self._process_constructor = constructor
 
@@ -202,7 +209,7 @@ class SolverProcessBuilder:
         """
 
         def constructor(self, proc):
-            var_shape = proc.variable_assignment.shape
+            var_shape = proc.variable_assignment.shape 
             discrete_var_shape = None
             if hasattr(proc, "discrete_variables"):
                 discrete_var_shape = proc.discrete_variables.shape
@@ -214,6 +221,7 @@ class SolverProcessBuilder:
             constraints = proc.problem.constraints
             hyperparameters = proc.hyperparameters
             problem = proc.problem
+
             hps = (
                 hyperparameters
                 if isinstance(hyperparameters, list)
@@ -275,9 +283,7 @@ class SolverProcessBuilder:
         """
         vars = dict()
         for rank, coefficient in coefficients.items():
-            initial_value = SolverProcessBuilder._get_initial_value_for_var(
-                coefficient, rank
-            )
+            initial_value = coefficient
             if rank == 2:
                 SolverProcessBuilder._update_linear_component_var(
                     vars, coefficient
@@ -285,49 +291,6 @@ class SolverProcessBuilder:
             vars[rank] = Var(shape=coefficient.shape, init=initial_value)
         return vars
 
-    @staticmethod
-    def _get_initial_value_for_var(
-        coefficient: npt.ArrayLike, rank: int
-    ) -> npt.ArrayLike:
-        """Get the value for initializing the coefficient's Var.
-
-        Parameters
-        ----------
-        coefficient: npt.ArrayLike
-            A tensor representing one of the coefficients of a cost or
-            constraints function.
-        rank: int
-            The rank of the tensor coefficient.
-        """
-        if rank == 1:
-            return coefficient
-        if rank == 2:
-            quadratic_component = coefficient * np.logical_not(
-                np.eye(*coefficient.shape)
-            )
-            return quadratic_component
-
-    @staticmethod
-    def _update_linear_component_var(
-        vars: ty.Dict[int, AbstractProcessMember],
-        quadratic_coefficient: npt.ArrayLike,
-    ):
-        """Update a linear coefficient's Var given a quadratic coefficient.
-
-        Parameters
-        ----------
-        vars: ty.Dict[int, AbstractProcessMember]
-            A dictionary where keys are ranks and values are the Lava Vars
-            corresponding to ranks' coefficients.
-        quadratic_coefficient: npt.ArrayLike
-            An array-like tensor of rank 2, corresponds to the coefficient of
-            the quadratic term on a cost or constraint function.
-        """
-        linear_component = quadratic_coefficient.diagonal()
-        if 1 in vars.keys():
-            vars[1].init = vars[1].init + linear_component
-        else:
-            vars[1] = Var(shape=linear_component.shape, init=linear_component)
 
     def _in_ports_from_coefficients(
         self, coefficients: CoefficientTensorsMixin

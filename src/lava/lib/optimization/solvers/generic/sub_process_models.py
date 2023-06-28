@@ -32,7 +32,7 @@ from lava.lib.optimization.solvers.qp.models import (
 )
 from lava.proc.sparse.process import Sparse
 from lava.lib.optimization.utils.qp_processing import convert_to_fp
-
+from scipy.sparse import csr_matrix
 @implements(proc=ContinuousVariablesProcess, protocol=LoihiProtocol)
 @requires(CPU)
 class ContinuousVariablesModel(AbstractSubProcessModel):
@@ -77,7 +77,7 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
                     )
             # Connect the parent InPort to the InPort of the Dense child-Process.
             proc.in_ports.a_in.connect(self.ProjGrad.in_ports.a_in_qc)
-            self.ProjGrad.out_ports.s_out.connect(proc.out_ports.s_out_qc)
+            self.ProjGrad.out_ports.s_out_qc.connect(proc.out_ports.s_out)
             proc.vars.variable_assignment.alias(self.ProjGrad.qp_neuron_state)
         else:
             AssertionError("Unknown neuron model specified")
@@ -118,11 +118,13 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
             growth_params = proc.hyperparameters.get("growth_schedule_parameters", (3, 2))
             
             
-            self.sparse_A = Sparse(weights=A_pre_fp_man, num_message_bits=24,
+            self.sparse_A = Sparse(weights=csr_matrix(A_pre_fp_man), 
+                                   num_message_bits=24,
             )
             
             self.sparse_A_T = Sparse(
-                weights=A_pre_fp_man.T, weight_exp=A_exp_new, 
+                weights=csr_matrix(A_pre_fp_man.T), 
+                weight_exp=A_exp_new, 
                 num_message_bits=24
             )
 

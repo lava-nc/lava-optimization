@@ -31,40 +31,27 @@ class CostMinimizer:
         """Port sending gradient descent components to the dynamical systems."""
         return self.coefficients_2nd_order.a_out
 
-# how to handle continuous cases for Constraint Enforcing 
-# and VariablesImplementation?
 @dataclass
 class ConstraintEnforcing:
     """Processes implementing an optimization problem's constraints and their
     enforcing."""
 
-    continuous: ContinuousConstraintsProcess
-    discrete: DiscreteConstraintsProcess
-    mixed: MixedConstraintsProcess
+    continuous: ContinuousConstraintsProcess = None
+    # discrete: DiscreteConstraintsProcess
+    # mixed: MixedConstraintsProcess
     
     @property
-    def gradient_in(self):
-        return self.discrete.a_in
+    def state_in(self):
+        return self.continuous.a_in
 
     @property
     def state_out(self):
-        return self.discrete.s_out
+        return self.continuous.s_out
 
-    @property
-    def importances(self):
-        return self.discrete.cost_diagonal
-
-    @importances.setter
-    def importances(self, value):
-        self.discrete.cost_diagonal = value
-
-    @property
-    def local_cost(self):
-        return self.discrete.local_cost
 
     @property
     def variables_assignment(self):
-        return self.discrete.variable_assignment
+        return self.continuous.constraint_assignment
 
 @dataclass()
 class VariablesImplementation:
@@ -78,9 +65,17 @@ class VariablesImplementation:
         return self.discrete.a_in
 
     @property
+    def gradient_in_cont(self):
+        return self.continuous.a_in
+    
+    @property
     def state_out(self):
         return self.discrete.s_out
 
+    @property
+    def state_out_cont(self):
+        return self.continuous.s_out
+    
     @property
     def importances(self):
         return self.discrete.cost_diagonal
@@ -97,6 +92,9 @@ class VariablesImplementation:
     def variables_assignment(self):
         return self.discrete.variable_assignment
 
+    @property
+    def variables_assignment_cont(self):
+        return self.continuous.variable_assignment
 
 @dataclass
 class ProximalGradientMinimizer:

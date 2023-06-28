@@ -23,7 +23,7 @@ from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.process import Dense
 from lava.proc.sparse.process import Sparse
 from lava.lib.optimization.utils.qp_processing import convert_to_fp
-
+from scipy.sparse import csr_matrix
 
 @implements(proc=SolutionFinder, protocol=LoihiProtocol)
 @requires(CPU)
@@ -83,10 +83,8 @@ class SolutionFinderModel(AbstractSubProcessModel):
                 self.cost_convergence_check.update_buffer.connect(
                     proc.out_ports.cost_out)
 
-
-        elif continuous_var_shape[0]:
+        elif continuous_var_shape:
             self.constraints = ConstraintEnforcing()
-
             self.variables.continuous = ContinuousVariablesProcess(
                 shape=continuous_var_shape,
                 hyperparameters=hyperparameters,
@@ -94,34 +92,39 @@ class SolutionFinderModel(AbstractSubProcessModel):
             )
 
             self.constraints.continuous = ContinuousConstraintsProcess(
-                shape=continuous_var_shape,
+                shape_in=continuous_var_shape,
+                shape_out=continuous_var_shape,
                 hyperparameters=hyperparameters,
                 problem=problem,
             )
             self.cost_minimizer = None
             # weights need to converted to fixed_pt first
-            A_pre = proc.problem.constraint_hyperplanes_eq
-            Q_pre = proc.problem.hessian
-            _, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
+            A_pre = problem.constraint_hyperplanes_eq
+            Q_pre = problem.hessian
+            Q_pre_man, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
             _, A_pre_fp_exp = convert_to_fp(A_pre, 8)
             correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp) 
             Q_exp_new = -correction_exp + Q_pre_fp_exp
+            
             if cost_coefficients is not None:
                 self.cost_minimizer = CostMinimizer(
                     Sparse(
                         # todo just using the last coefficient for now
-                        weights=cost_coefficients[2].init,
+                        weights=csr_matrix(Q_pre_man),
                         weight_exp=Q_exp_new,
                         num_message_bits=24,
                     )
                 )
-            
             # Connect processes
-            self.cost_minimizer.gradient_out.connect(self.variables.gradient_in)
-            self.variables.state_out.connect(self.cost_minimizer.state_in)
-            self.variables.state_out.connect(self.constraints.state_in)
-            self.constraints.state_out.connect(self.variables.gradient_in)
-
+            self.cost_minimizer.gradient_out.connect(self.variables.gradient_in_cont)
+            self.variables.state_out_cont.connect(self.cost_minimizer.state_in)
+            self.variables.state_out_cont.connect(self.constraints.state_in)
+            self.constraints.state_out.connect(self.variables.gradient_in_cont)
+            
+            proc.vars.variables_assignment.alias(
+                    self.variables.variables_assignment
+                )
+            
     def _get_init_state(
         self, hyperparameters, cost_coefficients, discrete_var_shape
     ):
@@ -131,3 +134,47 @@ class SolutionFinderModel(AbstractSubProcessModel):
         q_off_diag = cost_coefficients[2].init
         q_diag = cost_coefficients[1].init
         return q_off_diag @ init_value + q_diag
+
+    @staticmethod
+    def _get_initial_value_for_var(
+        coefficient: npt.ArrayLike, rank: int
+    ) -> npt.ArrayLike:
+        """Get the value for initializing the coefficient's Var.
+
+        Parameters
+        ----------
+        coefficient: npt.ArrayLike
+            A tensor representing one of the coefficients of a cost or
+            constraints function.
+        rank: int
+            The rank of the tensor coefficient.
+        """
+        if rank == 1:
+            return coefficient
+        if rank == 2:
+            quadratic_component = coefficient * np.logical_not(
+                np.eye(*coefficient.shape)
+            )
+            return quadratic_component
+        
+    @staticmethod
+    def _update_linear_component_var(
+        vars: ty.Dict[int, AbstractProcessMember],
+        quadratic_coefficient: npt.ArrayLike,
+    ):
+        """Update a linear coefficient's Var given a quadratic coefficient.
+
+        Parameters
+        ----------
+        vars: ty.Dict[int, AbstractProcessMember]
+            A dictionary where keys are ranks and values are the Lava Vars
+            corresponding to ranks' coefficients.
+        quadratic_coefficient: npt.ArrayLike
+            An array-like tensor of rank 2, corresponds to the coefficient of
+            the quadratic term on a cost or constraint function.
+        """
+        linear_component = quadratic_coefficient.diagonal()
+        if 1 in vars.keys():
+            vars[1].init = vars[1].init + linear_component
+        else:
+            vars[1] = Var(shape=linear_component.shape, init=linear_component)

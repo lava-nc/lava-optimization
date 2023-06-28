@@ -161,7 +161,8 @@ class ContinuousConstraintsProcess(AbstractProcess):
 
     def __init__(
         self,
-        shape: ty.Tuple[int, ...],
+        shape_in: ty.Tuple[int, ...],
+        shape_out: ty.Tuple[int, ...],
         problem: OptimizationProblem, 
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
         name: ty.Optional[str] = None,
@@ -169,18 +170,20 @@ class ContinuousConstraintsProcess(AbstractProcess):
     ) -> None:
         
         super().__init__(
-            shape=shape,
+            shape_in=shape_in,
+            shape_out=shape_out,
             problem=problem,
             name=name,
             log_config=log_config,
         )
         
-        self.num_constraints = np.prod(shape)
+        self.num_constraints = np.prod(problem.constraint_biases_eq.shape)
         self.problem = problem
         self.hyperparameters = hyperparameters
-        self.a_in = InPort(shape=shape)
-        self.s_out = OutPort(shape=shape)
-        self.constraint_assignment = Var(shape=shape)
+        self.a_in = InPort(shape=shape_in)
+        self.s_out = OutPort(shape=shape_out)
+        self.constraint_assignment = Var(shape=problem.constraint_biases_eq.shape)
+        print("cons assign {}".format(self.constraint_assignment.shape))
 
 class DiscreteConstraintsProcess(AbstractProcess):
     """Process implementing discrete constraints via synapses."""

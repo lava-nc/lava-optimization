@@ -177,6 +177,7 @@ class SolverProcessBuilder:
                 if self.is_discrete:
                     self.cost_diagonal = problem.cost.coefficients[2].diagonal()
             
+ 
             if not self.is_continuous:
                 self.variable_assignment = Var(
                     shape=(problem.variables.discrete.num_variables,)
@@ -189,6 +190,10 @@ class SolverProcessBuilder:
                 self.feasibility = Var(shape=(1,))
                 self.solution_step = Var(shape=(1,))
                 self.cost_monitor = Var(shape=(1,))
+            elif self.is_continuous:
+                self.variable_assignment = Var(
+                    shape=(problem.variables.continuous.num_variables,)
+                )
             self.finders = None
         self._process_constructor = constructor
 
@@ -223,12 +228,13 @@ class SolverProcessBuilder:
                 if isinstance(hyperparameters, list)
                 else [hyperparameters]
             )
-
-            self.solution_reader = SolutionReader(
-                var_shape=discrete_var_shape,
-                target_cost=target_cost,
-                num_in_ports=len(hps),
-            )
+            # 
+            if not proc.is_continuous:
+                self.solution_reader = SolutionReader(
+                    var_shape=discrete_var_shape,
+                    target_cost=target_cost,
+                    num_in_ports=len(hps),
+                )
             finders = []
             for idx, hp in enumerate(hps):
                 finder = SolutionFinder(
@@ -242,27 +248,29 @@ class SolverProcessBuilder:
                 )
                 setattr(self, f"finder_{idx}", finder)
                 finders.append(finder)
-                finder.cost_out.connect(
-                    getattr(self.solution_reader, f"read_gate_in_port_{idx}")
-                )
+                if not proc.is_continuous:
+                    finder.cost_out.connect(
+                        getattr(self.solution_reader, f"read_gate_in_port_{idx}")
+                    )
             proc.finders = finders
             # Variable aliasing
-            if hasattr(proc, "cost_coefficients"):
-                proc.vars.optimum.alias(self.solution_reader.min_cost)
-                proc.vars.optimality.alias(proc.finders[0].cost)
+            if not proc.is_continuous:
+                if hasattr(proc, "cost_coefficients"):
+                    proc.vars.optimum.alias(self.solution_reader.min_cost)
+                    proc.vars.optimality.alias(proc.finders[0].cost)
+                proc.vars.best_variable_assignment.alias(
+                    self.solution_reader.solution
+                )
+                proc.vars.solution_step.alias(self.solution_reader.solution_step)
+
+                # Connect processes
+                self.solution_reader.ref_port.connect_var(
+                    finders[0].variables_assignment
+                )
             proc.vars.variable_assignment.alias(
-                proc.finders[0].variables_assignment
-            )
-            proc.vars.best_variable_assignment.alias(
-                self.solution_reader.solution
-            )
-            proc.vars.solution_step.alias(self.solution_reader.solution_step)
-
-            # Connect processes
-            self.solution_reader.ref_port.connect_var(
-                finders[0].variables_assignment
-            )
-
+                    proc.finders[0].variables_assignment
+                )
+            
         self._model_constructor = constructor
 
     @staticmethod

@@ -38,7 +38,7 @@ class SolutionFinderModel(AbstractSubProcessModel):
         
         # Subprocesses
         self.variables = VariablesImplementation()
-        if discrete_var_shape[0]:
+        if discrete_var_shape is not None:
             hyperparameters.update(
                 dict(
                     init_state=self._get_init_state(
@@ -128,7 +128,7 @@ class SolutionFinderModel(AbstractSubProcessModel):
             self.constraints.state_out.connect(self.variables.gradient_in_cont)
             
             proc.vars.variables_assignment.alias(
-                    self.variables.variables_assignment
+                    self.variables.variables_assignment_cont
                 )
             
     def _get_init_state(

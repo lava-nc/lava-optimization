@@ -418,11 +418,17 @@ class OptimizationSolver:
             self._profiler = None
 
     def _get_results(self, config: SolverConfig):
-        best_cost, idx = self.solver_process.optimum.get()
-        best_cost = SolutionReadoutPyModel.decode_cost(best_cost)
+        idx=0
+        if self.solver_process.is_discrete:
+            best_cost, idx = self.solver_process.optimum.get()
+            best_cost = SolutionReadoutPyModel.decode_cost(best_cost)
+            best_timestep = self.solver_process.solution_step.aliased_var.get() - 2
         best_state = self._get_best_state(config, int(idx))
-        best_timestep = self.solver_process.solution_step.aliased_var.get() - 2
-        return best_state, int(best_cost), int(best_timestep)
+        
+        if self.solver_process.is_discrete:
+            return best_state, int(best_cost), int(best_timestep)
+        else:
+            return best_state, None, None
     
     def _get_best_state(self, config: SolverConfig, idx: int):
         if self._is_problem_discrete():
@@ -430,13 +436,11 @@ class OptimizationSolver:
             return discrete_values
         
         if self._is_problem_continuous():
-            continuous_values = self._get_and_decode_continuous_vars(config, idx)
+            continuous_values = self._get_and_decode_continuous_vars(idx)
             return continuous_values
         
     def _is_problem_discrete(self):
-       return hasattr(self.problem.variables, "discrete") or isinstance(
-                self.problem.variables, DiscreteVariables
-            ) and self.problem.variables.discrete.num_variables != 0
+       return hasattr(self.problem.variables, "discrete") and self.problem.variables.discrete.num_variables is not None
 
     def _get_and_decode_discrete_vars(self, config: SolverConfig, idx: int):
         if isinstance(config.hyperparameters, list):
@@ -450,11 +454,9 @@ class OptimizationSolver:
             return best_assignment.aliased_var.get()
 
     def _is_problem_continuous(self):
-        return hasattr(self.problem.variables, "continuous") or isinstance(
-                self.problem.variables, ContinuousVariables
-            ) and self.problem.variables.continuous.num_variables != 0
+        return hasattr(self.problem.variables, "continuous") and self.problem.variables.continuous.num_variables is not None
 
-    def _get_and_decode_continous_vars(self, idx: int):
+    def _get_and_decode_continuous_vars(self, idx: int):
         solution = np.asarray(
             self.solver_process.finders[idx].variables_assignment.get()
         ).astype(np.int32)

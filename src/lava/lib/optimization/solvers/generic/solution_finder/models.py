@@ -107,16 +107,17 @@ class SolutionFinderModel(AbstractSubProcessModel):
             # weights need to converted to fixed_pt first
             A_pre = problem.constraint_hyperplanes_eq
             Q_pre = problem.hessian
-            Q_pre_man, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
+            Q_pre_fp_man, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
             _, A_pre_fp_exp = convert_to_fp(A_pre, 8)
+            Q_pre_fp_man = (Q_pre_fp_man // 2) * 2
             correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp) 
             Q_exp_new = -correction_exp + Q_pre_fp_exp
             
             if cost_coefficients is not None:
                 self.cost_minimizer = CostMinimizer(
-                    Sparse(
+                    Dense(
                         # todo just using the last coefficient for now
-                        weights=csr_matrix(Q_pre_man),
+                        weights=Q_pre_fp_man,
                         weight_exp=Q_exp_new,
                         num_message_bits=24,
                     )

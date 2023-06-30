@@ -183,7 +183,6 @@ class ContinuousConstraintsProcess(AbstractProcess):
         self.a_in = InPort(shape=shape_in)
         self.s_out = OutPort(shape=shape_out)
         self.constraint_assignment = Var(shape=problem.constraint_biases_eq.shape)
-        print("cons assign {}".format(self.constraint_assignment.shape))
 
 class DiscreteConstraintsProcess(AbstractProcess):
     """Process implementing discrete constraints via synapses."""

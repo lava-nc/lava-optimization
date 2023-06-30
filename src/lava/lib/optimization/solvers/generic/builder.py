@@ -212,7 +212,6 @@ class SolverProcessBuilder:
         def constructor(self, proc):
             discrete_var_shape = None
             if hasattr(proc, "discrete_variables"):
-                print(f"{proc.discrete_variables.shape=}")
                 discrete_var_shape = proc.discrete_variables.shape
             continuous_var_shape = None
             if hasattr(proc, "continuous_variables"):

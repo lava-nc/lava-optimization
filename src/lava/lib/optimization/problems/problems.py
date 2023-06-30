@@ -275,9 +275,9 @@ class QP(OptimizationProblem):
     def evaluate_constraint_violations(self, sol):
         return self.constraint_hyperplanes_eq@sol - self.constraint_biases_eq
 
-    def precondition_problem(self, type='ruiz'):
+    def precondition_problem(self, iterations=5, type='ruiz'):
         if type=='ruiz':
-            self._ruiz_precondition()
+            self._ruiz_precondition(iterations=iterations)
         else:
             raise NotImplementedError("Only Ruiz preconditioning is enabled \
                                       for QP problems at the moment")

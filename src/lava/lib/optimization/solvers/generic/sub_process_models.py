@@ -117,13 +117,14 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
             beta_exp =  proc.hyperparameters.get("beta_exponent", 1)
             growth_params = proc.hyperparameters.get("growth_schedule_parameters", (3, 2))
             
-            
-            self.sparse_A = Sparse(weights=csr_matrix(A_pre_fp_man), 
+            A_pre_fp_man = (A_pre_fp_man // 2) * 2
+
+            self.sparse_A = Dense(weights=A_pre_fp_man, 
                                    num_message_bits=24,
             )
             
-            self.sparse_A_T = Sparse(
-                weights=csr_matrix(A_pre_fp_man.T), 
+            self.sparse_A_T = Dense(
+                weights=A_pre_fp_man.T, 
                 weight_exp=A_exp_new, 
                 num_message_bits=24
             )

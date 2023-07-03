@@ -83,9 +83,9 @@ class OptimizationSolverModel(AbstractSubProcessModel):
         )
 
         # Connect processes
-        self.finder.cost_out_first.connect(
+        self.finder.cost_out_first_byte.connect(
             self.solution_reader.read_gate_in_port_first_byte_0)
-        self.finder.cost_out_last.connect(
+        self.finder.cost_out_last_bytes.connect(
             self.solution_reader.read_gate_in_port_last_bytes_0)
         self.solution_reader.ref_port.connect_var(
             self.finder.variables_assignment
@@ -163,10 +163,10 @@ class TestFinderReaderIntegration(unittest.TestCase):
         )
 
         # Connect processes.
-        self.solution_finder.cost_out_first.connect(
+        self.solution_finder.cost_out_first_byte.connect(
             self.solution_reader.read_gate_in_port_first_byte_0
         )
-        self.solution_finder.cost_out_last.connect(
+        self.solution_finder.cost_out_last_bytes.connect(
             self.solution_reader.read_gate_in_port_last_bytes_0
         )
         self.solution_reader.ref_port.connect_var(

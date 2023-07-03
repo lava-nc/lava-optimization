@@ -23,12 +23,12 @@ class ReadGate(AbstractProcess):
 
     InPorts
     -------
-    cost_in_last: OutPort
+    cost_in_last_bytes: OutPort
         Receives a better cost found by the CostIntegrator at the
         previous timestep.
         Messages the last 3 byte of the new best cost.
-        Total cost = cost_out_first << 24 + cost_out_last.
-    cost_in_first: OutPort
+        Total cost = cost_in_first_byte << 24 + cost_in_last_bytes.
+    cost_in_first_byte: OutPort
         Receives a better cost found by the CostIntegrator at the
         previous timestep.
         Messages the first byte of the new best cost.
@@ -61,11 +61,11 @@ class ReadGate(AbstractProcess):
         self.best_solution = Var(shape=shape, init=-1)
         for id in range(num_in_ports):
             # Cost is transferred as two separate values
-            # cost_last = last 3 byte of cost
-            # cost_first = first byte of cost
-            # total cost = np.int8(cost_first) << 24 + cost_last
-            setattr(self, f"cost_in_last_{id}", InPort(shape=(1,)))
-            setattr(self, f"cost_in_first_{id}", InPort(shape=(1,)))
+            # cost_last_bytes = last 3 byte of cost
+            # cost_first_byte = first byte of cost
+            # total cost = np.int8(cost_first_byte) << 24 + cost_last_bytes
+            setattr(self, f"cost_in_last_bytes_{id}", InPort(shape=(1,)))
+            setattr(self, f"cost_in_first_byte_{id}", InPort(shape=(1,)))
         self.cost_out = OutPort(shape=(2,))
         self.send_pause_request = OutPort(shape=(1,))
         self.solution_out = OutPort(shape=shape)

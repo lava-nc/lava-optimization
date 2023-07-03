@@ -27,10 +27,10 @@ def readgate_run_spk(self):
     costs_last = []
     costs_first = []
     for ii in range(num_ports):
-        in_port_last = getattr(self, f"cost_in_last_{ii}")
-        costs_last.append(in_port_last.recv()[0])
-        in_port_first = getattr(self, f"cost_in_first_{ii}")
-        costs_first.append(in_port_first.recv()[0])
+        in_port_last_bytes = getattr(self, f"cost_in_last_bytes_{ii}")
+        costs_last.append(in_port_last_bytes.recv()[0])
+        in_port_first_byte = getattr(self, f"cost_in_first_byte_{ii}")
+        costs_first.append(in_port_first_byte.recv()[0])
     # convert to int8 to make signed; then convert back to int32.
     costs = (np.array(costs_first).astype(np.int8).astype(np.int32) << 24) + \
         costs_last
@@ -61,13 +61,13 @@ def readgate_run_post_mgmt(self):
 
 def get_readgate_members(num_in_ports):
     in_ports_last = {
-        f"cost_in_last_{id}": LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                         precision=32)
+        f"cost_in_last_bytes_{id}": LavaPyType(PyInPort.VEC_DENSE, np.int32,
+                                               precision=32)
         for id in range(num_in_ports)
     }
     in_ports_first = {
-        f"cost_in_first_{id}": LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                          precision=32)
+        f"cost_in_first_byte_{id}": LavaPyType(PyInPort.VEC_DENSE, np.int32,
+                                               precision=32)
         for id in range(num_in_ports)
     }
     readgate_members = {
@@ -129,10 +129,10 @@ class ReadGatePyModelD(PyLoihiProcessModel):
     """
     target_cost: int = LavaPyType(int, np.int32, 32)
     best_solution: int = LavaPyType(int, np.int32, 32)
-    cost_in_first: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                         precision=8)
-    cost_in_last: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                        precision=24)
+    cost_in_first_byte: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
+                                              precision=8)
+    cost_in_last_bytes: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
+                                              precision=24)
     cost_out: PyOutPort = LavaPyType(
         PyOutPort.VEC_DENSE, np.int32, precision=32
     )
@@ -153,10 +153,10 @@ class ReadGatePyModelD(PyLoihiProcessModel):
     def run_spk(self):
         """Execute spiking phase, integrate input, update dynamics and
         send messages out."""
-        cost_first = self.cost_in_first.recv()
-        cost_last = self.cost_in_last.recv()
-        cost = np.array(cost_first << 24).astype(np.int8).astype(np.int32) + \
-            cost_last
+        cost_first_byte = self.cost_in_first_byte.recv()
+        cost_last_bytes = self.cost_in_last_bytes.recv()
+        cost = np.array(cost_first_byte << 24).astype(np.int8).astype(np.int32)\
+            + cost_last_bytes
         if cost[0]:
             self.min_cost = cost[0]
             self.cost_out.send(np.array([0]))

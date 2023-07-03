@@ -59,9 +59,6 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 
     @staticmethod
     def decode_cost(raw_cost) -> np.ndarray:
-        # The following casts cost as a signed 24-bit value (8 = 32 - 24)
-        # Deprecated now that Read_Gate sends signed 32bit values
-        # return (np.array([raw_cost]).astype(np.int32) << 8) >> 8
         return np.array([raw_cost]).astype(np.int32)
 
     @staticmethod

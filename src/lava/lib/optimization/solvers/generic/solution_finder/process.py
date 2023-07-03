@@ -32,7 +32,7 @@ class SolutionFinder(AbstractProcess):
             log_config=log_config,
         )
         self.variables_assignment = Var(shape=discrete_var_shape, init=(1,))
-        self.cost_last = Var(shape=(1,), init=(0,))
-        self.cost_first = Var(shape=(1,), init=(0,))
-        self.cost_out_last = OutPort(shape=(1,))
-        self.cost_out_first = OutPort(shape=(1,))
+        self.cost_last_bytes = Var(shape=(1,), init=(0,))
+        self.cost_first_byte = Var(shape=(1,), init=(0,))
+        self.cost_out_last_bytes = OutPort(shape=(1,))
+        self.cost_out_first_byte = OutPort(shape=(1,))

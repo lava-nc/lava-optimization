@@ -239,11 +239,11 @@ class SolverProcessBuilder:
                 )
                 setattr(self, f"finder_{idx}", finder)
                 finders.append(finder)
-                finder.cost_out_last.connect(
+                finder.cost_out_last_bytes.connect(
                     getattr(self.solution_reader,
                             f"read_gate_in_port_last_bytes_{idx}")
                 )
-                finder.cost_out_first.connect(
+                finder.cost_out_first_byte.connect(
                     getattr(self.solution_reader,
                             f"read_gate_in_port_first_byte_{idx}")
                 )
@@ -252,9 +252,10 @@ class SolverProcessBuilder:
             if hasattr(proc, "cost_coefficients"):
                 proc.vars.optimum.alias(self.solution_reader.min_cost)
                 # Cost = optimality_first_byte << 24 + optimality_last_bytes
-                proc.vars.optimality_last_bytes.alias(proc.finders[0].cost_last)
+                proc.vars.optimality_last_bytes.alias(
+                    proc.finders[0].cost_last_bytes)
                 proc.vars.optimality_first_byte.alias(
-                    proc.finders[0].cost_first)
+                    proc.finders[0].cost_first_byte)
             proc.vars.variable_assignment.alias(
                 proc.finders[0].variables_assignment
             )

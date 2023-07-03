@@ -29,11 +29,11 @@ class CostIntegrator(AbstractProcess):
 
     OutPorts
     --------
-    cost_out_last: OutPort
+    cost_out_last_bytes: OutPort
         Notifies the next process about the detection of a better cost.
         Messages the last 3 byte of the new best cost.
-        Total cost = cost_out_first << 24 + cost_out_last.
-    cost_out_first: OutPort
+        Total cost = cost_out_first_byte << 24 + cost_out_last_bytes.
+    cost_out_first_byte: OutPort
         Notifies the next process about the detection of a better cost.
         Messages the first byte of the new best cost.
 
@@ -42,11 +42,11 @@ class CostIntegrator(AbstractProcess):
     cost
         Holds current cost as addition of input spikes' payloads
 
-    cost_min_last
+    cost_min_last_bytes
         Current minimum cost, i.e., the lowest reported cost so far.
         Saves the last 3 bytes.
-        cost_min = cost_min_first << 24 + cost_min_last
-    cost_min_first
+        cost_min = cost_min_first_byte << 24 + cost_min_last_bytes
+    cost_min_first_byte
         Current minimum cost, i.e., the lowest reported cost so far.
         Saves the first byte.
     """
@@ -61,22 +61,22 @@ class CostIntegrator(AbstractProcess):
     ) -> None:
         super().__init__(shape=shape, name=name, log_config=log_config)
         self.cost_in = InPort(shape=shape)
-        self.cost_out_last = OutPort(shape=shape)
-        self.cost_out_first = OutPort(shape=shape)
+        self.cost_out_last_bytes = OutPort(shape=shape)
+        self.cost_out_first_byte = OutPort(shape=shape)
 
         # Current cost initiated to zero
-        # Note: Total cost = cost_first << 24 + cost_last
-        self.cost_last = Var(shape=shape, init=0)
+        # Note: Total cost = cost_first_byte << 24 + cost_last_bytes
+        self.cost_last_bytes = Var(shape=shape, init=0)
         # first 8 bit of cost
-        self.cost_first = Var(shape=shape, init=0)
+        self.cost_first_byte = Var(shape=shape, init=0)
 
-        # Note: Total min cost = cost_min_first << 24 + cost_min_last
+        # Note: Total min cost = cost_min_first_byte << 24 + cost_min_last_bytes
         # Extract first 8 bit
-        cost_min_first = np.right_shift(min_cost, 24)
-        cost_min_first = max(-2 ** 7, min(cost_min_first, 2 ** 7 - 1))
+        cost_min_first_byte = np.right_shift(min_cost, 24)
+        cost_min_first_byte = max(-2 ** 7, min(cost_min_first_byte, 2 ** 7 - 1))
         # Extract last 24 bit
-        cost_min_last = min_cost & 2 ** 24 - 1
+        cost_min_last_bytes = min_cost & 2 ** 24 - 1
         # last 24 bit of cost
-        self.cost_min_last = Var(shape=shape, init=cost_min_last)
+        self.cost_min_last_bytes = Var(shape=shape, init=cost_min_last_bytes)
         # first 8 bit of cost
-        self.cost_min_first = Var(shape=shape, init=cost_min_first)
+        self.cost_min_first_byte = Var(shape=shape, init=cost_min_first_byte)

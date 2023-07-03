@@ -29,8 +29,8 @@ class TestSolutionReadout(unittest.TestCase):
         self.readout = SolutionReadout(shape=(4,), target_cost=-3)
 
         # Connect processes.
-        integrator_last_bytes.s_out.connect(readgate.cost_in_last_0)
-        integrator_first_byte.s_out.connect(readgate.cost_in_first_0)
+        integrator_last_bytes.s_out.connect(readgate.cost_in_last_bytes_0)
+        integrator_first_byte.s_out.connect(readgate.cost_in_first_byte_0)
         readgate.solution_reader.connect_var(spiker.payload)
         readgate.solution_out.connect(self.readout.read_solution)
         readgate.cost_out.connect(self.readout.cost_in)

@@ -39,9 +39,9 @@ class SolutionReaderModel(AbstractSubProcessModel):
         for id in range(num_in_ports):
             in_port = getattr(proc.in_ports,
                               f"read_gate_in_port_first_byte_{id}")
-            out_port = getattr(self.read_gate, f"cost_in_first_{id}")
+            out_port = getattr(self.read_gate, f"cost_in_first_byte_{id}")
             in_port.connect(out_port)
             in_port = getattr(proc.in_ports,
                               f"read_gate_in_port_last_bytes_{id}")
-            out_port = getattr(self.read_gate, f"cost_in_last_{id}")
+            out_port = getattr(self.read_gate, f"cost_in_last_bytes_{id}")
             in_port.connect(out_port)

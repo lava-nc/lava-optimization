@@ -273,10 +273,8 @@ class SubGDModel(AbstractSubProcessModel):
 @implements(proc=ProjectedGradientNeuronsPIPGeq, protocol=LoihiProtocol)
 @requires(CPU)
 class PyProjGradPIPGeqModel(PyLoihiProcessModel):
-    a_in_qc: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64)
-    s_out_qc: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64)
-    a_in_cn: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64)
-    s_out_cd: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64)
+    a_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64)
+    s_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64)
     qp_neuron_state: np.ndarray = LavaPyType(np.ndarray, np.float64)
     grad_bias: np.ndarray = LavaPyType(np.ndarray, np.float64)
     alpha: np.ndarray = LavaPyType(np.ndarray, np.float64)
@@ -305,8 +303,7 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
 
     def run_spk(self):
         self.decay_counter += 1
-        a_in_qc = self.a_in_qc.recv()
-        a_in_cn = self.a_in_cn.recv()
+        a_in = self.a_in.recv()
         if self.decay_counter % 2 == 0:
             if self.lr_decay_type == "schedule":
                 if self.decay_counter == self.alpha_decay_schedule:
@@ -328,13 +325,11 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
 
             # process behavior: gradient update
             self.qp_neuron_state -= self.alpha * (
-                a_in_qc + self.grad_bias + a_in_cn
+                a_in + self.grad_bias
             )
-            self.s_out_cd.send(self.qp_neuron_state)
-            self.s_out_qc.send(np.zeros(self.qp_neuron_state.shape))
+            self.s_out.send(self.qp_neuron_state)
         else:
-            self.s_out_cd.send(np.zeros(self.qp_neuron_state.shape))
-            self.s_out_qc.send(self.qp_neuron_state)
+            self.s_out.send(np.zeros(self.qp_neuron_state.shape))
 
 
 @implements(proc=ProportionalIntegralNeuronsPIPGeq, protocol=LoihiProtocol)

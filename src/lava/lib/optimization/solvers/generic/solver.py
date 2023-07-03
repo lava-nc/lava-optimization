@@ -4,6 +4,9 @@
 import typing as ty
 from dataclasses import dataclass
 from lava.lib.optimization.problems.variables import ContinuousVariables, DiscreteVariables
+from lava.lib.optimization.solvers.qp.models import PyPIneurPIPGeqModel, PyProjGradPIPGeqModel
+from lava.lib.optimization.solvers.qp.ncmodels import NcL2ModelPG, NcL2ModelPI
+from lava.lib.optimization.solvers.qp.processes import ProjectedGradientNeuronsPIPGeq, ProportionalIntegralNeuronsPIPGeq
 
 import numpy as np
 from lava.magma.core.resources import (
@@ -384,6 +387,8 @@ class OptimizationSolver:
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMPyModel,
                 QuboScif: PyModelQuboScifFixed,
+                ProportionalIntegralNeuronsPIPGeq:PyPIneurPIPGeqModel,
+                ProjectedGradientNeuronsPIPGeq:PyProjGradPIPGeqModel,         
             }
             return Loihi1SimCfg(
                 exception_proc_model_map=pdict, select_sub_proc_model=True
@@ -400,6 +405,8 @@ class OptimizationSolver:
                     NEBMSimulatedAnnealingAbstractModel,
                 NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
                 CostIntegrator: CostIntegratorNcModel,
+                ProportionalIntegralNeuronsPIPGeq:NcL2ModelPI,
+                ProjectedGradientNeuronsPIPGeq:NcL2ModelPG,
             }
             return Loihi2HwCfg(
                 exception_proc_model_map=pdict,

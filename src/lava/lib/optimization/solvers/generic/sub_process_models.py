@@ -76,8 +76,8 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
                         alpha_decay_params=decay_params,
                     )
             # Connect the parent InPort to the InPort of the Dense child-Process.
-            proc.in_ports.a_in.connect(self.ProjGrad.in_ports.a_in_qc)
-            self.ProjGrad.out_ports.s_out_qc.connect(proc.out_ports.s_out)
+            proc.in_ports.a_in.connect(self.ProjGrad.in_ports.a_in)
+            self.ProjGrad.out_ports.s_out.connect(proc.out_ports.s_out)
             proc.vars.variable_assignment.alias(self.ProjGrad.qp_neuron_state)
         else:
             AssertionError("Unknown neuron model specified")

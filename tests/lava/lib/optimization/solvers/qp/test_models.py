@@ -407,16 +407,12 @@ class TestModelsFloatingPoint(unittest.TestCase):
             in_shape=input_spike_qc.shape, spike_in=input_spike_qc
         )
         out_spike_cd_process = OutProbeProcess(
-            out_shape=process.s_out_cd.shape
+            out_shape=process.s_out.shape
         )
-        out_spike_qc_process = OutProbeProcess(
-            out_shape=process.s_out_qc.shape
-        )
-
-        in_spike_cn_process.a_out.connect(process.a_in_cn)
-        in_spike_qc_process.a_out.connect(process.a_in_qc)
-        process.s_out_cd.connect(out_spike_cd_process.s_in)
-        process.s_out_qc.connect(out_spike_qc_process.s_in)
+      
+        in_spike_cn_process.a_out.connect(process.a_in)
+        in_spike_qc_process.a_out.connect(process.a_in)
+        process.s_out.connect(out_spike_cd_process.s_in)
 
         # Advancing one time-step does not change state since neuron works only
         # even time-steps

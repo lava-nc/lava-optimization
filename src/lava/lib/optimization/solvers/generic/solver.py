@@ -163,7 +163,7 @@ class SolverReport:
     profiler: Profiler
         Profiler instance containing time, energy and activity measurements.
     """
-
+    problem: OptimizationProblem = None
     best_cost: int = None
     best_state: np.ndarray = None
     best_timestep: int = None
@@ -246,6 +246,7 @@ class OptimizationSolver:
         cost_timeseries, state_timeseries = self._get_probing(config)
         self.solver_process.stop()
         return SolverReport(
+            problem=self.problem,
             best_cost=best_cost,
             best_state=best_state,
             best_timestep=best_timestep,

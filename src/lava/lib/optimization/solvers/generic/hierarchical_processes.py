@@ -86,10 +86,20 @@ class CostConvergenceChecker(AbstractProcess):
     ----------
     cost_components: InPort
         Additive contributions to the total cost.
-    update_buffer: OutPort
+    cost_out_last_bytes: OutPort
         Notifies the next process about the detection of a better cost.
-    min_cost: Var
+        Messages the last 3 byte of the new best cost.
+        Total cost = cost_out_first_byte << 24 + cost_out_last_bytes.
+    cost_out_first_byte: OutPort
+        Notifies the next process about the detection of a better cost.
+        Messages the first byte of the new best cost.
+    cost_min_last_bytes
         Current minimum cost, i.e., the lowest reported cost so far.
+        Saves the last 3 bytes.
+        cost_min = cost_min_first_byte << 24 + cost_min_last_bytes
+    cost_min_first_byte
+        Current minimum cost, i.e., the lowest reported cost so far.
+        Saves the first byte.
     """
 
     def __init__(
@@ -113,10 +123,13 @@ class CostConvergenceChecker(AbstractProcess):
         """
         super().__init__(shape=shape, name=name, log_config=log_config)
         self.shape = shape
-        self.min_cost = Var(shape=(1,))
-        self.cost = Var(shape=(1,))
+        self.cost_min_first_byte = Var(shape=(1,))
+        self.cost_min_last_bytes = Var(shape=(1,))
+        self.cost_first_byte = Var(shape=(1,))
+        self.cost_last_bytes = Var(shape=(1,))
         self.cost_components = InPort(shape=shape)
-        self.update_buffer = OutPort(shape=(1,))
+        self.cost_out_last_bytes = OutPort(shape=(1,))
+        self.cost_out_first_byte = OutPort(shape=(1,))
 
 
 class SatConvergenceChecker(AbstractProcess):

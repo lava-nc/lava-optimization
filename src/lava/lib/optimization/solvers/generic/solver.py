@@ -309,6 +309,7 @@ class OptimizationSolver:
         )
         self._process_builder.create_solver_process(
             problem=self.problem,
+            backend=config.backend,
             hyperparameters=config.hyperparameters or dict(),
         )
         self._process_builder.create_solver_model(

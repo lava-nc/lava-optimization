@@ -1,10 +1,11 @@
 # Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
+import os
 import unittest
 
 import numpy as np
-from lava.lib.optimization.problems.problems import QUBO
+from lava.lib.optimization.problems.problems import QP, QUBO
 from lava.lib.optimization.solvers.generic.solution_finder.process import (
     SolutionFinder,
 )
@@ -19,7 +20,7 @@ from lava.lib.optimization.solvers.generic.solver import (
 )
 from lava.lib.optimization.utils.generators.mis import MISProblem
 
-class TestOptimizationSolver(unittest.TestCase):
+class TestOptimizationSolverQUBO(unittest.TestCase):
     def setUp(self) -> None:
         self.problem = QUBO(
             np.array([[-5, 2, 4, 0],
@@ -74,9 +75,6 @@ class TestOptimizationSolver(unittest.TestCase):
         self.assertIsInstance(pm.finder_0, SolutionFinder)
         self.assertIsInstance(pm.solution_reader, SolutionReader)
     
-    def test_qp_sub_process_connections(self):
-        pass
-    
     def test_subprocesses_connections(self):
         # TODO split into a test for SolutionReader and one for SolutionFinder
         self.assertIsNone(self.solver.solver_process)
@@ -96,11 +94,13 @@ class TestOptimizationSolver(unittest.TestCase):
         )
 
     def test_qubo_cost_defines_weights(self):
+        from lava.lib.optimization.solvers.generic.solution_finder.models import SolutionFinderModel
         self.solver.solve(config=SolverConfig(timeout=1))
         pm = self.solver.solver_process.model_class(self.solver.solver_process)
         q_no_diag = np.copy(self.problem.cost.get_coefficient(2))
         np.fill_diagonal(q_no_diag, 0)
-        wgts = pm.finder_0.proc_params.get("cost_coefficients")[2].init
+        sfpm = SolutionFinderModel(pm.finder_0)
+        wgts = sfpm.cost_minimizer.coefficients_2nd_order.weights.init
         condition = (wgts == q_no_diag).all()
         self.assertTrue(condition)
 
@@ -132,6 +132,70 @@ class TestOptimizationSolver(unittest.TestCase):
             np.all(report.best_state == states[report.best_timestep])
         )
 
+class TestOptimizationSolverQP(unittest.TestCase):
+    def setUp(self) -> None:
+        root = os.path.dirname(os.path.abspath(__file__))
+        qp_data = np.load(root + "/data/qp/ex_qp_small.npz")
+        Q, self.A, p, k = [qp_data[i] for i in qp_data]
+        p, self.k = np.squeeze(p), np.squeeze(k)
+        qp_workloads = {'anymal': QP(hessian=Q, 
+                                    linear_offset=p, 
+                                    equality_constraints_weights=self.A, 
+                                    equality_constraints_biases=self.k)}
+        self.problem = qp_workloads['anymal']
+        self.problem.precondition_problem(iterations=5, type="ruiz")
+        self.solver = OptimizationSolver(problem=self.problem)
+        self.solution_shape = (self.problem.hessian.shape[0], )
+
+    def test_create_obj(self):
+        self.assertIsInstance(self.solver, OptimizationSolver)
+
+    def test_solution_has_expected_shape(self):
+        report = self.solver.solve(config=SolverConfig(timeout=3000))
+        self.assertEqual(report.best_state.shape, self.solution_shape)
+
+    def test_constraint_satisfaction_flt_pt_cpu(self):
+        np.random.seed(2)
+        mu, sigma, lamda =  0.11, 8.14, 1.6
+        alpha_init = 2/(mu + 2*lamda)
+        beta_init = mu/(2*sigma)
+        print(f"{beta_init=}")
+        config = SolverConfig(
+            timeout=3000,
+            backend="CPU",
+            hyperparameters={"neuron_model": "qp/lp-pipg",
+                             "alpha":alpha_init,
+                             "beta": beta_init,
+                             "lr_change_type": "computed_schedule",
+                             "alpha_decay_indices": (
+                                    np.array([50, 100, 200, 350, 550, 800, 1100, 1450, 1850, 2300])*2
+                                ),
+                             "beta_growth_indices":(
+                                    np.array([1, 3, 7, 15, 31, 63, 127, 255, 511, 1023, 2047, 4095,])*2 + 1
+                                    ),
+                             "decay_schedule_parameters":(100,100,0),
+                             "growth_schedule_parameters":(3,2),
+                             },
+        )
+        report = self.solver.solve(config=config)
+        solution = self.problem.postconditioner@report.best_state
+        # should be the value of constraint violation
+        print(f"{np.linalg.norm(self.A@solution-self.k)=}")
+        self.assertLess(
+            np.linalg.norm(self.problem.constraint_hyperplanes_eq@solution), 100, "Solver didn't converge"
+        )
+
+    def test_solver_creates_optimizationsolver_process(self):
+        self.solver._create_solver_process(config=SolverConfig(backend="CPU"))
+        class_name = type(self.solver.solver_process).__name__
+        self.assertEqual(class_name, "OptimizationSolverProcess")
+
+    def test_solves_creates_subprocesses(self):
+        self.assertIsNone(self.solver.solver_process)
+        self.solver.solve(config=SolverConfig(timeout=1))
+        pm = self.solver.solver_process.model_class(self.solver.solver_process)
+        self.assertIsInstance(pm.finder_0, SolutionFinder)
+    
 
 def solve_workload(problem, reference_solution, noise_precision=5,
                    noise_amplitude=1, on_tau=-3):
@@ -148,15 +212,7 @@ def solve_workload(problem, reference_solution, noise_precision=5,
     ))
     return report, expected_cost
 
-def solve_qp_workload(problem):
-    solver = OptimizationSolver(problem)
-    pass
 class TestWorkloads(unittest.TestCase):
-    
-    def test_solve_anymal_qp(self):
-        # does one test CPU/NcModel here?
-        pass
-    
     def test_solve_polynomial_minimization(self):
         """Polynomial minimization with y=-5x_1 -3x_2 -8x_3 -6x_4 +
         4x_1x_2+8x_1x_3+2x_2x_3+10x_3x_4
@@ -252,6 +308,7 @@ class TestWorkloads(unittest.TestCase):
                                                on_tau=-1)
         self.assertEqual(problem.evaluate_cost(report.best_state),
                          expected_cost)
+
 
 
 if __name__ == "__main__":

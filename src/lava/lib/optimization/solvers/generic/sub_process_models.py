@@ -17,13 +17,16 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import \
     ContinuousVariablesProcess, ContinuousConstraintsProcess, \
     StochasticIntegrateAndFire, NEBMAbstract, \
     NEBMSimulatedAnnealingAbstract
-
+from lava.magma.core.resources import (
+    CPU,
+    Loihi2NeuroCore,
+    NeuroCore,
+)
 from lava.lib.optimization.solvers.generic.nebm.process import NEBM, \
     NEBMSimulatedAnnealing
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
-from lava.magma.core.resources import Loihi2NeuroCore, CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.process import Dense
 from lava.lib.optimization.solvers.qp.models import (
@@ -33,6 +36,21 @@ from lava.lib.optimization.solvers.qp.models import (
 from lava.proc.sparse.process import Sparse
 from lava.lib.optimization.utils.qp_processing import convert_to_fp
 from scipy.sparse import csr_matrix
+
+CPUS = [CPU, "CPU"]
+NEUROCORES = [Loihi2NeuroCore, NeuroCore, "Loihi2"]
+BACKEND_MSG = f""" was requested as backend. However,
+the solver currently supports only Loihi 2 and CPU backends.
+These can be specified by calling solve with any of the following:
+backend = "CPU"
+backend = "Loihi2"
+backend = CPU
+backend = Loihi2NeuroCore
+backend = NeuroCoreS
+The explicit resource classes can be imported from
+lava.magma.core.resources"""
+
+
 @implements(proc=ContinuousVariablesProcess, protocol=LoihiProtocol)
 @requires(CPU)
 class ContinuousVariablesModel(AbstractSubProcessModel):
@@ -42,6 +60,7 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
     def __init__(self, proc):
         # Instantiate child processes
         # The input shape is a 2D vector (shape of the weight matrix).
+        backend = proc.backend
         neuron_model = proc.hyperparameters.get("neuron_model", "qp/lp-pipg")
         
         if neuron_model == "qp/lp-pipg":
@@ -55,26 +74,42 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
             init_state = proc.hyperparameters.get("init_state",
                                                   np.zeros((p_pre.shape[0],), 
                                                            dtype=int))
-            
+            lr_change = proc.hyperparameters.get("lr_change_type", "indices")
             alpha_man =  proc.hyperparameters.get("alpha_mantissa", 1)
             alpha_exp =  proc.hyperparameters.get("alpha_exponent", 1)
             decay_params = proc.hyperparameters.get("decay_schedule_parameters", 
                                                     (100, 100, 0))
+            alpha_decay_indices = proc.hyperparameters.get("alpha_decay_indices", [0])
             _, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
             _, A_pre_fp_exp = convert_to_fp(A_pre, 8)
             p_pre_fp_man, p_pre_fp_exp = convert_to_fp(p_pre, 24)
+            
+            alpha = proc.hyperparameters.get("alpha", 1)
             correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp)
-            self.ProjGrad = ProjectedGradientNeuronsPIPGeq(
-                        shape=init_state.shape,
-                        qp_neurons_init=init_state,
-                        da_exp=correction_exp,
-                        grad_bias=p_pre_fp_man,
-                        grad_bias_exp=p_pre_fp_exp,
-                        alpha=alpha_man,
-                        alpha_exp=alpha_exp,
-                        lr_decay_type="indices",
-                        alpha_decay_params=decay_params,
-                    )
+            if backend in CPUS:
+                self.ProjGrad = ProjectedGradientNeuronsPIPGeq(
+                            shape=init_state.shape,
+                            qp_neurons_init=init_state,
+                            grad_bias=p_pre,
+                            alpha=alpha,
+                            lr_decay_type=lr_change,
+                            alpha_decay_params=decay_params,
+                            alpha_decay_indices = alpha_decay_indices
+                        )
+            elif backend in NEUROCORES:
+                self.ProjGrad = ProjectedGradientNeuronsPIPGeq(
+                            shape=init_state.shape,
+                            qp_neurons_init=init_state,
+                            da_exp=correction_exp,
+                            grad_bias=p_pre_fp_man,
+                            grad_bias_exp=p_pre_fp_exp,
+                            alpha=alpha_man,
+                            alpha_exp=alpha_exp,
+                            alpha_decay_params=decay_params,
+                        )
+            else:
+                raise NotImplementedError(str(backend) + BACKEND_MSG)
+
             # Connect the parent InPort to the InPort of the Dense child-Process.
             proc.in_ports.a_in.connect(self.ProjGrad.in_ports.a_in)
             self.ProjGrad.out_ports.s_out.connect(proc.out_ports.s_out)
@@ -92,6 +127,7 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
     def __init__(self, proc):
         # Instantiate child processes
         # The input shape is a 2D vector (shape of the weight matrix).
+        backend = proc.backend
         neuron_model = proc.hyperparameters.get("neuron_model", "qp/lp-pipg")
         
         if neuron_model == "qp/lp-pipg":
@@ -115,36 +151,60 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
                                                            dtype=int))
             beta_man =  proc.hyperparameters.get("beta_mantissa", 1)
             beta_exp =  proc.hyperparameters.get("beta_exponent", 1)
+            beta = proc.hyperparameters.get("beta", 1)
             growth_params = proc.hyperparameters.get("growth_schedule_parameters", (3, 2))
-            
+            beta_growth_indices = proc.hyperparameters.get("beta_growth_indices", [0])
+            lr_change = proc.hyperparameters.get("lr_change_type", "indices")
             A_pre_fp_man = (A_pre_fp_man // 2) * 2
+            if backend in CPUS:
+                self.conn_A = Dense(weights=A_pre, 
+                                    num_message_bits=64,
+                )
+                
+                self.conn_A_T = Dense(
+                    weights=A_pre.T, 
+                    num_message_bits=64
+                )
 
-            self.sparse_A = Dense(weights=A_pre_fp_man, 
-                                   num_message_bits=24,
-            )
-            
-            self.sparse_A_T = Dense(
-                weights=A_pre_fp_man.T, 
-                weight_exp=A_exp_new, 
-                num_message_bits=24
-            )
+                # Neurons for Constraint Checking
+                self.ProInt = ProportionalIntegralNeuronsPIPGeq(
+                            shape=init_constraints.shape,
+                            constraint_neurons_init=init_constraints,
+                            thresholds=k_pre,
+                            beta=beta,
+                            lr_growth_type=lr_change,
+                            beta_growth_params=growth_params,
+                            beta_growth_indices=beta_growth_indices 
+                        )
+            elif backend in NEUROCORES:
+                self.conn_A = Dense(weights=A_pre_fp_man, 
+                                    num_message_bits=24,
+                )
+                
+                self.conn_A_T = Dense(
+                    weights=A_pre_fp_man.T, 
+                    weight_exp=A_exp_new, 
+                    num_message_bits=24
+                )
 
-            # Neurons for Constraint Checking
-            self.ProInt = ProportionalIntegralNeuronsPIPGeq(
-                        shape=init_constraints.shape,
-                        constraint_neurons_init=init_constraints,
-                        da_exp=A_pre_fp_exp,
-                        thresholds=k_pre_fp_man,
-                        thresholds_exp=k_pre_fp_exp,
-                        beta=beta_man,
-                        beta_exp=beta_exp,
-                        lr_growth_type="indices",
-                        beta_growth_params=growth_params,
-                    )
-            proc.in_ports.a_in.connect(self.sparse_A.s_in)
-            self.sparse_A.a_out.connect(self.ProInt.a_in)
-            self.ProInt.s_out.connect(self.sparse_A_T.s_in)
-            self.sparse_A_T.a_out.connect(proc.out_ports.s_out)
+                # Neurons for Constraint Checking
+                self.ProInt = ProportionalIntegralNeuronsPIPGeq(
+                            shape=init_constraints.shape,
+                            constraint_neurons_init=init_constraints,
+                            da_exp=A_pre_fp_exp,
+                            thresholds=k_pre_fp_man,
+                            thresholds_exp=k_pre_fp_exp,
+                            beta=beta_man,
+                            beta_exp=beta_exp,
+                            beta_growth_params=growth_params,
+                        )
+            else:
+                raise NotImplementedError(str(backend) + BACKEND_MSG)
+
+            proc.in_ports.a_in.connect(self.conn_A.s_in)
+            self.conn_A.a_out.connect(self.ProInt.a_in)
+            self.ProInt.s_out.connect(self.conn_A_T.s_in)
+            self.conn_A_T.a_out.connect(proc.out_ports.s_out)
             proc.vars.constraint_assignment.alias(self.ProInt.constraint_neuron_state)
         else:
             AssertionError("Unknown neuron model specified")

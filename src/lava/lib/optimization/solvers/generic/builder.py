@@ -62,6 +62,7 @@ class SolverProcessBuilder:
     def create_solver_process(
         self,
         problem: OptimizationProblem,
+        backend,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
     ):
         """Create and set a solver process for the specified optimization
@@ -79,13 +80,13 @@ class SolverProcessBuilder:
             variables defining the problem. The temperature provides the
             level of noise.
         """
-        self._create_process_constructor(problem, hyperparameters)
+        self._create_process_constructor(backend, problem, hyperparameters)
         SolverProcess = type(
             "OptimizationSolverProcess",
             (AbstractProcess,),
             {"__init__": self._process_constructor},
         )
-        self._process = SolverProcess(hyperparameters)
+        self._process = SolverProcess(backend, hyperparameters)
 
     def create_solver_model(
         self,
@@ -119,6 +120,7 @@ class SolverProcessBuilder:
 
     def _create_process_constructor(
         self,
+        backend,
         problem: OptimizationProblem,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
     ):
@@ -140,17 +142,20 @@ class SolverProcessBuilder:
 
         def constructor(
             self,
+            backend,
             hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
         ) -> None:
             super(type(self), self).__init__(
+                backend=backend,
                 hyperparameters=hyperparameters,
                 name=name,
                 log_config=log_config,
             )
             self.problem = problem
             self.hyperparameters = hyperparameters
+            self.backend = backend
             self.is_continuous=0
             self.is_discrete = 0
             if not hasattr(problem, "variables"):
@@ -221,6 +226,7 @@ class SolverProcessBuilder:
             constraints = proc.problem.constraints
             hyperparameters = proc.hyperparameters
             problem = proc.problem
+            backend = proc.backend
 
             hps = (
                 hyperparameters
@@ -240,6 +246,7 @@ class SolverProcessBuilder:
                     cost_diagonal=cost_diagonal,
                     cost_coefficients=cost_coefficients,
                     constraints=constraints,
+                    backend=backend,
                     hyperparameters=hp,
                     discrete_var_shape=discrete_var_shape,
                     continuous_var_shape=continuous_var_shape,

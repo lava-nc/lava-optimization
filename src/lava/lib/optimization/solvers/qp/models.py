@@ -315,6 +315,7 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
                     self.alpha = self.alpha / 2
 
             if self.lr_decay_type == "computed_schedule":
+                print(f"{self.decay_index=}")
                 if self.decay_counter == self.decay_index:
                     self.alpha = self.alpha / 2
                     self.decay_factor += 1
@@ -322,7 +323,9 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
                         self.decay_index
                         + self.decay_interval * self.decay_factor
                     )
-
+            else:
+                raise NotImplementedError("Learning Rate change type not supported")
+            
             # process behavior: gradient update
             self.qp_neuron_state -= self.alpha * (
                 a_in + self.grad_bias
@@ -366,7 +369,7 @@ class PyPIneurPIPGeqModel(PyLoihiProcessModel):
         self.growth_counter += 1
         a_in = self.a_in.recv()
         if self.growth_counter % 2 == 1:
-            # print(f"{self.growth_counter=}")
+            print(f"{self.lr_growth_type=}")
             if self.lr_growth_type == "schedule":
                 if self.growth_counter == self.beta_growth_schedule:
                     self.beta = self.beta * 2
@@ -383,9 +386,13 @@ class PyPIneurPIPGeqModel(PyLoihiProcessModel):
                         self.growth_index + 2 * self.growth_factor
                     )
                     self.growth_factor *= 2
+            else:
+                raise NotImplementedError("Learning Rate change type not supported")
 
             # process behavior:
+            # print((a_in - self.constraint_bias)[0:10])
             omega = self.beta * (a_in - self.constraint_bias)
+            # print(f"{omega[0:10]=}")
             self.constraint_neuron_state += omega
             gamma = self.constraint_neuron_state + omega
             self.s_out.send(gamma)

@@ -20,6 +20,7 @@ class ContinuousVariablesProcess(AbstractProcess):
         self,
         shape: ty.Tuple[int, ...],
         problem: OptimizationProblem,
+        backend,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
@@ -33,6 +34,7 @@ class ContinuousVariablesProcess(AbstractProcess):
         )
 
         self.num_variables = np.prod(shape)
+        self.backend = backend
         self.hyperparameters = hyperparameters
         self.problem = problem
         self.a_in = InPort(shape=shape)
@@ -164,6 +166,7 @@ class ContinuousConstraintsProcess(AbstractProcess):
         shape_in: ty.Tuple[int, ...],
         shape_out: ty.Tuple[int, ...],
         problem: OptimizationProblem, 
+        backend,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
@@ -179,6 +182,7 @@ class ContinuousConstraintsProcess(AbstractProcess):
         
         self.num_constraints = np.prod(problem.constraint_biases_eq.shape)
         self.problem = problem
+        self.backend = backend
         self.hyperparameters = hyperparameters
         self.a_in = InPort(shape=shape_in)
         self.s_out = OutPort(shape=shape_out)

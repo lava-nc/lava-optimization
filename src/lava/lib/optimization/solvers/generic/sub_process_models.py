@@ -81,6 +81,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             max_temperature = proc.hyperparameters.get("max_temperature", 10)
             min_temperature = proc.hyperparameters.get("min_temperature", 0)
             delta_temperature = proc.hyperparameters.get("delta_temperature", 1)
+            exp_temperature = proc.hyperparameters.get("exp_temperature", None)
             steps_per_temperature = proc.hyperparameters.get(
                 "steps_per_temperature", 100)
             refract_scaling = proc.hyperparameters.get("refract_scaling", 14)
@@ -95,6 +96,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                     max_temperature=max_temperature,
                     min_temperature=min_temperature,
                     delta_temperature=delta_temperature,
+                    exp_temperature=exp_temperature,
                     steps_per_temperature=steps_per_temperature,
                     refract=refract,
                     refract_scaling=refract_scaling,
@@ -144,11 +146,23 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
 
         # Connect the OutPort of the LIF child-Process to the OutPort of the
         # parent Process.
-        self.cost_integrator.out_ports.update_buffer.connect(
-            proc.out_ports.update_buffer
+        # Communicates the last 3 bytes, and the first byte
+        # Total cost = cost_min_first_byte << 24 + cost_min_last_bytes
+        self.cost_integrator.out_ports.cost_out_last_bytes.connect(
+            proc.out_ports.cost_out_last_bytes
         )
-        proc.vars.min_cost.alias(self.cost_integrator.vars.min_cost)
-        proc.vars.cost.alias(self.cost_integrator.vars.cost)
+        self.cost_integrator.out_ports.cost_out_first_byte.connect(
+            proc.out_ports.cost_out_first_byte
+        )
+        # Note: Total min cost = cost_min_first_byte << 24 + cost_min_last_bytes
+        proc.vars.cost_min_last_bytes.alias(
+            self.cost_integrator.vars.cost_min_last_bytes)
+        proc.vars.cost_min_first_byte.alias(
+            self.cost_integrator.vars.cost_min_first_byte)
+        proc.vars.cost_last_bytes.alias(
+            self.cost_integrator.vars.cost_last_bytes)
+        proc.vars.cost_first_byte.alias(
+            self.cost_integrator.vars.cost_first_byte)
 
 
 @implements(proc=StochasticIntegrateAndFire, protocol=LoihiProtocol)
@@ -228,6 +242,7 @@ class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
         max_temperature = proc.proc_params.get("max_temperature", 10)
         min_temperature = proc.proc_params.get("min_temperature", 0)
         delta_temperature = proc.proc_params.get("delta_temperature", 1)
+        exp_temperature = proc.proc_params.get("exp_temperature", 1)
         steps_per_temperature = proc.proc_params.get(
             "steps_per_temperature", 100)
         refract_scaling = proc.proc_params.get("refract_scaling", 14)
@@ -240,6 +255,7 @@ class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
             max_temperature=max_temperature,
             min_temperature=min_temperature,
             delta_temperature=delta_temperature,
+            exp_temperature=exp_temperature,
             steps_per_temperature=steps_per_temperature,
             refract_scaling=refract_scaling,
             refract=refract,
@@ -247,6 +263,7 @@ class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
             init_state=init_state,
             neuron_model=neuron_model,
         )
+
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)

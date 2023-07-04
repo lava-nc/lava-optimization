@@ -389,6 +389,7 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             max_temperature: int = 10,
             min_temperature: int = 0,
             delta_temperature: int = 1,
+            exp_temperature: int = None,
             steps_per_temperature: int = 100,
             refract_scaling: int = 14,
             refract: ty.Optional[ty.Union[int, npty.NDArray]],
@@ -435,6 +436,7 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             max_temperature=max_temperature,
             min_temperature=min_temperature,
             delta_temperature=delta_temperature,
+            exp_temperature=exp_temperature,
             steps_per_temperature=steps_per_temperature,
             refract_scaling=refract_scaling,
             refract=refract,
@@ -453,6 +455,7 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
         self.max_temperature = Var(shape=shape, init=max_temperature)
         self.min_temperature = Var(shape=shape, init=min_temperature)
         self.delta_temperature = Var(shape=shape, init=delta_temperature)
+        self.exp_temperature = Var(shape=shape, init=exp_temperature)
         self.steps_per_temperature = Var(shape=shape,
                                          init=steps_per_temperature)
         self.refract = Var(shape=shape, init=refract)

@@ -161,12 +161,12 @@ class TestOptimizationSolverQP(unittest.TestCase):
         beta_init = mu/(2*sigma)
         print(f"{beta_init=}")
         config = SolverConfig(
-            timeout=3000,
+            timeout=500*2,
             backend="CPU",
             hyperparameters={"neuron_model": "qp/lp-pipg",
                              "alpha":alpha_init,
                              "beta": beta_init,
-                             "lr_change_type": "computed_schedule",
+                             "lr_change_type": "indices",
                              "alpha_decay_indices": (
                                     np.array([50, 100, 200, 350, 550, 800, 1100, 1450, 1850, 2300])*2
                                 ),
@@ -180,9 +180,9 @@ class TestOptimizationSolverQP(unittest.TestCase):
         report = self.solver.solve(config=config)
         solution = self.problem.postconditioner@report.best_state
         # should be the value of constraint violation
-        print(f"{np.linalg.norm(self.A@solution-self.k)=}")
+        print(f"{np.linalg.norm(self.A@solution)=}")
         self.assertLess(
-            np.linalg.norm(self.problem.constraint_hyperplanes_eq@solution), 100, "Solver didn't converge"
+            np.linalg.norm(self.A@solution-self.k), 100, "Solver didn't converge"
         )
 
     def test_solver_creates_optimizationsolver_process(self):

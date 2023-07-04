@@ -300,10 +300,14 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
         ) = self.proc_params["alpha_dec_params"]
         self.alpha_decay_indices = self.proc_params["alpha_dec_list"]
         self.decay_counter = 0
-
+        self.connectivity_spike = 0
     def run_spk(self):
         self.decay_counter += 1
         a_in = self.a_in.recv()
+        if self.decay_counter % 2 == 1:
+            # spike for qp_neuron_state coming in from quad connectivity
+            # in hardware is simulated here
+            self.connectivity_spike = a_in
         if self.decay_counter % 2 == 0:
             if self.lr_decay_type == "schedule":
                 if self.decay_counter == self.alpha_decay_schedule:
@@ -323,12 +327,12 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
                         self.decay_index
                         + self.decay_interval * self.decay_factor
                     )
-            else:
-                raise NotImplementedError("Learning Rate change type not supported")
+            # else:
+            #     raise NotImplementedError("Learning Rate change type not supported")
             
             # process behavior: gradient update
             self.qp_neuron_state -= self.alpha * (
-                a_in + self.grad_bias
+                a_in + self.grad_bias + self.connectivity_spike
             )
             self.s_out.send(self.qp_neuron_state)
         else:
@@ -364,12 +368,13 @@ class PyPIneurPIPGeqModel(PyLoihiProcessModel):
         ) = self.proc_params["beta_grw_params"]
         self.beta_growth_indices = self.proc_params["beta_grw_list"]
         self.growth_counter = 0
+        self.connectivity_spike = 0
 
     def run_spk(self):
         self.growth_counter += 1
         a_in = self.a_in.recv()
+
         if self.growth_counter % 2 == 1:
-            print(f"{self.lr_growth_type=}")
             if self.lr_growth_type == "schedule":
                 if self.growth_counter == self.beta_growth_schedule:
                     self.beta = self.beta * 2
@@ -386,14 +391,12 @@ class PyPIneurPIPGeqModel(PyLoihiProcessModel):
                         self.growth_index + 2 * self.growth_factor
                     )
                     self.growth_factor *= 2
-            else:
-                raise NotImplementedError("Learning Rate change type not supported")
+            # else:
+            #     raise NotImplementedError("Learning Rate change type not supported")
 
             # process behavior:
-            # print((a_in - self.constraint_bias)[0:10])
-            omega = self.beta * (a_in - self.constraint_bias)
-            # print(f"{omega[0:10]=}")
-            self.constraint_neuron_state += omega
+            omega = self.beta * (a_in - self.constraint_bias + self.connectivity_spike)
+            self.constraint_neuron_state += omega 
             gamma = self.constraint_neuron_state + omega
             self.s_out.send(gamma)
         else:

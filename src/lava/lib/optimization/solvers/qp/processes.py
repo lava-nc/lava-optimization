@@ -365,8 +365,8 @@ class ProjectedGradientNeuronsPIPGeq(AbstractProcess):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1,))
 
-        # Ports
-        # In/outPorts that come from/go to the quadratic connectivity process
+        # # Ports
+        # # In/outPorts that come from/go to the quadratic connectivity process
         self.a_in = InPort(shape=(shape[0],))
         self.s_out = OutPort(shape=(shape[0],))
 

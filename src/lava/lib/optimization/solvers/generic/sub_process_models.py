@@ -64,7 +64,6 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
         neuron_model = proc.hyperparameters.get("neuron_model", "qp/lp-pipg")
         
         if neuron_model == "qp/lp-pipg":
-            # these are part of the problem not hyperparams
             # adding them here to show that they are need for the neurons models
             # since some values are calculated based on these weights 
             Q_pre = proc.problem.hessian
@@ -80,12 +79,7 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
             decay_params = proc.hyperparameters.get("decay_schedule_parameters", 
                                                     (100, 100, 0))
             alpha_decay_indices = proc.hyperparameters.get("alpha_decay_indices", [0])
-            _, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
-            _, A_pre_fp_exp = convert_to_fp(A_pre, 8)
-            p_pre_fp_man, p_pre_fp_exp = convert_to_fp(p_pre, 24)
-            
             alpha = proc.hyperparameters.get("alpha", 1)
-            correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp)
             if backend in CPUS:
                 self.ProjGrad = ProjectedGradientNeuronsPIPGeq(
                             shape=init_state.shape,
@@ -97,6 +91,11 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
                             alpha_decay_indices = alpha_decay_indices
                         )
             elif backend in NEUROCORES:
+                _, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
+                _, A_pre_fp_exp = convert_to_fp(A_pre, 8)
+                p_pre_fp_man, p_pre_fp_exp = convert_to_fp(p_pre, 24)
+                correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp)
+
                 self.ProjGrad = ProjectedGradientNeuronsPIPGeq(
                             shape=init_state.shape,
                             qp_neurons_init=init_state,
@@ -117,7 +116,6 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
         else:
             AssertionError("Unknown neuron model specified")
 
-
 @implements(proc=ContinuousConstraintsProcess, protocol=LoihiProtocol)
 @requires(CPU)
 class ContinuousConstraintsModel(AbstractSubProcessModel):
@@ -130,20 +128,12 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
         backend = proc.backend
         neuron_model = proc.hyperparameters.get("neuron_model", "qp/lp-pipg")
         
-        if neuron_model == "qp/lp-pipg":
-            # initialize weight processes A and A^T
-              # these are part of the problem not hyperparams
+        if neuron_model == "qp/lp-pipg":        
             # adding them here to show that they are need for the neurons models
             # since some values are calculated based on these weights 
             Q_pre = proc.problem.hessian
             A_pre = proc.problem.constraint_hyperplanes_eq
             k_pre = proc.problem.constraint_biases_eq
-            _, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
-            A_pre_fp_man, A_pre_fp_exp = convert_to_fp(A_pre, 8)
-            k_pre_fp_man, k_pre_fp_exp = convert_to_fp(k_pre, 24)
-            correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp)
-            
-            A_exp_new = -correction_exp + A_pre_fp_exp
             # legitimate hyperparameters
             init_constraints = proc.hyperparameters.get(
                                                     "init_constraints",
@@ -155,7 +145,7 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
             growth_params = proc.hyperparameters.get("growth_schedule_parameters", (3, 2))
             beta_growth_indices = proc.hyperparameters.get("beta_growth_indices", [0])
             lr_change = proc.hyperparameters.get("lr_change_type", "indices")
-            A_pre_fp_man = (A_pre_fp_man // 2) * 2
+
             if backend in CPUS:
                 self.conn_A = Dense(weights=A_pre, 
                                     num_message_bits=64,
@@ -177,6 +167,13 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
                             beta_growth_indices=beta_growth_indices 
                         )
             elif backend in NEUROCORES:
+                _, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
+                A_pre_fp_man, A_pre_fp_exp = convert_to_fp(A_pre, 8)
+                k_pre_fp_man, k_pre_fp_exp = convert_to_fp(k_pre, 24)
+                correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp)
+                A_exp_new = -correction_exp + A_pre_fp_exp
+                A_pre_fp_man = (A_pre_fp_man // 2) * 2
+
                 self.conn_A = Dense(weights=A_pre_fp_man, 
                                     num_message_bits=24,
                 )

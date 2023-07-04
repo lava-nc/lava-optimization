@@ -433,7 +433,7 @@ class TestModelsFloatingPoint(unittest.TestCase):
         self.assertEqual(
             np.all(
                 out_spike_cd_process.vars.spike_out.get()
-                == (init_sol - alpha * (input_spike_qc + p + input_spike_cn))
+                == (init_sol - alpha * (2*(input_spike_qc + input_spike_cn) + p))
             ),
             True,
         )

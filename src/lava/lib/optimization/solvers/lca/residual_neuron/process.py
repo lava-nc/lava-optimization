@@ -19,6 +19,7 @@ class ResidualNeuron(AbstractProcess):
     spike_height: the threshold to fire and reset at
     bias: added to voltage every timestep
     """
+
     def __init__(self,
                  spike_height: float,
                  bias: ty.Union[int, np.ndarray],

@@ -319,7 +319,6 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
                     self.alpha = self.alpha / 2
 
             if self.lr_decay_type == "computed_schedule":
-                print(f"{self.decay_index=}")
                 if self.decay_counter == self.decay_index:
                     self.alpha = self.alpha / 2
                     self.decay_factor += 1

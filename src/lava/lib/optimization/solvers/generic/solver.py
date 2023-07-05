@@ -456,7 +456,7 @@ class OptimizationSolver:
         if isinstance(config.hyperparameters, list):
             raw_solution = np.asarray(
                 self.solver_process.finders[idx].variables_assignment.get()
-            ).astype(np.int32)
+            )
             raw_solution &= 0x3F
             return raw_solution.astype(np.int8) >> 5
         else:
@@ -469,5 +469,5 @@ class OptimizationSolver:
     def _get_and_decode_continuous_vars(self, idx: int):
         solution = np.asarray(
             self.solver_process.finders[idx].variables_assignment.get()
-        ).astype(np.int32)
+        )
         return solution

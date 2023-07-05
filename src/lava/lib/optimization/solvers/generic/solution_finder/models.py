@@ -124,7 +124,6 @@ class SolutionFinderModel(AbstractSubProcessModel):
                 problem=problem,
             )
             self.cost_minimizer = None
-            # weights need to converted to fixed_pt first
             Q_pre = problem.hessian
             if cost_coefficients is not None:
                 if backend in CPUS:
@@ -136,6 +135,7 @@ class SolutionFinderModel(AbstractSubProcessModel):
                     )
                 elif backend in NEUROCORES:
                     A_pre = problem.constraint_hyperplanes_eq
+                    # weights need to converted to fixed_pt first
                     Q_pre_fp_man, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
                     _, A_pre_fp_exp = convert_to_fp(A_pre, 8)
                     Q_pre_fp_man = (Q_pre_fp_man // 2) * 2

@@ -16,7 +16,9 @@ from lava.magma.core.run_configs import Loihi1SimCfg, Loihi2HwCfg
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
+from lava.proc.sparse.models import PySparseModelFloat
 from lava.proc.dense.process import Dense
+from lava.proc.sparse.process import Sparse
 from lava.proc.monitor.process import Monitor
 from lava.utils.profiler import Profiler
 
@@ -47,6 +49,7 @@ from lava.lib.optimization.solvers.generic.sub_process_models import (
 
 try:
     from lava.proc.dense.ncmodels import NcModelDense
+    from lava.proc.sparse.ncmodel import NcModelSparse
 
     from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels import (
         CostIntegratorNcModel,
@@ -73,6 +76,9 @@ except ImportError:
         pass
 
     class CostIntegratorNcModel:
+        pass
+
+    class NcModelSparse:
         pass
 
 
@@ -404,6 +410,7 @@ class OptimizationSolver:
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGatePyModel,
                 Dense: PyDenseModelFloat,
+                Sparse: PySparseModelFloat,
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMPyModel,
                 QuboScif: PyModelQuboScifFixed,
@@ -416,6 +423,7 @@ class OptimizationSolver:
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGateCModel,
                 Dense: NcModelDense,
+                Sparse: NcModelSparse,
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMNcModel,
                 NEBMSimulatedAnnealingAbstract:

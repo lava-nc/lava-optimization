@@ -24,6 +24,7 @@ from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.resources import Loihi2NeuroCore, CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.process import Dense
+from lava.proc.sparse.process import Sparse
 
 
 @implements(proc=DiscreteVariablesProcess, protocol=LoihiProtocol)
@@ -107,9 +108,9 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         else:
             AssertionError("Unknown neuron model specified")
         if weights.shape != (0, 0):
-            self.dense = Dense(weights=weights)
-            self.s_bit.out_ports.messages.connect(self.dense.in_ports.s_in)
-            self.dense.out_ports.a_out.connect(self.s_bit.in_ports.added_input)
+            self.sparse = Sparse(weights=weights)
+            self.s_bit.out_ports.messages.connect(self.sparse.in_ports.s_in)
+            self.sparse.out_ports.a_out.connect(self.s_bit.in_ports.added_input)
 
         # Connect the parent InPort to the InPort of the Dense child-Process.
         proc.in_ports.a_in.connect(self.s_bit.in_ports.added_input)

@@ -46,63 +46,56 @@ class MISProblem:
 
     @classmethod
     def from_random_uniform(
-        cls, n: int, m: float, seed: int = 0
+        cls, num_vertices: int, density: float, seed: int = 0
     ) -> "MISProblem":
         """
-        Instantiate a new MIS problem, based on a random graph.
+        Instantiate a new MIS problem, based on a random uniform graph sampled
+        with the given paramters.
 
         Parameters
         ----------
-        n: int
+        num_vertices: int
             Number of vertices of the random graph.
-        m: int
-            Number of edges in the random graph.
+        density: float
+            Density of the random adjacency matrix.
         seed: int
             Seed for random graph generation.
         """
         graph = netx.generators.gnm_random_graph(
-            n=n, m=m, directed=False, seed=seed
+            n=num_vertices,
+            m=int(0.5 * density * num_vertices**2),
+            directed=False,
+            seed=seed
         )
         adjacency = np.array(netx.adjacency_matrix(graph).toarray())
         return cls(adjacency_matrix=adjacency)
 
     @classmethod
-    def from_erdos_renyi(cls, n: int, p: float, seed: int = 0) -> "MISProblem":
-        """
-        Instantiate a new MIS problem, based on a random Erdos-Renyi graph.
-
-        Parameters
-        ----------
-        n: int
-            Number of vertices of the random graph.
-        p: float
-            Connection probability between different vertices.
-        seed: int
-            Seed for random graph generation.
-        """
-        graph = netx.generators.erdos_renyi_graph(n=n, p=p, seed=seed)
-        adjacency = np.array(netx.adjacency_matrix(graph).toarray())
-        return cls(adjacency_matrix=adjacency)
-
-    @classmethod
     def from_watts_strogatz(
-        cls, n: int, k: int, p: float, seed: int = 0
+        cls,
+        num_vertices: int,
+        num_neighbors: int,
+        connection_prob: float,
+        seed: int = 0
     ) -> "MISProblem":
         """
-        Instantiate a new MIS problem, based on a random Watts-Strogatz graph.
+        Instantiate a new MIS problem, based on a random Watts-Strogatz graph
+        sampled with the given parameters.
 
         Parameters
         ----------
-        n: int
+        num_vertices: int
             Number of vertices of the random graph.
-        k: int
+        num_neighbors: int
             Each node is joined with its k nearest neighbors.
-        p: float
+        connection_prob: float
             Connection probability between different vertices.
         seed: int
             Seed for random graph generation.
         """
-        graph = netx.generators.watts_strogatz_graph(n=n, k=k, p=p, seed=seed)
+        graph = netx.generators.watts_strogatz_graph(
+            n=num_vertices, k=num_neighbors, p=connection_prob, seed=seed
+        )
         adjacency = np.array(netx.adjacency_matrix(graph).toarray())
         return cls(adjacency_matrix=adjacency)
 

@@ -231,8 +231,8 @@ class TestWorkloads(unittest.TestCase):
 
     def test_solve_mis(self):
         mis = MISProblem.from_random_uniform(
-            n=15,
-            m=0.9,
+            num_vertices=15,
+            density=0.9,
             seed=0
         )
         problem = mis.get_as_qubo(1, 8)

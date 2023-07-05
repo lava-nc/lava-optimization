@@ -13,7 +13,7 @@ class SolutionReader(AbstractProcess):
         self,
         var_shape,
         target_cost,
-        min_cost: int = 2**24,
+        min_cost: int = (1 << 31) - 1,
         num_in_ports: int = 1,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
@@ -33,4 +33,7 @@ class SolutionReader(AbstractProcess):
         self.satisfaction = Var(shape=(1,), init=0)
         self.ref_port = RefPort(shape=var_shape)
         for id in range(num_in_ports):
-            setattr(self, f"read_gate_in_port_{id}", InPort(shape=(1,)))
+            setattr(self, f"read_gate_in_port_first_byte_{id}",
+                    InPort(shape=(1,)))
+            setattr(self, f"read_gate_in_port_last_bytes_{id}",
+                    InPort(shape=(1,)))

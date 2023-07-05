@@ -59,8 +59,7 @@ class SolutionReadoutPyModel(PyAsyncProcessModel):
 
     @staticmethod
     def decode_cost(raw_cost) -> np.ndarray:
-        # The following casts cost as a signed 24-bit value (8 = 32 - 24)
-        return (np.array([raw_cost]).astype(np.int32) << 8) >> 8
+        return np.array([raw_cost]).astype(np.int32)
 
     @staticmethod
     def decode_solution(raw_solution) -> np.ndarray:

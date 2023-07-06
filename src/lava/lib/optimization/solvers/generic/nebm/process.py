@@ -77,6 +77,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         steps_per_temperature: int,
         refract_scaling: int,
         refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
+        exp_temperature=None,
         init_value=0,
         init_state=None,
         neuron_model: str,
@@ -100,6 +101,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         init_state : ArrayLike
             The state of neurons with which the network is initialized
         """
+
         super().__init__(
             shape=shape,
             min_temperature=min_temperature,
@@ -108,6 +110,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
             refract=refract,
             refract_scaling=refract_scaling,
             neuron_model=neuron_model,
+            exp_temperature=exp_temperature,
         )
 
         self.a_in = InPort(shape=shape)

@@ -84,7 +84,7 @@ class TestOptimizationSolverQUBO(unittest.TestCase):
         solution_reader = pm.solution_reader
         best_assignment = self.solver.solver_process.best_variable_assignment
         self.assertIs(
-            solution_finder.cost_out.out_connections[0].process,
+            solution_finder.cost_out_last_bytes.out_connections[0].process,
             solution_reader,
         )
         self.assertIs(best_assignment.aliased_var, solution_reader.solution)
@@ -160,7 +160,7 @@ class TestOptimizationSolverQP(unittest.TestCase):
         alpha_init = 2/(mu + 2*lamda)
         beta_init = mu/(2*sigma)
         config = SolverConfig(
-            timeout=1500*2,
+            timeout=1000*2,
             backend="CPU",
             hyperparameters={"neuron_model": "qp/lp-pipg",
                              "alpha":alpha_init,

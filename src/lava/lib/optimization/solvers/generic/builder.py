@@ -190,7 +190,9 @@ class SolverProcessBuilder:
                 self.best_variable_assignment = Var(
                     shape=(problem.variables.discrete.num_variables,)
                 )
-                self.optimality = Var(shape=(1,))
+                # Total cost = optimality_first_byte << 24 + optimality_last_bytes
+                self.optimality_last_bytes = Var(shape=(1,))
+                self.optimality_first_byte = Var(shape=(1,))
                 self.optimum = Var(shape=(2,))
                 self.feasibility = Var(shape=(1,))
                 self.solution_step = Var(shape=(1,))
@@ -255,15 +257,27 @@ class SolverProcessBuilder:
                 setattr(self, f"finder_{idx}", finder)
                 finders.append(finder)
                 if not proc.is_continuous:
-                    finder.cost_out.connect(
-                        getattr(self.solution_reader, f"read_gate_in_port_{idx}")
+                    finder.cost_out_last_bytes.connect(
+                    getattr(self.solution_reader,
+                            f"read_gate_in_port_last_bytes_{idx}")
+                    )
+                    finder.cost_out_first_byte.connect(
+                        getattr(self.solution_reader,
+                                f"read_gate_in_port_first_byte_{idx}")
                     )
             proc.finders = finders
             # Variable aliasing
             if not proc.is_continuous:
                 if hasattr(proc, "cost_coefficients"):
                     proc.vars.optimum.alias(self.solution_reader.min_cost)
-                    proc.vars.optimality.alias(proc.finders[0].cost)
+                    # Cost = optimality_first_byte << 24 + optimality_last_bytes
+                    proc.vars.optimality_last_bytes.alias(
+                        proc.finders[0].cost_last_bytes)
+                    proc.vars.optimality_first_byte.alias(
+                        proc.finders[0].cost_first_byte)
+                proc.vars.variable_assignment.alias(
+                    proc.finders[0].variables_assignment
+                )
                 proc.vars.best_variable_assignment.alias(
                     self.solution_reader.solution
                 )
@@ -273,6 +287,7 @@ class SolverProcessBuilder:
                 self.solution_reader.ref_port.connect_var(
                     finders[0].variables_assignment
                 )
+
             proc.vars.variable_assignment.alias(
                     proc.finders[0].variables_assignment
                 )

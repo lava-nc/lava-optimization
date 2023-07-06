@@ -20,7 +20,9 @@ from lava.magma.core.run_configs import Loihi1SimCfg, Loihi2HwCfg
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.models import PyDenseModelFloat
+from lava.proc.sparse.models import PySparseModelFloat
 from lava.proc.dense.process import Dense
+from lava.proc.sparse.process import Sparse
 from lava.proc.monitor.process import Monitor
 from lava.utils.profiler import Profiler
 
@@ -51,6 +53,7 @@ from lava.lib.optimization.solvers.generic.sub_process_models import (
 
 try:
     from lava.proc.dense.ncmodels import NcModelDense
+    from lava.proc.sparse.ncmodel import NcModelSparse
 
     from lava.lib.optimization.solvers.generic.cost_integrator.ncmodels import (
         CostIntegratorNcModel,
@@ -77,6 +80,9 @@ except ImportError:
         pass
 
     class CostIntegratorNcModel:
+        pass
+
+    class NcModelSparse:
         pass
 
 
@@ -167,7 +173,7 @@ class SolverReport:
     profiler: Profiler
         Profiler instance containing time, energy and activity measurements.
     """
-
+    problem: OptimizationProblem = None
     best_cost: int = None
     best_state: np.ndarray = None
     best_timestep: int = None
@@ -224,12 +230,15 @@ class OptimizationSolver:
         self.solver_process = None
         self.solver_model = None
         self._profiler = None
-        self._cost_tracker = None
+        self._cost_tracker_first_byte = None
+        self._cost_tracker_last_bytes = None
         self._state_tracker = None
 
     def solve(self, config: SolverConfig = SolverConfig()) -> SolverReport:
         """
-        Create solver from problem spec and run until target_cost or timeout.
+        Create solver from problem spec and run until it has
+        either minimized the cost to the target_cost or ran for a number of
+        time steps provided by the timeout parameter.
 
         Parameters
         ----------
@@ -247,6 +256,7 @@ class OptimizationSolver:
         cost_timeseries, state_timeseries = self._get_probing(config)
         self.solver_process.stop()
         return SolverReport(
+            problem=self.problem,
             best_cost=best_cost,
             best_state=best_state,
             best_timestep=best_timestep,
@@ -264,8 +274,12 @@ class OptimizationSolver:
         if config.backend in NEUROCORES:
             from lava.utils.loihi2_state_probes import StateProbe
             if config.probe_cost:
-                self._cost_tracker = StateProbe(self.solver_process.optimality)
-                probes.append(self._cost_tracker)
+                self._cost_tracker_last_bytes = StateProbe(
+                    self.solver_process.optimality_last_bytes)
+                self._cost_tracker_first_byte = StateProbe(
+                    self.solver_process.optimality_first_byte)
+                probes.append(self._cost_tracker_last_bytes)
+                probes.append(self._cost_tracker_first_byte)
             if config.probe_state:
                 self._state_tracker = StateProbe(
                     self.solver_process.variable_assignment
@@ -273,12 +287,18 @@ class OptimizationSolver:
                 probes.append(self._state_tracker)
         elif config.backend in CPUS:
             if config.probe_cost:
-                self._cost_tracker = Monitor()
-                self._cost_tracker.probe(
-                    target=self.solver_process.optimality,
+                self._cost_tracker_first_byte = Monitor()
+                self._cost_tracker_first_byte.probe(
+                    target=self.solver_process.optimality_first_byte,
                     num_steps=config.timeout,
                 )
-                probes.append(self._cost_tracker)
+                self._cost_tracker_last_bytes = Monitor()
+                self._cost_tracker_last_bytes.probe(
+                    target=self.solver_process.optimality_last_bytes,
+                    num_steps=config.timeout,
+                )
+                probes.append(self._cost_tracker_first_byte)
+                probes.append(self._cost_tracker_last_bytes)
             if config.probe_state:
                 self._state_tracker = Monitor()
                 self._state_tracker.probe(
@@ -346,9 +366,19 @@ class OptimizationSolver:
         config: SolverConfig
             Solver configuration used. Refers to SolverConfig documentation.
         """
-        cost_timeseries = self._get_probed_data(
-            tracker=self._cost_tracker, var_name="optimality"
+        cost_timeseries_last_bytes = self._get_probed_data(
+            tracker=self._cost_tracker_last_bytes,
+            var_name="optimality_last_bytes"
         )
+        cost_timeseries_first_byte = self._get_probed_data(
+            tracker=self._cost_tracker_first_byte,
+            var_name="optimality_first_byte"
+        )
+        if self._cost_tracker_first_byte is not None:
+            cost_timeseries = (cost_timeseries_first_byte << 24) + \
+                cost_timeseries_last_bytes
+        else:
+            cost_timeseries = None
         state_timeseries = self._get_probed_data(
             tracker=self._state_tracker, var_name="variable_assignment"
         )
@@ -385,6 +415,7 @@ class OptimizationSolver:
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGatePyModel,
                 Dense: PyDenseModelFloat,
+                Sparse: PySparseModelFloat,
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMPyModel,
                 QuboScif: PyModelQuboScifFixed,
@@ -400,6 +431,7 @@ class OptimizationSolver:
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGateCModel,
                 Dense: NcModelDense,
+                Sparse: NcModelSparse,
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMNcModel,
                 NEBMSimulatedAnnealingAbstract:

@@ -97,15 +97,22 @@ class SolutionFinderModel(AbstractSubProcessModel):
                 self.variables.local_cost.connect(
                     self.cost_convergence_check.cost_components
                 )
-
-                proc.vars.variables_assignment.alias(
+            proc.vars.variables_assignment.alias(
                     self.variables.variables_assignment
                 )
-                proc.vars.cost.alias(
-                    self.cost_convergence_check.cost
-                )
-                self.cost_convergence_check.update_buffer.connect(
-                    proc.out_ports.cost_out)
+            # Note: Total min cost = cost_min_first_byte << 24 + cost_min_last_bytes
+            proc.vars.cost_last_bytes.alias(
+                self.cost_convergence_check.cost_last_bytes
+            )
+            proc.vars.cost_first_byte.alias(
+                self.cost_convergence_check.cost_first_byte
+            )
+            self.cost_convergence_check.cost_out_last_bytes.connect(
+                proc.out_ports.cost_out_last_bytes
+            )
+            self.cost_convergence_check.cost_out_first_byte.connect(
+                proc.out_ports.cost_out_first_byte
+            )
 
         elif continuous_var_shape:
             self.constraints = ConstraintEnforcing()
@@ -128,8 +135,8 @@ class SolutionFinderModel(AbstractSubProcessModel):
             if cost_coefficients is not None:
                 if backend in CPUS:
                     self.cost_minimizer = CostMinimizer(
-                        Dense(
-                            weights=Q_pre,
+                        Sparse(
+                            weights=csr_matrix(Q_pre),
                             num_message_bits=64,
                         )
                     )
@@ -142,8 +149,8 @@ class SolutionFinderModel(AbstractSubProcessModel):
                     correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp) 
                     Q_exp_new = -correction_exp + Q_pre_fp_exp
                     self.cost_minimizer = CostMinimizer(
-                        Dense(
-                            weights=Q_pre_fp_man,
+                        Sparse(
+                            weights=csr_matrix(Q_pre_fp_man),
                             weight_exp=Q_exp_new,
                             num_message_bits=24,
                         )
@@ -158,8 +165,9 @@ class SolutionFinderModel(AbstractSubProcessModel):
             
             proc.vars.variables_assignment.alias(
                     self.variables.variables_assignment_cont
-                )
+            )
             
+
     def _get_init_state(
         self, hyperparameters, cost_coefficients, discrete_var_shape
     ):

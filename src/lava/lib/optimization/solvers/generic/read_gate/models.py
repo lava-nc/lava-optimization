@@ -38,7 +38,7 @@ def readgate_run_spk(self):
     cost = costs[id]
 
     if self.solution is not None:
-        timestep = -np.array([self.time_step])
+        timestep = np.array([self.time_step])
         if self.min_cost <= self.target_cost:
             self._req_pause = True
         self.cost_out.send(np.array([self.min_cost, self.min_cost_id]))
@@ -47,8 +47,6 @@ def readgate_run_spk(self):
         self.solution = None
         self.min_cost = None
         self.min_cost_id = None
-    else:
-        self.cost_out.send(np.array([0, 0]))
     if cost:
         self.min_cost = cost
         self.min_cost_id = id
@@ -162,6 +160,7 @@ class ReadGatePyModelD(PyLoihiProcessModel):
             self.cost_out.send(np.array([0]))
         elif self.solution is not None:
             timestep = - np.array([self.time_step])
+
             if self.min_cost <= self.target_cost:
                 self._req_pause = True
             self.cost_out.send(np.array([self.min_cost]))

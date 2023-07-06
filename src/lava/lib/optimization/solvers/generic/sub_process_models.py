@@ -29,7 +29,7 @@ from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.process import Dense
-from lava.lib.optimization.solvers.qp.models import (
+from lava.lib.optimization.solvers.generic.qp.models import (
     ProjectedGradientNeuronsPIPGeq,
     ProportionalIntegralNeuronsPIPGeq,
 )

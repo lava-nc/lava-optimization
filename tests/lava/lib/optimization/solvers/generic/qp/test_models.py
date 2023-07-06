@@ -17,7 +17,7 @@ from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg
 
-from lava.lib.optimization.solvers.qp.models import (
+from lava.lib.optimization.solvers.generic.qp.models import (
     ConstraintCheck,
     ConstraintNeurons,
     SolutionNeurons,

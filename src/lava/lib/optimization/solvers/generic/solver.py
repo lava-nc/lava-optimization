@@ -4,9 +4,9 @@
 import typing as ty
 from dataclasses import dataclass
 from lava.lib.optimization.problems.variables import ContinuousVariables, DiscreteVariables
-from lava.lib.optimization.solvers.qp.models import PyPIneurPIPGeqModel, PyProjGradPIPGeqModel
-from lava.lib.optimization.solvers.qp.ncmodels import NcL2ModelPG, NcL2ModelPI
-from lava.lib.optimization.solvers.qp.processes import ProjectedGradientNeuronsPIPGeq, ProportionalIntegralNeuronsPIPGeq
+from lava.lib.optimization.solvers.generic.qp.models import PyPIneurPIPGeqModel, PyProjGradPIPGeqModel
+from lava.lib.optimization.solvers.generic.qp.ncmodels import NcL2ModelPG, NcL2ModelPI
+from lava.lib.optimization.solvers.generic.qp.processes import ProjectedGradientNeuronsPIPGeq, ProportionalIntegralNeuronsPIPGeq
 
 import numpy as np
 from lava.magma.core.resources import (

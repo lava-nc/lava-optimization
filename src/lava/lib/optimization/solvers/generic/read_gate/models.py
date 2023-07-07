@@ -14,7 +14,7 @@ from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
 def readgate_post_guard(self):
     """Decide whether to run post management phase."""
-    return True if self.min_cost else False
+    return True if self.best_cost else False
 
 
 def readgate_run_spk(self):
@@ -36,25 +36,22 @@ def readgate_run_spk(self):
         costs_last
     id = np.argmin(costs)
     cost = costs[id]
-
-    if self.solution is not None:
-        timestep = np.array([self.time_step])
-        if self.min_cost <= self.target_cost:
-            self._req_pause = True
-        self.cost_out.send(np.array([self.min_cost, self.min_cost_id]))
-        self.send_pause_request.send(timestep)
-        self.solution_out.send(self.solution)
-        self.solution = None
-        self.min_cost = None
-        self.min_cost_id = None
-    if cost:
-        self.min_cost = cost
-        self.min_cost_id = id
+    if (self.best_cost <= self.target_cost) or (self.time_step == \
+            self.total_steps -1):
+        self.cost_out.send(np.array([self.best_cost, self.best_cost_id]))
+        self.send_pause_request.send(best_cost_step)
+        self.solution_out.send(self.best_solution)
+    self.best_cost = None
+    self.best_cost_id = None
+    if cost and (cost < self.best_cost):
+        best_cost_step = np.array([self.time_step])
+        self.best_cost = cost
+        self.best_cost_id = id
 
 
 def readgate_run_post_mgmt(self):
     """Execute post management phase."""
-    self.solution = self.solution_reader.read()
+    self.best_solution = self.solution_reader.read()
 
 
 def get_readgate_members(num_in_ports):
@@ -81,9 +78,8 @@ def get_readgate_members(num_in_ports):
         "solution_reader": LavaPyType(
             PyRefPort.VEC_DENSE, np.int32, precision=32
         ),
-        "min_cost": None,
-        "min_cost_id": None,
-        "solution": None,
+        "best_cost": None,
+        "best_cost_id": None,
         "post_guard": readgate_post_guard,
         "run_spk": readgate_run_spk,
         "run_post_mgmt": readgate_run_post_mgmt,
@@ -141,12 +137,11 @@ class ReadGatePyModelD(PyLoihiProcessModel):
         PyOutPort.VEC_DENSE, np.int32, precision=32
     )
     solution_reader = LavaPyType(PyRefPort.VEC_DENSE, np.int32, precision=32)
-    min_cost: int = None
-    solution: np.ndarray = None
+    best_cost: int = None
 
     def post_guard(self):
         """Decide whether to run post management phase."""
-        return True if self.min_cost else False
+        return True if self.best_cost else False
 
     def run_spk(self):
         """Execute spiking phase, integrate input, update dynamics and
@@ -156,21 +151,21 @@ class ReadGatePyModelD(PyLoihiProcessModel):
         cost = np.array(cost_first_byte << 24).astype(np.int8).astype(np.int32)\
             + cost_last_bytes
         if cost[0]:
-            self.min_cost = cost[0]
+            self.best_cost = cost[0]
             self.cost_out.send(np.array([0]))
-        elif self.solution is not None:
+        elif self.best_solution is not None:
             timestep = - np.array([self.time_step])
 
-            if self.min_cost <= self.target_cost:
+            if self.best_cost <= self.target_cost:
                 self._req_pause = True
-            self.cost_out.send(np.array([self.min_cost]))
+            self.cost_out.send(np.array([self.best_cost]))
             self.send_pause_request.send(timestep)
-            self.solution_out.send(self.solution)
-            self.solution = None
-            self.min_cost = None
+            self.solution_out.send(self.best_solution)
+            self.best_solution = None
+            self.best_cost = None
         else:
             self.cost_out.send(np.array([0]))
 
     def run_post_mgmt(self):
         """Execute post management phase."""
-        self.solution = self.solution_reader.read()
+        self.best_solution = self.solution_reader.read()

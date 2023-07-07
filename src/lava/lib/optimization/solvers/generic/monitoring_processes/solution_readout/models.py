@@ -37,20 +37,15 @@ class SolutionReadoutPyModel(PyAsyncProcessModel):
     min_cost: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
 
     def run_async(self):
-        while True:
-            raw_cost, min_cost_id = self.cost_in.recv()
-            if raw_cost != 0:
-                timestep, raw_solution = self._receive_data()
-                cost = self.decode_cost(raw_cost)
-                self.solution_step = abs(timestep)
-                self.solution[:] = self.decode_solution(raw_solution)
-                self.min_cost[:] = np.asarray([cost[0], min_cost_id])
-                if cost[0] < 0:
-                    self._printout_new_solution(cost, min_cost_id, timestep)
-                self._printout_if_converged()
-                if (timestep > 0) or (timestep == 0 and self.min_cost[0] == 1):
-                    self._req_pause = True
-                    return
+        raw_cost, min_cost_id = self.cost_in.recv()
+        timestep, raw_solution = self._receive_data()
+        cost = self.decode_cost(raw_cost)
+        self.solution_step = abs(timestep)
+        self.solution[:] = self.decode_solution(raw_solution)
+        self.min_cost[:] = np.asarray([cost[0], min_cost_id])
+        self._printout_new_solution(cost, min_cost_id, timestep)
+        self._printout_if_converged()
+        self._req_pause = True
 
     def _receive_data(self):
         timestep = self.timestep_in.recv()[0]

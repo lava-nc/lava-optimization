@@ -37,7 +37,7 @@ def readgate_run_spk(self):
     id = np.argmin(costs)
     cost = costs[id]
     if (self.best_cost <= self.target_cost) or\
-            (self.time_step ==self.total_steps - 1):
+            (self.time_step == self.total_steps - 1):
         self.cost_out.send(np.array([self.best_cost, self.best_cost_id]))
         self.send_pause_request.send(best_cost_step)
         self.solution_out.send(self.best_solution)

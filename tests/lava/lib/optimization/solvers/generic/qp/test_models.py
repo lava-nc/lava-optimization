@@ -406,10 +406,8 @@ class TestModelsFloatingPoint(unittest.TestCase):
         in_spike_qc_process = InSpikeSetProcess(
             in_shape=input_spike_qc.shape, spike_in=input_spike_qc
         )
-        out_spike_cd_process = OutProbeProcess(
-            out_shape=process.s_out.shape
-        )
-      
+        out_spike_cd_process = OutProbeProcess(out_shape=process.s_out.shape)
+
         in_spike_cn_process.a_out.connect(process.a_in)
         in_spike_qc_process.a_out.connect(process.a_in)
         process.s_out.connect(out_spike_cd_process.s_in)
@@ -433,7 +431,10 @@ class TestModelsFloatingPoint(unittest.TestCase):
         self.assertEqual(
             np.all(
                 out_spike_cd_process.vars.spike_out.get()
-                == (init_sol - alpha * (2*(input_spike_qc + input_spike_cn) + p))
+                == (
+                    init_sol
+                    - alpha * (2 * (input_spike_qc + input_spike_cn) + p)
+                )
             ),
             True,
         )

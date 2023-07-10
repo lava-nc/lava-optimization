@@ -42,6 +42,7 @@ backend = NeuroCoreS
 The explicit resource classes can be imported from
 lava.magma.core.resources"""
 
+
 @implements(proc=SolutionFinder, protocol=LoihiProtocol)
 @requires(CPU)
 class SolutionFinderModel(AbstractSubProcessModel):
@@ -73,8 +74,9 @@ class SolutionFinderModel(AbstractSubProcessModel):
             self.cost_minimizer = None
             self.cost_convergence_check = None
             if cost_coefficients is not None:
-                weights =  cost_coefficients[2].init*np.logical_not(
-                np.eye(*cost_coefficients[2].init.shape))
+                weights = cost_coefficients[2].init * np.logical_not(
+                    np.eye(*cost_coefficients[2].init.shape)
+                )
                 self.cost_minimizer = CostMinimizer(
                     Dense(
                         # todo just using the last coefficient for now
@@ -83,7 +85,10 @@ class SolutionFinderModel(AbstractSubProcessModel):
                     )
                 )
                 if 1 in cost_coefficients.keys():
-                    q_diag = cost_coefficients[1].init + cost_coefficients[2].init.diagonal()
+                    q_diag = (
+                        cost_coefficients[1].init
+                        + cost_coefficients[2].init.diagonal()
+                    )
                 else:
                     q_diag = cost_coefficients[2].init.diagonal()
                 self.variables.importances = q_diag
@@ -92,14 +97,16 @@ class SolutionFinderModel(AbstractSubProcessModel):
                 )
 
                 # Connect processes
-                self.cost_minimizer.gradient_out.connect(self.variables.gradient_in)
+                self.cost_minimizer.gradient_out.connect(
+                    self.variables.gradient_in
+                )
                 self.variables.state_out.connect(self.cost_minimizer.state_in)
                 self.variables.local_cost.connect(
                     self.cost_convergence_check.cost_components
                 )
             proc.vars.variables_assignment.alias(
-                    self.variables.variables_assignment
-                )
+                self.variables.variables_assignment
+            )
             # Note: Total min cost = cost_min_first_byte << 24 + cost_min_last_bytes
             proc.vars.cost_last_bytes.alias(
                 self.cost_convergence_check.cost_last_bytes
@@ -146,7 +153,7 @@ class SolutionFinderModel(AbstractSubProcessModel):
                     Q_pre_fp_man, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
                     _, A_pre_fp_exp = convert_to_fp(A_pre, 8)
                     Q_pre_fp_man = (Q_pre_fp_man // 2) * 2
-                    correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp) 
+                    correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp)
                     Q_exp_new = -correction_exp + Q_pre_fp_exp
                     self.cost_minimizer = CostMinimizer(
                         Sparse(
@@ -158,15 +165,16 @@ class SolutionFinderModel(AbstractSubProcessModel):
                 else:
                     raise NotImplementedError(str(backend) + BACKEND_MSG)
             # Connect processes
-            self.cost_minimizer.gradient_out.connect(self.variables.gradient_in_cont)
+            self.cost_minimizer.gradient_out.connect(
+                self.variables.gradient_in_cont
+            )
             self.variables.state_out_cont.connect(self.cost_minimizer.state_in)
             self.variables.state_out_cont.connect(self.constraints.state_in)
             self.constraints.state_out.connect(self.variables.gradient_in_cont)
-            
+
             proc.vars.variables_assignment.alias(
-                    self.variables.variables_assignment_cont
+                self.variables.variables_assignment_cont
             )
-            
 
     def _get_init_state(
         self, hyperparameters, cost_coefficients, discrete_var_shape
@@ -175,9 +183,13 @@ class SolutionFinderModel(AbstractSubProcessModel):
             "init_value", np.zeros(discrete_var_shape, dtype=int)
         )
         q_off_diag = cost_coefficients[2].init * np.logical_not(
-                np.eye(*cost_coefficients[2].init.shape))
+            np.eye(*cost_coefficients[2].init.shape)
+        )
         if 1 in cost_coefficients.keys():
-            q_diag = cost_coefficients[1].init + cost_coefficients[2].init.diagonal()
+            q_diag = (
+                cost_coefficients[1].init
+                + cost_coefficients[2].init.diagonal()
+            )
         else:
             q_diag = cost_coefficients[2].init.diagonal()
 

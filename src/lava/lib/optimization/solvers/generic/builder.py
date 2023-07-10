@@ -6,12 +6,16 @@ import typing as ty
 import numpy as np
 from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 from lava.lib.optimization.problems.problems import OptimizationProblem
-from lava.lib.optimization.problems.variables import ContinuousVariables, \
-    DiscreteVariables
-from lava.lib.optimization.solvers.generic.solution_finder.process import \
-    SolutionFinder
-from lava.lib.optimization.solvers.generic.solution_reader.process import \
-    SolutionReader
+from lava.lib.optimization.problems.variables import (
+    ContinuousVariables,
+    DiscreteVariables,
+)
+from lava.lib.optimization.solvers.generic.solution_finder.process import (
+    SolutionFinder,
+)
+from lava.lib.optimization.solvers.generic.solution_reader.process import (
+    SolutionReader,
+)
 from lava.magma.core.model.model import AbstractProcessModel
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.process.interfaces import AbstractProcessMember
@@ -156,33 +160,40 @@ class SolverProcessBuilder:
             self.problem = problem
             self.hyperparameters = hyperparameters
             self.backend = backend
-            self.is_continuous=0
+            self.is_continuous = 0
             self.is_discrete = 0
             if not hasattr(problem, "variables"):
                 raise Exception(
                     "An optimization problem must contain " "variables."
                 )
-            if hasattr(problem.variables, "continuous") and problem.variables.continuous.num_variables is not None:
+            if (
+                hasattr(problem.variables, "continuous")
+                and problem.variables.continuous.num_variables is not None
+            ):
                 self.continuous_variables = Var(
-                    shape=(problem.variables.continuous.num_variables, )
+                    shape=(problem.variables.continuous.num_variables,)
                 )
-                self.is_continuous=1
-            if hasattr(problem.variables, "discrete") and problem.variables.discrete.num_variables is not None:
+                self.is_continuous = 1
+            if (
+                hasattr(problem.variables, "discrete")
+                and problem.variables.discrete.num_variables is not None
+            ):
                 self.discrete_variables = Var(
                     shape=(
                         problem.variables.discrete.num_variables,
                         # problem.variables.domain_sizes[0]
                     )
                 )
-                self.is_discrete=1
+                self.is_discrete = 1
             self.cost_diagonal = None
             if hasattr(problem, "cost"):
                 mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
                 self.cost_coefficients = mrcv(problem.cost.coefficients)
                 if self.is_discrete:
-                    self.cost_diagonal = problem.cost.coefficients[2].diagonal()
-            
- 
+                    self.cost_diagonal = problem.cost.coefficients[
+                        2
+                    ].diagonal()
+
             if not self.is_continuous:
                 self.variable_assignment = Var(
                     shape=(problem.variables.discrete.num_variables,)
@@ -202,6 +213,7 @@ class SolverProcessBuilder:
                     shape=(problem.variables.continuous.num_variables,)
                 )
             self.finders = None
+
         self._process_constructor = constructor
 
     def _create_model_constructor(self, target_cost: int):
@@ -235,7 +247,7 @@ class SolverProcessBuilder:
                 if isinstance(hyperparameters, list)
                 else [hyperparameters]
             )
-            # 
+            #
             if not proc.is_continuous:
                 self.solution_reader = SolutionReader(
                     var_shape=discrete_var_shape,
@@ -252,18 +264,22 @@ class SolverProcessBuilder:
                     hyperparameters=hp,
                     discrete_var_shape=discrete_var_shape,
                     continuous_var_shape=continuous_var_shape,
-                    problem=problem
+                    problem=problem,
                 )
                 setattr(self, f"finder_{idx}", finder)
                 finders.append(finder)
                 if not proc.is_continuous:
                     finder.cost_out_last_bytes.connect(
-                    getattr(self.solution_reader,
-                            f"read_gate_in_port_last_bytes_{idx}")
+                        getattr(
+                            self.solution_reader,
+                            f"read_gate_in_port_last_bytes_{idx}",
+                        )
                     )
                     finder.cost_out_first_byte.connect(
-                        getattr(self.solution_reader,
-                                f"read_gate_in_port_first_byte_{idx}")
+                        getattr(
+                            self.solution_reader,
+                            f"read_gate_in_port_first_byte_{idx}",
+                        )
                     )
             proc.finders = finders
             # Variable aliasing
@@ -272,16 +288,20 @@ class SolverProcessBuilder:
                     proc.vars.optimum.alias(self.solution_reader.min_cost)
                     # Cost = optimality_first_byte << 24 + optimality_last_bytes
                     proc.vars.optimality_last_bytes.alias(
-                        proc.finders[0].cost_last_bytes)
+                        proc.finders[0].cost_last_bytes
+                    )
                     proc.vars.optimality_first_byte.alias(
-                        proc.finders[0].cost_first_byte)
+                        proc.finders[0].cost_first_byte
+                    )
                 proc.vars.variable_assignment.alias(
                     proc.finders[0].variables_assignment
                 )
                 proc.vars.best_variable_assignment.alias(
                     self.solution_reader.solution
                 )
-                proc.vars.solution_step.alias(self.solution_reader.solution_step)
+                proc.vars.solution_step.alias(
+                    self.solution_reader.solution_step
+                )
 
                 # Connect processes
                 self.solution_reader.ref_port.connect_var(
@@ -289,9 +309,9 @@ class SolverProcessBuilder:
                 )
 
             proc.vars.variable_assignment.alias(
-                    proc.finders[0].variables_assignment
-                )
-            
+                proc.finders[0].variables_assignment
+            )
+
         self._model_constructor = constructor
 
     @staticmethod
@@ -310,7 +330,6 @@ class SolverProcessBuilder:
         for rank, coefficient in coefficients.items():
             vars[rank] = Var(shape=coefficient.shape, init=coefficient)
         return vars
-
 
     def _in_ports_from_coefficients(
         self, coefficients: CoefficientTensorsMixin

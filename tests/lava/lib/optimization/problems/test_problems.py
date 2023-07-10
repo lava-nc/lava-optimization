@@ -57,7 +57,9 @@ class TestOptimizationProblem(unittest.TestCase):
             OptimizationProblem()
 
     def test_compliant_sublcass(self):
-        self.assertIsInstance(self.compliant_instantiation, OptimizationProblem)
+        self.assertIsInstance(
+            self.compliant_instantiation, OptimizationProblem
+        )
 
     def test_not_compliant_sublcass(self):
         with self.assertRaises(TypeError):
@@ -236,9 +238,11 @@ class TestIQP(unittest.TestCase):
     def test_evaluate_constraints(self):
         self.assertTrue(
             np.all(
-                self.iqp.evaluate_constraints(np.array([0, 0, 0, 0])) == -self.b
+                self.iqp.evaluate_constraints(np.array([0, 0, 0, 0]))
+                == -self.b
             )
         )
+
 
 class TestQP(unittest.TestCase):
     def setUp(self):
@@ -248,10 +252,12 @@ class TestQP(unittest.TestCase):
             [[0, 4, 2, 1], [2, 0, 1, 1], [1, 1, 0, 1]], dtype=np.int32
         )
         self.b = np.array([1, 1, 1], dtype=np.int32).T
-        self.qp = QP(hessian=self.H, 
-                     linear_offset=self.c, 
-                     equality_constraints_weights=self.A, 
-                     equality_constraints_biases=self.b)
+        self.qp = QP(
+            hessian=self.H,
+            linear_offset=self.c,
+            equality_constraints_weights=self.A,
+            equality_constraints_biases=self.b,
+        )
 
     def test_create_obj(self):
         self.assertIsInstance(self.qp, QP)
@@ -268,16 +274,18 @@ class TestQP(unittest.TestCase):
     def test_evaluate_cost(self):
         sol = np.array([0, 1, 0, 0])
         self.assertEqual(
-            self.qp.evaluate_cost(sol), sol.T@self.H@sol + sol@self.c 
+            self.qp.evaluate_cost(sol), sol.T @ self.H @ sol + sol @ self.c
         )
 
     def test_evaluate_constraint_violations(self):
         sol = np.array([0, 0, 0, 0])
         self.assertTrue(
             np.all(
-                self.qp.evaluate_constraint_violations(sol) == self.A@sol - self.b
+                self.qp.evaluate_constraint_violations(sol)
+                == self.A @ sol - self.b
             )
         )
+
 
 class TestILP(unittest.TestCase):
     def setUp(self):
@@ -308,7 +316,8 @@ class TestILP(unittest.TestCase):
     def test_evaluate_constraints(self):
         self.assertTrue(
             np.all(
-                self.ilp.evaluate_constraints(np.array([0, 0, 0, 0])) == -self.b
+                self.ilp.evaluate_constraints(np.array([0, 0, 0, 0]))
+                == -self.b
             )
         )
 

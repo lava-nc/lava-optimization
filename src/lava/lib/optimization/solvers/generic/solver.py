@@ -487,7 +487,7 @@ class OptimizationSolver:
     def _get_and_decode_discrete_vars(self, config: SolverConfig, idx: int):
         if isinstance(config.hyperparameters, list):
             raw_solution = np.asarray(
-                self.solver_process.finders[idx].variables_assignment.get()
+                self.solver_process.finders[idx].variables_assignment.get().astype(np.int32)
             )
             raw_solution &= 0x3F
             return raw_solution.astype(np.int8) >> 5

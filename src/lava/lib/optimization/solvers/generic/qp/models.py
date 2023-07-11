@@ -389,7 +389,7 @@ class PyPIneurPIPGeqModel(PyLoihiProcessModel):
                         self.growth_index + 2 * self.growth_factor
                     )
                     self.growth_factor *= 2
-           
+
             # process behavior:
             omega = self.beta * (
                 a_in - self.constraint_bias + self.connectivity_spike

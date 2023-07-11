@@ -172,10 +172,10 @@ class TestTutorials(unittest.TestCase):
         finally:
             os.chdir(cwd)
 
-    def test_tutorial_01_solving_lasso(self):
+    def test_tutorial_01_solving_qp(self):
         """Test tutorial on Lava lasso solver."""
         self._run_notebook(
-            "tutorial_01_solving_lasso.ipynb"
+            "tutorial_01_solving_qp.ipynb"
         )
 
     def test_tutorial_02_solving_qubos(self):

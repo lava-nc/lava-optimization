@@ -6,10 +6,6 @@ import typing as ty
 import numpy as np
 from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 from lava.lib.optimization.problems.problems import OptimizationProblem
-from lava.lib.optimization.problems.variables import (
-    ContinuousVariables,
-    DiscreteVariables,
-)
 from lava.lib.optimization.solvers.generic.solution_finder.process import (
     SolutionFinder,
 )
@@ -193,7 +189,6 @@ class SolverProcessBuilder:
                     self.cost_diagonal = problem.cost.coefficients[
                         2
                     ].diagonal()
-
             if not self.is_continuous:
                 self.variable_assignment = Var(
                     shape=(problem.variables.discrete.num_variables,)

@@ -41,8 +41,8 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
 )
 from lava.lib.optimization.solvers.generic.monitoring_processes. \
     solution_readout.models import (
-    SolutionReadoutPyModel,
-)
+        SolutionReadoutPyModel,
+    )
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.nebm.process import (
     NEBM,
@@ -71,10 +71,10 @@ try:
     from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
         ReadGateCModel,
     )
-    
+
     from lava.lib.optimization.solvers.generic.qp.ncmodels import (
-    NcL2ModelPG,
-    NcL2ModelPI,
+        NcL2ModelPG,
+        NcL2ModelPI,
     )
 except ImportError:
 
@@ -450,17 +450,18 @@ class OptimizationSolver:
         elif backend in NEUROCORES:
             # just add neurocore processes here in the dictionary for QP
             pdict = {
-            self.solver_process: self.solver_model,
-            ReadGate: ReadGateCModel,
-            Dense: NcModelDense,
-            Sparse: NcModelSparse,
-            NEBMAbstract: NEBMAbstractModel,
-            NEBM: NEBMNcModel,
-            NEBMSimulatedAnnealingAbstract: NEBMSimulatedAnnealingAbstractModel,
-            NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
-            CostIntegrator: CostIntegratorNcModel,
-            ProportionalIntegralNeuronsPIPGeq: NcL2ModelPI,
-            ProjectedGradientNeuronsPIPGeq: NcL2ModelPG,
+                self.solver_process: self.solver_model,
+                ReadGate: ReadGateCModel,
+                Dense: NcModelDense,
+                Sparse: NcModelSparse,
+                NEBMAbstract: NEBMAbstractModel,
+                NEBM: NEBMNcModel,
+                NEBMSimulatedAnnealingAbstract:
+                NEBMSimulatedAnnealingAbstractModel,
+                NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
+                CostIntegrator: CostIntegratorNcModel,
+                ProportionalIntegralNeuronsPIPGeq: NcL2ModelPI,
+                ProjectedGradientNeuronsPIPGeq: NcL2ModelPG,
             }
             return Loihi2HwCfg(
                 exception_proc_model_map=pdict,

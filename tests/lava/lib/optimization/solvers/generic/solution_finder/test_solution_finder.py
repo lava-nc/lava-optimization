@@ -26,10 +26,6 @@ class TestSolutionFinder(unittest.TestCase):
         from lava.magma.core.process.variable import Var
 
         cc = {
-            1: Var(
-                shape=self.problem.cost.coefficients[2].diagonal().shape,
-                init=self.problem.cost.coefficients[2].diagonal(),
-            ),
             2: Var(
                 shape=self.problem.cost.coefficients[2].shape,
                 init=self.problem.cost.coefficients[2],
@@ -44,6 +40,8 @@ class TestSolutionFinder(unittest.TestCase):
             constraints=None,
             hyperparameters={},
             continuous_var_shape=None,
+            backend="CPU",
+            problem=self.problem,
         )
 
         # Execution configurations.
@@ -74,11 +72,11 @@ class TestSolutionFinder(unittest.TestCase):
         pm = self.solution_finder.model_class(self.solution_finder)
         self.assertEqual(
             pm.variables.discrete.num_variables,
-            self.problem.variables.num_variables,
+            self.problem.variables.discrete.num_variables,
         )
         self.assertEqual(
             self.solution_finder.variables_assignment.size,
-            self.problem.variables.num_variables,
+            self.problem.variables.discrete.num_variables,
         )
 
     def test_qubo_cost_defines_biases(self):
@@ -90,3 +88,6 @@ class TestSolutionFinder(unittest.TestCase):
             == self.problem.cost.get_coefficient(2).diagonal()
         ).all()
         self.assertTrue(condition)
+
+if __name__ == "__main__":
+    unittest.main()

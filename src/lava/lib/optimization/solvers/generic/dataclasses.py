@@ -31,6 +31,7 @@ class CostMinimizer:
         """Port sending gradient descent components to the dynamical systems."""
         return self.coefficients_2nd_order.a_out
 
+
 @dataclass
 class ConstraintEnforcing:
     """Processes implementing an optimization problem's constraints and their
@@ -39,7 +40,7 @@ class ConstraintEnforcing:
     continuous: ContinuousConstraintsProcess = None
     # discrete: DiscreteConstraintsProcess
     # mixed: MixedConstraintsProcess
-    
+
     @property
     def state_in(self):
         return self.continuous.a_in
@@ -48,10 +49,10 @@ class ConstraintEnforcing:
     def state_out(self):
         return self.continuous.s_out
 
-
     @property
     def variables_assignment(self):
         return self.continuous.constraint_assignment
+
 
 @dataclass()
 class VariablesImplementation:
@@ -67,7 +68,7 @@ class VariablesImplementation:
     @property
     def gradient_in_cont(self):
         return self.continuous.a_in
-    
+
     @property
     def state_out(self):
         return self.discrete.s_out
@@ -75,7 +76,7 @@ class VariablesImplementation:
     @property
     def state_out_cont(self):
         return self.continuous.s_out
-    
+
     @property
     def importances(self):
         return self.discrete.cost_diagonal
@@ -95,6 +96,7 @@ class VariablesImplementation:
     @property
     def variables_assignment_cont(self):
         return self.continuous.variable_assignment
+
 
 @dataclass
 class ProximalGradientMinimizer:

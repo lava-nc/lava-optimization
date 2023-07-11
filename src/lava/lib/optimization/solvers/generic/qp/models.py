@@ -301,6 +301,7 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
         self.alpha_decay_indices = self.proc_params["alpha_dec_list"]
         self.decay_counter = 0
         self.connectivity_spike = 0
+
     def run_spk(self):
         self.decay_counter += 1
         a_in = self.a_in.recv()
@@ -328,7 +329,7 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
                     )
             # else:
             #     raise NotImplementedError("Learning Rate change type not supported")
-            
+
             # process behavior: gradient update
             self.qp_neuron_state -= self.alpha * (
                 a_in + self.grad_bias + self.connectivity_spike
@@ -394,8 +395,10 @@ class PyPIneurPIPGeqModel(PyLoihiProcessModel):
             #     raise NotImplementedError("Learning Rate change type not supported")
 
             # process behavior:
-            omega = self.beta * (a_in - self.constraint_bias + self.connectivity_spike)
-            self.constraint_neuron_state += omega 
+            omega = self.beta * (
+                a_in - self.constraint_bias + self.connectivity_spike
+            )
+            self.constraint_neuron_state += omega
             gamma = self.constraint_neuron_state + omega
             self.s_out.send(gamma)
         else:

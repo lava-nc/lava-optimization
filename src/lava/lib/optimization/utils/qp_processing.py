@@ -3,6 +3,7 @@
 # See: https://spdx.org/licenses/
 import numpy as np
 
+
 def convert_to_fp(mat, man_bits):
     """Function that returns the exponent, mantissa representation for
     floating point numbers that need to be represented on Loihi. A global exp

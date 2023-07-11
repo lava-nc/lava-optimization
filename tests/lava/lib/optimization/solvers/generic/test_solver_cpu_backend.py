@@ -12,10 +12,6 @@ from lava.lib.optimization.solvers.generic.solution_finder.process import (
 from lava.lib.optimization.solvers.generic.solution_reader.process import (
     SolutionReader,
 )
-from lava.lib.optimization.solvers.generic.monitoring_processes.solution_readout.process import (
-    SolutionReadout,
-)
-from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.solver import (
     OptimizationSolver,
     SolverConfig,
@@ -99,7 +95,8 @@ class TestOptimizationSolverQUBO(unittest.TestCase):
         )
 
     def test_qubo_cost_defines_weights(self):
-        from lava.lib.optimization.solvers.generic.solution_finder.models import (
+        from lava.lib.optimization.solvers.generic.solution_finder.models \
+            import (
             SolutionFinderModel,
         )
 

@@ -201,7 +201,8 @@ class SolverProcessBuilder:
                 self.best_variable_assignment = Var(
                     shape=(problem.variables.discrete.num_variables,)
                 )
-                # Total cost = optimality_first_byte << 24 + optimality_last_bytes
+                # Total cost = optimality_first_byte << 24 
+                # + optimality_last_bytes
                 self.optimality_last_bytes = Var(shape=(1,))
                 self.optimality_first_byte = Var(shape=(1,))
                 self.optimum = Var(shape=(2,))

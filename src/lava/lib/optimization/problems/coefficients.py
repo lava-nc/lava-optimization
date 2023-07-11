@@ -29,7 +29,7 @@ class CoefficientTensorsMixin:
                     "or (possibly nested) lists."
                 )
             else:
-                rank = np.squeeze(coefficient).ndim 
+                rank = np.squeeze(coefficient).ndim
             c_dict[rank] = coefficient
         self._coefficients = c_dict
 

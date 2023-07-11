@@ -25,7 +25,6 @@ class ContinuousVariablesProcess(AbstractProcess):
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
-        
         super().__init__(
             shape=shape,
             name=name,
@@ -64,6 +63,7 @@ class DiscreteVariablesProcess(AbstractProcess):
         Holds the current value assigned to the variables by
         the solver network.
     """
+
     def __init__(
         self,
         shape: ty.Tuple[int, ...],
@@ -178,13 +178,12 @@ class ContinuousConstraintsProcess(AbstractProcess):
         self,
         shape_in: ty.Tuple[int, ...],
         shape_out: ty.Tuple[int, ...],
-        problem: OptimizationProblem, 
+        problem: OptimizationProblem,
         backend,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
-        
         super().__init__(
             shape_in=shape_in,
             shape_out=shape_out,
@@ -192,14 +191,17 @@ class ContinuousConstraintsProcess(AbstractProcess):
             name=name,
             log_config=log_config,
         )
-        
+
         self.num_constraints = np.prod(problem.constraint_biases_eq.shape)
         self.problem = problem
         self.backend = backend
         self.hyperparameters = hyperparameters
         self.a_in = InPort(shape=shape_in)
         self.s_out = OutPort(shape=shape_out)
-        self.constraint_assignment = Var(shape=problem.constraint_biases_eq.shape)
+        self.constraint_assignment = Var(
+            shape=problem.constraint_biases_eq.shape
+        )
+
 
 class DiscreteConstraintsProcess(AbstractProcess):
     """Process implementing discrete constraints via synapses."""
@@ -441,23 +443,23 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
     """
 
     def __init__(
-            self,
-            *,
-            max_temperature: int = 10,
-            min_temperature: int = 0,
-            delta_temperature: int = 1,
-            exp_temperature: int = None,
-            steps_per_temperature: int = 100,
-            refract_scaling: int = 14,
-            refract: ty.Optional[ty.Union[int, npty.NDArray]],
-            shape: ty.Tuple[int, ...] = (1,),
-            init_state: npt.ArrayLike = 0,
-            min_integration: npt.ArrayLike = -1000,
-            cost_diagonal: npt.ArrayLike = 0,
-            name: ty.Optional[str] = None,
-            log_config: ty.Optional[LogConfig] = None,
-            init_value: npt.ArrayLike = 0,
-            neuron_model: str,
+        self,
+        *,
+        max_temperature: int = 10,
+        min_temperature: int = 0,
+        delta_temperature: int = 1,
+        exp_temperature: int = None,
+        steps_per_temperature: int = 100,
+        refract_scaling: int = 14,
+        refract: ty.Optional[ty.Union[int, npty.NDArray]],
+        shape: ty.Tuple[int, ...] = (1,),
+        init_state: npt.ArrayLike = 0,
+        min_integration: npt.ArrayLike = -1000,
+        cost_diagonal: npt.ArrayLike = 0,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+        init_value: npt.ArrayLike = 0,
+        neuron_model: str,
     ) -> None:
         """
 
@@ -513,8 +515,9 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
         self.min_temperature = Var(shape=shape, init=min_temperature)
         self.delta_temperature = Var(shape=shape, init=delta_temperature)
         self.exp_temperature = Var(shape=shape, init=exp_temperature)
-        self.steps_per_temperature = Var(shape=shape,
-                                         init=steps_per_temperature)
+        self.steps_per_temperature = Var(
+            shape=shape, init=steps_per_temperature
+        )
         self.refract = Var(shape=shape, init=refract)
         self.state = Var(shape=shape, init=init_state)
         self.min_integration = Var(shape=shape, init=min_integration)

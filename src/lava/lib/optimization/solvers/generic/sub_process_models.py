@@ -119,7 +119,8 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
             else:
                 raise NotImplementedError(str(backend) + BACKEND_MSG)
 
-            # Connect the parent InPort to the InPort of the Dense child-Process.
+            # Connect the parent InPort to the InPort of the Dense 
+            # child-Process.
             proc.in_ports.a_in.connect(self.ProjGrad.in_ports.a_in)
             self.ProjGrad.out_ports.s_out.connect(proc.out_ports.s_out)
             proc.vars.variable_assignment.alias(self.ProjGrad.qp_neuron_state)

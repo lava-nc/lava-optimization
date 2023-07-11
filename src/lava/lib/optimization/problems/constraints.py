@@ -25,7 +25,9 @@ class DiscreteConstraints:
     constraint they define.
     """
 
-    def __init__(self, constraints: ty.List[ty.Tuple[int, int, npt.ArrayLike]]):
+    def __init__(
+        self, constraints: ty.List[ty.Tuple[int, int, npt.ArrayLike]]
+    ):
         self._constraints = constraints
         self.set_relations_var_subsets(self._constraints)
 
@@ -122,6 +124,7 @@ class EqualityConstraints(CoefficientTensorsMixin):
         coefficients defining the constraints.
 
     """
+
     def __init__(self, *coefficients: CTType):
         super().__init__(*coefficients)
 
@@ -147,6 +150,7 @@ class InequalityConstraints(CoefficientTensorsMixin):
         coefficients defining the constraints.
 
     """
+
     def __init__(self, *coefficients: CTType):
         super().__init__(*coefficients)
 
@@ -164,8 +168,9 @@ class ArithmeticConstraints:
         ineq: tuple of tensor coefficients defining the inequality constraints.
         """
         self._equality = None if eq is None else EqualityConstraints(*eq)
-        self._inequality = None if ineq is None else InequalityConstraints(*ineq)
-    
+        self._inequality = (
+            None if ineq is None else InequalityConstraints(*ineq)
+        )
 
     @property
     def equality(self):

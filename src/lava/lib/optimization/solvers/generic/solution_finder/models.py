@@ -107,7 +107,8 @@ class SolutionFinderModel(AbstractSubProcessModel):
             proc.vars.variables_assignment.alias(
                 self.variables.variables_assignment
             )
-            # Note: Total min cost = cost_min_first_byte << 24 + cost_min_last_bytes
+            # Note: Total min cost = cost_min_first_byte << 24 
+            # + cost_min_last_bytes
             proc.vars.cost_last_bytes.alias(
                 self.cost_convergence_check.cost_last_bytes
             )

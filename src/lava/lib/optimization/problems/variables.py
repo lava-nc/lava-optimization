@@ -63,7 +63,6 @@ class DiscreteVariables:
         """List of discrete variables each an instance of the Variable class."""
         return [Variable(name=str(n)) for n in range(self.num_variables)]
 
-
     @property
     def num_variables(self):
         """Number of variables in this set."""

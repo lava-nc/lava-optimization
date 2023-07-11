@@ -83,7 +83,6 @@ class ContinuousVariables:
     """
 
     def __init__(self, num_variables=None, bounds: ty.List[ty.Tuple] = None):
-        # self._num_variables = num_variables or len(bounds) if bounds is not None else None
         self._num_variables = num_variables
         self._bounds = bounds
 

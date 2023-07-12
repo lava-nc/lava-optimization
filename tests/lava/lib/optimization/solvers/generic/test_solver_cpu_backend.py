@@ -95,10 +95,9 @@ class TestOptimizationSolverQUBO(unittest.TestCase):
         )
 
     def test_qubo_cost_defines_weights(self):
-        from lava.lib.optimization.solvers.generic.solution_finder.models\
-            import (
-                SolutionFinderModel,
-            )
+        from lava.lib.optimization.solvers.generic.solution_finder.models import (
+            SolutionFinderModel,
+        )
 
         self.solver.solve(config=SolverConfig(timeout=1))
         pm = self.solver.solver_process.model_class(self.solver.solver_process)

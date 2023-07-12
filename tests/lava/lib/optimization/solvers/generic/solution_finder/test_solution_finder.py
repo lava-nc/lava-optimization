@@ -5,8 +5,9 @@ import unittest
 
 import numpy as np
 from lava.lib.optimization.problems.problems import QUBO
-from lava.lib.optimization.solvers.generic.read_gate.models import \
-    get_read_gate_model_class
+from lava.lib.optimization.solvers.generic.read_gate.models import (
+    get_read_gate_model_class,
+)
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.solution_finder.process import (
     SolutionFinder,
@@ -62,7 +63,9 @@ class TestSolutionFinder(unittest.TestCase):
         self.solution_finder.stop()
         pm = self.solution_finder.model_class(self.solution_finder)
         self.assertIs(
-            pm.cost_convergence_check.cost_components.in_connections[0].process,
+            pm.cost_convergence_check.cost_components.in_connections[
+                0
+            ].process,
             pm.variables.discrete,
         )
 
@@ -88,6 +91,7 @@ class TestSolutionFinder(unittest.TestCase):
             == self.problem.cost.get_coefficient(2).diagonal()
         ).all()
         self.assertTrue(condition)
+
 
 if __name__ == "__main__":
     unittest.main()

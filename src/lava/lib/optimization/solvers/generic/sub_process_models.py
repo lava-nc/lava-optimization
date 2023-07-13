@@ -49,6 +49,9 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
         neuron_model = proc.hyperparameters.get("neuron_model", "nebm")
+        available_sa_models = ['nebm-sa', 'nebm-sa-balanced',
+                               'nebm-sa-refract-approx-unbalanced',
+                               'nebm-sa-refract-approx', 'nebm-sa-refract']
         if neuron_model == "nebm":
             temperature = proc.hyperparameters.get("temperature", 1)
             refract = proc.hyperparameters.get("refract", 0)
@@ -78,7 +81,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                                            noise_precision=noise_precision,
                                            sustained_on_tau=on_tau,
                                            cost_diagonal=diagonal)
-        elif 'nebm-sa' in neuron_model:
+        elif neuron_model in available_sa_models:
             max_temperature = proc.hyperparameters.get("max_temperature", 10)
             min_temperature = proc.hyperparameters.get("min_temperature", 0)
             delta_temperature = proc.hyperparameters.get("delta_temperature", 1)

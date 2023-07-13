@@ -49,6 +49,9 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
         neuron_model = proc.hyperparameters.get("neuron_model", "nebm")
+        available_sa_models = ['nebm-sa', 'nebm-sa-balanced',
+                               'nebm-sa-refract-approx-unbalanced',
+                               'nebm-sa-refract-approx', 'nebm-sa-refract']
         if neuron_model == "nebm":
             temperature = proc.hyperparameters.get("temperature", 1)
             refract = proc.hyperparameters.get("refract", 0)
@@ -78,7 +81,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                                            noise_precision=noise_precision,
                                            sustained_on_tau=on_tau,
                                            cost_diagonal=diagonal)
-        elif neuron_model == 'nebm-sa' or 'nebm-sa-balanced':
+        elif neuron_model in available_sa_models:
             max_temperature = proc.hyperparameters.get("max_temperature", 10)
             min_temperature = proc.hyperparameters.get("min_temperature", 0)
             delta_temperature = proc.hyperparameters.get("delta_temperature", 1)
@@ -91,6 +94,8 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                                                   np.zeros(shape, dtype=int))
             init_state = proc.hyperparameters.get("init_state",
                                                   np.zeros(shape, dtype=int))
+            annealing_schedule = proc.hyperparameters.get("annealing_schedule",
+                                                          "linear")
             self.s_bit = \
                 NEBMSimulatedAnnealingAbstract(
                     shape=shape,
@@ -104,6 +109,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                     init_value=init_value,
                     init_state=init_state,
                     neuron_model=neuron_model,
+                    annealing_schedule=annealing_schedule,
                 )
         else:
             AssertionError("Unknown neuron model specified")

@@ -413,6 +413,7 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
             init_value: npt.ArrayLike = 0,
+            annealing_schedule: str = 'linear',
             neuron_model: str,
     ) -> None:
         """
@@ -459,6 +460,7 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             log_config=log_config,
             init_value=init_value,
             neuron_model=neuron_model,
+            annealing_schedule=annealing_schedule,
         )
         self.added_input = InPort(shape=shape)
         self.messages = OutPort(shape=shape)

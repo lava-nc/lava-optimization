@@ -181,10 +181,14 @@ class CSP(OptimizationProblem):
 
 
 class QP(OptimizationProblem):
-    """A Rudimentary interface for the QP solver. Inequality Constraints
-    should be of the form Ax<=k. Equality constraints are expressed as
-    sandwiched inequality constraints. The cost of the QP is of the form
-    1/2*x^t*Q*x + p^Tx
+    """An interface for the QP solver. Equality Constraints should be of the
+    form Ax=k. Support for inequality constraints is pending.
+    The cost of the QP is of the form 1/2*x^t*Q*x + p^Tx. The problem has to
+    be preconditioned with a preconditioner. The library currently supports
+    ruiz preconditioning which is a useful preconditioner for block diagonal
+    QPs. Other preconditioners can be added in the future. Calling the
+    precondition_problem method preconditions the problem and modifies the
+    matrices and vectors that constitute the problem.
 
         Parameters
         ----------
@@ -212,7 +216,7 @@ class QP(OptimizationProblem):
 
     def __init__(
         self,
-        hessian: npt.ArrayLike,
+        hessian: ty.Optional[np.ndarray] = None,
         linear_offset: ty.Optional[np.ndarray] = None,
         inequality_constraints_weights: ty.Optional[np.ndarray] = None,
         inequality_constraints_biases: ty.Optional[np.ndarray] = None,
@@ -279,12 +283,21 @@ class QP(OptimizationProblem):
         return self._postconditioner
 
     def evaluate_cost(self, sol):
+        '''Evaluates the quadratic cost 1/2x^TQx + p^Tx. Returns a scalar cost.
+        '''
         return sol.T @ self.hessian @ sol + sol @ self.linear_offset
 
     def evaluate_constraint_violations(self, sol):
+        '''Evalue constraint violations A_eq@x - k_eq. Returns a vector of all
+        constraint violations
+        '''
         return self.constraint_hyperplanes_eq @ sol - self.constraint_biases_eq
 
     def precondition_problem(self, iterations=5, type="ruiz"):
+        ''' Used to precondition problems before they can be used in the solver.
+        Only ruiz preconditioning supported at the moment. Other preconditioners
+        can be added by following the example of the Ruiz preconditioner.
+        '''
         if type == "ruiz":
             self._ruiz_precondition(iterations=iterations)
         else:
@@ -313,8 +326,7 @@ class QP(OptimizationProblem):
         m_bar = matrix
         left_preconditioner = sparse.csc_matrix(np.eye(matrix.shape[0]))
         right_preconditioner = sparse.csc_matrix(np.eye(matrix.shape[1]))
-        row_del, col_del = 0, 0
-        for i in range(iterations):
+        for _ in range(iterations):
             D_l_inv = sparse.csc_matrix(
                 np.diag(1 / np.sqrt(np.linalg.norm(m_bar, ord=2, axis=1)))
             )
@@ -327,8 +339,6 @@ class QP(OptimizationProblem):
 
             m_bar = D_l_inv @ m_bar @ D_r_inv
             left_preconditioner = left_preconditioner @ D_l_inv
-            # right_preconditioner = right_preconditioner@D_r_inv
-            row_del = np.max(np.abs(1 - np.linalg.norm(m_bar, ord=2, axis=1)))
         return left_preconditioner, right_preconditioner, m_bar
 
 

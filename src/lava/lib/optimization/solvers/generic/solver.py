@@ -431,7 +431,6 @@ class OptimizationSolver:
         )
 
         if backend in CPUS:
-            # just add CPU processes here in the dictionary for QP
             ReadGatePyModel = get_read_gate_model_class(num_in_ports)
             pdict = {
                 self.solver_process: self.solver_model,
@@ -448,7 +447,6 @@ class OptimizationSolver:
                 exception_proc_model_map=pdict, select_sub_proc_model=True
             )
         elif backend in NEUROCORES:
-            # just add neurocore processes here in the dictionary for QP
             pdict = {
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGateCModel,

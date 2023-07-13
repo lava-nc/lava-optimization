@@ -2,8 +2,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import typing as ty
-
-import numpy as np
+from lava.magma.core.resources import (
+    CPU,
+    AbstractComputeResource,
+    Loihi2NeuroCore,
+    NeuroCore,
+)
 from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.solution_finder.process import (
@@ -21,6 +25,8 @@ from lava.magma.core.process.variable import Var
 from lava.magma.core.resources import AbstractComputeResource
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from numpy import typing as npt
+
+BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 
 
 class SolverProcessBuilder:
@@ -62,7 +68,7 @@ class SolverProcessBuilder:
     def create_solver_process(
         self,
         problem: OptimizationProblem,
-        backend,
+        backend: BACKENDS,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
     ):
         """Create and set a solver process for the specified optimization
@@ -120,7 +126,7 @@ class SolverProcessBuilder:
 
     def _create_process_constructor(
         self,
-        backend,
+        backend: BACKENDS,
         problem: OptimizationProblem,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
     ):
@@ -142,7 +148,7 @@ class SolverProcessBuilder:
 
         def constructor(
             self,
-            backend,
+            backend: BACKENDS,
             hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
@@ -177,7 +183,6 @@ class SolverProcessBuilder:
                 self.discrete_variables = Var(
                     shape=(
                         problem.variables.discrete.num_variables,
-                        # problem.variables.domain_sizes[0]
                     )
                 )
                 self.is_discrete = 1

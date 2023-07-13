@@ -300,13 +300,15 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
         ) = self.proc_params["alpha_dec_params"]
         self.alpha_decay_indices = self.proc_params["alpha_dec_list"]
         self.decay_counter = 0
+        # variable to store incoming spike at odd timestep to emulate hardware
+        # behavior
         self.connectivity_spike = 0
 
     def run_spk(self):
         self.decay_counter += 1
         a_in = self.a_in.recv()
         if self.decay_counter % 2 == 1:
-            # spike for qp_neuron_state coming in from quad connectivity
+            # spike for qp_neuron_state coming in from quadratic connectivity
             # in hardware is simulated here
             self.connectivity_spike = a_in
         if self.decay_counter % 2 == 0:
@@ -366,7 +368,6 @@ class PyPIneurPIPGeqModel(PyLoihiProcessModel):
         ) = self.proc_params["beta_grw_params"]
         self.beta_growth_indices = self.proc_params["beta_grw_list"]
         self.growth_counter = 0
-        self.connectivity_spike = 0
 
     def run_spk(self):
         self.growth_counter += 1
@@ -392,7 +393,7 @@ class PyPIneurPIPGeqModel(PyLoihiProcessModel):
 
             # process behavior:
             omega = self.beta * (
-                a_in - self.constraint_bias + self.connectivity_spike
+                a_in - self.constraint_bias
             )
             self.constraint_neuron_state += omega
             gamma = self.constraint_neuron_state + omega

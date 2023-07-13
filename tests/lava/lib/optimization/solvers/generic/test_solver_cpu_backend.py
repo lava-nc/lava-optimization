@@ -17,6 +17,8 @@ from lava.lib.optimization.solvers.generic.solver import (
     SolverConfig,
 )
 from lava.lib.optimization.utils.generators.mis import MISProblem
+from lava.lib.optimization.solvers.generic.solution_finder.models\
+    import SolutionFinderModel
 
 
 class TestOptimizationSolverQUBO(unittest.TestCase):
@@ -95,9 +97,6 @@ class TestOptimizationSolverQUBO(unittest.TestCase):
         )
 
     def test_qubo_cost_defines_weights(self):
-        from lava.lib.optimization.solvers.generic.solution_finder.models\
-            import SolutionFinderModel
-
         self.solver.solve(config=SolverConfig(timeout=1))
         pm = self.solver.solver_process.model_class(self.solver.solver_process)
         q_no_diag = np.copy(self.problem.cost.get_coefficient(2))
@@ -166,7 +165,7 @@ class TestOptimizationSolverQP(unittest.TestCase):
             timeout=1000 * 2,
             backend="CPU",
             hyperparameters={
-                "neuron_model": "qp/lp-pipg",
+                "neuron_model": "qp-lp_pipg",
                 "alpha": alpha_init,
                 "beta": beta_init,
                 "lr_change_type": "indices",

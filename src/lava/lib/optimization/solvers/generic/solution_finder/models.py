@@ -26,7 +26,7 @@ from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.process import Dense
 from lava.proc.sparse.process import Sparse
-from lava.lib.optimization.utils.qp_processing import convert_to_fp
+from lava.lib.optimization.utils.datatype_converter import convert_to_fp
 from scipy.sparse import csr_matrix
 
 CPUS = [CPU, "CPU"]
@@ -79,7 +79,6 @@ class SolutionFinderModel(AbstractSubProcessModel):
                 )
                 self.cost_minimizer = CostMinimizer(
                     Dense(
-                        # todo just using the last coefficient for now
                         weights=weights,
                         num_message_bits=24,
                     )

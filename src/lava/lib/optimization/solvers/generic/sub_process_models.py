@@ -42,7 +42,7 @@ from lava.lib.optimization.solvers.generic.qp.models import (
     ProportionalIntegralNeuronsPIPGeq,
 )
 from lava.proc.sparse.process import Sparse
-from lava.lib.optimization.utils.qp_processing import convert_to_fp
+from lava.lib.optimization.utils.datatype_converter import convert_to_fp
 from scipy.sparse import csr_matrix
 
 CPUS = [CPU, "CPU"]
@@ -68,9 +68,9 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
         # Instantiate child processes
         # The input shape is a 2D vector (shape of the weight matrix).
         backend = proc.backend
-        neuron_model = proc.hyperparameters.get("neuron_model", "qp/lp-pipg")
+        neuron_model = proc.hyperparameters.get("neuron_model", "qp-lp_pipg")
 
-        if neuron_model == "qp/lp-pipg":
+        if neuron_model == "qp-lp_pipg":
             # adding them here to show that they are need for the neurons models
             # since some values are calculated based on these weights
             Q_pre = proc.problem.hessian
@@ -136,9 +136,9 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
         # Instantiate child processes
         # The input shape is a 2D vector (shape of the weight matrix).
         backend = proc.backend
-        neuron_model = proc.hyperparameters.get("neuron_model", "qp/lp-pipg")
+        neuron_model = proc.hyperparameters.get("neuron_model", "qp-lp_pipg")
 
-        if neuron_model == "qp/lp-pipg":
+        if neuron_model == "qp-lp_pipg":
             # adding them here to show that they are need for the neurons models
             # since some values are calculated based on these weights
             Q_pre = proc.problem.hessian

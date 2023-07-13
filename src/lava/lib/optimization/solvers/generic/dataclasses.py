@@ -38,8 +38,8 @@ class ConstraintEnforcing:
     enforcing."""
 
     continuous: ContinuousConstraintsProcess = None
-    # discrete: DiscreteConstraintsProcess
-    # mixed: MixedConstraintsProcess
+    discrete: DiscreteConstraintsProcess = None
+    mixed: MixedConstraintsProcess = None
 
     @property
     def state_in(self):

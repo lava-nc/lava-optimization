@@ -1,6 +1,7 @@
 # Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
+import typing as ty
 import numpy as np
 
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
@@ -36,25 +37,23 @@ def readgate_run_spk(self):
         costs_last
     id = np.argmin(costs)
     cost = costs[id]
-    if (self.best_cost <= self.target_cost) or\
-            (self.time_step == self.total_steps - 1):
+    if (self.best_cost <= self.target_cost) or (self.time_step ==
+                                                self.total_steps):
         self.cost_out.send(np.array([self.best_cost, self.best_cost_id]))
-        self.send_pause_request.send(best_cost_step)
+        self.send_pause_request.send(np.array([self.best_cost_step -
+                                               1]).reshape(1,))
         self.solution_out.send(self.best_solution)
-    self.best_cost = None
-    self.best_cost_id = None
     if cost and (cost < self.best_cost):
-        best_cost_step = np.array([self.time_step])
+        self.best_cost_step = np.array([self.time_step])
         self.best_cost = cost
         self.best_cost_id = id
-
 
 def readgate_run_post_mgmt(self):
     """Execute post management phase."""
     self.best_solution = self.solution_reader.read()
 
 
-def get_readgate_members(num_in_ports):
+def get_readgate_members(num_in_ports, total_steps):
     in_ports_last = {
         f"cost_in_last_bytes_{id}": LavaPyType(PyInPort.VEC_DENSE, np.int32,
                                                precision=32)
@@ -66,8 +65,8 @@ def get_readgate_members(num_in_ports):
         for id in range(num_in_ports)
     }
     readgate_members = {
-        "target_cost": LavaPyType(int, np.int32, 32),
-        "best_solution": LavaPyType(int, np.int32, 32),
+        "target_cost": LavaPyType(np.ndarray, np.int32, 32),
+        "best_solution": LavaPyType(np.ndarray, np.int32, 32),
         "cost_out": LavaPyType(PyOutPort.VEC_DENSE, np.int32,
                                precision=32),
         "solution_out": LavaPyType(PyOutPort.VEC_DENSE, np.int32,
@@ -78,8 +77,10 @@ def get_readgate_members(num_in_ports):
         "solution_reader": LavaPyType(
             PyRefPort.VEC_DENSE, np.int32, precision=32
         ),
-        "best_cost": None,
-        "best_cost_id": None,
+        "best_cost": int((1 << 31) - 1),
+        "best_cost_id": -1,
+        "best_cost_step": -1,
+        "total_steps": total_steps,
         "post_guard": readgate_post_guard,
         "run_spk": readgate_run_spk,
         "run_post_mgmt": readgate_run_post_mgmt,
@@ -89,7 +90,7 @@ def get_readgate_members(num_in_ports):
     return readgate_members
 
 
-def get_read_gate_model_class(num_in_ports: int):
+def get_read_gate_model_class(num_in_ports: int, total_steps: ty.Optional[int]):
     """Produce CPU model for the ReadGate process.
 
     The model verifies if better payload (cost) has been notified by the
@@ -100,7 +101,7 @@ def get_read_gate_model_class(num_in_ports: int):
     ReadGatePyModelBase = type(
         "ReadGatePyModel",
         (PyLoihiProcessModel,),
-        get_readgate_members(num_in_ports),
+        get_readgate_members(num_in_ports, total_steps),
     )
     ReadGatePyModelImpl = implements(ReadGate, protocol=LoihiProtocol)(
         ReadGatePyModelBase

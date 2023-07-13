@@ -303,11 +303,9 @@ class OptimizationSolver:
                     num_steps=config.timeout,
                 )
                 probes.append(self._state_tracker)
-        run_cfg = self._get_run_config(
-            backend=config.backend,
-            probes=probes,
-            num_in_ports=num_in_ports,
-        )
+        run_cfg = self._get_run_config(config=config,
+                                       probes=probes,
+                                       num_in_ports=num_in_ports)
         run_condition = RunSteps(num_steps=config.timeout)
         self._prepare_profiler(config=config, run_cfg=run_cfg)
         return run_condition, run_cfg
@@ -394,9 +392,8 @@ class OptimizationSolver:
         else:
             return tracker.time_series
 
-    def _get_run_config(
-        self, backend: BACKENDS, probes=None, num_in_ports: int = None
-    ):
+    def _get_run_config(self, config: SolverConfig, probes=None,
+                        num_in_ports: int = None):
         from lava.lib.optimization.solvers.generic.read_gate.models import (
             get_read_gate_model_class,
         )
@@ -404,8 +401,9 @@ class OptimizationSolver:
             ReadGate,
         )
 
-        if backend in CPUS:
-            ReadGatePyModel = get_read_gate_model_class(num_in_ports)
+        if config.backend in CPUS:
+            ReadGatePyModel = get_read_gate_model_class(num_in_ports,
+                                                        config.timeout)
             pdict = {
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGatePyModel,
@@ -418,7 +416,7 @@ class OptimizationSolver:
             return Loihi1SimCfg(
                 exception_proc_model_map=pdict, select_sub_proc_model=True
             )
-        elif backend in NEUROCORES:
+        elif config.backend in NEUROCORES:
             pdict = {
                 self.solver_process: self.solver_model,
                 ReadGate: ReadGateCModel,
@@ -437,7 +435,7 @@ class OptimizationSolver:
                 callback_fxs=probes,
             )
         else:
-            raise NotImplementedError(str(backend) + BACKEND_MSG)
+            raise NotImplementedError(str(config.backend) + BACKEND_MSG)
 
     def _prepare_profiler(self, config: SolverConfig, run_cfg) -> None:
         if config.probe_time or config.probe_energy:
@@ -453,7 +451,7 @@ class OptimizationSolver:
         best_cost, idx = self.solver_process.optimum.get()
         best_cost = SolutionReadoutPyModel.decode_cost(best_cost)
         best_state = self._get_best_state(config, idx)
-        best_timestep = self.solver_process.solution_step.aliased_var.get() - 2
+        best_timestep = self.solver_process.solution_step.aliased_var.get()
         return best_state, int(best_cost), int(best_timestep)
 
     def _get_best_state(self, config: SolverConfig, idx: int):

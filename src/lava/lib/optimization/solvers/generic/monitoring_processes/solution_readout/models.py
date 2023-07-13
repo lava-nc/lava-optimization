@@ -65,7 +65,7 @@ class SolutionReadoutPyModel(PyAsyncProcessModel):
     def _printout_new_solution(self, cost, min_cost_id, timestep):
         print(
             f"Host: better solution found by network {min_cost_id} at "
-            f"step {abs(timestep) - 2} "
+            f"step {abs(timestep)} "
             f"with cost {cost[0]}: {self.solution}"
         )
 

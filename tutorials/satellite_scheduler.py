@@ -3,16 +3,18 @@
 # See: https://spdx.org/licenses/
 
 
-from matplotlib.patches import PathPatch
-from matplotlib.path import Path
-from networkx.algorithms.approximation import maximum_independent_set
 import matplotlib.pyplot as plt
 import networkx as ntx
 import numpy as np
-from lava.utils.system import Loihi2
+
+from matplotlib.patches import PathPatch
+from matplotlib.path import Path
+from networkx.algorithms.approximation import maximum_independent_set
+
+from lava.utils import loihi
+
 from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.solver import OptimizationSolver, SolverConfig
-
 from lava.lib.optimization.utils.generators.mis import MISProblem
 
 
@@ -147,17 +149,6 @@ class SatelliteScheduleProblem:
         self.netx_solution = np.array([row for row in solution])
         self.netx_solution = self.netx_solution[np.argsort(self.netx_solution[:,0])]
     
-    def select_lava_backend(self, use_loihi2=True, partition='kp'):
-        """ Select a hardware backend for Lava. """
-        if use_loihi2 and Loihi2.is_loihi2_available:
-            self.lava_backend = 'Loihi2'
-            Loihi2.preferred_partition = partition
-            Loihi2.set_environ_settings(partition)
-            self.probe_cost = False
-        else:
-            self.lava_backend = 'CPU'
-            self.probe_cost = True
-    
     def set_qubo_hyperparameters(self, t=8, rmin=64, rmax=127):
         """ Set the hyperparameters to use for the QUBO solver. """
         self.hyperparameters = {
@@ -166,10 +157,10 @@ class SatelliteScheduleProblem:
             "refract_counter": np.random.randint(0, rmin, self.graph.number_of_nodes()),
         }
 
-    def solve_with_lava_qubo(self, timeout=1000):
+    def solve_with_lava_qubo(self, timeout=1000, probe_cost=False):
         """ Find a maximum independent set using QUBO in Lava. """
-        if self.lava_backend is None:
-            self.select_lava_backend(use_loihi2=False)
+        self.lava_backend = 'Loihi2' if loihi.host else 'CPU'
+        self.probe_cost = probe_cost
         qubo_matrix = MISProblem._get_qubo_cost_from_adjacency(
             self.adjacency, self.qubo_weights[0], self.qubo_weights[1])
         self.qubo_problem = QUBO(qubo_matrix)

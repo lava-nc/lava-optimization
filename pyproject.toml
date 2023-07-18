@@ -17,7 +17,7 @@ repository = "https://github.com/lava-nc/lava-optimization"
 authors = [ 
     "Intel's Neuromorphic Computing Lab and the open source community <lava@intel.com>"
 ]
-license = "Lava DL is licensed under BSD-3-Clause"
+license = "(BSD-3-Clause)"
 keywords = [
     "neuromorphic",
     "ai",
@@ -35,7 +35,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
-    "License :: OSI Approved :: The 3-Clause BSD License (BSD-3-Clause)",
+    "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent"
 ]
 
@@ -57,6 +57,7 @@ schema = "^0.7.5"
 scikit-optimize = "^0.9.0"
 scipy = "^1.9.1"
 nbformat = "^5.7.1"
+seaborn = "^0.12.2"
 
 [tool.poetry.dev-dependencies]
 bandit = "1.7.4"

@@ -13,12 +13,14 @@ from lava.lib.optimization.problems.constraints import (
 from lava.lib.optimization.problems.cost import Cost
 from lava.lib.optimization.problems.problems import (
     IQP,
+    QP,
     OptimizationProblem,
     CSP,
     QUBO,
     ILP,
 )
 from lava.lib.optimization.problems.variables import (
+    ContinuousVariables,
     DiscreteVariables,
     Variables,
 )
@@ -55,7 +57,9 @@ class TestOptimizationProblem(unittest.TestCase):
             OptimizationProblem()
 
     def test_compliant_sublcass(self):
-        self.assertIsInstance(self.compliant_instantiation, OptimizationProblem)
+        self.assertIsInstance(
+            self.compliant_instantiation, OptimizationProblem
+        )
 
     def test_not_compliant_sublcass(self):
         with self.assertRaises(TypeError):
@@ -90,15 +94,15 @@ class TestQUBO(unittest.TestCase):
         self.assertEqual(list(self.qubo.cost.coefficients.keys()), [2])
 
     def test_variables_class(self):
-        self.assertIsInstance(self.qubo.variables, DiscreteVariables)
+        self.assertIsInstance(self.qubo.variables.discrete, DiscreteVariables)
 
     def test_variables_are_binary(self):
-        for n, size in enumerate(self.qubo.variables.domain_sizes):
+        for n, size in enumerate(self.qubo.variables.discrete.domain_sizes):
             with self.subTest(msg=f"Var ID {n}"):
                 self.assertEqual(size, 2)
 
     def test_number_of_variables(self):
-        self.assertEqual(self.qubo.variables.num_variables, 10)
+        self.assertEqual(self.qubo.variables.discrete.num_variables, 10)
 
     def test_constraints_is_none(self):
         self.assertIsNone(self.qubo.constraints)
@@ -115,7 +119,7 @@ class TestQUBO(unittest.TestCase):
     def test_variables_update_after_setting_cost(self):
         new_cost = np.eye(4, dtype=int)
         self.qubo.cost = new_cost
-        self.assertEqual(self.qubo.variables.num_variables, 4)
+        self.assertEqual(self.qubo.variables.discrete.num_variables, 4)
 
     def test_class_of_setted_cost(self):
         new_cost = np.eye(10, dtype=int)
@@ -234,7 +238,53 @@ class TestIQP(unittest.TestCase):
     def test_evaluate_constraints(self):
         self.assertTrue(
             np.all(
-                self.iqp.evaluate_constraints(np.array([0, 0, 0, 0])) == -self.b
+                self.iqp.evaluate_constraints(np.array([0, 0, 0, 0]))
+                == -self.b
+            )
+        )
+
+
+class TestQP(unittest.TestCase):
+    def setUp(self):
+        self.H = np.zeros((4, 4), dtype=np.int32)
+        self.c = np.array([0, 1, 2, 3], dtype=np.int32).T
+        self.A = np.array(
+            [[0, 4, 2, 1], [2, 0, 1, 1], [1, 1, 0, 1]], dtype=np.int32
+        )
+        self.b = np.array([1, 1, 1], dtype=np.int32).T
+        self.qp = QP(
+            hessian=self.H,
+            linear_offset=self.c,
+            equality_constraints_weights=self.A,
+            equality_constraints_biases=self.b,
+        )
+
+    def test_create_obj(self):
+        self.assertIsInstance(self.qp, QP)
+
+    def test_variables_class(self):
+        self.assertIsInstance(
+            self.qp.variables.continuous, ContinuousVariables
+        )
+
+    def test_cost_class(self):
+        self.assertIsInstance(self.qp.cost, Cost)
+
+    def test_cost_is_quadratic(self):
+        self.assertEqual(self.qp.cost.max_degree, 2)
+
+    def test_evaluate_cost(self):
+        sol = np.array([0, 1, 0, 0])
+        self.assertEqual(
+            self.qp.evaluate_cost(sol), sol.T @ self.H @ sol + sol @ self.c
+        )
+
+    def test_evaluate_constraint_violations(self):
+        sol = np.array([0, 0, 0, 0])
+        self.assertTrue(
+            np.all(
+                self.qp.evaluate_constraint_violations(sol)
+                == self.A @ sol - self.b
             )
         )
 
@@ -268,7 +318,8 @@ class TestILP(unittest.TestCase):
     def test_evaluate_constraints(self):
         self.assertTrue(
             np.all(
-                self.ilp.evaluate_constraints(np.array([0, 0, 0, 0])) == -self.b
+                self.ilp.evaluate_constraints(np.array([0, 0, 0, 0]))
+                == -self.b
             )
         )
 

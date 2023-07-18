@@ -21,6 +21,7 @@ class NEBM(AbstractProcess):
         refract_counter: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
         init_value=0,
         init_state=0,
+        neuron_model: str = 'nebm',
     ):
         """
         NEBM Process.
@@ -76,9 +77,11 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         steps_per_temperature: int,
         refract_scaling: int,
         refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
+        exp_temperature=None,
         init_value=0,
         init_state=None,
         neuron_model: str,
+        annealing_schedule: str = 'linear',
     ):
         """
         SA Process.
@@ -99,6 +102,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         init_state : ArrayLike
             The state of neurons with which the network is initialized
         """
+
         super().__init__(
             shape=shape,
             min_temperature=min_temperature,
@@ -106,7 +110,9 @@ class NEBMSimulatedAnnealing(AbstractProcess):
             steps_per_temperature=steps_per_temperature,
             refract=refract,
             refract_scaling=refract_scaling,
+            exp_temperature=exp_temperature,
             neuron_model=neuron_model,
+            annealing_schedule=annealing_schedule,
         )
 
         self.a_in = InPort(shape=shape)
@@ -119,7 +125,13 @@ class NEBMSimulatedAnnealing(AbstractProcess):
 
         self.temperature = Var(shape=shape, init=int(max_temperature))
 
-        self.refract_counter = Var(shape=shape, init=int(0))
+        self.refract_counter = Var(
+            shape=shape,
+            init=(refract or 0)
+            + np.right_shift(
+                np.random.randint(0, 2**8, size=shape), (refract_scaling or 0)
+            ),
+        )
 
         # Initial state determined in DiscreteVariables
         self.state = Var(

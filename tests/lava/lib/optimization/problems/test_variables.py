@@ -5,9 +5,12 @@
 
 import unittest
 
-from lava.lib.optimization.problems.variables import (ContinuousVariables,
-                                                      DiscreteVariables,
-                                                      Variable, Variables)
+from lava.lib.optimization.problems.variables import (
+    ContinuousVariables,
+    DiscreteVariables,
+    Variable,
+    Variables,
+)
 
 
 class TestVariable(unittest.TestCase):
@@ -72,7 +75,9 @@ class TestDiscreteVariables(unittest.TestCase):
 class TestContinuousVariables(unittest.TestCase):
     def setUp(self) -> None:
         self.bounds = [(0, 1), (0, 20), (-1, 4)]
-        self.cvars = ContinuousVariables(bounds=self.bounds)
+        self.cvars = ContinuousVariables(
+            num_variables=len(self.bounds), bounds=self.bounds
+        )
 
     def test_obj_creation(self):
         self.assertIsInstance(self.cvars, ContinuousVariables)

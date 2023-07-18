@@ -42,22 +42,45 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             return
         raw_cost, min_cost_id = self.cost_in.recv()
         if raw_cost != 0:
-            timestep = self.timestep_in.recv()[0]
-            # The following casts cost as a signed 24-bit value (8 = 32 - 24)
-            cost = (np.array([raw_cost]).astype(np.int32) << 8) >> 8
-            raw_solution = self.read_solution.recv()
-            raw_solution &= 0x1F  # AND with 0x1F (=0b11111) retains 5 LSBs
-            # The binary solution was attained 2 steps ago. Shift down by 4.
-            self.solution[:] = raw_solution.astype(np.int8) >> 4
+            timestep, raw_solution = self._receive_data()
+            cost = self.decode_cost(raw_cost)
             self.solution_step = abs(timestep)
+            self.solution[:] = self.decode_solution(raw_solution)
             self.min_cost[:] = np.asarray([cost[0], min_cost_id])
             if cost[0] < 0:
-                self.log.info(msg=
-                    f"Host: better solution found by network {min_cost_id} at "
-                    f"step {abs(timestep)-2} "
-                    f"with cost {cost[0]}: {self.solution}"
-                )
-            if (self.min_cost[0] is not None and self.min_cost[0] <= self.target_cost):
-                print(f"Host: network reached target cost {self.target_cost}.")
-            if timestep > 0 or timestep == -1:
-                self.stop = True
+                self._printout_new_solution(cost, min_cost_id, timestep)
+            self._printout_if_converged()
+            self._stop_if_requested(timestep, min_cost_id)
+
+    def _receive_data(self):
+        timestep = self.timestep_in.recv()[0]
+        raw_solution = self.read_solution.recv()
+        return timestep, raw_solution
+
+    @staticmethod
+    def decode_cost(raw_cost) -> np.ndarray:
+        return np.array([raw_cost]).astype(np.int32)
+
+    @staticmethod
+    def decode_solution(raw_solution) -> np.ndarray:
+        raw_solution &= 0x1F  # AND with 0x1F (=0b11111) retains 5 LSBs
+        # The binary solution was attained 2 steps ago. Shift down by 4.
+        return raw_solution.astype(np.int8) >> 4
+
+    def _printout_new_solution(self, cost, min_cost_id, timestep):
+        print(
+            f"Host: better solution found by network {min_cost_id} at "
+            f"step {abs(timestep) - 2} "
+            f"with cost {cost[0]}: {self.solution}"
+        )
+
+    def _printout_if_converged(self):
+        if (
+                self.min_cost[0] is not None
+                and self.min_cost[0] <= self.target_cost
+        ):
+            print(f"Host: network reached target cost {self.target_cost}.")
+
+    def _stop_if_requested(self, timestep, min_cost_id):
+        if (timestep > 0 or timestep == -1) and min_cost_id != -1:
+            self.stop = True

@@ -18,6 +18,8 @@ class CoefficientTensorsMixin:
         """
         c_dict = dict()
         for coefficient in coefficients:
+            if coefficient is None:
+                continue
             if type(coefficient) in [list, int]:
                 coefficient = np.asarray(coefficient)
                 rank = coefficient.ndim
@@ -27,7 +29,7 @@ class CoefficientTensorsMixin:
                     "or (possibly nested) lists."
                 )
             else:
-                rank = coefficient.ndim
+                rank = np.squeeze(coefficient).ndim
             c_dict[rank] = coefficient
         self._coefficients = c_dict
 

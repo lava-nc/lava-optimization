@@ -19,6 +19,7 @@ from lava.lib.optimization.problems.variables import (
     ContinuousVariables,
     DiscreteVariables,
 )
+from scipy import sparse
 
 
 class OptimizationProblem(ABC):
@@ -71,16 +72,16 @@ class QUBO(OptimizationProblem):
         self.validate_input(q)
         self.q = q
         self._q_cost = Cost(q)
-        self._b_variables = DiscreteVariables(domains=[2] * q.shape[0])
+        self._variables._discrete = DiscreteVariables(domains=[2] * q.shape[0])
 
     @property
     def variables(self):
         """Binary variables of the QUBO problem."""
-        return self._b_variables
+        return self._variables
 
     @property
     def num_variables(self):
-        return self.variables.num_variables
+        return self.variables.discrete.num_variables
 
     @property
     def cost(self):
@@ -94,7 +95,9 @@ class QUBO(OptimizationProblem):
         q = Cost(value)
         if list(q.coefficients.keys()) != [2]:
             raise ValueError("Cost must be a quadratic " "matrix.")
-        self._b_variables = DiscreteVariables(domains=[2] * value.shape[0])
+        self._variables._discrete = DiscreteVariables(
+            domains=[2] * value.shape[0]
+        )
         self._q_cost = q
 
     @property
@@ -177,124 +180,166 @@ class CSP(OptimizationProblem):
         raise NotImplementedError
 
 
-class QP:
-    """A Rudimentary interface for the QP solver. Inequality Constraints
-    should be of the form Ax<=k. Equality constraints are expressed as
-    sandwiched inequality constraints. The cost of the QP is of the form
-    1/2*x^t*Q*x + p^Tx
+class QP(OptimizationProblem):
+    """An interface for the QP solver. Equality Constraints should be of the
+    form Ax=k. Support for inequality constraints is pending.
+    The cost of the QP is of the form 1/2*x^t*Q*x + p^Tx. The problem has to
+    be preconditioned with a preconditioner. The library currently supports
+    ruiz preconditioning which is a useful preconditioner for block diagonal
+    QPs. Other preconditioners can be added in the future. Calling the
+    precondition_problem method preconditions the problem and modifies the
+    matrices and vectors that constitute the problem.
 
-    Parameters
-    ----------
-    hessian : 2-D or 1-D np.array
-        Quadratic term of the cost function
-    linear_offset : 1-D np.array, optional
-        Linear term of the cost function, defaults vector of zeros of the
-        size of the number of variables in the QP
-    constraint_hyperplanes : 2-D or 1-D np.array, optional
-        Inequality constrainting hyperplanes, by default None
-    constraint_biases : 1-D np.array, optional
-        Ineqaulity constraints offsets, by default None
-    constraint_hyperplanes_eq : 2-D or 1-D np.array, optional
-        Equality constrainting hyperplanes, by default None
-    constraint_biases_eq : 1-D np.array, optional
-        Eqaulity constraints offsets, by default None
+        Parameters
+        ----------
+        hessian : 2-D or 1-D np.array
+            Quadratic term of the cost function
+        linear_offset : 1-D np.array, optional
+            Linear term of the cost function, defaults vector of zeros of the
+            size of the number of variables in the QP
+        constraint_hyperplanes : 2-D or 1-D np.array, optional
+            Inequality constrainting hyperplanes, by default None
+        constraint_biases : 1-D np.array, optional
+            Ineqaulity constraints offsets, by default None
+        constraint_hyperplanes_eq : 2-D or 1-D np.array, optional
+            Equality constrainting hyperplanes, by default None
+        constraint_biases_eq : 1-D np.array, optional
+            Eqaulity constraints offsets, by default None
 
-    Raises
-    ------
-    ValueError
-        ValueError exception raised if equality or inequality constraints
-        are not properly defined. Ex: Defining A_eq while not defining k_eq
-        and vice-versa.
-
+        Raises
+        ------
+        ValueError
+            ValueError exception raised if equality or inequality constraints
+            are not properly defined. Ex: Defining A_eq while not defining k_eq
+            and vice-versa.
     """
 
     def __init__(
         self,
-        hessian: np.ndarray,
+        hessian: ty.Optional[np.ndarray] = None,
         linear_offset: ty.Optional[np.ndarray] = None,
-        constraint_hyperplanes: ty.Optional[np.ndarray] = None,
-        constraint_biases: ty.Optional[np.ndarray] = None,
-        constraint_hyperplanes_eq: ty.Optional[np.ndarray] = None,
-        constraint_biases_eq: ty.Optional[np.ndarray] = None,
+        inequality_constraints_weights: ty.Optional[np.ndarray] = None,
+        inequality_constraints_biases: ty.Optional[np.ndarray] = None,
+        equality_constraints_weights: ty.Optional[np.ndarray] = None,
+        equality_constraints_biases: ty.Optional[np.ndarray] = None,
     ):
-        if (
-            constraint_hyperplanes is None and constraint_biases is not None
-        ) or (constraint_hyperplanes is not None and constraint_biases is None):
-            raise ValueError(
-                "Please properly define your Inequality constraints. Supply \
-                all A and k "
-            )
-
-        if (
-            constraint_hyperplanes_eq is None
-            and constraint_biases_eq is not None
-        ) or (
-            constraint_hyperplanes_eq is not None
-            and constraint_biases_eq is None
-        ):
-            raise ValueError(
-                "Please properly define your Equality constraints. Supply \
-                all A_eq and k_eq."
-            )
-
-        self._hessian = hessian
-
-        if linear_offset is not None:
-            self._linear_offset = linear_offset
-        else:
-            self._linear_offset = np.zeros((hessian.shape[0], 1))
-
-        if constraint_hyperplanes is not None:
-            self._constraint_hyperplanes = constraint_hyperplanes
-            self._constraint_biases = constraint_biases
-        else:
-            self._constraint_hyperplanes = None
-            self._constraint_biases = None
-
-        if constraint_hyperplanes_eq is not None:
-            self._constraint_hyperplanes_eq = constraint_hyperplanes_eq
-            self._constraint_biases_eq = constraint_biases_eq
-
-        if constraint_hyperplanes_eq is not None:
-            constraint_hyperplanes_eq_new = np.vstack(
-                (constraint_hyperplanes_eq, -constraint_hyperplanes_eq)
-            )
-            constraint_biases_eq_new = np.vstack(
-                (constraint_biases_eq, -constraint_biases_eq)
-            )
-            if constraint_hyperplanes is not None:
-                self._constraint_hyperplanes = np.vstack(
-                    (
-                        self._constraint_hyperplanes,
-                        constraint_hyperplanes_eq_new,
-                    )
-                )
-                self._constraint_biases = np.vstack(
-                    (self._constraint_biases, constraint_biases_eq_new)
-                )
-            else:
-                self._constraint_hyperplanes = constraint_hyperplanes_eq_new
-                self._constraint_biases = constraint_biases_eq_new
+        super().__init__()
+        self._variables._continuous = ContinuousVariables(
+            num_variables=hessian.shape[0]
+        )
+        self.q_cost = Cost(linear_offset, hessian)
+        self._constraints.arithmetic = ArithmeticConstraints(
+            ineq=[
+                inequality_constraints_biases,
+                inequality_constraints_weights,
+            ],
+            eq=[equality_constraints_biases, equality_constraints_weights],
+        )
+        self._postconditioner = None
 
     @property
-    def get_hessian(self) -> np.ndarray:
-        return self._hessian
+    def variables(self):
+        return self._variables
 
     @property
-    def get_linear_offset(self) -> np.ndarray:
-        return self._linear_offset
+    def cost(self):
+        return self.q_cost
 
     @property
-    def get_constraint_hyperplanes(self) -> np.ndarray:
-        return self._constraint_hyperplanes
+    def constraints(self):
+        return self._constraints.arithmetic
 
     @property
-    def get_constraint_biases(self) -> np.ndarray:
-        return self._constraint_biases
+    def hessian(self) -> np.ndarray:
+        return self.cost.get_coefficient(order=2)
+
+    @property
+    def linear_offset(self) -> np.ndarray:
+        return self.cost.get_coefficient(order=1)
+
+    @property
+    def constraint_hyperplanes_ineq(self) -> np.ndarray:
+        return self.constraints.inequality.get_coefficient(order=2)
+
+    @property
+    def constraint_biases_ineq(self) -> np.ndarray:
+        return self.constraints.inequality.get_coefficient(order=1)
+
+    # needs to change
+    @property
+    def constraint_hyperplanes_eq(self) -> np.ndarray:
+        return self.constraints.equality.get_coefficient(order=2)
+
+    @property
+    def constraint_biases_eq(self) -> np.ndarray:
+        return self.constraints.equality.get_coefficient(order=1)
 
     @property
     def num_variables(self) -> int:
-        return len(self._linear_offset)
+        return self.variables.continuous.num_variables
+
+    @property
+    def postconditioner(self) -> np.ndarray:
+        return self._postconditioner
+
+    def evaluate_cost(self, sol):
+        '''Evaluates the quadratic cost 1/2x^TQx + p^Tx. Returns a scalar cost.
+        '''
+        return sol.T @ self.hessian @ sol + sol @ self.linear_offset
+
+    def evaluate_constraint_violations(self, sol):
+        '''Evalue constraint violations A_eq@x - k_eq. Returns a vector of all
+        constraint violations
+        '''
+        return self.constraint_hyperplanes_eq @ sol - self.constraint_biases_eq
+
+    def precondition_problem(self, iterations=5, type="ruiz"):
+        ''' Used to precondition problems before they can be used in the solver.
+        Only ruiz preconditioning supported at the moment. Other preconditioners
+        can be added by following the example of the Ruiz preconditioner.
+        '''
+        if type == "ruiz":
+            self._ruiz_precondition(iterations=iterations)
+        else:
+            raise NotImplementedError(
+                "Only Ruiz preconditioning is enabled \
+                                      for QP problems at the moment"
+            )
+
+    def _ruiz_precondition(self, iterations):
+        Q = self.hessian
+        p = self.linear_offset
+        pre_mat_Q, _, _ = self._ruiz_equilibriation(Q, iterations)
+        Q_pre = pre_mat_Q @ Q @ pre_mat_Q
+        p_pre = pre_mat_Q @ p
+        self.cost.coefficients[2], self.cost.coefficients[1] = Q_pre, p_pre
+        A = self.constraint_hyperplanes_eq
+        k = self.constraint_biases_eq
+        pre_mat_A, _, _ = self._ruiz_equilibriation(A, iterations)
+        A_pre = pre_mat_A @ A @ pre_mat_Q
+        k_pre = pre_mat_A @ k
+        self.constraints.equality.coefficients[2] = A_pre
+        self.constraints.equality.coefficients[1] = k_pre
+        self._postconditioner = pre_mat_Q
+
+    def _ruiz_equilibriation(self, matrix, iterations):
+        m_bar = matrix
+        left_preconditioner = sparse.csc_matrix(np.eye(matrix.shape[0]))
+        right_preconditioner = sparse.csc_matrix(np.eye(matrix.shape[1]))
+        for _ in range(iterations):
+            D_l_inv = sparse.csc_matrix(
+                np.diag(1 / np.sqrt(np.linalg.norm(m_bar, ord=2, axis=1)))
+            )
+            if m_bar.shape[0] != m_bar.shape[1]:
+                D_r_inv = sparse.csc_matrix(
+                    np.diag(1 / np.sqrt(np.linalg.norm(m_bar, ord=2, axis=0)))
+                )
+            else:
+                D_r_inv = D_l_inv
+
+            m_bar = D_l_inv @ m_bar @ D_r_inv
+            left_preconditioner = left_preconditioner @ D_l_inv
+        return left_preconditioner, right_preconditioner, m_bar
 
 
 class IQP(OptimizationProblem):

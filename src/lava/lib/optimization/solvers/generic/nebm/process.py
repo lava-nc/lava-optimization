@@ -20,6 +20,7 @@ class NEBM(AbstractProcess):
         refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
         init_value=0,
         init_state=0,
+        neuron_model: str = 'nebm',
     ):
         """
         NEBM Process.
@@ -81,6 +82,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         init_value=0,
         init_state=None,
         neuron_model: str,
+        annealing_schedule: str = 'linear',
     ):
         """
         SA Process.
@@ -109,8 +111,9 @@ class NEBMSimulatedAnnealing(AbstractProcess):
             steps_per_temperature=steps_per_temperature,
             refract=refract,
             refract_scaling=refract_scaling,
-            neuron_model=neuron_model,
             exp_temperature=exp_temperature,
+            neuron_model=neuron_model,
+            annealing_schedule=annealing_schedule,
         )
 
         self.a_in = InPort(shape=shape)

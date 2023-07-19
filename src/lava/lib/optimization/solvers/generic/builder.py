@@ -2,16 +2,20 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import typing as ty
-
-import numpy as np
+from lava.magma.core.resources import (
+    CPU,
+    AbstractComputeResource,
+    Loihi2NeuroCore,
+    NeuroCore,
+)
 from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
 from lava.lib.optimization.problems.problems import OptimizationProblem
-from lava.lib.optimization.problems.variables import ContinuousVariables, \
-    DiscreteVariables
-from lava.lib.optimization.solvers.generic.solution_finder.process import \
-    SolutionFinder
-from lava.lib.optimization.solvers.generic.solution_reader.process import \
-    SolutionReader
+from lava.lib.optimization.solvers.generic.solution_finder.process import (
+    SolutionFinder,
+)
+from lava.lib.optimization.solvers.generic.solution_reader.process import (
+    SolutionReader,
+)
 from lava.magma.core.model.model import AbstractProcessModel
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.process.interfaces import AbstractProcessMember
@@ -21,6 +25,8 @@ from lava.magma.core.process.variable import Var
 from lava.magma.core.resources import AbstractComputeResource
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
 from numpy import typing as npt
+
+BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 
 
 class SolverProcessBuilder:
@@ -62,6 +68,7 @@ class SolverProcessBuilder:
     def create_solver_process(
         self,
         problem: OptimizationProblem,
+        backend: BACKENDS,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
     ):
         """Create and set a solver process for the specified optimization
@@ -79,13 +86,13 @@ class SolverProcessBuilder:
             variables defining the problem. The temperature provides the
             level of noise.
         """
-        self._create_process_constructor(problem, hyperparameters)
+        self._create_process_constructor(backend, problem, hyperparameters)
         SolverProcess = type(
             "OptimizationSolverProcess",
             (AbstractProcess,),
             {"__init__": self._process_constructor},
         )
-        self._process = SolverProcess(hyperparameters)
+        self._process = SolverProcess(backend, hyperparameters)
 
     def create_solver_model(
         self,
@@ -119,6 +126,7 @@ class SolverProcessBuilder:
 
     def _create_process_constructor(
         self,
+        backend: BACKENDS,
         problem: OptimizationProblem,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
     ):
@@ -140,55 +148,72 @@ class SolverProcessBuilder:
 
         def constructor(
             self,
+            backend: BACKENDS,
             hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
         ) -> None:
             super(type(self), self).__init__(
+                backend=backend,
                 hyperparameters=hyperparameters,
                 name=name,
                 log_config=log_config,
             )
             self.problem = problem
             self.hyperparameters = hyperparameters
+            self.backend = backend
+            self.is_continuous = 0
+            self.is_discrete = 0
             if not hasattr(problem, "variables"):
                 raise Exception(
                     "An optimization problem must contain " "variables."
                 )
-            if hasattr(problem.variables, "continuous") or isinstance(
-                problem.variables, ContinuousVariables
+            if (
+                hasattr(problem.variables, "continuous")
+                and problem.variables.continuous.num_variables is not None
             ):
                 self.continuous_variables = Var(
-                    shape=(problem.variables.continuous.num_vars, 2)
+                    shape=(problem.variables.continuous.num_variables,)
                 )
-            if hasattr(problem.variables, "discrete") or isinstance(
-                problem.variables, DiscreteVariables
+                self.is_continuous = 1
+            if (
+                hasattr(problem.variables, "discrete")
+                and problem.variables.discrete.num_variables is not None
             ):
                 self.discrete_variables = Var(
                     shape=(
-                        problem.variables.num_variables,
-                        # problem.variables.domain_sizes[0]
+                        problem.variables.discrete.num_variables,
                     )
                 )
+                self.is_discrete = 1
             self.cost_diagonal = None
             if hasattr(problem, "cost"):
                 mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
                 self.cost_coefficients = mrcv(problem.cost.coefficients)
-                self.cost_diagonal = problem.cost.coefficients[2].diagonal()
-            self.variable_assignment = Var(
-                shape=(problem.variables.num_variables,)
-            )
-            self.best_variable_assignment = Var(
-                shape=(problem.variables.num_variables,)
-            )
-            # Total cost = optimality_first_byte << 24 + optimality_last_bytes
-            self.optimality_last_bytes = Var(shape=(1,))
-            self.optimality_first_byte = Var(shape=(1,))
-            self.optimum = Var(shape=(2,))
-            self.feasibility = Var(shape=(1,))
-            self.solution_step = Var(shape=(1,))
-            self.cost_monitor = Var(shape=(1,))
+                if self.is_discrete:
+                    self.cost_diagonal = problem.cost.coefficients[
+                        2
+                    ].diagonal()
+            if not self.is_continuous:
+                self.variable_assignment = Var(
+                    shape=(problem.variables.discrete.num_variables,)
+                )
+                self.best_variable_assignment = Var(
+                    shape=(problem.variables.discrete.num_variables,)
+                )
+                # Total cost=optimality_first_byte<<24+optimality_last_bytes
+                self.optimality_last_bytes = Var(shape=(1,))
+                self.optimality_first_byte = Var(shape=(1,))
+                self.optimum = Var(shape=(2,))
+                self.feasibility = Var(shape=(1,))
+                self.solution_step = Var(shape=(1,))
+                self.cost_monitor = Var(shape=(1,))
+            elif self.is_continuous:
+                self.variable_assignment = Var(
+                    shape=(problem.variables.continuous.num_variables,)
+                )
             self.finders = None
+
         self._process_constructor = constructor
 
     def _create_model_constructor(self, target_cost: int):
@@ -204,7 +229,6 @@ class SolverProcessBuilder:
         """
 
         def constructor(self, proc):
-            var_shape = proc.variable_assignment.shape
             discrete_var_shape = None
             if hasattr(proc, "discrete_variables"):
                 discrete_var_shape = proc.discrete_variables.shape
@@ -215,58 +239,77 @@ class SolverProcessBuilder:
             cost_coefficients = proc.cost_coefficients
             constraints = proc.problem.constraints
             hyperparameters = proc.hyperparameters
+            problem = proc.problem
+            backend = proc.backend
 
             hps = (
                 hyperparameters
                 if isinstance(hyperparameters, list)
                 else [hyperparameters]
             )
-
-            self.solution_reader = SolutionReader(
-                var_shape=discrete_var_shape,
-                target_cost=target_cost,
-                num_in_ports=len(hps),
-            )
+            #
+            if not proc.is_continuous:
+                self.solution_reader = SolutionReader(
+                    var_shape=discrete_var_shape,
+                    target_cost=target_cost,
+                    num_in_ports=len(hps),
+                )
             finders = []
             for idx, hp in enumerate(hps):
                 finder = SolutionFinder(
                     cost_diagonal=cost_diagonal,
                     cost_coefficients=cost_coefficients,
                     constraints=constraints,
+                    backend=backend,
                     hyperparameters=hp,
                     discrete_var_shape=discrete_var_shape,
                     continuous_var_shape=continuous_var_shape,
+                    problem=problem,
                 )
                 setattr(self, f"finder_{idx}", finder)
                 finders.append(finder)
-                finder.cost_out_last_bytes.connect(
-                    getattr(self.solution_reader,
-                            f"read_gate_in_port_last_bytes_{idx}")
-                )
-                finder.cost_out_first_byte.connect(
-                    getattr(self.solution_reader,
-                            f"read_gate_in_port_first_byte_{idx}")
-                )
+                if not proc.is_continuous:
+                    finder.cost_out_last_bytes.connect(
+                        getattr(
+                            self.solution_reader,
+                            f"read_gate_in_port_last_bytes_{idx}",
+                        )
+                    )
+                    finder.cost_out_first_byte.connect(
+                        getattr(
+                            self.solution_reader,
+                            f"read_gate_in_port_first_byte_{idx}",
+                        )
+                    )
             proc.finders = finders
             # Variable aliasing
-            if hasattr(proc, "cost_coefficients"):
-                proc.vars.optimum.alias(self.solution_reader.min_cost)
-                # Cost = optimality_first_byte << 24 + optimality_last_bytes
-                proc.vars.optimality_last_bytes.alias(
-                    proc.finders[0].cost_last_bytes)
-                proc.vars.optimality_first_byte.alias(
-                    proc.finders[0].cost_first_byte)
+            if not proc.is_continuous:
+                if hasattr(proc, "cost_coefficients"):
+                    proc.vars.optimum.alias(self.solution_reader.min_cost)
+                    # Cost = optimality_first_byte << 24 + optimality_last_bytes
+                    proc.vars.optimality_last_bytes.alias(
+                        proc.finders[0].cost_last_bytes
+                    )
+                    proc.vars.optimality_first_byte.alias(
+                        proc.finders[0].cost_first_byte
+                    )
+                proc.vars.variable_assignment.alias(
+                    proc.finders[0].variables_assignment
+                )
+                proc.vars.best_variable_assignment.alias(
+                    self.solution_reader.solution
+                )
+                proc.vars.solution_step.alias(
+                    self.solution_reader.solution_step
+                )
+
+                # Connect processes
+                self.solution_reader.ref_port.connect_var(
+                    finders[0].variables_assignment
+                )
+
             proc.vars.variable_assignment.alias(
                 proc.finders[0].variables_assignment
-            )
-            proc.vars.best_variable_assignment.alias(
-                self.solution_reader.solution
-            )
-            proc.vars.solution_step.alias(self.solution_reader.solution_step)
-
-            # Connect processes
-            self.solution_reader.ref_port.connect_var(
-                finders[0].variables_assignment
             )
 
         self._model_constructor = constructor
@@ -285,59 +328,8 @@ class SolverProcessBuilder:
         """
         vars = dict()
         for rank, coefficient in coefficients.items():
-            initial_value = SolverProcessBuilder._get_initial_value_for_var(
-                coefficient, rank
-            )
-            if rank == 2:
-                SolverProcessBuilder._update_linear_component_var(
-                    vars, coefficient
-                )
-            vars[rank] = Var(shape=coefficient.shape, init=initial_value)
+            vars[rank] = Var(shape=coefficient.shape, init=coefficient)
         return vars
-
-    @staticmethod
-    def _get_initial_value_for_var(
-        coefficient: npt.ArrayLike, rank: int
-    ) -> npt.ArrayLike:
-        """Get the value for initializing the coefficient's Var.
-
-        Parameters
-        ----------
-        coefficient: npt.ArrayLike
-            A tensor representing one of the coefficients of a cost or
-            constraints function.
-        rank: int
-            The rank of the tensor coefficient.
-        """
-        if rank == 1:
-            return coefficient
-        if rank == 2:
-            quadratic_component = coefficient * np.logical_not(
-                np.eye(*coefficient.shape)
-            )
-            return quadratic_component
-
-    @staticmethod
-    def _update_linear_component_var(
-        vars: ty.Dict[int, AbstractProcessMember],
-        quadratic_coefficient: npt.ArrayLike,
-    ):
-        """Update a linear coefficient's Var given a quadratic coefficient.
-
-        Parameters
-        ----------
-        vars: ty.Dict[int, AbstractProcessMember]
-            A dictionary where keys are ranks and values are the Lava Vars
-            corresponding to ranks' coefficients.
-        quadratic_coefficient: npt.ArrayLike
-            An array-like tensor of rank 2, corresponds to the coefficient of
-            the quadratic term on a cost or constraint function.
-        """
-        linear_component = quadratic_coefficient.diagonal()
-        if 1 in vars.keys():
-            vars[1].init = vars[1].init + linear_component
-        else:
-            vars[1] = Var(shape=linear_component.shape, init=linear_component)
 
     def _in_ports_from_coefficients(
         self, coefficients: CoefficientTensorsMixin

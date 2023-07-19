@@ -3,6 +3,14 @@
 # See: https://spdx.org/licenses/
 import typing as ty
 from dataclasses import dataclass
+from lava.lib.optimization.solvers.generic.qp.models import (
+    PyPIneurPIPGeqModel,
+    PyProjGradPIPGeqModel,
+)
+from lava.lib.optimization.solvers.generic.qp.processes import (
+    ProjectedGradientNeuronsPIPGeq,
+    ProportionalIntegralNeuronsPIPGeq,
+)
 
 import numpy as np
 from lava.magma.core.resources import (
@@ -31,8 +39,10 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     NEBMAbstract,
     NEBMSimulatedAnnealingAbstract,
 )
-from lava.lib.optimization.solvers.generic.monitoring_processes.\
-    solution_readout.models import SolutionReadoutPyModel
+from lava.lib.optimization.solvers.generic.monitoring_processes. \
+    solution_readout.models import (
+        SolutionReadoutPyModel,
+    )
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.nebm.process import (
     NEBM,
@@ -61,6 +71,11 @@ try:
     from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
         ReadGateCModel,
     )
+
+    from lava.lib.optimization.solvers.generic.qp.ncmodels import (
+        NcL2ModelPG,
+        NcL2ModelPI,
+    )
 except ImportError:
 
     class ReadGateCModel:
@@ -79,6 +94,12 @@ except ImportError:
         pass
 
     class NcModelSparse:
+        pass
+
+    class NcL2ModelPG:
+        pass
+
+    class NcL2ModelPI:
         pass
 
 
@@ -169,6 +190,7 @@ class SolverReport:
     profiler: Profiler
         Profiler instance containing time, energy and activity measurements.
     """
+
     problem: OptimizationProblem = None
     best_cost: int = None
     best_state: np.ndarray = None
@@ -272,9 +294,11 @@ class OptimizationSolver:
 
             if config.probe_cost:
                 self._cost_tracker_last_bytes = StateProbe(
-                    self.solver_process.optimality_last_bytes)
+                    self.solver_process.optimality_last_bytes
+                )
                 self._cost_tracker_first_byte = StateProbe(
-                    self.solver_process.optimality_first_byte)
+                    self.solver_process.optimality_first_byte
+                )
                 probes.append(self._cost_tracker_last_bytes)
                 probes.append(self._cost_tracker_first_byte)
             if config.probe_state:
@@ -319,13 +343,14 @@ class OptimizationSolver:
         Parameters
         ----------
         config: SolverConfig
-            Solver configuraiton used. Refers to SolverConfig documentation.
+            Solver configuration used. Refers to SolverConfig documentation.
         """
         requirements, protocol = self._get_requirements_and_protocol(
             backend=config.backend
         )
         self._process_builder.create_solver_process(
             problem=self.problem,
+            backend=config.backend,
             hyperparameters=config.hyperparameters or dict(),
         )
         self._process_builder.create_solver_model(
@@ -360,19 +385,20 @@ class OptimizationSolver:
         Parameters
         ----------
         config: SolverConfig
-            Solver configuraiton used. Refers to SolverConfig documentation.
+            Solver configuration used. Refers to SolverConfig documentation.
         """
         cost_timeseries_last_bytes = self._get_probed_data(
             tracker=self._cost_tracker_last_bytes,
-            var_name="optimality_last_bytes"
+            var_name="optimality_last_bytes",
         )
         cost_timeseries_first_byte = self._get_probed_data(
             tracker=self._cost_tracker_first_byte,
-            var_name="optimality_first_byte"
+            var_name="optimality_first_byte",
         )
         if self._cost_tracker_first_byte is not None:
-            cost_timeseries = (cost_timeseries_first_byte << 24) + \
-                cost_timeseries_last_bytes
+            cost_timeseries = (
+                cost_timeseries_first_byte << 24
+            ) + cost_timeseries_last_bytes
         else:
             cost_timeseries = None
         state_timeseries = self._get_probed_data(
@@ -414,6 +440,8 @@ class OptimizationSolver:
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMPyModel,
                 QuboScif: PyModelQuboScifFixed,
+                ProportionalIntegralNeuronsPIPGeq: PyPIneurPIPGeqModel,
+                ProjectedGradientNeuronsPIPGeq: PyProjGradPIPGeqModel,
             }
             return Loihi1SimCfg(
                 exception_proc_model_map=pdict, select_sub_proc_model=True
@@ -427,9 +455,11 @@ class OptimizationSolver:
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMNcModel,
                 NEBMSimulatedAnnealingAbstract:
-                    NEBMSimulatedAnnealingAbstractModel,
+                NEBMSimulatedAnnealingAbstractModel,
                 NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
                 CostIntegrator: CostIntegratorNcModel,
+                ProportionalIntegralNeuronsPIPGeq: NcL2ModelPI,
+                ProjectedGradientNeuronsPIPGeq: NcL2ModelPG,
             }
             return Loihi2HwCfg(
                 exception_proc_model_map=pdict,
@@ -450,20 +480,56 @@ class OptimizationSolver:
             self._profiler = None
 
     def _get_results(self, config: SolverConfig):
-        best_cost, idx = self.solver_process.optimum.get()
-        best_cost = SolutionReadoutPyModel.decode_cost(best_cost)
-        best_state = self._get_best_state(config, idx)
-        best_timestep = self.solver_process.solution_step.aliased_var.get() - 2
-        return best_state, int(best_cost), int(best_timestep)
+        idx = 0
+        if self.solver_process.is_discrete:
+            best_cost, idx = self.solver_process.optimum.get()
+            best_cost = SolutionReadoutPyModel.decode_cost(best_cost)
+            best_timestep = (
+                self.solver_process.solution_step.aliased_var.get() - 2
+            )
+        best_state = self._get_best_state(config, int(idx))
+
+        if self.solver_process.is_discrete:
+            return best_state, int(best_cost), int(best_timestep)
+        else:
+            return best_state, None, None
 
     def _get_best_state(self, config: SolverConfig, idx: int):
+        if self._is_problem_discrete():
+            discrete_values = self._get_and_decode_discrete_vars(config, idx)
+            return discrete_values
+
+        if self._is_problem_continuous():
+            continuous_values = self._get_and_decode_continuous_vars(idx)
+            return continuous_values
+
+    def _is_problem_discrete(self):
+        return (
+            hasattr(self.problem.variables, "discrete")
+            and self.problem.variables.discrete.num_variables is not None
+        )
+
+    def _get_and_decode_discrete_vars(self, config: SolverConfig, idx: int):
         if isinstance(config.hyperparameters, list):
-            idx = int(idx)
             raw_solution = np.asarray(
-                self.solver_process.finders[idx].variables_assignment.get()
-            ).astype(np.int32)
+                self.solver_process.finders[idx]
+                .variables_assignment.get()
+                .astype(np.int32)
+            )
             raw_solution &= 0x3F
             return raw_solution.astype(np.int8) >> 5
         else:
             best_assignment = self.solver_process.best_variable_assignment
-            return best_assignment.aliased_var.get().astype(np.int8)
+            return best_assignment.aliased_var.get()
+
+    def _is_problem_continuous(self):
+        return (
+            hasattr(self.problem.variables, "continuous")
+            and self.problem.variables.continuous.num_variables is not None
+        )
+
+    def _get_and_decode_continuous_vars(self, idx: int):
+        solution = np.asarray(
+            self.solver_process.finders[idx].variables_assignment.get()
+        )
+        return solution

@@ -17,7 +17,7 @@ from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg
 
-from lava.lib.optimization.solvers.qp.models import (
+from lava.lib.optimization.solvers.generic.qp.models import (
     ConstraintCheck,
     ConstraintNeurons,
     SolutionNeurons,
@@ -406,17 +406,11 @@ class TestModelsFloatingPoint(unittest.TestCase):
         in_spike_qc_process = InSpikeSetProcess(
             in_shape=input_spike_qc.shape, spike_in=input_spike_qc
         )
-        out_spike_cd_process = OutProbeProcess(
-            out_shape=process.s_out_cd.shape
-        )
-        out_spike_qc_process = OutProbeProcess(
-            out_shape=process.s_out_qc.shape
-        )
+        out_spike_cd_process = OutProbeProcess(out_shape=process.s_out.shape)
 
-        in_spike_cn_process.a_out.connect(process.a_in_cn)
-        in_spike_qc_process.a_out.connect(process.a_in_qc)
-        process.s_out_cd.connect(out_spike_cd_process.s_in)
-        process.s_out_qc.connect(out_spike_qc_process.s_in)
+        in_spike_cn_process.a_out.connect(process.a_in)
+        in_spike_qc_process.a_out.connect(process.a_in)
+        process.s_out.connect(out_spike_cd_process.s_in)
 
         # Advancing one time-step does not change state since neuron works only
         # even time-steps
@@ -437,7 +431,10 @@ class TestModelsFloatingPoint(unittest.TestCase):
         self.assertEqual(
             np.all(
                 out_spike_cd_process.vars.spike_out.get()
-                == (init_sol - alpha * (input_spike_qc + p + input_spike_cn))
+                == (
+                    init_sol
+                    - alpha * (2 * (input_spike_qc + input_spike_cn) + p)
+                )
             ),
             True,
         )

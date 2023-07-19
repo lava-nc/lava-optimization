@@ -304,7 +304,7 @@ class ProjectedGradientNeuronsPIPGeq(AbstractProcess):
     process with this solver. Use the standard Lava Dense process.
     Intialize the ProjectedGradientNeuronsPIPGeq process.
     Implements the abstract behaviour
-    qp_neuron_state -= alpha*(a_in_qc + grad_bias + a_in_cn)
+    qp_neuron_state -= alpha*(a_in + grad_bias)
 
     Parameters
     ----------
@@ -365,14 +365,10 @@ class ProjectedGradientNeuronsPIPGeq(AbstractProcess):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1,))
 
-        # Ports
-        # In/outPorts that come from/go to the quadratic connectivity process
-        self.a_in_qc = InPort(shape=(shape[0],))
-        self.s_out_qc = OutPort(shape=(shape[0],))
-        # In/outPorts that come from/go to the constraint normals process
-        self.a_in_cn = InPort(shape=(shape[0],))
-        # OutPort for constraint directions
-        self.s_out_cd = OutPort(shape=(shape[0],))
+        # # Ports
+        # # In/outPorts that come from/go to the quadratic connectivity process
+        self.a_in = InPort(shape=(shape[0],))
+        self.s_out = OutPort(shape=(shape[0],))
 
         # Keyword Readouts
         grad_bias = kwargs.pop("grad_bias", np.zeros(shape))

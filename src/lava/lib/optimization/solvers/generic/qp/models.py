@@ -14,7 +14,7 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
-from lava.lib.optimization.solvers.qp.processes import (
+from lava.lib.optimization.solvers.generic.qp.processes import (
     ConstraintCheck,
     ConstraintNeurons,
     SolutionNeurons,
@@ -273,10 +273,8 @@ class SubGDModel(AbstractSubProcessModel):
 @implements(proc=ProjectedGradientNeuronsPIPGeq, protocol=LoihiProtocol)
 @requires(CPU)
 class PyProjGradPIPGeqModel(PyLoihiProcessModel):
-    a_in_qc: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64)
-    s_out_qc: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64)
-    a_in_cn: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64)
-    s_out_cd: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64)
+    a_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.float64)
+    s_out: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.float64)
     qp_neuron_state: np.ndarray = LavaPyType(np.ndarray, np.float64)
     grad_bias: np.ndarray = LavaPyType(np.ndarray, np.float64)
     alpha: np.ndarray = LavaPyType(np.ndarray, np.float64)
@@ -302,11 +300,17 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
         ) = self.proc_params["alpha_dec_params"]
         self.alpha_decay_indices = self.proc_params["alpha_dec_list"]
         self.decay_counter = 0
+        # variable to store incoming spike at odd timestep to emulate hardware
+        # behavior
+        self.connectivity_spike = 0
 
     def run_spk(self):
         self.decay_counter += 1
-        a_in_qc = self.a_in_qc.recv()
-        a_in_cn = self.a_in_cn.recv()
+        a_in = self.a_in.recv()
+        if self.decay_counter % 2 == 1:
+            # spike for qp_neuron_state coming in from quadratic connectivity
+            # in hardware is simulated here
+            self.connectivity_spike = a_in
         if self.decay_counter % 2 == 0:
             if self.lr_decay_type == "schedule":
                 if self.decay_counter == self.alpha_decay_schedule:
@@ -328,13 +332,11 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
 
             # process behavior: gradient update
             self.qp_neuron_state -= self.alpha * (
-                a_in_qc + self.grad_bias + a_in_cn
+                a_in + self.grad_bias + self.connectivity_spike
             )
-            self.s_out_cd.send(self.qp_neuron_state)
-            self.s_out_qc.send(np.zeros(self.qp_neuron_state.shape))
+            self.s_out.send(self.qp_neuron_state)
         else:
-            self.s_out_cd.send(np.zeros(self.qp_neuron_state.shape))
-            self.s_out_qc.send(self.qp_neuron_state)
+            self.s_out.send(np.zeros(self.qp_neuron_state.shape))
 
 
 @implements(proc=ProportionalIntegralNeuronsPIPGeq, protocol=LoihiProtocol)
@@ -370,8 +372,8 @@ class PyPIneurPIPGeqModel(PyLoihiProcessModel):
     def run_spk(self):
         self.growth_counter += 1
         a_in = self.a_in.recv()
+
         if self.growth_counter % 2 == 1:
-            # print(f"{self.growth_counter=}")
             if self.lr_growth_type == "schedule":
                 if self.growth_counter == self.beta_growth_schedule:
                     self.beta = self.beta * 2
@@ -390,7 +392,9 @@ class PyPIneurPIPGeqModel(PyLoihiProcessModel):
                     self.growth_factor *= 2
 
             # process behavior:
-            omega = self.beta * (a_in - self.constraint_bias)
+            omega = self.beta * (
+                a_in - self.constraint_bias
+            )
             self.constraint_neuron_state += omega
             gamma = self.constraint_neuron_state + omega
             self.s_out.send(gamma)

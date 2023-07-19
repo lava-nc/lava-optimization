@@ -6,7 +6,7 @@ import numpy as np
 from lava.magma.core.run_conditions import RunSteps
 from lava.magma.core.run_configs import Loihi1SimCfg
 from lava.lib.optimization.problems.problems import QP
-from lava.lib.optimization.solvers.qp.models import (
+from lava.lib.optimization.solvers.generic.qp.models import (
     ConstraintCheck,
     GradientDynamics,
 )

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import typing as ty
+from lava.lib.optimization.problems.problems import OptimizationProblem
 from numpy import typing as npty
 
 import numpy as np
@@ -15,9 +16,30 @@ class ContinuousVariablesProcess(AbstractProcess):
     """Process which implementation holds the evolution of continuous
     variables on the solver of an optimization problem."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        raise NotImplementedError
+    def __init__(
+        self,
+        shape: ty.Tuple[int, ...],
+        problem: OptimizationProblem,
+        backend,
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(
+            shape=shape,
+            name=name,
+            problem=problem,
+            log_config=log_config,
+        )
+
+        self.num_variables = np.prod(shape)
+        self.backend = backend
+        self.hyperparameters = hyperparameters
+        self.problem = problem
+        self.a_in = InPort(shape=shape)
+        self.s_out = OutPort(shape=shape)
+        self.variable_assignment = Var(shape=shape)
+        self.cost = OutPort(shape=shape)
 
 
 class DiscreteVariablesProcess(AbstractProcess):
@@ -86,10 +108,20 @@ class CostConvergenceChecker(AbstractProcess):
     ----------
     cost_components: InPort
         Additive contributions to the total cost.
-    update_buffer: OutPort
+    cost_out_last_bytes: OutPort
         Notifies the next process about the detection of a better cost.
-    min_cost: Var
+        Messages the last 3 byte of the new best cost.
+        Total cost = cost_out_first_byte << 24 + cost_out_last_bytes.
+    cost_out_first_byte: OutPort
+        Notifies the next process about the detection of a better cost.
+        Messages the first byte of the new best cost.
+    cost_min_last_bytes
         Current minimum cost, i.e., the lowest reported cost so far.
+        Saves the last 3 bytes.
+        cost_min = cost_min_first_byte << 24 + cost_min_last_bytes
+    cost_min_first_byte
+        Current minimum cost, i.e., the lowest reported cost so far.
+        Saves the first byte.
     """
 
     def __init__(
@@ -113,10 +145,13 @@ class CostConvergenceChecker(AbstractProcess):
         """
         super().__init__(shape=shape, name=name, log_config=log_config)
         self.shape = shape
-        self.min_cost = Var(shape=(1,))
-        self.cost = Var(shape=(1,))
+        self.cost_min_first_byte = Var(shape=(1,))
+        self.cost_min_last_bytes = Var(shape=(1,))
+        self.cost_first_byte = Var(shape=(1,))
+        self.cost_last_bytes = Var(shape=(1,))
         self.cost_components = InPort(shape=shape)
-        self.update_buffer = OutPort(shape=(1,))
+        self.cost_out_last_bytes = OutPort(shape=(1,))
+        self.cost_out_first_byte = OutPort(shape=(1,))
 
 
 class SatConvergenceChecker(AbstractProcess):
@@ -139,9 +174,33 @@ class AugmentedTermsProcess(AbstractProcess):
 class ContinuousConstraintsProcess(AbstractProcess):
     """Process implementing continuous constraints via neurons and synapses."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        raise NotImplementedError
+    def __init__(
+        self,
+        shape_in: ty.Tuple[int, ...],
+        shape_out: ty.Tuple[int, ...],
+        problem: OptimizationProblem,
+        backend,
+        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        super().__init__(
+            shape_in=shape_in,
+            shape_out=shape_out,
+            problem=problem,
+            name=name,
+            log_config=log_config,
+        )
+
+        self.num_constraints = np.prod(problem.constraint_biases_eq.shape)
+        self.problem = problem
+        self.backend = backend
+        self.hyperparameters = hyperparameters
+        self.a_in = InPort(shape=shape_in)
+        self.s_out = OutPort(shape=shape_out)
+        self.constraint_assignment = Var(
+            shape=problem.constraint_biases_eq.shape
+        )
 
 
 class DiscreteConstraintsProcess(AbstractProcess):
@@ -384,22 +443,24 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
     """
 
     def __init__(
-            self,
-            *,
-            max_temperature: int = 10,
-            min_temperature: int = 0,
-            delta_temperature: int = 1,
-            steps_per_temperature: int = 100,
-            refract_scaling: int = 14,
-            refract: ty.Optional[ty.Union[int, npty.NDArray]],
-            shape: ty.Tuple[int, ...] = (1,),
-            init_state: npt.ArrayLike = 0,
-            min_integration: npt.ArrayLike = -1000,
-            cost_diagonal: npt.ArrayLike = 0,
-            name: ty.Optional[str] = None,
-            log_config: ty.Optional[LogConfig] = None,
-            init_value: npt.ArrayLike = 0,
-            neuron_model: str,
+        self,
+        *,
+        max_temperature: int = 10,
+        min_temperature: int = 0,
+        delta_temperature: int = 1,
+        exp_temperature: int = None,
+        steps_per_temperature: int = 100,
+        refract_scaling: int = 14,
+        refract: ty.Optional[ty.Union[int, npty.NDArray]],
+        shape: ty.Tuple[int, ...] = (1,),
+        init_state: npt.ArrayLike = 0,
+        min_integration: npt.ArrayLike = -1000,
+        cost_diagonal: npt.ArrayLike = 0,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+        init_value: npt.ArrayLike = 0,
+        annealing_schedule: str = 'linear',
+        neuron_model: str,
     ) -> None:
         """
 
@@ -435,6 +496,7 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             max_temperature=max_temperature,
             min_temperature=min_temperature,
             delta_temperature=delta_temperature,
+            exp_temperature=exp_temperature,
             steps_per_temperature=steps_per_temperature,
             refract_scaling=refract_scaling,
             refract=refract,
@@ -444,6 +506,7 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             log_config=log_config,
             init_value=init_value,
             neuron_model=neuron_model,
+            annealing_schedule=annealing_schedule,
         )
         self.added_input = InPort(shape=shape)
         self.messages = OutPort(shape=shape)
@@ -453,8 +516,10 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
         self.max_temperature = Var(shape=shape, init=max_temperature)
         self.min_temperature = Var(shape=shape, init=min_temperature)
         self.delta_temperature = Var(shape=shape, init=delta_temperature)
-        self.steps_per_temperature = Var(shape=shape,
-                                         init=steps_per_temperature)
+        self.exp_temperature = Var(shape=shape, init=exp_temperature)
+        self.steps_per_temperature = Var(
+            shape=shape, init=steps_per_temperature
+        )
         self.refract = Var(shape=shape, init=refract)
         self.state = Var(shape=shape, init=init_state)
         self.min_integration = Var(shape=shape, init=min_integration)

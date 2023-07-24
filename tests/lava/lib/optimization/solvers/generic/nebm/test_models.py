@@ -97,7 +97,8 @@ class TestPyNEBM(unittest.TestCase):
 
         actual_cost = report.cost_timeseries.flatten()
         actual_cost = actual_cost[:report.best_timestep + 1]
-        expected_cost = np.array([0, 0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10])
+        expected_cost = np.array([0, 0, -1, -2, -3, -4, -5, -6, -7,
+                                  -8, -9, -10])
         np.testing.assert_array_equal(actual_cost, expected_cost)
 
     def test_robust_descend(self):

@@ -68,8 +68,10 @@ class NEBMPyModel(PyLoihiProcessModel):
         self.spk_hist[wta_spk_idx] |= 1
         # Generate output spikes for feedback
         s_wta = np.zeros_like(self.state)
-        s_wta[np.logical_and(wta_spk_idx, np.logical_not(wta_spk_idx_prev))] = +1
-        s_wta[np.logical_and(wta_spk_idx_prev, np.logical_not(wta_spk_idx))] = -1
+        pos_spk = np.logical_and(wta_spk_idx, np.logical_not(wta_spk_idx_prev))
+        neg_spk = np.logical_and(wta_spk_idx_prev, np.logical_not(wta_spk_idx))
+        s_wta[pos_spk] = +1
+        s_wta[neg_spk] = -1
         # Update the refractory periods
         self.refract_counter = np.maximum(
             self.refract_counter - 1,

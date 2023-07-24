@@ -17,7 +17,7 @@ class NEBM(AbstractProcess):
         *,
         shape: ty.Tuple[int, ...],
         temperature: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
-        refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
+        refract: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
         refract_counter: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
         init_value=0,
         init_state=0,

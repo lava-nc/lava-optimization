@@ -9,6 +9,16 @@ from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
 
+def boltzmann(delta_e, temperature):
+    """ Return the probability that each unit should be ON from a boltzmann
+    distribution with the given temperature. Note that the boltzmann
+    distribution is undefined for temperature equal to zero, in this case
+    return probabilities corresponding to greedy energy descent."""
+    if temperature == 0:
+        return delta_e < 0
+    return 1 / (1 + np.exp(delta_e / temperature))
+
+
 @implements(proc=NEBM, protocol=LoihiProtocol)
 @requires(CPU)
 @tag('fixed_pt')
@@ -19,26 +29,15 @@ class NEBMPyModel(PyLoihiProcessModel):
     a_in = LavaPyType(PyInPort.VEC_DENSE, int, precision=24)
     s_sig_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=24)
     s_wta_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=24)
-
     state: np.ndarray = LavaPyType(np.ndarray, int, precision=24)
     spk_hist: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
-
     temperature: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
     refract: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
-
     refract_counter: np.ndarray = LavaPyType(np.ndarray, int, precision=8)
 
     def __init__(self, proc_params):
         super().__init__(proc_params)
         self.a_in_data = np.zeros(proc_params['shape'])
-
-    def _get_random(self):
-        # ToDo: Choosing a 16-bit signed random integer. For bit-accuracy,
-        # need to replace it with Loihi-conformant LFSR function
-        prand = np.zeros(shape=self.state.shape)
-        if prand.size > 0:
-            prand = np.random.randint(0, (2 ** 16) - 1, size=prand.size)
-        return prand
 
     def _update_buffers(self):
         # Populate the buffer for local computation
@@ -58,17 +57,11 @@ class NEBMPyModel(PyLoihiProcessModel):
         return s_sig
 
     def _generate_wta_spikes(self, spk_hist_buffer):
-        lfsr = self._get_random()
         self.state += self.a_in_data
-        # Note: this should not happen; otherwise, cost is too high/low!
-        np.clip(self.state, a_min=-(2 ** 23), a_max=2 ** 23 - 1, out=self.state)
-        # Get spikes from previous time step
         wta_spk_idx_prev = (spk_hist_buffer == 1)
-        # Generate new spikes when spiking will decrease the energy (grad descent)
-        # or randomly in proportion to the temperature, but only when not refractory
-        wta_spk_idx = self.state < 0
-        rng_spk = lfsr < self.temperature - self.state
-        wta_spk_idx = np.logical_or(wta_spk_idx, rng_spk)
+        prob = boltzmann(self.state, self.temperature[0])
+        rand = np.random.rand(*prob.shape)
+        wta_spk_idx = rand < prob
         refractory = self.refract_counter > 0
         wta_spk_idx[refractory] = wta_spk_idx_prev[refractory]
         # Add spikes to history

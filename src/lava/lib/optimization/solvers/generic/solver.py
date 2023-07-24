@@ -426,7 +426,9 @@ class OptimizationSolver:
     def _get_run_config(
         self, backend: BACKENDS, probes=None, num_in_ports: int = None
     ):
-        from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
+        from lava.lib.optimization.solvers.generic.read_gate.process import (
+            ReadGate
+        )
         from lava.lib.optimization.solvers.generic.read_gate.models import (
             get_read_gate_model_class,
         )

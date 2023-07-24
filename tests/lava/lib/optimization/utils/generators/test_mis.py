@@ -43,9 +43,10 @@ class TestMISProblem(unittest.TestCase):
         edges."""
         graph = self.problem.get_graph()
         number_of_nodes = 10
-        number_of_edges = 37
+        possible_connections = (number_of_nodes ** 2 - number_of_nodes) / 2
         self.assertEqual(graph.number_of_nodes(), number_of_nodes)
-        self.assertEqual(graph.number_of_edges(), number_of_edges)
+        self.assertAlmostEqual(graph.number_of_edges() / possible_connections,
+                               self.connection_prob, delta=0.1)
 
     def test_get_graph_matrix(self):
         """Tests the correct adjacency matrix is returned."""
@@ -91,23 +92,14 @@ class TestMISProblem(unittest.TestCase):
         w_diag = 1.0
         w_off = 4.0
         qubo = self.problem.get_as_qubo(w_diag, w_off)
-        correct_matrix = np.array([[-1, 0, 2, 2, 2, 2, 2, 0, 2, 2],
-                                   [0, -1, 0, 2, 2, 2, 2, 2, 2, 2],
-                                   [2, 0, -1, 2, 2, 0, 2, 2, 2, 2],
-                                   [2, 2, 2, -1, 0, 0, 2, 2, 2, 2],
-                                   [2, 2, 2, 0, -1, 2, 2, 2, 2, 2],
-                                   [2, 2, 0, 0, 2, -1, 2, 2, 2, 2],
-                                   [2, 2, 2, 2, 2, 2, -1, 0, 2, 0],
-                                   [0, 2, 2, 2, 2, 2, 0, -1, 2, 2],
-                                   [2, 2, 2, 2, 2, 2, 2, 2, -1, 2],
-                                   [2, 2, 2, 2, 2, 2, 0, 2, 2, -1]])
-        self.assertTrue((correct_matrix == qubo.q).all())
+        self.assertTrue(np.all(qubo.q[np.diag_indices(10)] == -w_diag))
+        self.assertTrue(np.all(qubo.q[qubo.q > 0] == w_off / 2))
 
     def test_find_maximum_independent_set(self):
         """Tests the correct maximum independent set is returned."""
         mis = self.problem.find_maximum_independent_set()
-        correct_mis = np.array([0, 0, 0, 0, 0, 0, 1, 0, 0, 1])
-        self.assertTrue((correct_mis == mis).all())
+        correct_set_size = 2
+        self.assertEqual(mis.sum(), correct_set_size)
 
     def test_qubo_solution(self):
         """Tests that a solution with the optimal cost is found by

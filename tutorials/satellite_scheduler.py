@@ -10,6 +10,7 @@ import numpy as np
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path
 from networkx.algorithms.approximation import maximum_independent_set
+from typing import Tuple, Optional
 
 from lava.utils import loihi
 
@@ -61,26 +62,49 @@ class SatelliteScheduleProblem:
 
     def __init__(
             self,
-            num_satellites = 6,
-            view_height = 0.25,
-            view_coords = 'linspace',
-            num_requests = 48,
-            turn_rate = 2,
-            qubo_weights = (1, 8),
-            solution_criteria = 0.99,
+            num_satellites : int = 6,
+            view_height : float = 0.25,
+            view_coords : Optional[np.ndarray] = None,
+            num_requests : int = 48,
+            turn_rate : float = 2,
+            qubo_weights : Tuple = (1, 8),
+            solution_criteria : float = 0.99,
     ):
+        """ Create a SatelliteScheduleProblem.
+        Parameters
+        ----------
+        num_satellites : int, default = 6
+            The number of satellites to generate schedules for.
+        view_height : float, default = 0.25
+            The range from minimum to maximum viewable angle for each satellite.
+        view_coords : Optional[np.ndarray], default = None
+            The view coordinates (i.e. minimum viewable angle) for each satellite
+            in a numpy array. If None, view coordinates will be evenly distributed
+            across the viewable range.
+        num_requests : int, default = 48
+            The number of requests to generate.
+        turn_rate : float, default = 2
+            How quickly each satellite may reorient its view angle.
+        qubo_weights : Tuple, default = (1, 8)
+            The QUBO weight matrix parameters for diagonal and off-diagonal weights.
+        solution_criteria : float, default = 0.99
+            The target for a successful solution. The solver will stop looking for
+            a better schedule if the specified fraction of requests are satisfied.
+        """
         super().__init__()
         self.num_satellites = num_satellites
         self.view_height = view_height
-        if view_coords == 'linspace':
-            self.view_coords = np.linspace(-0.1, 1.1 - view_height, num_satellites)
+        if view_coords is None:
+            self.view_coords = np.linspace(0 - view_height / 2,
+                                           1 - view_height / 2,
+                                           num_satellites)
         else:
             self.view_coords = view_coords
         self.num_requests = num_requests
         self.turn_rate = turn_rate
         self.qubo_weights = qubo_weights
         if type(solution_criteria) is float and 0.0 < solution_criteria <= 1.0:
-            self.target_cost = int(-solution_criteria * num_requests)
+            self.target_cost = int(-solution_criteria * num_requests * qubo_weights[0])
         elif type(solution_criteria) is int and solution_criteria < 0:
             self.target_cost = solution_criteria
         self.random_seed = None
@@ -148,6 +172,7 @@ class SatelliteScheduleProblem:
         solution = maximum_independent_set(self.graph)
         self.netx_solution = np.array([row for row in solution])
         self.netx_solution = self.netx_solution[np.argsort(self.netx_solution[:,0])]
+        return self.netx_solution
     
     def set_qubo_hyperparameters(self, t=8, rmin=64, rmax=127):
         """ Set the hyperparameters to use for the QUBO solver. """
@@ -176,6 +201,7 @@ class SatelliteScheduleProblem:
         )
         qubo_state = self.solver_report.best_state
         self.lava_solution = np.array(self.graph.nodes)[np.where(qubo_state)[0]]
+        return self.lava_solution
 
     def plot_problem(self):
         """ Plot the problem state using pyplot. """
@@ -228,7 +254,7 @@ class SatelliteScheduleProblem:
         plt.yticks([])
         if self.solver_report.cost_timeseries is not None:
             plt.subplot(233)
-            plt.plot(self.solver_report.cost_timeseries.T, lw=0.75)
+            plt.plot(self.solver_report.cost_timeseries, lw=0.75)
             plt.title(f'QUBO solution cost is {self.solver_report.best_cost}')
             plt.subplot(236)
         else:
@@ -244,16 +270,3 @@ class SatelliteScheduleProblem:
         plt.title(f'Satellite turn rates')
         plt.tight_layout()
         plt.show()
-
-
-if __name__ == "__main__":
-    schedule = SatelliteScheduleProblem(
-        num_satellites=10,
-        num_requests=100
-    )
-    schedule.generate(42)
-    schedule.plot_problem()
-    schedule.solve_with_netx()
-    schedule.set_qubo_hyperparameters()
-    schedule.solve_with_lava_qubo()
-    schedule.plot_solutions()

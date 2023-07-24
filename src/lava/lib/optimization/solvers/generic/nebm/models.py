@@ -59,7 +59,9 @@ class NEBMPyModel(PyLoihiProcessModel):
     def _generate_wta_spikes(self, spk_hist_buffer):
         self.state += self.a_in_data
         wta_spk_idx_prev = (spk_hist_buffer == 1)
-        prob = boltzmann(self.state, self.temperature[0])
+        # HACK: Need to enable temperature < 1, because temperature = 1 is
+        # already too hot for small QUBOs.
+        prob = boltzmann(self.state, self.temperature[0] / 4.0)
         rand = np.random.rand(*prob.shape)
         wta_spk_idx = rand < prob
         refractory = self.refract_counter > 0

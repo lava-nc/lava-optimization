@@ -55,7 +55,7 @@ class TestPyNEBM(unittest.TestCase):
         report = solve_nebm(q, temp=1, target=-100, time=1000)
         prob_on = report.state_timeseries.mean(axis=0)
         diff_prob_on = np.diff(prob_on)
-        self.assertTrue(np.all(diff_prob_on < 0))
+        self.assertTrue(np.all(diff_prob_on <= 0))
 
     def test_refract_oscillatory(self):
         # Check that the model oscillates with no tie-breaking

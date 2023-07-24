@@ -251,6 +251,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         if neuron_model == "nebm":
             temperature = proc.hyperparameters.get("temperature", 1)
             refract = proc.hyperparameters.get("refract", 0)
+            refract_counter = proc.hyperparameters.get("refract_counter", 0)
             init_value = proc.hyperparameters.get(
                 "init_value", np.zeros(shape, dtype=int)
             )
@@ -258,15 +259,14 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                 "init_state", np.zeros(shape, dtype=int)
             )
 
-            self.s_bit = NEBMAbstract(
-                temperature=temperature,
-                refract=refract,
-                init_state=init_state,
-                shape=shape,
-                cost_diagonal=diagonal,
-                init_value=init_value,
-            )
-        elif neuron_model == "scif":
+            self.s_bit = NEBMAbstract(temperature=temperature,
+                                      refract=refract,
+                                      refract_counter=refract_counter,
+                                      init_state=init_state,
+                                      shape=shape,
+                                      cost_diagonal=diagonal,
+                                      init_value=init_value)
+        elif neuron_model == 'scif':
             noise_amplitude = proc.hyperparameters.get("noise_amplitude", 1)
             noise_precision = proc.hyperparameters.get("noise_precision", 5)
             init_value = proc.hyperparameters.get(
@@ -424,40 +424,35 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
 @implements(proc=NEBMAbstract, protocol=LoihiProtocol)
 @requires(Loihi2NeuroCore)
 class NEBMAbstractModel(AbstractSubProcessModel):
-    """Model for the StochasticIntegrateAndFire process.
-
-    The process is just a wrapper over the Boltzmann process.
-    # Todo deprecate in favour of Boltzmann.
+    """
+    ProcessModel for an NEBM process.
     """
 
     def __init__(self, proc):
         shape = proc.proc_params.get("shape", (1,))
         temperature = proc.proc_params.get("temperature", (1,))
         refract = proc.proc_params.get("refract", (1,))
+        refract_counter = proc.proc_params.get("refract_counter", (0,))
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))
-        self.scif = NEBM(
-            shape=shape,
-            temperature=temperature,
-            refract=refract,
-            init_value=init_value,
-            init_state=init_state,
-        )
-        proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
-        self.scif.s_wta_out.connect(proc.out_ports.messages)
-        self.scif.s_sig_out.connect(proc.out_ports.local_cost)
-
-        proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
-        proc.vars.state.alias(self.scif.vars.state)
+        self.nebm = NEBM(shape=shape,
+                         temperature=temperature,
+                         refract=refract,
+                         refract_counter=refract_counter,
+                         init_value=init_value,
+                         init_state=init_state)
+        proc.in_ports.added_input.connect(self.nebm.in_ports.a_in)
+        self.nebm.s_wta_out.connect(proc.out_ports.messages)
+        self.nebm.s_sig_out.connect(proc.out_ports.local_cost)
+        proc.vars.prev_assignment.alias(self.nebm.vars.spk_hist)
+        proc.vars.state.alias(self.nebm.vars.state)
 
 
 @implements(proc=NEBMSimulatedAnnealingAbstract, protocol=LoihiProtocol)
 @requires(Loihi2NeuroCore)
 class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
-    """Model for the StochasticIntegrateAndFire process.
-
-    The process is just a wrapper over the Boltzmann process.
-    # Todo deprecate in favour of Boltzmann.
+    """
+    ProcessModel for an NEBM process with Simulated Annealing.
     """
 
     def __init__(self, proc):
@@ -474,7 +469,7 @@ class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))
         neuron_model = proc.proc_params.get("neuron_model")
-        self.scif = NEBMSimulatedAnnealing(
+        self.nebm = NEBMSimulatedAnnealing(
             shape=shape,
             max_temperature=max_temperature,
             min_temperature=min_temperature,
@@ -487,10 +482,9 @@ class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
             init_state=init_state,
             neuron_model=neuron_model,
         )
+        proc.in_ports.added_input.connect(self.nebm.in_ports.a_in)
+        self.nebm.s_wta_out.connect(proc.out_ports.messages)
+        self.nebm.s_sig_out.connect(proc.out_ports.local_cost)
 
-        proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
-        self.scif.s_wta_out.connect(proc.out_ports.messages)
-        self.scif.s_sig_out.connect(proc.out_ports.local_cost)
-
-        proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
-        proc.vars.state.alias(self.scif.vars.state)
+        proc.vars.prev_assignment.alias(self.nebm.vars.spk_hist)
+        proc.vars.state.alias(self.nebm.vars.state)

@@ -113,6 +113,9 @@ venv.bak/
 .spyderproject
 .spyproject
 
+# VSCode settings
+.vscode/*
+
 # Rope project settings
 .ropeproject
 
@@ -126,3 +129,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Flakeheaven Cache
+.flakeheaven_cache/*

@@ -1,8 +1,12 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
+
 import typing as ty
+import numpy as np
+
 from dataclasses import dataclass
+
 from lava.lib.optimization.solvers.generic.qp.models import (
     PyPIneurPIPGeqModel,
     PyProjGradPIPGeqModel,
@@ -12,7 +16,6 @@ from lava.lib.optimization.solvers.generic.qp.processes import (
     ProportionalIntegralNeuronsPIPGeq,
 )
 
-import numpy as np
 from lava.magma.core.resources import (
     CPU,
     AbstractComputeResource,
@@ -423,11 +426,11 @@ class OptimizationSolver:
     def _get_run_config(
         self, backend: BACKENDS, probes=None, num_in_ports: int = None
     ):
+        from lava.lib.optimization.solvers.generic.read_gate.process import (
+            ReadGate
+        )
         from lava.lib.optimization.solvers.generic.read_gate.models import (
             get_read_gate_model_class,
-        )
-        from lava.lib.optimization.solvers.generic.read_gate.process import (
-            ReadGate,
         )
 
         if backend in CPUS:
@@ -443,9 +446,8 @@ class OptimizationSolver:
                 ProportionalIntegralNeuronsPIPGeq: PyPIneurPIPGeqModel,
                 ProjectedGradientNeuronsPIPGeq: PyProjGradPIPGeqModel,
             }
-            return Loihi1SimCfg(
-                exception_proc_model_map=pdict, select_sub_proc_model=True
-            )
+            return Loihi1SimCfg(exception_proc_model_map=pdict,
+                                select_sub_proc_model=True)
         elif backend in NEUROCORES:
             pdict = {
                 self.solver_process: self.solver_model,

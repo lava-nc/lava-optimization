@@ -112,10 +112,8 @@ class TestMISProblem(unittest.TestCase):
             target_cost=optimal_cost,
             backend="CPU",
             hyperparameters={
-                "steps_to_fire": 11,
-                "noise_amplitude": 1,
-                "noise_precision": 4,
-                "step_size": 11,
+                "temperature": 1,
+                "refract": np.random.randint(2, 8, 10)
             }
         )
 

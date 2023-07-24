@@ -119,7 +119,7 @@ class TestSolverTuner(unittest.TestCase):
             else:
                 return -float("inf")
 
-        fitness_target = -10
+        fitness_target = -16
 
         hyperparams, success = self.solver_tuner.tune(
             solver=solver,

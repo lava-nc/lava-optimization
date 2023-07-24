@@ -344,6 +344,7 @@ class NEBMAbstract(AbstractProcess):
         *,
         temperature: npt.ArrayLike,
         refract: ty.Optional[ty.Union[int, npty.NDArray]],
+        refract_counter: ty.Optional[ty.Union[int, npty.NDArray]],
         shape: ty.Tuple[int, ...] = (1,),
         init_state: npt.ArrayLike = 0,
         input_duration: npt.ArrayLike = 6,
@@ -374,9 +375,11 @@ class NEBMAbstract(AbstractProcess):
             at a given timestep). The total input value will be truncated at
             this value if adding current and preserved inputs results in a lower
             value.
-        refractory_period: npt.ArrayLike, optional
+        refract: npt.ArrayLike, optional
             Number of timesteps to wait after firing and reset before resuming
             updating.
+        refract_counter: npt.ArrayLike, optional
+            Number of timesteps to initially suppress a unit firing.
         cost_diagonal: npt.ArrayLike, optional
             The linear coefficients on the cost function of the optimization
             problem where this system will be used.
@@ -392,6 +395,7 @@ class NEBMAbstract(AbstractProcess):
             init_state=init_state,
             temperature=temperature,
             refract=refract,
+            refract_counter=refract_counter,
             input_duration=input_duration,
             min_state=min_state,
             min_integration=min_integration,
@@ -407,6 +411,7 @@ class NEBMAbstract(AbstractProcess):
         self.integration = Var(shape=shape, init=0)
         self.temperature = Var(shape=shape, init=temperature)
         self.refract = Var(shape=shape, init=refract)
+        self.refract_counter = Var(shape=shape, init=refract_counter)
         self.state = Var(shape=shape, init=init_state)
         self.input_duration = Var(shape=shape, init=input_duration)
         self.min_state = Var(shape=shape, init=min_state)

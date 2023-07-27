@@ -3,9 +3,8 @@
 # See: https://spdx.org/licenses/
 
 
-import numpy as np
-import numpy.typing as npt
 import networkx as netx
+import numpy as np
 
 from lava.lib.optimization.problems.problems import QUBO
 
@@ -65,7 +64,7 @@ class MISProblem:
             n=num_vertices,
             m=int(0.5 * density * num_vertices**2),
             directed=False,
-            seed=seed
+            seed=seed,
         )
         adjacency = np.array(netx.adjacency_matrix(graph).toarray())
         return cls(adjacency_matrix=adjacency)
@@ -76,7 +75,7 @@ class MISProblem:
         num_vertices: int,
         num_neighbors: int,
         connection_prob: float,
-        seed: int = 0
+        seed: int = 0,
     ) -> "MISProblem":
         """
         Instantiate a new MIS problem, based on a random Watts-Strogatz graph

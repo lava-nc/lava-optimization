@@ -170,7 +170,8 @@ class MISProblem:
         """
         if w_off <= 2 * w_diag:
             raise ValueError(
-                "Off-diagonal weights must be > 2 x diagonal weights."
+                "Off-diagonal weights must be > 2 x diagonal weights to ensure"
+                "a correct formulatin of the problem."
             )
         q = -w_diag * np.eye(self.num_vertices) + w_off / 2 * self._adjacency
         return q.astype(int)

@@ -3,10 +3,12 @@
 # See: https://spdx.org/licenses/
 import numpy as np
 from lava.lib.optimization.solvers.generic.dataclasses import (
+    ConstraintEnforcing,
     VariablesImplementation,
     CostMinimizer,
 )
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
+    ContinuousConstraintsProcess,
     DiscreteVariablesProcess,
     ContinuousVariablesProcess,
     CostConvergenceChecker,
@@ -14,11 +16,31 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
 from lava.lib.optimization.solvers.generic.solution_finder.process import (
     SolutionFinder,
 )
+from lava.magma.core.resources import (
+    CPU,
+    Loihi2NeuroCore,
+    NeuroCore,
+)
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
-from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.dense.process import Dense
+from lava.proc.sparse.process import Sparse
+from lava.lib.optimization.utils.datatype_converter import convert_to_fp
+from scipy.sparse import csr_matrix
+
+CPUS = [CPU, "CPU"]
+NEUROCORES = [Loihi2NeuroCore, NeuroCore, "Loihi2"]
+BACKEND_MSG = f""" was requested as backend. However,
+the solver currently supports only Loihi 2 and CPU backends.
+These can be specified by calling solve with any of the following:
+backend = "CPU"
+backend = "Loihi2"
+backend = CPU
+backend = Loihi2NeuroCore
+backend = NeuroCoreS
+The explicit resource classes can be imported from
+lava.magma.core.resources"""
 
 
 @implements(proc=SolutionFinder, protocol=LoihiProtocol)
@@ -30,10 +52,12 @@ class SolutionFinderModel(AbstractSubProcessModel):
         hyperparameters = proc.proc_params.get("hyperparameters")
         discrete_var_shape = proc.proc_params.get("discrete_var_shape")
         continuous_var_shape = proc.proc_params.get("continuous_var_shape")
+        problem = proc.proc_params.get("problem")
+        backend = proc.proc_params.get("backend")
 
         # Subprocesses
         self.variables = VariablesImplementation()
-        if discrete_var_shape:
+        if discrete_var_shape is not None:
             hyperparameters.update(
                 dict(
                     init_state=self._get_init_state(
@@ -47,49 +71,109 @@ class SolutionFinderModel(AbstractSubProcessModel):
                 hyperparameters=hyperparameters,
             )
 
-        if continuous_var_shape:
-            self.variables.continuous = ContinuousVariablesProcess(
-                shape=continuous_var_shape
-            )
-
-        self.cost_minimizer = None
-        self.cost_convergence_check = None
-        if cost_coefficients is not None:
-            self.cost_minimizer = CostMinimizer(
-                Dense(
-                    # todo just using the last coefficient for now
-                    weights=cost_coefficients[2].init,
-                    num_message_bits=24,
+            self.cost_minimizer = None
+            self.cost_convergence_check = None
+            if cost_coefficients is not None:
+                weights = cost_coefficients[2].init * np.logical_not(
+                    np.eye(*cost_coefficients[2].init.shape)
                 )
+                self.cost_minimizer = CostMinimizer(
+                    Dense(
+                        weights=weights,
+                        num_message_bits=24,
+                    )
+                )
+                if 1 in cost_coefficients.keys():
+                    q_diag = (
+                        cost_coefficients[1].init
+                        + cost_coefficients[2].init.diagonal()
+                    )
+                else:
+                    q_diag = cost_coefficients[2].init.diagonal()
+                self.variables.importances = q_diag
+                self.cost_convergence_check = CostConvergenceChecker(
+                    shape=discrete_var_shape
+                )
+
+                # Connect processes
+                self.cost_minimizer.gradient_out.connect(
+                    self.variables.gradient_in
+                )
+                self.variables.state_out.connect(self.cost_minimizer.state_in)
+                self.variables.local_cost.connect(
+                    self.cost_convergence_check.cost_components
+                )
+            proc.vars.variables_assignment.alias(
+                self.variables.variables_assignment
             )
-            self.variables.importances = cost_coefficients[1].init
-            self.cost_convergence_check = CostConvergenceChecker(
-                shape=discrete_var_shape
+            # Note: Total min cost=cost_min_first_byte<<24+cost_min_last_bytes
+            proc.vars.cost_last_bytes.alias(
+                self.cost_convergence_check.cost_last_bytes
+            )
+            proc.vars.cost_first_byte.alias(
+                self.cost_convergence_check.cost_first_byte
+            )
+            self.cost_convergence_check.cost_out_last_bytes.connect(
+                proc.out_ports.cost_out_last_bytes
+            )
+            self.cost_convergence_check.cost_out_first_byte.connect(
+                proc.out_ports.cost_out_first_byte
             )
 
-        # Connect processes
-        self.cost_minimizer.gradient_out.connect(self.variables.gradient_in)
-        self.variables.state_out.connect(self.cost_minimizer.state_in)
-        self.variables.local_cost.connect(
-            self.cost_convergence_check.cost_components
-        )
+        elif continuous_var_shape:
+            self.constraints = ConstraintEnforcing()
+            self.variables.continuous = ContinuousVariablesProcess(
+                shape=continuous_var_shape,
+                hyperparameters=hyperparameters,
+                backend=backend,
+                problem=problem,
+            )
 
-        proc.vars.variables_assignment.alias(
-            self.variables.variables_assignment
-        )
-        # Note: Total min cost = cost_min_first_byte << 24 + cost_min_last_bytes
-        proc.vars.cost_last_bytes.alias(
-            self.cost_convergence_check.cost_last_bytes
-        )
-        proc.vars.cost_first_byte.alias(
-            self.cost_convergence_check.cost_first_byte
-        )
-        self.cost_convergence_check.cost_out_last_bytes.connect(
-            proc.out_ports.cost_out_last_bytes
-        )
-        self.cost_convergence_check.cost_out_first_byte.connect(
-            proc.out_ports.cost_out_first_byte
-        )
+            self.constraints.continuous = ContinuousConstraintsProcess(
+                shape_in=continuous_var_shape,
+                shape_out=continuous_var_shape,
+                backend=backend,
+                hyperparameters=hyperparameters,
+                problem=problem,
+            )
+            self.cost_minimizer = None
+            Q_pre = problem.hessian
+            if cost_coefficients is not None:
+                if backend in CPUS:
+                    self.cost_minimizer = CostMinimizer(
+                        Sparse(
+                            weights=csr_matrix(Q_pre),
+                            num_message_bits=64,
+                        )
+                    )
+                elif backend in NEUROCORES:
+                    A_pre = problem.constraint_hyperplanes_eq
+                    # weights need to converted to fixed_pt first
+                    Q_pre_fp_man, Q_pre_fp_exp = convert_to_fp(Q_pre, 8)
+                    _, A_pre_fp_exp = convert_to_fp(A_pre, 8)
+                    Q_pre_fp_man = (Q_pre_fp_man // 2) * 2
+                    correction_exp = min(A_pre_fp_exp, Q_pre_fp_exp)
+                    Q_exp_new = -correction_exp + Q_pre_fp_exp
+                    self.cost_minimizer = CostMinimizer(
+                        Sparse(
+                            weights=csr_matrix(Q_pre_fp_man),
+                            weight_exp=Q_exp_new,
+                            num_message_bits=24,
+                        )
+                    )
+                else:
+                    raise NotImplementedError(str(backend) + BACKEND_MSG)
+            # Connect processes
+            self.cost_minimizer.gradient_out.connect(
+                self.variables.gradient_in_cont
+            )
+            self.variables.state_out_cont.connect(self.cost_minimizer.state_in)
+            self.variables.state_out_cont.connect(self.constraints.state_in)
+            self.constraints.state_out.connect(self.variables.gradient_in_cont)
+
+            proc.vars.variables_assignment.alias(
+                self.variables.variables_assignment_cont
+            )
 
     def _get_init_state(
         self, hyperparameters, cost_coefficients, discrete_var_shape
@@ -97,6 +181,15 @@ class SolutionFinderModel(AbstractSubProcessModel):
         init_value = hyperparameters.get(
             "init_value", np.zeros(discrete_var_shape, dtype=int)
         )
-        q_off_diag = cost_coefficients[2].init
-        q_diag = cost_coefficients[1].init
+        q_off_diag = cost_coefficients[2].init * np.logical_not(
+            np.eye(*cost_coefficients[2].init.shape)
+        )
+        if 1 in cost_coefficients.keys():
+            q_diag = (
+                cost_coefficients[1].init
+                + cost_coefficients[2].init.diagonal()
+            )
+        else:
+            q_diag = cost_coefficients[2].init.diagonal()
+
         return q_off_diag @ init_value + q_diag

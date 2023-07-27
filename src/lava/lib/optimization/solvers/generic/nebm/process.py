@@ -17,9 +17,11 @@ class NEBM(AbstractProcess):
         *,
         shape: ty.Tuple[int, ...],
         temperature: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
-        refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
+        refract: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
+        refract_counter: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
         init_value=0,
         init_state=0,
+        neuron_model: str = 'nebm',
     ):
         """
         NEBM Process.
@@ -49,10 +51,8 @@ class NEBM(AbstractProcess):
         )
 
         self.temperature = Var(shape=shape, init=int(temperature))
-
         self.refract = Var(shape=shape, init=refract)
-
-        self.refract_counter = Var(shape=shape, init=refract)
+        self.refract_counter = Var(shape=shape, init=refract_counter)
 
         # Initial state determined in DiscreteVariables
         self.state = Var(shape=shape, init=init_state.astype(int))
@@ -81,6 +81,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         init_value=0,
         init_state=None,
         neuron_model: str,
+        annealing_schedule: str = 'linear',
     ):
         """
         SA Process.
@@ -109,8 +110,9 @@ class NEBMSimulatedAnnealing(AbstractProcess):
             steps_per_temperature=steps_per_temperature,
             refract=refract,
             refract_scaling=refract_scaling,
-            neuron_model=neuron_model,
             exp_temperature=exp_temperature,
+            neuron_model=neuron_model,
+            annealing_schedule=annealing_schedule,
         )
 
         self.a_in = InPort(shape=shape)

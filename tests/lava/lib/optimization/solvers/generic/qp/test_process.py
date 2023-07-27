@@ -6,7 +6,7 @@
 import unittest
 import numpy as np
 
-from lava.lib.optimization.solvers.qp.processes import (
+from lava.lib.optimization.solvers.generic.qp.processes import (
     ConstraintCheck,
     ConstraintNeurons,
     QPDense,
@@ -160,10 +160,8 @@ class TestProcessesFloatingPoint(unittest.TestCase):
             process.vars.alpha_decay_schedule.get() == alpha_d, True
         )
         # self.assertEqual(process.decay_counter.get() == 0, True)
-        self.assertEqual(np.all(process.a_in_qc.shape == (p.shape[0],)), True)
-        self.assertEqual(np.all(process.a_in_cn.shape == (p.shape[0],)), True)
-        self.assertEqual(np.all(process.s_out_qc.shape == (p.shape[0],)), True)
-        self.assertEqual(np.all(process.s_out_cd.shape == (p.shape[0],)), True)
+        self.assertEqual(np.all(process.a_in.shape == (p.shape[0],)), True)
+        self.assertEqual(np.all(process.s_out.shape == (p.shape[0],)), True)
 
     def test_process_proportional_integral_pipgeq_neurons(self):
         init_sol = np.array([[2, 4, 6, 4, 1]]).T

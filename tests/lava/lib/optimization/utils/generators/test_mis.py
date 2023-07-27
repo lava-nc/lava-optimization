@@ -38,8 +38,26 @@ class TestMISProblem(unittest.TestCase):
         """Tests that the graph contains the correct number of nodes and
         edges."""
         graph = self.problem.get_graph()
-        self.assertEqual(graph.number_of_nodes(), self.num_vertices)
-        self.assertEqual(2 * graph.number_of_edges(), self.num_edges)
+        number_of_nodes = 10
+        possible_connections = (number_of_nodes ** 2 - number_of_nodes) / 2
+        self.assertEqual(graph.number_of_nodes(), number_of_nodes)
+        self.assertAlmostEqual(graph.number_of_edges() / possible_connections,
+                               self.connection_prob, delta=0.1)
+
+    def test_get_graph_matrix(self):
+        """Tests the correct adjacency matrix is returned."""
+        matrix = self.problem.get_graph_matrix()
+        correct_matrix = np.array([[0, 0, 1, 1, 1, 1, 1, 0, 1, 1],
+                                   [0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
+                                   [1, 0, 0, 1, 1, 0, 1, 1, 1, 1],
+                                   [1, 1, 1, 0, 0, 0, 1, 1, 1, 1],
+                                   [1, 1, 1, 0, 0, 1, 1, 1, 1, 1],
+                                   [1, 1, 0, 0, 1, 0, 1, 1, 1, 1],
+                                   [1, 1, 1, 1, 1, 1, 0, 0, 1, 0],
+                                   [0, 1, 1, 1, 1, 1, 0, 0, 1, 1],
+                                   [1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+                                   [1, 1, 1, 1, 1, 1, 0, 1, 1, 0]])
+        self.assertTrue((correct_matrix == matrix).all())
 
     def test_get_complement_graph(self):
         """Tests that the complement graph contains the correct number of
@@ -64,17 +82,34 @@ class TestMISProblem(unittest.TestCase):
         w_diag = 1
         w_off = 4
         qubo = self.problem.get_as_qubo(w_diag, w_off)
-        correct_matrix = np.array([[-1, 2, 2, 0],
-                                   [2, -1, 0, 0],
-                                   [2, 0, -1, 2],
-                                   [0, 0, 2, -1]])
-        self.assertTrue((correct_matrix == qubo.q).all())
+        self.assertTrue(np.all(qubo.q[np.diag_indices(10)] == -w_diag))
+        self.assertTrue(np.all(qubo.q[qubo.q > 0] == w_off / 2))
 
     def test_find_maximum_independent_set(self):
         """Tests the correct maximum independent set is returned."""
         mis = self.problem.find_maximum_independent_set()
-        correct_mis = np.array([0, 1, 1, 0])
-        self.assertTrue((correct_mis == mis).all())
+        correct_set_size = 2
+        self.assertEqual(mis.sum(), correct_set_size)
+
+    def test_qubo_solution(self):
+        """Tests that a solution with the optimal cost is found by
+        OptimizationSolver with the QUBO formulation."""
+        optimal_cost = -2
+        qubo = self.problem.get_as_qubo(w_diag=1, w_off=4)
+
+        config = SolverConfig(
+            timeout=1000,
+            target_cost=optimal_cost,
+            backend="CPU",
+            hyperparameters={
+                "temperature": 1,
+                "refract": np.random.randint(2, 8, 10)
+            }
+        )
+
+        solver = OptimizationSolver(qubo)
+        report = solver.solve(config=config)
+        self.assertEqual(qubo.evaluate_cost(report.best_state), optimal_cost)
 
 
 if __name__ == "__main__":

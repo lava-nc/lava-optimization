@@ -247,7 +247,7 @@ class VRPSolver:
                         node_idxs[0] >= self.problem.num_vehicles]
                     nodes_to_pass = np.array(node_list_for_clustering)[node_idxs, :]
                     nodes_to_pass = [tuple(node) for node in nodes_to_pass.tolist()]
-                    q_vrp_obj = QMatrixVRP(
+                    q_tsp_obj = QMatrixVRP(
                         nodes_to_pass,
                         num_vehicles=1,
                         problem_type=ProblemType.TSP,
@@ -260,12 +260,12 @@ class VRPSolver:
                         fixed_pt_range=(-128, 127),
                         profile_mat_gen=scfg.profile_q_mat_gen_tsp
                     )
-                    Q_VRP = q_vrp_obj.matrix.astype(int)
+                    Q_TSP = q_tsp_obj.matrix.astype(int)
                     if scfg.profile_q_mat_gen_tsp:
-                        self.q_gen_times_tsp.append(q_vrp_obj.time_tsp_mat)
-                        self.tsp_q_shapes.append(Q_VRP.shape)
+                        self.q_gen_times_tsp.append(q_tsp_obj.time_tsp_mat)
+                        self.tsp_q_shapes.append(Q_TSP.shape)
                     if not scfg.only_gen_q_mats:
-                        tsp = QUBO(q=Q_VRP)
+                        tsp = QUBO(q=Q_TSP)
                         tsp_solver = OptimizationSolver(problem=tsp)
                         scfg.hyperparameters.update({
                             'refract': np.random.randint(0, int(np.sqrt(matsize)),

@@ -20,14 +20,19 @@ class TestSolutionReader(unittest.TestCase):
     def setUp(self) -> None:
         # Create processes.
         spiker = Spiker(shape=(4,), period=3, payload=7)
-        integrator = Spiker(shape=(1,), period=7, payload=-4)
+        # Together, these processes spike a cost of (-1<<24)+16777212 = -4
+        integrator_last_bytes = Spiker(shape=(1,), period=7, payload=16777212)
+        integrator_first_byte = Spiker(shape=(1,), period=7, payload=-1)
 
         self.solution_reader = SolutionReader(
             var_shape=(4,), target_cost=0, min_cost=2
         )
 
         # Connect processes.
-        integrator.s_out.connect(self.solution_reader.read_gate_in_port_0)
+        integrator_last_bytes.s_out.connect(
+            self.solution_reader.read_gate_in_port_last_bytes_0)
+        integrator_first_byte.s_out.connect(
+            self.solution_reader.read_gate_in_port_first_byte_0)
         self.solution_reader.ref_port.connect_var(spiker.payload)
 
         # Execution configurations.

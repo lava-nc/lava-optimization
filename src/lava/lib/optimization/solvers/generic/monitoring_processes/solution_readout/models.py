@@ -59,8 +59,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 
     @staticmethod
     def decode_cost(raw_cost) -> np.ndarray:
-        # The following casts cost as a signed 24-bit value (8 = 32 - 24)
-        return (np.array([raw_cost]).astype(np.int32) << 8) >> 8
+        return np.array([raw_cost]).astype(np.int32)
 
     @staticmethod
     def decode_solution(raw_solution) -> np.ndarray:
@@ -69,7 +68,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
         return raw_solution.astype(np.int8) >> 4
 
     def _printout_new_solution(self, cost, min_cost_id, timestep):
-        print(
+        self.log.info(
             f"Host: better solution found by network {min_cost_id} at "
             f"step {abs(timestep) - 2} "
             f"with cost {cost[0]}: {self.solution}"
@@ -80,7 +79,8 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
                 self.min_cost[0] is not None
                 and self.min_cost[0] <= self.target_cost
         ):
-            print(f"Host: network reached target cost {self.target_cost}.")
+            self.log.info(
+                f"Host: network reached target cost {self.target_cost}.")
 
     def _stop_if_requested(self, timestep, min_cost_id):
         if (timestep > 0 or timestep == -1) and min_cost_id != -1:

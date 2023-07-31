@@ -13,10 +13,13 @@
 # no express or implied warranties, other than those that are
 # expressly stated in the License.
 import enum
+import logging
 import time
+import copy
 from pprint import pprint
 
 import numpy as np
+import numpy.typing as npty
 from scipy.spatial import distance
 
 
@@ -44,7 +47,7 @@ class QMatrixVRP:
             lamda_cnstrt=1,
             fixed_pt=False,
             fixed_pt_range=(0, 127),
-            max_dist_cutoff_fraction=1.0,
+            clust_dist_sparse_params=None,
             profile_mat_gen=False
     ) -> None:
         """The Constructor of the class generates Q matrices depending on the
@@ -91,22 +94,42 @@ class QMatrixVRP:
             value of  min and max values that the Q matrix can have if
             `fixed_pt =True`.
 
-            max_dist_cutoff_fraction (float, optional) : Specifies the
-            fraction of maximum distance in the distance matrix at which
-            distances are cut-off. Helps in sparsifying the distance matrix.
-            Default is 1.0, which means no cut-off.
+            clust_dist_sparse_params (dict, optional) : Dictionary of
+            parameters for sparsification of the distance matrix used in
+            clustering of the waypoint and the vehicle positions. The
+            parameters are:
+                - do_sparse (bool) : a toggle to enable/disable sparsification
+                (default is False, i.e., disable sparsification)
+                - algo (string) : the algorithm used for sparsification (
+                default is "cutoff", which imposes a maximum cutoff distance
+                on the distance matrix and subtracts it from the matrix.
+                Another option is "edge-prune", which prunes edges longer
+                than a cutoff from the connectivity graph of the entire problem
+                - max_dist_cutoff_fraction (float) : a fraction between 0 and 1,
+                which multiplies the max of the distance matrix, and the
+                result is used as the cutoff in both algorithms.
 
             profile_mat_gen (bool, optional): Specifies if Q matrix
             generation needs to be timed using python's time.time()
         """
+        if not clust_dist_sparse_params:
+            self.clust_dist_sparse_params = {"do_sparse": False,
+                                             "algo": "cutoff",
+                                             "max_dist_cutoff_fraction": 1.0}
+        else:
+            self.clust_dist_sparse_params = \
+                copy.deepcopy(clust_dist_sparse_params)
         self.fixed_pt = fixed_pt
         self.min_fixed_pt_mant = fixed_pt_range[0]
         self.max_fixed_pt_mant = fixed_pt_range[1]
         self.problem_type = problem_type
         self.num_vehicles = num_vehicles
-        self.max_cutoff_frac = max_dist_cutoff_fraction
+        self.max_cutoff_frac = self.clust_dist_sparse_params[
+            "max_dist_cutoff_fraction"]
         self.dist_sparsity = 0.
         self.dist_proxy_sparsity = 0.
+        self.time_clust_mat = 0.
+        self.time_tsp_mat = 0.
 
         if self.problem_type == ProblemType.RANDOM:
             self.matrix = np.random.randint(-128, 127, size=(
@@ -117,17 +140,17 @@ class QMatrixVRP:
                 self._gen_clustering_Q_matrix(input_nodes, lamda_dist,
                                               lamda_wypts, lamda_vhcles)
             if profile_mat_gen:
-                time_taken_clustering = time.time() - start_time
-                pprint(f"Clustering Q matrix generated in"
-                       f" {time_taken_clustering} s")
+                self.time_clust_mat = time.time() - start_time
+                # pprint(f"Clustering Q matrix generated in"
+                #        f" {self.time_clust_mat} s")
         elif self.problem_type == ProblemType.TSP:
             start_time = time.time()
             self.matrix = self._gen_tsp_Q_matrix(
                 input_nodes, lamda_dist, lamda_cnstrt
             )
             if profile_mat_gen:
-                time_taken_tsp = time.time() - start_time
-                pprint(f"TSP Q matrix generated in {time_taken_tsp} s")
+                self.time_tsp_mat = time.time() - start_time
+                # pprint(f"TSP Q matrix generated in {self.time_tsp_mat} s")
         else:
             raise ValueError(
                 "problem_type cannot be None or argument passed cannot be "
@@ -226,6 +249,58 @@ class QMatrixVRP:
             Q = self._stochastic_rounding(Q)
         return Q
 
+    @staticmethod
+    def _compute_matrix_sparsity(mat: npty.NDArray):
+        return 1 - (np.count_nonzero(mat) / np.prod(mat.shape))
+
+    def _sparsify_dist_using_cutoff(self, dist):
+        # The following variants can be used as a proxy for Euclidean
+        # distance, which may help in sparsifying the Q matrix.
+        # Dist_proxy = np.zeros_like(Dist)
+        # inv_dist_mtrx = (1 / Dist)
+        # log_dist_mtrx = np.log(Dist)
+        # Dist_proxy[Dist <= 1] = Dist[Dist <= 1]
+        # Dist_proxy[Dist > 1] = 2 - log_dist_mtrx[Dist > 1]
+        # Dist_proxy = 100 * (1 - np.exp(-Dist/100))
+        if self.max_cutoff_frac == 1.0:
+            return dist
+        max_dist_cutoff = self.max_cutoff_frac * np.max(dist)
+        dist_proxy = dist.copy()
+        dist_proxy[dist_proxy >= max_dist_cutoff] = max_dist_cutoff
+        dist_proxy = np.around(dist_proxy - max_dist_cutoff, 2)
+        return dist_proxy
+
+    def _sparsify_dist_using_edge_pruning(self, dist):
+        if self.max_cutoff_frac == 1.0:
+            return dist
+        dist_proxy = dist.copy()
+        num_nodes = dist.shape[0]
+        max_per_row = np.max(dist_proxy, axis=1)
+        max_per_row = max_per_row.reshape((num_nodes, 1))
+        max_per_row = np.tile(max_per_row, (1, num_nodes))
+        cut_off = self.max_cutoff_frac * max_per_row
+
+        idxmat = dist_proxy >= cut_off
+        dist_proxy[idxmat] = cut_off[idxmat]
+        dist_proxy = dist_proxy - cut_off
+
+        # Zero-out distances between vehicles. Constraints will later take
+        # care of this
+        dist_proxy[0:self.num_vehicles, 0:self.num_vehicles] = np.zeros((
+            self.num_vehicles, self.num_vehicles))
+        return dist_proxy
+
+    def _sparsify_dist(self, dist):
+        if self.clust_dist_sparse_params["algo"] == "cutoff":
+            return self._sparsify_dist_using_cutoff(dist)
+        elif self.clust_dist_sparse_params["algo"] == "edge_prune":
+            return self._sparsify_dist_using_edge_pruning(dist)
+        else:
+            raise ValueError("Invalid algorithm chosen for sparsification of "
+                             "the distance matrix in Q-matrix computation for "
+                             "the clustering stage. Choose one of 'cutoff' "
+                             "and 'edge_prune'.")
+
     def _gen_clustering_Q_matrix(
             self, input_nodes, lamda_dist, lamda_wypts, lamda_vhcles
     ):
@@ -251,30 +326,18 @@ class QMatrixVRP:
             np.ndarray: Returns a 2 dimension connectivity matrix of size n*n
         """
         Dist = distance.cdist(input_nodes, input_nodes, "euclidean")
+        # Normalize the distance matrix
+        dist_sparsity = self._compute_matrix_sparsity(Dist)
+        dist_proxy_sparsity = dist_sparsity
         num_nodes = Dist.shape[0]
-        # The following variants can be used as a proxy for Euclidean
-        # distance, which may help in sparsifying the Q matrix.
-        # Dist_proxy = np.zeros_like(Dist)
-        # inv_dist_mtrx = (1 / Dist)
-        # log_dist_mtrx = np.log(Dist)
-        # Dist_proxy[Dist <= 1] = Dist[Dist <= 1]
-        # Dist_proxy[Dist > 1] = 2 - log_dist_mtrx[Dist > 1]
-        # Dist_proxy = 100 * (1 - np.exp(-Dist/100))
-        max_dist_cutoff = self.max_cutoff_frac * np.max(Dist)
-        Dist_proxy = Dist.copy()
-        Dist_proxy[Dist_proxy >= max_dist_cutoff] = max_dist_cutoff
-        Dist_proxy = np.around(Dist_proxy - max_dist_cutoff, 2)
-        dist_sparsity = 1 - (np.count_nonzero(Dist) / np.prod(Dist.shape))
-        dist_proxy_sparsity = 1 - (
-                np.count_nonzero(Dist_proxy) / np.prod(Dist_proxy.shape)
-        )
-        print(f"{dist_sparsity=}\t{dist_proxy_sparsity=}")
+        if self.clust_dist_sparse_params["do_sparse"]:
+            Dist = self._sparsify_dist(Dist)
+            dist_proxy_sparsity = self._compute_matrix_sparsity(Dist)
 
         # TODO: Introduce cut-off distancing later to sparsify distance
         #  matrix later using one of the proxies above.
         # Distance matrix for the encoding
-        dist_mtrx = np.kron(np.eye(self.num_vehicles), Dist_proxy)
-
+        dist_mtrx = np.kron(np.eye(self.num_vehicles), Dist)
         # Vehicles can only belong to one cluster
         # Off-diagonal elements are two, populating matrix with 2
         vhcle_mat_off_diag = 2 * np.ones(
@@ -316,10 +379,8 @@ class QMatrixVRP:
             wypt_constraint_off_diag = np.vstack(
                 (wypt_constraint_off_diag, np.roll(wypt_cnstrnt_vector,
                                                    i + 1),))
-
         cnstrnt_wypts_blck = \
             -3 * wypnt_cnstrnt_diag + 2 * wypt_constraint_off_diag
-
         # Combine all matrices to get final Q matrix
         Q = (lamda_dist * dist_mtrx
              + lamda_vhcles * cnstrnt_vhcles_blck

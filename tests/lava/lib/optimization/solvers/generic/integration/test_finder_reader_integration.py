@@ -6,8 +6,9 @@ import unittest
 
 import numpy as np
 from lava.lib.optimization.problems.problems import OptimizationProblem, QUBO
-from lava.lib.optimization.solvers.generic.read_gate.models import \
-    get_read_gate_model_class
+from lava.lib.optimization.solvers.generic.read_gate.models import (
+    get_read_gate_model_class,
+)
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.lib.optimization.solvers.generic.solution_finder.process import (
     SolutionFinder,
@@ -80,10 +81,17 @@ class OptimizationSolverModel(AbstractSubProcessModel):
             hyperparameters=hyperparameters,
             discrete_var_shape=(4,),
             continuous_var_shape=None,
+            backend="CPU",
+            problem=problem,
         )
 
         # Connect processes
-        self.finder.cost_out.connect(self.solution_reader.read_gate_in_port_0)
+        self.finder.cost_out_first_byte.connect(
+            self.solution_reader.read_gate_in_port_first_byte_0
+        )
+        self.finder.cost_out_last_bytes.connect(
+            self.solution_reader.read_gate_in_port_last_bytes_0
+        )
         self.solution_reader.ref_port.connect_var(
             self.finder.variables_assignment
         )
@@ -153,6 +161,8 @@ class TestFinderReaderIntegration(unittest.TestCase):
             },
             discrete_var_shape=(4,),
             continuous_var_shape=None,
+            backend="CPU",
+            problem=self.problem,
         )
 
         self.solution_reader = SolutionReader(
@@ -160,8 +170,11 @@ class TestFinderReaderIntegration(unittest.TestCase):
         )
 
         # Connect processes.
-        self.solution_finder.cost_out.connect(
-            self.solution_reader.read_gate_in_port_0
+        self.solution_finder.cost_out_first_byte.connect(
+            self.solution_reader.read_gate_in_port_first_byte_0
+        )
+        self.solution_finder.cost_out_last_bytes.connect(
+            self.solution_reader.read_gate_in_port_last_bytes_0
         )
         self.solution_reader.ref_port.connect_var(
             self.solution_finder.variables_assignment
@@ -183,3 +196,7 @@ class TestFinderReaderIntegration(unittest.TestCase):
     def test_run_reader(self):
         self.solution_reader.run(RunSteps(5), run_cfg=self.run_cfg)
         self.solution_reader.stop()
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -262,6 +262,8 @@ class QMatrixVRP:
         # Dist_proxy[Dist <= 1] = Dist[Dist <= 1]
         # Dist_proxy[Dist > 1] = 2 - log_dist_mtrx[Dist > 1]
         # Dist_proxy = 100 * (1 - np.exp(-Dist/100))
+        if self.max_cutoff_frac == 1.0:
+            return dist
         max_dist_cutoff = self.max_cutoff_frac * np.max(dist)
         dist_proxy = dist.copy()
         dist_proxy[dist_proxy >= max_dist_cutoff] = max_dist_cutoff
@@ -269,12 +271,28 @@ class QMatrixVRP:
         return dist_proxy
 
     def _sparsify_dist_using_edge_pruning(self, dist):
+        if self.max_cutoff_frac == 1.0:
+            return dist
         dist_proxy = dist.copy()
+        num_nodes = dist.shape[0]
+        max_per_row = np.max(dist_proxy, axis=1)
+        max_per_row = max_per_row.reshape((num_nodes, 1))
+        max_per_row = np.tile(max_per_row, (1, num_nodes))
+        cut_off = self.max_cutoff_frac * max_per_row
+
+        idxmat = dist_proxy >= cut_off
+        dist_proxy[idxmat] = cut_off[idxmat]
+        dist_proxy = dist_proxy - cut_off
+
+        # Zero-out distances between vehicles. Constraints will later take
+        # care of this
+        dist_proxy[0:self.num_vehicles, 0:self.num_vehicles] = np.zeros((
+            self.num_vehicles, self.num_vehicles))
         return dist_proxy
 
     def _sparsify_dist(self, dist):
         if self.clust_dist_sparse_params["algo"] == "cutoff":
-            return  self._sparsify_dist_using_cutoff(dist)
+            return self._sparsify_dist_using_cutoff(dist)
         elif self.clust_dist_sparse_params["algo"] == "edge_prune":
             return self._sparsify_dist_using_edge_pruning(dist)
         else:
@@ -308,6 +326,7 @@ class QMatrixVRP:
             np.ndarray: Returns a 2 dimension connectivity matrix of size n*n
         """
         Dist = distance.cdist(input_nodes, input_nodes, "euclidean")
+        # Normalize the distance matrix
         dist_sparsity = self._compute_matrix_sparsity(Dist)
         dist_proxy_sparsity = dist_sparsity
         num_nodes = Dist.shape[0]

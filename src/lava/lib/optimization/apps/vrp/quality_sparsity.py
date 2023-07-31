@@ -10,13 +10,16 @@ def main(j=0):
     max_dist_cutoff_fraction_list = np.around(np.geomspace(1.0, 0.1,
                                                            15), 2).tolist()
     max_dist_cutoff_fraction_list.reverse()
+    print(f"Cutoff fractions: {max_dist_cutoff_fraction_list}")
     np.random.seed(42313)
-    max_dist_cutoff_fraction_list = [0.0, 0.1, 0.12, 0.14, 0.16, 0.19,
-                                     0.23, 0.27, 0.32, 0.37, 0.44, 0.52]
+    # max_dist_cutoff_fraction_list = [0.0, 0.1, 0.12, 0.14, 0.16, 0.19,
+    #                                  0.23, 0.27, 0.32, 0.37, 0.44, 0.52]
     dist_sparsity_list = []
     dist_proxy_sparsity_list = []
     total_cost_list = []
     frac_wp_clustered_list = []
+    clustering_extent_list = []
+
     print(f"Loading vrp_instance_{j}.dat")
     all_coords = np.loadtxt(f"vrp_instance_{j}.dat")
     v_c = [tuple(coords) for coords in all_coords[:10, :].tolist()]
@@ -27,15 +30,23 @@ def main(j=0):
     for cutoff_factor in max_dist_cutoff_fraction_list:
         scfg = VRPConfig(backend="Loihi2",
                          core_solver=CoreSolver.LAVA_QUBO,
+                         do_distance_sparsification=True,
+                         sparsification_algo="edge_prune",
                          max_dist_cutoff_fraction=cutoff_factor,
                          hyperparameters={},
                          target_cost=-1000000,
                          timeout=10000,
                          probe_time=False,
+                         only_gen_q_mats=False,
+                         only_cluster=True,
+                         profile_q_mat_gen_clust=True,
+                         profile_q_mat_gen_tsp=False,
                          log_level=40)
         try:
             clusters, routes = solver.solve(scfg=scfg)
+            cluster_check = np.sum(clusters) / 110
         except ValueError:
+            cluster_check = -1.0
             routes = dict(
                 zip(
                     range(1, vrp_instance.num_vehicles + 1),
@@ -59,6 +70,7 @@ def main(j=0):
                                           flat_waypoint_list)) / 100
         frac_wp_clustered_list.append(frac_wp_clusered)
         total_cost_list.append(total_cost)
+        clustering_extent_list.append(cluster_check)
 
         np.savetxt(f"problem_{j}_dist_sp.dat",
                    np.array(dist_sparsity_list), fmt="%.3f")
@@ -68,6 +80,8 @@ def main(j=0):
                    np.array(total_cost_list), fmt="%.3f")
         np.savetxt(f"problem_{j}_frac_wp_clustered.dat",
                    np.array(frac_wp_clustered_list), fmt="%.3f")
+        np.savetxt(f"problem_{j}_clustering_extent.dat",
+                   np.array(clustering_extent_list), fmt="%.2f")
 
 
 if __name__ == '__main__':

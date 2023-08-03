@@ -93,6 +93,7 @@ class LCA2Layer(AbstractProcess):
             tau: ty.Optional[float] = 0.1,
             tau_exp: ty.Optional[int] = 0,
             spike_height: ty.Optional[int] = 1,
+            conv: ty.Optional[bool] = False,
             **kwargs) -> None:
         super().__init__(**kwargs)
 
@@ -101,9 +102,17 @@ class LCA2Layer(AbstractProcess):
         self.tau_exp = Var(shape=(1,), init=tau_exp)
         self.weights = Var(shape=weights.shape, init=weights)
         self.weights_exp = Var(shape=(1,), init=weights_exp)
-        self.v1 = OutPort(shape=(weights.shape[0],))
-        self.res = OutPort(shape=(weights.shape[1],))
-        self.voltage = Var(shape=(weights.shape[0],))
+        if conv:
+            kernel_size = weights.shape[1]
+            v1_height = input_vec.shape[0] - (kernel_size - 1)
+            v1_width = input_vec.shape[1] - (kernel_size - 1)
+            v1_shape = (v1_height, v1_width, weights.shape[0])
+        else:
+            v1_shape = (weights.shape[0],)
+        self.v1 = OutPort(shape=v1_shape)
+        self.res = OutPort(shape=input_vec.shape)
+        self.voltage = Var(shape=v1_shape)
         self.spike_height = Var(shape=(1,), init=spike_height)
         self.input = Var(shape=input_vec.shape, init=input_vec)
         self.input_exp = Var(shape=input_vec.shape, init=input_exp)
+        self.conv = Var(shape=(1,), init=conv)

@@ -239,14 +239,17 @@ class VRPSolver:
             if not scfg.only_cluster:
                 for j, col in enumerate(clustering_solution.T):
                     # number of binary variables = num nodes * num steps
-                    matsize = np.count_nonzero(col[self.problem.num_vehicles:])**2
+                    matsize = np.count_nonzero(
+                        col[self.problem.num_vehicles:]) ** 2
                     node_idxs = np.nonzero(col)
                     vehicle_id_this_cluster = node_idxs[0][
                         node_idxs[0] < self.problem.num_vehicles] + 1
                     node_idxs = node_idxs[0][
                         node_idxs[0] >= self.problem.num_vehicles]
-                    nodes_to_pass = np.array(node_list_for_clustering)[node_idxs, :]
-                    nodes_to_pass = [tuple(node) for node in nodes_to_pass.tolist()]
+                    nodes_to_pass = np.array(
+                        node_list_for_clustering)[node_idxs, :]
+                    nodes_to_pass = [tuple(node) for node in
+                                     nodes_to_pass.tolist()]
                     q_tsp_obj = QMatrixVRP(
                         nodes_to_pass,
                         num_vehicles=1,
@@ -275,8 +278,8 @@ class VRPSolver:
                         report: SolverReport = tsp_solver.solve(config=scfg)
                         if report.profiler:
                             self.tsp_profiler_list.append(report.profiler)
-                            pprint(f"TSP {j} execution took"
-                                   f" {np.sum(report.profiler.execution_time)}s")
+                            pprint(f"TSP {j} execution took "
+                                   f"{np.sum(report.profiler.execution_time)}s")
                         solution: npty.NDArray = \
                             report.best_state.reshape((len(nodes_to_pass),
                                                        len(nodes_to_pass))).T

@@ -55,6 +55,8 @@ class SolutionFinderModel(AbstractSubProcessModel):
         problem = proc.proc_params.get("problem")
         backend = proc.proc_params.get("backend")
 
+        # TODO perform method extraction and simplify, the following is too
+        #  large and might include some code duplication.
         # Subprocesses
         self.variables = VariablesImplementation()
         if discrete_var_shape is not None:

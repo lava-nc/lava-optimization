@@ -11,7 +11,7 @@ from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 
-
+# TODO: change directory structure, flatten it
 @implements(SolutionReadout, protocol=LoihiProtocol)
 @requires(CPU)
 class SolutionReadoutPyModel(PyLoihiProcessModel):

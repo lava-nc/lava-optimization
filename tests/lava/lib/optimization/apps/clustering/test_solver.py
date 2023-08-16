@@ -49,15 +49,21 @@ class testClusteringSolver(unittest.TestCase):
                                 log_level=40)
         np.random.seed(42313)
         solver.solve(scfg=scfg)
-        print(f"{solver.solution.clustering_id_map=}")
-        print(f"{solver.solution.clustering_coords_map=}")
         gt_id_map = {1: [3, 4, 5, 6], 2: [7, 8, 9, 10]}
+        self.assertSetEqual(set(gt_id_map.keys()),
+                            set(solver.solution.clustering_id_map.keys()))
+        for cluster_id, cluster in gt_id_map.items():
+            self.assertSetEqual(
+                set(cluster), set(solver.solution.clustering_id_map[cluster_id]))
         gt_coord_map = {self.center_coords[0]: self.point_coords[:4],
                         self.center_coords[1]: self.point_coords[4:]}
-        # self.assertSetEqual(set(solver.solution.clustering_id_map.keys()),
-        #                     set(gt_id_map.keys()))
-        # self.assertSetEqual(set(solver.solution.clustering_id_map.values()),
-        #                     set(gt_id_map.values()))
+        self.assertSetEqual(set(gt_coord_map.keys()),
+                            set(solver.solution.clustering_coords_map.keys()))
+        for center_coords, points in gt_coord_map.items():
+            self.assertSetEqual(
+                set(points),
+                set(solver.solution.clustering_coords_map[center_coords]))
+
 
 
 if __name__ == '__main__':

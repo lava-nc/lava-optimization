@@ -12,13 +12,14 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     MixedConstraintsProcess,
 )
 from lava.proc.dense.process import Dense
+from lava.proc.sparse.process import Sparse
 
 
 @dataclass
 class CostMinimizer:
     """Processes implementing an optimization problem's cost function."""
 
-    coefficients_2nd_order: Dense
+    coefficients_2nd_order: Sparse
 
     @property
     def state_in(self):

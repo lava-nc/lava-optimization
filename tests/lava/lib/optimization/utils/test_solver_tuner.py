@@ -15,9 +15,10 @@ from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 def prepare_solver_and_config():
     """Generate an example QUBO workload."""
-
-    q = np.asarray([[-5, 2, 4, 0], [2, -3, 1, 0],
-                    [4, 1, -8, 5], [0, 0, 5, -6]])
+    q = np.asarray([[-5, 2, 4, 0],
+                    [2, -3, 1, 0],
+                    [4, 1, -8, 5],
+                    [0, 0, 5, -6]])
     qubo_problem = QUBO(q=q)
 
     solver = OptimizationSolver(qubo_problem)
@@ -26,7 +27,8 @@ def prepare_solver_and_config():
         target_cost=-11,
         backend="CPU",
         hyperparameters={
-            "neuron_model": "nebm"
+            "neuron_model": "nebm",
+            "refract": np.array([1, 2, 2, 1])
         }
     )
 
@@ -38,7 +40,7 @@ class TestSolverTuner(unittest.TestCase):
 
     def setUp(self) -> None:
         """Setup test environment for `SolverTuner` class."""
-        self.search_space = [(0,), (1,)]
+        self.search_space = [(0,), (10,)]
         self.params_names = ['temperature']
         self.shuffle = True
         self.seed = 41
@@ -95,7 +97,7 @@ class TestSolverTuner(unittest.TestCase):
     def test_generate_grid_util(self):
         """Tests `generate_grid` method produces the correct search space."""
         params_domains = {
-            'temperature': (0, 1),
+            'temperature': (0, 10),
         }
         gen_search_space, gen_params_names = SolverTuner.generate_grid(
             params_domains=params_domains
@@ -113,11 +115,11 @@ class TestSolverTuner(unittest.TestCase):
 
         def fitness(report: SolverReport) -> float:
             if report.best_cost <= config.target_cost:
-                return - report.best_timestep
+                return -report.best_timestep
             else:
-                return - float("inf")
+                return -float("inf")
 
-        fitness_target = -21
+        fitness_target = -16
 
         hyperparams, success = self.solver_tuner.tune(
             solver=solver,
@@ -126,9 +128,9 @@ class TestSolverTuner(unittest.TestCase):
             config=config
         )
 
-        print(hyperparams)
+        self.assertIsNotNone(hyperparams)
 
-        correct_best_temperature = 1
+        correct_best_temperature = 10
 
         self.assertEqual(hyperparams['temperature'], correct_best_temperature)
         self.assertTrue(success)

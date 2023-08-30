@@ -25,7 +25,6 @@ class SolutionReader(AbstractProcess):
             name=name,
             log_config=log_config,
         )
-
         self.solution = Var(shape=var_shape, init=-1)
         self.solution_step = Var(shape=(1,), init=-1)
         self.min_cost = Var(shape=(2,), init=min_cost)

@@ -70,6 +70,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
     def __init__(
         self,
         *,
+        cost_diagonal: npty.ArrayLike,
         shape: ty.Tuple[int, ...],
         max_temperature: int,
         min_temperature: int,
@@ -109,6 +110,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
             delta_temperature=delta_temperature,
             steps_per_temperature=steps_per_temperature,
             refract=refract,
+            cost_diagonal=cost_diagonal,
             refract_scaling=refract_scaling,
             exp_temperature=exp_temperature,
             neuron_model=neuron_model,

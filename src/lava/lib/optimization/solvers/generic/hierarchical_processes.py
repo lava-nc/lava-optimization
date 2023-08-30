@@ -9,7 +9,6 @@ import numpy as np
 from lava.magma.core.process.ports.ports import InPort, OutPort
 from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
-from numpy import typing as npt
 
 
 class ContinuousVariablesProcess(AbstractProcess):
@@ -21,7 +20,7 @@ class ContinuousVariablesProcess(AbstractProcess):
         shape: ty.Tuple[int, ...],
         problem: OptimizationProblem,
         backend,
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        hyperparameters: ty.Dict[str, ty.Union[int, npty.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
@@ -67,8 +66,8 @@ class DiscreteVariablesProcess(AbstractProcess):
     def __init__(
         self,
         shape: ty.Tuple[int, ...],
-        cost_diagonal: npt.ArrayLike = None,
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        cost_diagonal: npty.ArrayLike = None,
+        hyperparameters: ty.Dict[str, ty.Union[int, npty.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
@@ -77,7 +76,7 @@ class DiscreteVariablesProcess(AbstractProcess):
         ----------
         shape: tuple
             A tuple of the form (number of variables, domain size).
-        cost_diagonal: npt.ArrayLike
+        cost_diagonal: npty.ArrayLike
             The diagonal of the coefficient of the quadratic term on the cost
             function.
         hyperparameters: dict, optional
@@ -180,7 +179,7 @@ class ContinuousConstraintsProcess(AbstractProcess):
         shape_out: ty.Tuple[int, ...],
         problem: OptimizationProblem,
         backend,
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        hyperparameters: ty.Dict[str, ty.Union[int, npty.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
@@ -246,36 +245,36 @@ class StochasticIntegrateAndFire(AbstractProcess):
     def __init__(
         self,
         *,
-        step_size: npt.ArrayLike,
+        step_size: npty.ArrayLike,
         shape: ty.Tuple[int, ...] = (1,),
-        init_state: npt.ArrayLike = 0,
-        noise_amplitude: npt.ArrayLike = 1,
-        noise_precision: npt.ArrayLike = 8,
-        sustained_on_tau: npt.ArrayLike = -3,
-        threshold: npt.ArrayLike = 10,
-        cost_diagonal: npt.ArrayLike = 0,
+        init_state: npty.ArrayLike = 0,
+        noise_amplitude: npty.ArrayLike = 1,
+        noise_precision: npty.ArrayLike = 8,
+        sustained_on_tau: npty.ArrayLike = -3,
+        threshold: npty.ArrayLike = 10,
+        cost_diagonal: npty.ArrayLike = 0,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
-        init_value: npt.ArrayLike = 0,
+        init_value: npty.ArrayLike = 0,
     ) -> None:
         """
         Parameters
         ----------
         shape: tuple
             The shape of the set of dynamical systems to be created.
-        init_state: npt.ArrayLike, optional
+        init_state: npty.ArrayLike, optional
             The starting value of the state variable.
-        step_size: npt.ArrayLike, optional
+        step_size: npty.ArrayLike, optional
             a value to be added to the state variable at each timestep.
-        noise_amplitude: npt.ArrayLike, optional
+        noise_amplitude: npty.ArrayLike, optional
             The width/range for the stochastic perturbation to the state
             variable. A random number within this range will be added to the
             state variable at each timestep.
-        steps_to_fire: npt.ArrayLike, optional
+        steps_to_fire: npty.ArrayLike, optional
             After how many timesteps would the dynamical system fire and reset
             without stochastic perturbation. Note that if noise_amplitude > 0,
             the system will stochastically deviate from this value.
-        cost_diagonal: npt.ArrayLike, optional
+        cost_diagonal: npty.ArrayLike, optional
             The linear coefficients on the cost function of the optimization
             problem where this system will be used.
         name: str, optional
@@ -342,18 +341,18 @@ class NEBMAbstract(AbstractProcess):
     def __init__(
         self,
         *,
-        temperature: npt.ArrayLike,
+        temperature: npty.ArrayLike,
         refract: ty.Optional[ty.Union[int, npty.NDArray]],
         refract_counter: ty.Optional[ty.Union[int, npty.NDArray]],
         shape: ty.Tuple[int, ...] = (1,),
-        init_state: npt.ArrayLike = 0,
-        input_duration: npt.ArrayLike = 6,
-        min_state: npt.ArrayLike = 1000,
-        min_integration: npt.ArrayLike = -1000,
-        cost_diagonal: npt.ArrayLike = 0,
+        init_state: npty.ArrayLike = 0,
+        input_duration: npty.ArrayLike = 6,
+        min_state: npty.ArrayLike = 1000,
+        min_integration: npty.ArrayLike = -1000,
+        cost_diagonal: npty.ArrayLike = 0,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
-        init_value: npt.ArrayLike = 0,
+        init_value: npty.ArrayLike = 0,
     ) -> None:
         """
 
@@ -361,26 +360,26 @@ class NEBMAbstract(AbstractProcess):
         ----------
         shape: tuple
             The shape of the set of dynamical systems to be created.
-        init_state: npt.ArrayLike, optional
+        init_state: npty.ArrayLike, optional
             The starting value of the state variable.
-        temperature: npt.ArrayLike, optional
+        temperature: npty.ArrayLike, optional
             the temperature of the systems, defining the level of noise.
-        input_duration: npt.ArrayLike, optional
+        input_duration: npty.ArrayLike, optional
             Number of timesteps by which each input should be preserved.
-        min_state: npt.ArrayLike, optional
+        min_state: npty.ArrayLike, optional
             The minimum value for the state variable. The state variable will be
             truncated at this value if updating results in a lower value.
-        min_integration: npt.ArrayLike, optional
+        min_integration: npty.ArrayLike, optional
             The minimum value for the total input (addition of all valid inputs
             at a given timestep). The total input value will be truncated at
             this value if adding current and preserved inputs results in a lower
             value.
-        refract: npt.ArrayLike, optional
+        refract: npty.ArrayLike, optional
             Number of timesteps to wait after firing and reset before resuming
             updating.
-        refract_counter: npt.ArrayLike, optional
+        refract_counter: npty.ArrayLike, optional
             Number of timesteps to initially suppress a unit firing.
-        cost_diagonal: npt.ArrayLike, optional
+        cost_diagonal: npty.ArrayLike, optional
             The linear coefficients on the cost function of the optimization
             problem where this system will be used.
         name: str, optional
@@ -450,6 +449,7 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
     def __init__(
         self,
         *,
+        cost_diagonal: npty.ArrayLike,
         max_temperature: int = 10,
         min_temperature: int = 0,
         delta_temperature: int = 1,
@@ -458,12 +458,11 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
         refract_scaling: int = 14,
         refract: ty.Optional[ty.Union[int, npty.NDArray]],
         shape: ty.Tuple[int, ...] = (1,),
-        init_state: npt.ArrayLike = 0,
-        min_integration: npt.ArrayLike = -1000,
-        cost_diagonal: npt.ArrayLike = 0,
+        init_state: npty.ArrayLike = 0,
+        min_integration: npty.ArrayLike = -1000,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
-        init_value: npt.ArrayLike = 0,
+        init_value: npty.ArrayLike = 0,
         annealing_schedule: str = 'linear',
         neuron_model: str,
     ) -> None:
@@ -473,19 +472,19 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
         ----------
         shape: tuple
             The shape of the set of dynamical systems to be created.
-        init_state: npt.ArrayLike, optional
+        init_state: npty.ArrayLike, optional
             The starting value of the state variable.
-        temperature: npt.ArrayLike, optional
+        temperature: npty.ArrayLike, optional
             the temperature of the systems, defining the level of noise.
-        min_integration: npt.ArrayLike, optional
+        min_integration: npty.ArrayLike, optional
             The minimum value for the total input (addition of all valid inputs
             at a given timestep). The total input value will be truncated at
             this value if adding current and preserved inputs results in a lower
             value.
-        refractory_period: npt.ArrayLike, optional
+        refractory_period: npty.ArrayLike, optional
             Number of timesteps to wait after firing and reset before resuming
             updating.
-        cost_diagonal: npt.ArrayLike, optional
+        cost_diagonal: npty.ArrayLike, optional
             The linear coefficients on the cost function of the optimization
             problem where this system will be used.
         name: str, optional

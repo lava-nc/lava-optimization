@@ -314,6 +314,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                 steps_per_temperature=steps_per_temperature,
                 refract=refract,
                 refract_scaling=refract_scaling,
+                cost_diagonal=diagonal,
                 init_value=init_value,
                 init_state=init_state,
                 neuron_model=neuron_model,
@@ -457,6 +458,7 @@ class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
 
     def __init__(self, proc):
         shape = proc.proc_params.get("shape", (1,))
+        cost_diagonal = proc.proc_params.get("cost_diagonal")
         max_temperature = proc.proc_params.get("max_temperature", 10)
         min_temperature = proc.proc_params.get("min_temperature", 0)
         delta_temperature = proc.proc_params.get("delta_temperature", 1)
@@ -477,6 +479,7 @@ class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
             exp_temperature=exp_temperature,
             steps_per_temperature=steps_per_temperature,
             refract_scaling=refract_scaling,
+            cost_diagonal=cost_diagonal,
             refract=refract,
             init_value=init_value,
             init_state=init_state,

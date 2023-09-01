@@ -16,6 +16,7 @@ from matplotlib.path import Path
 from lava.utils import loihi
 from lava.lib.optimization.apps.scheduler.problems import \
     (SchedulingProblem, SatelliteScheduleProblem)
+from lava.lib.optimization.apps.scheduler.utils.util_funcs import *
 from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.solver import (OptimizationSolver,
                                                           SolverConfig)
@@ -58,8 +59,8 @@ class Scheduler:
 
         sol_criterion = self._problem.sat_cutoff
         if type(sol_criterion) is float and 0.0 < sol_criterion <= 1.0:
-            self._qubo_target_cost = (
-                int(sol_criterion * self._problem.num_tasks * qubo_weights[0]))
+            self._qubo_target_cost = int(
+                -sol_criterion * self._problem.num_tasks * qubo_weights[0])
         elif type(sol_criterion) is int and sol_criterion < 0:
             self._qubo_target_cost = sol_criterion
 
@@ -156,10 +157,14 @@ class Scheduler:
     def solve_with_netx(self):
         """ Find an approximate maximum independent set using networkx. """
         solution = maximum_independent_set(self.graph)
-        self._netx_solution = np.expand_dims(np.array([row for row in
-                                                       solution]), 1)
-        self._netx_solution = self._netx_solution[
-            np.argsort(self._netx_solution[:, 0])]
+        solution = np.array(list(solution))
+        self._netx_solution = np.zeros((solution.size, 4))
+        nds = self.graph.nodes
+        for j, sol_node in enumerate(solution):
+            satellite_id = nds[sol_node]["agent_id"]
+            request_coords = nds[sol_node]["task_attr"]
+            self._netx_solution[j, :] = (
+                np.hstack((sol_node, satellite_id, request_coords)))
 
     def solve_with_lava_qubo(self, timeout=1000):
         """ Find a maximum independent set using QUBO in Lava. """
@@ -179,8 +184,15 @@ class Scheduler:
             )
         )
         qubo_state = self.lava_solver_report.best_state
-        self._lava_solution = (
+        solution = (
             np.array(self.graph.nodes))[np.where(qubo_state)[0]]
+        self._lava_solution = np.zeros((solution.size, 4))
+        nds = self.graph.nodes
+        for j, sol_node in enumerate(solution):
+            satellite_id = nds[sol_node]["agent_id"]
+            request_coords = nds[sol_node]["task_attr"]
+            self._lava_solution[j, :] = (
+                np.hstack((sol_node, satellite_id, request_coords)))
 
 
 class SatelliteScheduler(Scheduler):
@@ -323,23 +335,27 @@ class SatelliteScheduleProblemm:
         self.solver_report = None
         self.lava_solution = None
 
-    def generate(self, seed=None):
+    def generate(self, seed=None, requests=None):
         """ Generate a new scheduler problem. """
         if seed:
             self.random_seed = seed
             np.random.seed(seed)
         self.graph = ntx.Graph()
         self.satellites = range(self.num_satellites)
-        self.generate_requests()
+        self.generate_requests(requests)
         self.generate_visible_nodes()
         self.generate_infeasibility_graph()
         self.rescale_adjacency()
 
-    def generate_requests(self):
+    def generate_requests(self, requests=None):
         """ Generate a random set of requests in the 2D plane. """
-        self.requests = np.random.random((self.num_requests, 2))
-        order = np.argsort(self.requests[:, 0])
-        self.requests = self.requests[order, :]
+        if requests is not None:
+            self.requests = requests
+        else:
+            np.random.seed(self.random_seed)
+            self.requests = np.random.random((self.num_requests, 2))
+            order = np.argsort(self.requests[:, 0])
+            self.requests = self.requests[order, :]
 
     def generate_visible_nodes(self):
         """
@@ -406,8 +422,9 @@ class SatelliteScheduleProblemm:
                 timeout=timeout,
                 hyperparameters=self.hyperparameters,
                 target_cost=self.target_cost,
-                backend=self.lava_backend,
+                backend="Loihi2",  # self.lava_backend,
                 probe_cost=self.probe_cost,
+                log_level=20
             )
         )
         qubo_state = self.solver_report.best_state

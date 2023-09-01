@@ -116,7 +116,14 @@ class SchedulingProblem:
 
     def generate_valid_nodes(self):
         node_id = 0
+        if self.agent_attrs is None:
+            self.agent_attrs = np.reshape(self.agent_ids,
+                                          (len(self.agent_ids), 1))
         agent_id_attr_map = dict(zip(self.agent_ids, self.agent_attrs))
+        if self.task_attrs is None:
+            self.task_attrs = (
+                np.tile(np.reshape(self.task_ids,
+                                   (len(self.task_ids), 1)), (1, 2)))
         task_id_attr_map = dict(zip(self.task_ids, self.task_attrs))
         for aid, a_attr in agent_id_attr_map.items():
             for tid, t_attr in task_id_attr_map.items():
@@ -129,13 +136,16 @@ class SchedulingProblem:
                     node_id += 1
 
     def generate_edges_from_constraints(self):
+        num_nodes = len(self.graph.nodes)
+        self.adjacency = (
+            np.zeros((num_nodes, num_nodes), dtype=int))
         for n1 in self.graph.nodes:
             for n2 in self.graph.nodes:
                 not_same = n1 != n2
                 is_conflict = self.is_edge_conflicting(n1, n2)
                 if not_same and is_conflict:
                     self.graph.add_edge(n1, n2)
-        self.adjacency = ntx.to_numpy_array(self.graph)
+                    self.adjacency[n1, n2] = 1
 
     def rescale_adjacency(self):
         """ Scale the adjacency matrix weights for QUBO solver. """
@@ -162,6 +172,7 @@ class SatelliteScheduleProblem(SchedulingProblem):
             view_height: float = 0.25,
             view_coords: Optional[np.ndarray] = None,
             num_requests: int = 48,
+            requests: Optional[np.ndarray] = None,
             turn_rate: float = 2,
             solution_criteria: float = 0.99,
     ):
@@ -204,13 +215,17 @@ class SatelliteScheduleProblem(SchedulingProblem):
         self.turn_rate = turn_rate
         self.requests = None
         self.qubo_problem = None
-        self.generate_requests()
+        self.generate_requests(requests)
 
-    def generate_requests(self):
+    def generate_requests(self, requests=None):
         """ Generate a random set of requests in the 2D plane. """
-        self.requests = np.random.random((self.num_requests, 2))
-        order = np.argsort(self.requests[:, 0])
-        self.requests = self.requests[order, :]
+        if requests is not None:
+            self.requests = requests
+        else:
+            np.random.seed(self.random_seed)
+            self.requests = np.random.random((self.num_requests, 2))
+            order = np.argsort(self.requests[:, 0])
+            self.requests = self.requests[order, :]
         self.task_attrs = self.requests.tolist()
 
     def is_node_valid(self, sat_id, req_id):

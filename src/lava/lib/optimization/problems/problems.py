@@ -116,12 +116,18 @@ class QUBO(OptimizationProblem):
         q: Quadratic coefficient of the cost function.
 
         """
+
         m, n = q.shape
         if m != n:
             raise ValueError("q matrix is not a square matrix.")
         if not issubclass(q.dtype.type, np.integer):
             raise NotImplementedError(
                 "Non integer q matrices are not supported yet."
+            )
+        # matrix must be symmetric for current implementation
+        if not np.allclose(q, q.T, rtol=1e-05, atol=1e-08):
+            raise NotImplementedError(
+                "Only symmetric matrixes are currently supported."
             )
 
     def verify_solution(self, solution):

@@ -65,8 +65,8 @@ class QUBO(OptimizationProblem):
 
         Parameters
         ----------
-        q: squared Q matrix defining the QUBO problem over a binary
-        vector x as: minimize x^T*Q*x.
+        q: squared, symmetric, int Q matrix defining the QUBO problem over a
+        binary vector x as: minimize x^T*Q*x.
         """
         super().__init__()
         self.validate_input(q)
@@ -109,7 +109,7 @@ class QUBO(OptimizationProblem):
         return int(self._q_cost(solution))
 
     def validate_input(self, q):
-        """Validate the cost coefficient is a square matrix.
+        """Validate that cost coefficient is a square, symmetric, int matrix.
 
         Parameters
         ----------

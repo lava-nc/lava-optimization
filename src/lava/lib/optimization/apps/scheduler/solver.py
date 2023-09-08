@@ -28,7 +28,9 @@ class Scheduler:
     def __init__(self,
                  sp: SchedulingProblem,
                  qubo_weights: Tuple[int, int] = (1, 8),
-                 probe_cost: bool = False):
+                 probe_cost: bool = False,
+                 probe_loihi_exec_time=False,
+                 probe_loihi_energy=False):
         """Solver for Scheduling Problems.
 
         Parameters
@@ -51,6 +53,8 @@ class Scheduler:
         }
         self._qubo_weights = qubo_weights
         self._probe_cost = probe_cost
+        self._probe_loihi_exec_time = probe_loihi_exec_time
+        self._probe_loihi_energy = probe_loihi_energy
         self._netx_solution = None
         self._qubo_problem = None
         self._lava_backend = 'Loihi2' if loihi.host else 'CPU'
@@ -131,6 +135,14 @@ class Scheduler:
         self._probe_cost = val
 
     @property
+    def probe_loihi_exec_time(self):
+        return self._probe_loihi_exec_time
+
+    @property
+    def probe_loihi_energy(self):
+        return self._probe_loihi_energy
+
+    @property
     def netx_solution(self):
         return self._netx_solution
 
@@ -180,7 +192,9 @@ class Scheduler:
                 target_cost=self.qubo_target_cost,
                 backend=self.lava_backend,
                 probe_cost=self.probe_cost,
-                log_level=20
+                probe_time=self.probe_loihi_exec_time,
+                probe_energy=self.probe_loihi_energy,
+                log_level=40
             )
         )
         qubo_state = self.lava_solver_report.best_state
@@ -199,11 +213,12 @@ class SatelliteScheduler(Scheduler):
     def __init__(self,
                  ssp: SatelliteScheduleProblem,
                  **kwargs):
-        qubo_weights = kwargs.get("qubo_weights", (1, 8))
-        probe_cost = kwargs.get("probe_cost", False)
+        qubo_weights = kwargs.pop("qubo_weights", (1, 8))
+        probe_cost = kwargs.pop("probe_cost", False)
         super(SatelliteScheduler, self).__init__(ssp,
                                                  qubo_weights=qubo_weights,
-                                                 probe_cost=probe_cost)
+                                                 probe_cost=probe_cost,
+                                                 **kwargs)
         self.num_satellites = ssp.num_satellites
         self.num_requests = ssp.num_requests
 

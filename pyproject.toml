@@ -11,6 +11,7 @@ packages = [
 ]
 include = ["tutorials"]
 version = "0.3.0.dev0"
+readme = "README.md"
 description = "A library of solvers that leverage neuromorphic hardware for constrained optimization. Lava-Optimization is part of Lava Framework. Lava-optimization is part of Lava Framework"
 homepage = "https://lava-nc.org/"
 repository = "https://github.com/lava-nc/lava-optimization"

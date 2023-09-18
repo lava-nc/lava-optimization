@@ -107,6 +107,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         super().__init__(
             shape=shape,
             min_temperature=min_temperature,
+            max_temperature=max_temperature,
             delta_temperature=delta_temperature,
             steps_per_temperature=steps_per_temperature,
             refract=refract,

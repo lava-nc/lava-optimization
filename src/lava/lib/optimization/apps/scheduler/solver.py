@@ -57,6 +57,7 @@ class Scheduler:
         self._probe_loihi_energy = probe_loihi_energy
         self._netx_solution = None
         self._qubo_problem = None
+        self._qubo_matrix = None
         self._lava_backend = 'Loihi2' if loihi.host else 'CPU'
         self._lava_solver_report = None
         self._lava_solution = None
@@ -151,6 +152,10 @@ class Scheduler:
         return self._qubo_problem
 
     @property
+    def qubo_matrix(self):
+        return self._qubo_matrix
+
+    @property
     def lava_backend(self):
         return self._lava_backend
 
@@ -166,6 +171,15 @@ class Scheduler:
     def lava_solution(self):
         return self._lava_solution
 
+    def gen_qubo_mat(self):
+        adj_mat = self.problem.adjacency
+        self._qubo_matrix = MISProblem._get_qubo_cost_from_adjacency(
+            adj_mat, self.qubo_weights[0], self.qubo_weights[1])
+
+    def gen_qubo_problem(self):
+        self.gen_qubo_mat()
+        self._qubo_problem = QUBO(self.qubo_matrix)
+
     def solve_with_netx(self):
         """ Find an approximate maximum independent set using networkx. """
         solution = maximum_independent_set(self.graph)
@@ -180,10 +194,7 @@ class Scheduler:
 
     def solve_with_lava_qubo(self, timeout=1000):
         """ Find a maximum independent set using QUBO in Lava. """
-        adj_mat = self.problem.adjacency
-        qubo_matrix = MISProblem._get_qubo_cost_from_adjacency(
-            adj_mat, self.qubo_weights[0], self.qubo_weights[1])
-        self._qubo_problem = QUBO(qubo_matrix)
+        self.gen_qubo_problem()
         solver = OptimizationSolver(self.qubo_problem)
         self._lava_solver_report = solver.solve(
             config=SolverConfig(

@@ -70,19 +70,14 @@ class NEBMSimulatedAnnealing(AbstractProcess):
     def __init__(
         self,
         *,
-        cost_diagonal: npty.ArrayLike,
         shape: ty.Tuple[int, ...],
+        cost_diagonal: npty.ArrayLike,
         max_temperature: int,
-        min_temperature: int,
-        delta_temperature: int,
-        steps_per_temperature: int,
         refract_scaling: int,
         refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
-        exp_temperature=None,
         init_value=0,
         init_state=None,
         neuron_model: str,
-        annealing_schedule: str = 'linear',
     ):
         """
         SA Process.
@@ -92,33 +87,32 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         shape: Tuple
             Number of neurons. Default is (1,).
 
-
-        temperature: ArrayLike
-            Temperature of the system, defining the level of noise.
         refract : ArrayLike
-            Minimum number of timesteps a neuron remains in a state after a
-            transition.
+            After a neuron has switched its binary variable, it remains in a
+            refractory state that prevents any variable switching for a
+            number of time steps. This number of time steps is determined by
+                rand(0, 255) >> refract_scaling + refract
+            Refract thus denotes the minimum number of timesteps a neuron
+            remains in a state after a transition.
+        refract_scaling: ArrayLike
+            Partly determines the refractive period of a neuron. For more
+            information, see details provided on 'refract' above.
         init_value : ArrayLike
             The spiking history with which the network is initialized
         init_state : ArrayLike
             The state of neurons with which the network is initialized
         """
 
+        self._validate_input(neuron_model)
         super().__init__(
             shape=shape,
-            min_temperature=min_temperature,
-            max_temperature=max_temperature,
-            delta_temperature=delta_temperature,
-            steps_per_temperature=steps_per_temperature,
             refract=refract,
             cost_diagonal=cost_diagonal,
             refract_scaling=refract_scaling,
-            exp_temperature=exp_temperature,
-            neuron_model=neuron_model,
-            annealing_schedule=annealing_schedule,
         )
 
         self.a_in = InPort(shape=shape)
+        self.delta_temperature_in = InPort(shape=shape)
         self.s_sig_out = OutPort(shape=shape)
         self.s_wta_out = OutPort(shape=shape)
 
@@ -144,6 +138,38 @@ class NEBMSimulatedAnnealing(AbstractProcess):
             else np.zeros(shape=shape, dtype=int),
         )
 
-        @property
-        def shape(self) -> ty.Tuple[int, ...]:
-            return self.proc_params["shape"]
+    def _validate_input(self, neuron_model: str) -> None:
+        """Validates input. At the moment, it only checks that the user has
+        chosen a supported neuron model is """
+
+        if neuron_model == 'nebm-sa-refract':
+            return
+        elif neuron_model == 'nebm-sa':
+            raise NotImplementedError(
+                f"The model 'nebm-sa' has been deprecated. Instead, we "
+                f"recommend switching to the new neuron model 'nebm-sa-refract'"
+                f" for a better solver performance.")
+        elif neuron_model == 'nebm-sa-balanced':
+            raise NotImplementedError(
+                f"The model 'nebm-sa-balanced' has been deprecated. Instead, we"
+                f" recommend switching to the new neuron model "
+                f"'nebm-sa-refract' for a better solver performance.")
+        elif neuron_model == 'nebm-sa-refract-approx-unbalanced':
+            raise NotImplementedError(
+                f"Please note that the neuron model "
+                f"'nebm-sa-refract_approx_unbalanced' has been removed. "
+                f"Instead, we recommend switching to the new neuron model "
+                f"'nebm-sa-refract' for a better solver performance.")
+        elif neuron_model == 'nebm-sa-refract-approx':
+            raise NotImplementedError(
+                f"Please note that the neuron model "
+                f"'nebm-sa-refract_approx_unbalanced' has been removed Instead,"
+                f" we recommend switching to the neuron model 'nebm-sa-refract'"
+                f" for a better solver performance.")
+        else:
+            raise ValueError(
+                f"Please specify a correct neuron model as hyperparameter.")
+
+    @property
+    def shape(self) -> ty.Tuple[int, ...]:
+        return self.proc_params["shape"]

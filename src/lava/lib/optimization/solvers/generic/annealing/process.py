@@ -49,8 +49,8 @@ class Annealing(AbstractProcess):
         min_temperature: ty.Union[int, npty.NDArray],
         delta_temperature: ty.Union[int, npty.NDArray],
         steps_per_temperature: ty.Union[int, npty.NDArray],
-        exp_temperature: ty.Union[int, npty.NDArray] = None,
-        annealing_schedule: str = 'linear',
+        exp_temperature: ty.Union[int, npty.NDArray],
+        annealing_schedule: str,
         shape: ty.Tuple[int, ...] = (1,),
     ):
 

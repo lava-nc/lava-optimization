@@ -469,7 +469,7 @@ class OptimizationSolver:
                 NEBMSimulatedAnnealingAbstract:
                 NEBMSimulatedAnnealingAbstractModel,
                 NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
-                Annealing:AnnealingNcModel,
+                Annealing: AnnealingNcModel,
                 CostIntegrator: CostIntegratorNcModel,
                 ProportionalIntegralNeuronsPIPGeq: NcL2ModelPI,
                 ProjectedGradientNeuronsPIPGeq: NcL2ModelPG,

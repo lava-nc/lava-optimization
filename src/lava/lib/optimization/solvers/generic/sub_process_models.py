@@ -251,8 +251,6 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         if neuron_model == "nebm":
             temperature = proc.hyperparameters.get("temperature", 1)
             refract = proc.hyperparameters.get("refract", 0)
-            # DELETE THIS AGAIN
-            print("WRONG MODEL3")
             refract_counter = proc.hyperparameters.get("refract_counter", 0)
             init_value = proc.hyperparameters.get(
                 "init_value", np.zeros(shape, dtype=int)
@@ -430,8 +428,6 @@ class NEBMAbstractModel(AbstractSubProcessModel):
         shape = proc.proc_params.get("shape", (1,))
         temperature = proc.proc_params.get("temperature", (1,))
         refract = proc.proc_params.get("refract", (1,))
-        #DELETE THIS AGAIN
-        print("WRONG MODEL4")
         refract_counter = proc.proc_params.get("refract_counter", (0,))
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))

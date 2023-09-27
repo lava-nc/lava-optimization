@@ -49,8 +49,6 @@ class NEBM(AbstractProcess):
         self.spk_hist = Var(
             shape=shape, init=(np.zeros(shape=shape) + init_value).astype(int)
         )
-        #DELETE THIS AGAIN
-        print("WRONG MODEL1")
         self.temperature = Var(shape=shape, init=int(temperature))
         self.refract = Var(shape=shape, init=refract)
         self.refract_counter = Var(shape=shape, init=refract_counter)

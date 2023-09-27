@@ -406,8 +406,6 @@ class NEBMAbstract(AbstractProcess):
         self.added_input = InPort(shape=shape)
         self.messages = OutPort(shape=shape)
         self.local_cost = OutPort(shape=shape)
-        #DELETE THIS AGAIN
-        print("WRONG MODEL2")
         self.integration = Var(shape=shape, init=0)
         self.temperature = Var(shape=shape, init=temperature)
         self.refract = Var(shape=shape, init=refract)

@@ -187,10 +187,10 @@ class Scheduler:
         self._netx_solution = np.zeros((solution.size, 4))
         nds = self.graph.nodes
         for j, sol_node in enumerate(solution):
-            satellite_id = nds[sol_node]["agent_id"]
-            request_coords = nds[sol_node]["task_attr"]
+            agent_id = nds[sol_node]["agent_id"]
+            task_attrs = nds[sol_node]["task_attr"]
             self._netx_solution[j, :] = (
-                np.hstack((sol_node, satellite_id, request_coords)))
+                np.hstack((sol_node, agent_id, task_attrs)))
 
     def solve_with_lava_qubo(self, timeout=1000):
         """ Find a maximum independent set using QUBO in Lava. """
@@ -214,10 +214,10 @@ class Scheduler:
         self._lava_solution = np.zeros((solution.size, 4))
         nds = self.graph.nodes
         for j, sol_node in enumerate(solution):
-            satellite_id = nds[sol_node]["agent_id"]
-            request_coords = nds[sol_node]["task_attr"]
+            agent_id = nds[sol_node]["agent_id"]
+            task_attrs = nds[sol_node]["task_attr"]
             self._lava_solution[j, :] = (
-                np.hstack((sol_node, satellite_id, request_coords)))
+                np.hstack((sol_node, agent_id, task_attrs)))
 
 
 class SatelliteScheduler(Scheduler):

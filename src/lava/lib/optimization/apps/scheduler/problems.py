@@ -16,7 +16,8 @@ class SchedulingProblem:
     def __init__(self,
                  num_agents: int = 3,
                  num_tasks: int = 3,
-                 sat_cutoff: Union[float, int] = 0.99):
+                 sat_cutoff: Union[float, int] = 0.99,
+                 seed: int = 42):
         """Schedule `num_tasks` tasks among `num_agents` agents such that
         every agent performs exactly one task and every task gets assigned
         exactly one agent.
@@ -35,6 +36,8 @@ class SchedulingProblem:
         and 1. If int, this is the target cost for the underlying QUBO
         solver. Default is 0.99 (i.e., 99% of the total number of tasks get
         assigned an agent).
+
+        seed (int) : Seed for PRNG used in problem generation.
         """
         self._num_agents = num_agents
         self._agent_ids = range(num_agents)
@@ -45,7 +48,7 @@ class SchedulingProblem:
         self._sat_cutoff = sat_cutoff
         self.graph = None
         self.adjacency = None
-        self.random_seed = None
+        self._random_seed = seed
 
     @property
     def num_agents(self):
@@ -95,6 +98,14 @@ class SchedulingProblem:
     def sat_cutoff(self, val: float):
         self._sat_cutoff = val
 
+    @property
+    def random_seed(self):
+        return self._random_seed
+
+    @random_seed.setter
+    def random_seed(self, val: int):
+        self._random_seed = val
+
     def is_node_valid(self, *args):
         return True
 
@@ -106,7 +117,7 @@ class SchedulingProblem:
 
     def generate(self, seed=None):
         """ Generate a new scheduler problem. """
-        if seed:
+        if seed != self.random_seed:  # set seed only if it's different
             self.random_seed = seed
             np.random.seed(seed)
         self.graph = ntx.Graph()
@@ -175,6 +186,7 @@ class SatelliteScheduleProblem(SchedulingProblem):
             requests: Optional[np.ndarray] = None,
             turn_rate: float = 2,
             solution_criteria: float = 0.99,
+            seed: int = 42,
     ):
         """ Create a SatelliteScheduleProblem.
         Parameters
@@ -198,7 +210,8 @@ class SatelliteScheduleProblem(SchedulingProblem):
         super(SatelliteScheduleProblem,
               self).__init__(num_agents=num_satellites,
                              num_tasks=num_requests,
-                             sat_cutoff=solution_criteria)
+                             sat_cutoff=solution_criteria,
+                             seed=seed)
         self.num_satellites = self.num_agents
         self.num_requests = self.num_tasks
 

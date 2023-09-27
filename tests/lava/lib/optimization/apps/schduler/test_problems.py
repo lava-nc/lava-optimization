@@ -40,7 +40,7 @@ class TestSatelliteSchedulingProblem(unittest.TestCase):
              [0.37454012, 0.95071431], [0.43194502, 0.29122914],
              [0.60111501, 0.70807258], [0.61185289, 0.13949386],
              [0.73199394, 0.59865848], [0.83244264, 0.21233911]]
-                            )
+        )
         self.ssp = SatelliteScheduleProblem(num_satellites=3,
                                             num_requests=12,
                                             requests=requests,

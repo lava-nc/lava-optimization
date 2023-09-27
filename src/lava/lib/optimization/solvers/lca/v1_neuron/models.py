@@ -64,5 +64,5 @@ class PyV1NeuronFixed(PyLoihiProcessModel):
         bias = np.right_shift(activation * self.tau_int, 24) \
             if self.proc_params['two_layer'] else self.bias
         self.v = np.right_shift(self.v * (2 ** 24 - self.tau_int), 24) \
-                 + self.a_in.recv() + bias
+            + self.a_in.recv() + bias
         self.s_out.send(activation)

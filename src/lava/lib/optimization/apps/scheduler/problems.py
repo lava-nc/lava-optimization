@@ -167,14 +167,15 @@ class SchedulingProblem:
 
 class SatelliteScheduleProblem(SchedulingProblem):
     """
-    SatelliteScheduleProblem is a synthetic scheduling problem in which a number of
-    vehicles must be assigned to view as many requests in a 2-dimensional plane as
-    possible. Each vehicle moves horizontally across the plane, has minimum and
-    maximum view angle, and has a maximum rotation rate (i.e. the rate at which the
-    vehicle can reorient vertically from one target to the next).
+    SatelliteScheduleProblem is a synthetic scheduling problem in which a
+    number of vehicles must be assigned to view as many requests in a
+    2-dimensional plane as possible. Each vehicle moves horizontally across
+    the plane, has minimum and maximum view angle, and has a maximum rotation
+    rate (i.e. the rate at which the vehicle can reorient vertically from one
+    target to the next).
 
-    The problem is represented as an infeasibility graph and can be solved by finding
-    the Maximum Independent Set.
+    The problem is represented as an infeasibility graph and can be solved by
+    finding the Maximum Independent Set.
     """
 
     def __init__(
@@ -196,16 +197,17 @@ class SatelliteScheduleProblem(SchedulingProblem):
         view_height : float, default = 0.25
             The range from minimum to maximum viewable angle for each satellite.
         view_coords : Optional[np.ndarray], default = None
-            The view coordinates (i.e. minimum viewable angle) for each satellite
-            in a numpy array. If None, view coordinates will be evenly distributed
-            across the viewable range.
+            The view coordinates (i.e. minimum viewable angle) for each
+            satellite in a numpy array. If None, view coordinates will be
+            evenly distributed across the viewable range.
         num_requests : int, default = 48
             The number of requests to generate.
         turn_rate : float, default = 2
             How quickly each satellite may reorient its view angle.
         solution_criteria : float, default = 0.99
-            The target for a successful solution. The solver will stop looking for
-            a better schedule if the specified fraction of requests are satisfied.
+            The target for a successful solution. The solver will stop
+            looking for a better schedule if the specified fraction of
+            requests is satisfied.
         """
         super(SatelliteScheduleProblem,
               self).__init__(num_agents=num_satellites,
@@ -246,8 +248,9 @@ class SatelliteScheduleProblem(SchedulingProblem):
         view_height = self.agent_attrs[sat_id][0]
         satellite_y_coord = self.agent_attrs[sat_id][1]
         request_y_coord = self.task_attrs[req_id][1]
-        return (satellite_y_coord <= request_y_coord <= satellite_y_coord +
-                view_height)
+        lower_bound = satellite_y_coord
+        upper_bound = satellite_y_coord + view_height
+        return lower_bound <= request_y_coord <= upper_bound
 
     def is_req_reachable(self, n1, n2):
         nodes = self.graph.nodes

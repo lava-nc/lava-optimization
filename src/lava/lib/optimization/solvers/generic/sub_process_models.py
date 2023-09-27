@@ -32,6 +32,7 @@ from lava.lib.optimization.solvers.generic.nebm.process import (
     NEBM,
     NEBMSimulatedAnnealing,
 )
+from lava.lib.optimization.solvers.generic.annealing.process import Annealing
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
@@ -244,13 +245,14 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             wta_weight
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
-        neuron_model = proc.hyperparameters.get("neuron_model", "nebm")
-        available_sa_models = ['nebm-sa', 'nebm-sa-balanced',
-                               'nebm-sa-refract-approx-unbalanced',
-                               'nebm-sa-refract-approx', 'nebm-sa-refract']
+        neuron_model = proc.hyperparameters.get("neuron_model",
+                                                'nebm-sa-refract')
+        available_sa_models = ['nebm-sa-refract']
         if neuron_model == "nebm":
             temperature = proc.hyperparameters.get("temperature", 1)
             refract = proc.hyperparameters.get("refract", 0)
+            # DELETE THIS AGAIN
+            print("WRONG MODEL3")
             refract_counter = proc.hyperparameters.get("refract_counter", 0)
             init_value = proc.hyperparameters.get(
                 "init_value", np.zeros(shape, dtype=int)
@@ -288,23 +290,19 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                 cost_diagonal=diagonal,
             )
         elif neuron_model in available_sa_models:
-            max_temperature = proc.hyperparameters.get("max_temperature", 10)
+            max_temperature = proc.hyperparameters.get("max_temperature", 1000)
             min_temperature = proc.hyperparameters.get("min_temperature", 0)
-            delta_temperature = proc.hyperparameters.get(
-                "delta_temperature", 1
-            )
+            delta_temperature = proc.hyperparameters.get("delta_temperature", 1)
             exp_temperature = proc.hyperparameters.get("exp_temperature", None)
             steps_per_temperature = proc.hyperparameters.get(
-                "steps_per_temperature", 100
+                "steps_per_temperature", 1
             )
-            refract_scaling = proc.hyperparameters.get("refract_scaling", 14)
-            refract = proc.hyperparameters.get("refract", 0)
+            refract_scaling = proc.hyperparameters.get("refract_scaling", 4)
             init_value = proc.hyperparameters.get(
                 "init_value", np.zeros(shape, dtype=int))
-            init_state = proc.hyperparameters.get(
-                "init_state", np.zeros(shape, dtype=int))
-            annealing_schedule = proc.hyperparameters.get(
-                "annealing_schedule", "linear")
+            init_state = proc.hyperparameters.get("init_state")
+            annealing_schedule = proc.hyperparameters.get("annealing_schedule",
+                                                          'linear')
             self.s_bit = NEBMSimulatedAnnealingAbstract(
                 shape=shape,
                 max_temperature=max_temperature,
@@ -312,7 +310,6 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                 delta_temperature=delta_temperature,
                 exp_temperature=exp_temperature,
                 steps_per_temperature=steps_per_temperature,
-                refract=refract,
                 refract_scaling=refract_scaling,
                 cost_diagonal=diagonal,
                 init_value=init_value,
@@ -433,6 +430,8 @@ class NEBMAbstractModel(AbstractSubProcessModel):
         shape = proc.proc_params.get("shape", (1,))
         temperature = proc.proc_params.get("temperature", (1,))
         refract = proc.proc_params.get("refract", (1,))
+        #DELETE THIS AGAIN
+        print("WRONG MODEL4")
         refract_counter = proc.proc_params.get("refract_counter", (0,))
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))
@@ -459,35 +458,50 @@ class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
     def __init__(self, proc):
         shape = proc.proc_params.get("shape", (1,))
         cost_diagonal = proc.proc_params.get("cost_diagonal")
-        max_temperature = proc.proc_params.get("max_temperature", 10)
-        min_temperature = proc.proc_params.get("min_temperature", 0)
-        delta_temperature = proc.proc_params.get("delta_temperature", 1)
-        exp_temperature = proc.proc_params.get("exp_temperature", 1)
+        max_temperature = proc.proc_params.get("max_temperature")
+        min_temperature = proc.proc_params.get("min_temperature")
+        annealing_schedule = proc.proc_params.get("annealing_schedule")
+        delta_temperature = proc.proc_params.get("delta_temperature")
+        exp_temperature = proc.proc_params.get("exp_temperature")
         steps_per_temperature = proc.proc_params.get(
             "steps_per_temperature", 100
         )
         refract_scaling = proc.proc_params.get("refract_scaling", 14)
-        refract = proc.proc_params.get("refract", (1,))
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))
         neuron_model = proc.proc_params.get("neuron_model")
-        self.nebm = NEBMSimulatedAnnealing(
-            shape=shape,
+        self.annealing = Annealing(
+            shape=(1,),
             max_temperature=max_temperature,
             min_temperature=min_temperature,
             delta_temperature=delta_temperature,
-            exp_temperature=exp_temperature,
             steps_per_temperature=steps_per_temperature,
+            exp_temperature=exp_temperature,
+            annealing_schedule=annealing_schedule,
+        )
+        self.nebm = NEBMSimulatedAnnealing(
+            shape=shape,
+            max_temperature=max_temperature,
             refract_scaling=refract_scaling,
             cost_diagonal=cost_diagonal,
-            refract=refract,
             init_value=init_value,
             init_state=init_state,
             neuron_model=neuron_model,
         )
+        # Connect Annealing neuron to NEBMSimulatedAnnealing neurons
+        weights = proc.proc_params.get("weights", np.ones((shape[0], 1)))
+        self.dense = Dense(weights=weights, num_message_bits=24)
+        self.annealing.out_ports.delta_temperature_out.connect(
+            self.dense.in_ports.s_in
+        )
+        self.dense.out_ports.a_out.connect(
+            self.nebm.in_ports.delta_temperature_in
+        )
+
         proc.in_ports.added_input.connect(self.nebm.in_ports.a_in)
         self.nebm.s_wta_out.connect(proc.out_ports.messages)
         self.nebm.s_sig_out.connect(proc.out_ports.local_cost)
 
         proc.vars.prev_assignment.alias(self.nebm.vars.spk_hist)
         proc.vars.state.alias(self.nebm.vars.state)
+        proc.vars.temperature.alias(self.annealing.temperature)

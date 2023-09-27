@@ -406,7 +406,8 @@ class NEBMAbstract(AbstractProcess):
         self.added_input = InPort(shape=shape)
         self.messages = OutPort(shape=shape)
         self.local_cost = OutPort(shape=shape)
-
+        #DELETE THIS AGAIN
+        print("WRONG MODEL2")
         self.integration = Var(shape=shape, init=0)
         self.temperature = Var(shape=shape, init=temperature)
         self.refract = Var(shape=shape, init=refract)
@@ -456,7 +457,6 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
         exp_temperature: int = None,
         steps_per_temperature: int = 100,
         refract_scaling: int = 14,
-        refract: ty.Optional[ty.Union[int, npty.NDArray]],
         shape: ty.Tuple[int, ...] = (1,),
         init_state: npty.ArrayLike = 0,
         min_integration: npty.ArrayLike = -1000,
@@ -503,7 +503,6 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             exp_temperature=exp_temperature,
             steps_per_temperature=steps_per_temperature,
             refract_scaling=refract_scaling,
-            refract=refract,
             min_integration=min_integration,
             cost_diagonal=cost_diagonal,
             name=name,
@@ -518,13 +517,13 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
 
         self.integration = Var(shape=shape, init=0)
         self.max_temperature = Var(shape=shape, init=max_temperature)
+        self.temperature = Var(shape=(1,), init=max_temperature)
         self.min_temperature = Var(shape=shape, init=min_temperature)
         self.delta_temperature = Var(shape=shape, init=delta_temperature)
         self.exp_temperature = Var(shape=shape, init=exp_temperature)
         self.steps_per_temperature = Var(
             shape=shape, init=steps_per_temperature
         )
-        self.refract = Var(shape=shape, init=refract)
         self.state = Var(shape=shape, init=init_state)
         self.min_integration = Var(shape=shape, init=min_integration)
         self.firing = Var(shape=shape, init=init_value)

@@ -49,7 +49,8 @@ class NEBM(AbstractProcess):
         self.spk_hist = Var(
             shape=shape, init=(np.zeros(shape=shape) + init_value).astype(int)
         )
-
+        #DELETE THIS AGAIN
+        print("WRONG MODEL1")
         self.temperature = Var(shape=shape, init=int(temperature))
         self.refract = Var(shape=shape, init=refract)
         self.refract_counter = Var(shape=shape, init=refract_counter)
@@ -74,7 +75,6 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         cost_diagonal: npty.ArrayLike,
         max_temperature: int,
         refract_scaling: int,
-        refract: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
         init_value=0,
         init_state=None,
         neuron_model: str,
@@ -87,16 +87,13 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         shape: Tuple
             Number of neurons. Default is (1,).
 
-        refract : ArrayLike
+        refract_scaling : ArrayLike
             After a neuron has switched its binary variable, it remains in a
             refractory state that prevents any variable switching for a
             number of time steps. This number of time steps is determined by
-                rand(0, 255) >> refract_scaling + refract
-            Refract thus denotes the minimum number of timesteps a neuron
-            remains in a state after a transition.
-        refract_scaling: ArrayLike
-            Partly determines the refractive period of a neuron. For more
-            information, see details provided on 'refract' above.
+                rand(0, 255) >> refract_scaling
+            Refract_scaling thus denotes the order of magnitude of timesteps a
+            neuron remains in a state after a transition.
         init_value : ArrayLike
             The spiking history with which the network is initialized
         init_state : ArrayLike
@@ -106,7 +103,6 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         self._validate_input(neuron_model)
         super().__init__(
             shape=shape,
-            refract=refract,
             cost_diagonal=cost_diagonal,
             refract_scaling=refract_scaling,
         )
@@ -124,8 +120,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
 
         self.refract_counter = Var(
             shape=shape,
-            init=(refract or 0)
-            + np.right_shift(
+            init=0 + np.right_shift(
                 np.random.randint(0, 2**8, size=shape), (refract_scaling or 0)
             ),
         )

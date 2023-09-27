@@ -53,6 +53,7 @@ from lava.lib.optimization.solvers.generic.nebm.process import (
     NEBM,
     NEBMSimulatedAnnealing,
 )
+from lava.lib.optimization.solvers.generic.annealing.process import Annealing
 from lava.lib.optimization.solvers.generic.scif.models import (
     PyModelQuboScifFixed,
 )
@@ -72,6 +73,9 @@ try:
     from lava.lib.optimization.solvers.generic.nebm.ncmodels import (
         NEBMNcModel,
         NEBMSimulatedAnnealingNcModel,
+    )
+    from lava.lib.optimization.solvers.generic.annealing.ncmodels import (
+        AnnealingNcModel,
     )
     from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
         ReadGateCModel,
@@ -93,6 +97,9 @@ except ImportError:
         pass
 
     class NEBMSimulatedAnnealingNcModel:
+        pass
+
+    class AnnealingNcModel:
         pass
 
     class CostIntegratorNcModel:
@@ -462,6 +469,7 @@ class OptimizationSolver:
                 NEBMSimulatedAnnealingAbstract:
                 NEBMSimulatedAnnealingAbstractModel,
                 NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
+                Annealing:AnnealingNcModel,
                 CostIntegrator: CostIntegratorNcModel,
                 ProportionalIntegralNeuronsPIPGeq: NcL2ModelPI,
                 ProjectedGradientNeuronsPIPGeq: NcL2ModelPG,

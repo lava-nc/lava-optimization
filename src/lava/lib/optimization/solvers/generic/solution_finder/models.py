@@ -193,7 +193,7 @@ class SolutionFinderModel(AbstractSubProcessModel):
             q_diag = cost_coefficients[2].init.diagonal()
 
         # nebm-sa-refract neuron models have a different definition of state
-        neuron_model = hyperparameters.get("neuron_model", "nebm")
+        neuron_model = hyperparameters.get("neuron_model", "nebm-sa-refract")
         if neuron_model == 'nebm-sa-refract':
             return q_off_diag @ init_value
         else:

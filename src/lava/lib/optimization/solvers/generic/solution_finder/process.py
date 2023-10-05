@@ -20,6 +20,7 @@ class SolutionFinder(AbstractProcess):
         discrete_var_shape,
         continuous_var_shape,
         problem,
+        idx=0,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ):
@@ -32,6 +33,7 @@ class SolutionFinder(AbstractProcess):
             discrete_var_shape=discrete_var_shape,
             continuous_var_shape=continuous_var_shape,
             problem=problem,
+            idx=idx,
             name=name,
             log_config=log_config,
         )
@@ -40,5 +42,7 @@ class SolutionFinder(AbstractProcess):
         )
         self.cost_last_bytes = Var(shape=(1,), init=(0,))
         self.cost_first_byte = Var(shape=(1,), init=(0,))
-        self.cost_out_last_bytes = OutPort(shape=(1,))
-        self.cost_out_first_byte = OutPort(shape=(1,))
+        setattr(self, f"cost_out_last_bytes_{idx}", OutPort(shape=(1,)))
+        setattr(self, f"cost_out_first_byte_{idx}", OutPort(shape=(1,)))
+        # self.cost_out_last_bytes = OutPort(shape=(1,))
+        # self.cost_out_first_byte = OutPort(shape=(1,))

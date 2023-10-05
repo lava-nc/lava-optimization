@@ -30,18 +30,19 @@ class SolutionReaderModel(AbstractSubProcessModel):
         self.read_gate.send_pause_request.connect(
             self.solution_readout.timestep_in
         )
+        self.solution_readout.acknowledgement.connect(self.read_gate.acknowledgement)
 
         proc.vars.solution.alias(self.solution_readout.solution)
         proc.vars.min_cost.alias(self.solution_readout.min_cost)
         proc.vars.solution_step.alias(self.solution_readout.solution_step)
 
         self.read_gate.solution_reader.connect(proc.ref_ports.ref_port)
-        for id in range(num_in_ports):
+        for idx in range(num_in_ports):
             in_port = getattr(proc.in_ports,
-                              f"read_gate_in_port_first_byte_{id}")
-            out_port = getattr(self.read_gate, f"cost_in_first_byte_{id}")
+                              f"read_gate_in_port_first_byte_{idx}")
+            out_port = getattr(self.read_gate, f"cost_in_first_byte_{idx}")
             in_port.connect(out_port)
             in_port = getattr(proc.in_ports,
-                              f"read_gate_in_port_last_bytes_{id}")
-            out_port = getattr(self.read_gate, f"cost_in_last_bytes_{id}")
+                              f"read_gate_in_port_last_bytes_{idx}")
+            out_port = getattr(self.read_gate, f"cost_in_last_bytes_{idx}")
             in_port.connect(out_port)

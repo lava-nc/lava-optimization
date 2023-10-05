@@ -265,17 +265,18 @@ class SolverProcessBuilder:
                     discrete_var_shape=discrete_var_shape,
                     continuous_var_shape=continuous_var_shape,
                     problem=problem,
+                    idx=idx
                 )
                 setattr(self, f"finder_{idx}", finder)
                 finders.append(finder)
                 if not proc.is_continuous:
-                    finder.cost_out_last_bytes.connect(
+                    getattr(finder, f"cost_out_last_bytes_{idx}").connect(
                         getattr(
                             self.solution_reader,
                             f"read_gate_in_port_last_bytes_{idx}",
                         )
                     )
-                    finder.cost_out_first_byte.connect(
+                    getattr(finder, f"cost_out_first_byte_{idx}").connect(
                         getattr(
                             self.solution_reader,
                             f"read_gate_in_port_first_byte_{idx}",
@@ -283,18 +284,19 @@ class SolverProcessBuilder:
                     )
             proc.finders = finders
             # Variable aliasing
-            if not proc.is_continuous:
+            if not proc.is_continuous: # or not proc._is_multichip:
                 if hasattr(proc, "cost_coefficients"):
+                    finder_idx = 0
                     proc.vars.optimum.alias(self.solution_reader.min_cost)
                     # Cost = optimality_first_byte << 24 + optimality_last_bytes
                     proc.vars.optimality_last_bytes.alias(
-                        proc.finders[0].cost_last_bytes
+                        proc.finders[finder_idx].cost_last_bytes
                     )
                     proc.vars.optimality_first_byte.alias(
-                        proc.finders[0].cost_first_byte
+                        proc.finders[finder_idx].cost_first_byte
                     )
                 proc.vars.variable_assignment.alias(
-                    proc.finders[0].variables_assignment
+                    proc.finders[finder_idx].variables_assignment
                 )
                 proc.vars.best_variable_assignment.alias(
                     self.solution_reader.solution

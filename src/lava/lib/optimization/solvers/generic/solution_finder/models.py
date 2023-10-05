@@ -54,6 +54,7 @@ class SolutionFinderModel(AbstractSubProcessModel):
         continuous_var_shape = proc.proc_params.get("continuous_var_shape")
         problem = proc.proc_params.get("problem")
         backend = proc.proc_params.get("backend")
+        idx = proc.proc_params.get("idx")
 
         # Subprocesses
         self.variables = VariablesImplementation()
@@ -114,10 +115,10 @@ class SolutionFinderModel(AbstractSubProcessModel):
                 self.cost_convergence_check.cost_first_byte
             )
             self.cost_convergence_check.cost_out_last_bytes.connect(
-                proc.out_ports.cost_out_last_bytes
+                getattr(proc.out_ports, f"cost_out_last_bytes_{idx}")
             )
             self.cost_convergence_check.cost_out_first_byte.connect(
-                proc.out_ports.cost_out_first_byte
+                getattr(proc.out_ports, f"cost_out_first_byte_{idx}")
             )
 
         elif continuous_var_shape:

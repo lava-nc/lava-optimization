@@ -6,7 +6,7 @@ from lava.lib.optimization.solvers.generic.monitoring_processes\
     .solution_readout.process import SolutionReadout
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import PyLoihiProcessModel
-from lava.magma.core.model.py.ports import PyInPort
+from lava.magma.core.model.py.ports import PyInPort, PyOutPort
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
@@ -33,9 +33,15 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     timestep_in: PyInPort = LavaPyType(
         PyInPort.VEC_DENSE, np.int32, precision=32
     )
+    acknowledgement: PyOutPort = LavaPyType(PyOutPort.VEC_DENSE, np.int32,
+                                            precision=32)
     target_cost: int = LavaPyType(int, np.int32, 32)
     min_cost: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     stop = False
+
+    @property
+    def _is_multichip(self):
+        return False
 
     def run_spk(self):
         if self.stop:
@@ -45,7 +51,8 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             timestep, raw_solution = self._receive_data()
             cost = self.decode_cost(raw_cost)
             self.solution_step = abs(timestep)
-            self.solution[:] = self.decode_solution(raw_solution)
+            if not self._is_multichip:
+                self.solution[:] = self.decode_solution(raw_solution)
             self.min_cost[:] = np.asarray([cost[0], min_cost_id])
             if cost[0] < 0:
                 self._printout_new_solution(cost, min_cost_id, timestep)
@@ -53,8 +60,12 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             self._stop_if_requested(timestep, min_cost_id)
 
     def _receive_data(self):
-        timestep = self.timestep_in.recv()[0]
-        raw_solution = self.read_solution.recv()
+        self.acknowledgement.send(np.asarray([1]))
+        timestep, _ = self.cost_in.recv()
+        self.acknowledgement.send(np.asarray([1]))
+        raw_solution=None
+        if not self._is_multichip:
+            raw_solution = self.read_solution.recv()
         return timestep, raw_solution
 
     @staticmethod
@@ -68,11 +79,17 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
         return raw_solution.astype(np.int8) >> 4
 
     def _printout_new_solution(self, cost, min_cost_id, timestep):
-        self.log.info(
-            f"Host: better solution found by network {min_cost_id} at "
-            f"step {abs(timestep) - 2} "
-            f"with cost {cost[0]}: {self.solution}"
-        )
+        if self.solution is not None:
+            self.log.info(
+                f"Host: better solution found by network {min_cost_id} at "
+                f"step {abs(timestep) - 2} "
+                f"with cost {cost[0]}: {self.solution}"
+            )
+        else:
+            self.log.info(
+                f"Host: better solution found by network {min_cost_id} at "
+                f"step {abs(timestep) - 2} "
+            )
 
     def _printout_if_converged(self):
         if (

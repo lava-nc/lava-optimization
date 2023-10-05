@@ -59,14 +59,15 @@ class ReadGate(AbstractProcess):
         )
         self.target_cost = Var(shape=(1,), init=target_cost)
         self.best_solution = Var(shape=shape, init=-1)
-        for id in range(num_in_ports):
+        for idx in range(num_in_ports):
             # Cost is transferred as two separate values
             # cost_last_bytes = last 3 byte of cost
             # cost_first_byte = first byte of cost
             # total cost = np.int8(cost_first_byte) << 24 + cost_last_bytes
-            setattr(self, f"cost_in_last_bytes_{id}", InPort(shape=(1,)))
-            setattr(self, f"cost_in_first_byte_{id}", InPort(shape=(1,)))
+            setattr(self, f"cost_in_last_bytes_{idx}", InPort(shape=(1,)))
+            setattr(self, f"cost_in_first_byte_{idx}", InPort(shape=(1,)))
+        self.acknowledgement = InPort(shape=(1,))
         self.cost_out = OutPort(shape=(2,))
-        self.send_pause_request = OutPort(shape=(1,))
+        self.send_pause_request = OutPort(shape=(2,))
         self.solution_out = OutPort(shape=shape)
         self.solution_reader = RefPort(shape=shape)

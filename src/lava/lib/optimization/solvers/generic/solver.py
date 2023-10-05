@@ -516,7 +516,7 @@ class OptimizationSolver:
                 .astype(np.int32)
             )
             raw_solution &= 0x3F
-            return raw_solution.astype(np.int8) >> 5
+            return raw_solution.astype(np.int8) >> 4
         else:
             best_assignment = self.solver_process.best_variable_assignment
             return best_assignment.aliased_var.get()

@@ -76,9 +76,9 @@ class TestAbstractDerivedProblems(unittest.TestCase):
         aup = AbstractUniformProblem(num_anchors=4,
                                      num_nodes=10,
                                      domain=[(-5, -5), (5, 5)])
-        gt_anchor_coords = np.array([[3,  3], [1, -3], [3,  2], [-3, -4]])
-        gt_node_coords = np.array([[0, -1], [-1,  0], [2, -2], [1, -1],
-                                   [-2, 2], [1, -4], [-2,  0], [3, -1],
+        gt_anchor_coords = np.array([[3, 3], [1, -3], [3, 2], [-3, -4]])
+        gt_node_coords = np.array([[0, -1], [-1, 0], [2, -2], [1, -1],
+                                   [-2, 2], [1, -4], [-2, 0], [3, -1],
                                    [1, -2], [4, -3]])
         self.assertTrue(np.all(aup.anchor_coords == gt_anchor_coords))
         self.assertTrue(np.all(aup.node_coords == gt_node_coords))
@@ -88,9 +88,9 @@ class TestAbstractDerivedProblems(unittest.TestCase):
         agp = AbstractGaussianProblem(num_anchors=4,
                                       num_nodes=7,
                                       domain=[(-3, -3), (3, 3)])
-        gt_anchor_coords = np.array([[-3,  2], [-3,  0], [-1,  0], [-3, -1]])
-        gt_node_coords = np.array([[-4,  2], [-2, -1], [-4,  0], [-2,  0],
-                                   [-2,  0], [-1, -1], [0,  0]])
+        gt_anchor_coords = np.array([[-3, 2], [-3, 0], [-1, 0], [-3, -1]])
+        gt_node_coords = np.array([[-4, 2], [-2, -1], [-4, 0], [-2, 0],
+                                   [-2, 0], [-1, -1], [0, 0]])
         self.assertTrue(np.all(agp.anchor_coords == gt_anchor_coords))
         self.assertTrue(np.all(agp.node_coords == gt_node_coords))
 
@@ -102,10 +102,10 @@ class TestClusteringProblems(unittest.TestCase):
         ucp = UniformlySampledClusteringProblem(num_clusters=4,
                                                 num_points=10,
                                                 domain=[(0, 0), (25, 25)])
-        gt_center_coords = np.array([[8, 15], [13,  8], [22, 11], [18, 11]])
-        gt_point_coords = np.array([[8,  7], [2, 17], [11, 21], [15, 20],
-                                    [20,  5], [7,  3], [6,  4], [10, 11],
-                                    [19,  7], [6, 10]])
+        gt_center_coords = np.array([[8, 15], [13, 8], [22, 11], [18, 11]])
+        gt_point_coords = np.array([[8, 7], [2, 17], [11, 21], [15, 20],
+                                    [20, 5], [7, 3], [6, 4], [10, 11],
+                                    [19, 7], [6, 10]])
         self.assertTrue(np.all(ucp.center_coords == gt_center_coords))
         self.assertTrue(np.all(ucp.point_coords == gt_point_coords))
 
@@ -116,9 +116,9 @@ class TestClusteringProblems(unittest.TestCase):
                                                domain=[(0, 0), (25, 25)],
                                                variance=3)
         gt_center_coords = np.array([[8, 15], [13, 8], [22, 11], [18, 11]])
-        gt_point_coords = np.array([[4, 13], [3, 17], [10, 10], [9,  8],
-                                    [8,  8], [23, 12], [25, 10], [18,  8],
-                                    [17,  8], [13, 12]])
+        gt_point_coords = np.array([[4, 13], [3, 17], [10, 10], [9, 8],
+                                    [8, 8], [23, 12], [25, 10], [18, 8],
+                                    [17, 8], [13, 12]])
         self.assertTrue(np.all(gcp.center_coords == gt_center_coords))
         self.assertTrue(np.all(gcp.point_coords == gt_point_coords))
 

@@ -180,8 +180,8 @@ class ClusteringSolver:
             node_idxs = np.nonzero(col)
             # ID of "this" cluster is the only nonzero row in this column
             # from row 0 to row 'num_clusters' - 1
-            this_cluster_id = (
-                    node_idxs[0][node_idxs[0] < self.problem.num_clusters] + 1)
+            this_cluster_id = \
+                (node_idxs[0][node_idxs[0] < self.problem.num_clusters] + 1)
             if len(this_cluster_id) != 1:
                 raise ValueError(f"More than one cluster center found in "
                                  f"{j}th cluster. Clustering might not have "

@@ -271,9 +271,10 @@ class VRPSolver:
                         tsp = QUBO(q=Q_TSP)
                         tsp_solver = OptimizationSolver(problem=tsp)
                         scfg.hyperparameters.update({
-                            'refract': np.random.randint(0, int(np.sqrt(matsize)),
-                                                         size=(matsize,)),
-                            'init_value': np.random.randint(0, 2, size=(matsize,))
+                            'refract': np.random.randint(
+                                0, int(np.sqrt(matsize)), size=(matsize,)),
+                            'init_value': np.random.randint(
+                                0, 2, size=(matsize,))
                         })
                         report: SolverReport = tsp_solver.solve(config=scfg)
                         if report.profiler:

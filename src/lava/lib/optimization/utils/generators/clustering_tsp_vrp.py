@@ -77,11 +77,8 @@ class AbstractProblem:
         return self._domain
 
     @domain.setter
-    def domain(self, d: ty.Union[
-                     ty.List[ty.List],
-                     ty.List[ty.Tuple],
-                     ty.Tuple[ty.List],
-                     npty.NDArray]):
+    def domain(self, d: ty.Union[ty.List[ty.List], ty.List[ty.Tuple],
+               ty.Tuple[ty.List], npty.NDArray]):
         self._domain = d
 
     @property
@@ -186,7 +183,7 @@ class AbstractGaussianProblem(AbstractProblem):
         prev_id = 0
         for j in range(self.num_anchors):
             num_to_sample = self.num_pt_per_clust + 1 if (
-                    j in clust_ids_for_extra) else self.num_pt_per_clust
+                j in clust_ids_for_extra) else self.num_pt_per_clust
             next_id = prev_id + num_to_sample
             self._node_coords[prev_id:next_id, :] = (
                 np.random.normal(self._anchor_coords[j, :], variance[j],

@@ -87,7 +87,7 @@ class ClusteringProblem:
 
     @cluster_centers.setter
     def cluster_centers(self, cluster_centers: ty.Dict[int, ty.Tuple[int,
-    int]]):
+                        int]]):
         self._cluster_centers = cluster_centers
 
     @property

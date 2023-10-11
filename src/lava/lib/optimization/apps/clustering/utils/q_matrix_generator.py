@@ -1,22 +1,9 @@
-# INTEL CORPORATION CONFIDENTIAL AND PROPRIETARY
-#
-# Copyright © 2023 Intel Corporation.
-#
-# This software and the related documents are Intel copyrighted
-# materials, and your use of them is governed by the express
-# license under which they were provided to you (License). Unless
-# the License provides otherwise, you may not use, modify, copy,
-# publish, distribute, disclose or transmit  this software or the
-# related documents without Intel's prior written permission.
-#
-# This software and the related documents are provided as is, with
-# no express or implied warranties, other than those that are
-# expressly stated in the License.
-import enum
-import logging
+# Copyright (C) 2023 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+# See: https://spdx.org/licenses/
+
 import time
 import copy
-from pprint import pprint
 
 import numpy as np
 import numpy.typing as npty
@@ -113,8 +100,8 @@ class QMatrixClust:
 
         start_time = time.time()
         self.matrix, self.dist_sparsity, self.dist_proxy_sparsity = \
-            self._gen_clustering_Q_matrix(input_nodes, lambda_dist,
-                                          lambda_points, lambda_centers)
+            self._gen_Q_matrix(input_nodes, lambda_dist, lambda_points,
+                               lambda_centers)
         if profile_mat_gen:
             self.time_to_gen_mat = time.time() - start_time
 
@@ -170,7 +157,7 @@ class QMatrixClust:
                              "the clustering stage. Choose one of 'cutoff' "
                              "and 'edge_prune'.")
 
-    def _gen_clustering_Q_matrix(
+    def _gen_Q_matrix(
             self, input_nodes, lambda_dist, lambda_points, lambda_centers
     ):
         """Return the Q matrix that sets up the QUBO for a clustering
@@ -224,15 +211,10 @@ class QMatrixClust:
         centers_mat = centers_mat_off_diag + centers_mat_diag
 
         # Only vehicle waypoints get affected by this constraint
-        cnstrnt_centers = np.pad(
-            centers_mat,
-            (
-                (0, num_nodes - self.num_clusters),
-                (0, num_nodes - self.num_clusters),
-            ),
-            "constant",
-            constant_values=(0),
-        )
+        cnstrnt_centers = np.pad(centers_mat, (
+            (0, num_nodes - self.num_clusters),
+            (0, num_nodes - self.num_clusters),
+        ), "constant", constant_values=(0),)
         cnstrnt_centers_blck = np.kron(
             np.eye(self.num_clusters), cnstrnt_centers
         )

@@ -111,7 +111,7 @@ class TestClusteringProblems(unittest.TestCase):
 
     def test_gaussian_clustering(self):
         np.random.seed(2)
-        ucp = GaussianSampledClusteringProblem(num_clusters=4,
+        gcp = GaussianSampledClusteringProblem(num_clusters=4,
                                                num_points=10,
                                                domain=[(0, 0), (25, 25)],
                                                variance=3)
@@ -119,8 +119,8 @@ class TestClusteringProblems(unittest.TestCase):
         gt_point_coords = np.array([[4, 13], [3, 17], [10, 10], [9,  8],
                                     [8,  8], [23, 12], [25, 10], [18,  8],
                                     [17,  8], [13, 12]])
-        self.assertTrue(np.all(ucp.center_coords == gt_center_coords))
-        self.assertTrue(np.all(ucp.point_coords == gt_point_coords))
+        self.assertTrue(np.all(gcp.center_coords == gt_center_coords))
+        self.assertTrue(np.all(gcp.point_coords == gt_point_coords))
 
 
 if __name__ == '__main__':

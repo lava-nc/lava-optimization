@@ -55,7 +55,7 @@ class ClusteringProblem:
         else:
             self._edges = []
 
-        self._problem_graph = self._generate_problem_graph()
+        self._problem_graph = None
 
     @property
     def points(self):
@@ -104,6 +104,15 @@ class ClusteringProblem:
 
     @property
     def problem_graph(self):
+        """NetworkX problem graph is created and returned.
+
+            If edges are specified, they are taken into account.
+            Returns
+            -------
+            A graph object corresponding to the problem.
+        """
+        if not self._problem_graph:
+            self._generate_problem_graph()
         return self._problem_graph
 
     def _generate_problem_graph(self):
@@ -145,4 +154,4 @@ class ClusteringProblem:
                 np.array(gph.nodes[edge[1]]["Coordinates"]) - np.array(
                     gph.nodes[edge[0]]["Coordinates"]))
 
-        return gph
+        self._problem_graph = gph

@@ -93,11 +93,11 @@ class AbstractProblem:
         return self.domain[1]
 
     @property
-    def anchor_coords(self):
+    def anchor_coords(self) -> ty.List[ty.Tuple[int, int]]:
         return self._anchor_coords
 
     @property
-    def node_coords(self):
+    def node_coords(self) -> ty.List[ty.Tuple[int, int]]:
         return self._node_coords
 
 
@@ -110,8 +110,8 @@ class AbstractClusteringProblem(AbstractProblem):
         kwargs.update({'num_anchors': num_clusters,
                        'num_nodes': num_points})
         super(AbstractClusteringProblem, self).__init__(**kwargs)
-        self.center_coords = self.anchor_coords
-        self.point_coords = self.node_coords
+        self.center_coords: ty.List[ty.Tuple[int, int]] = self.anchor_coords
+        self.point_coords: ty.List[ty.Tuple[int, int]] = self.node_coords
 
 
 class AbstractTSP(AbstractProblem):
@@ -123,8 +123,8 @@ class AbstractTSP(AbstractProblem):
         kwargs.update({'num_anchors': num_starting_pts,
                        'num_nodes': num_dest_nodes})
         super(AbstractTSP, self).__init__(**kwargs)
-        self.starting_coords = self.anchor_coords
-        self.dest_coords = self.node_coords
+        self.starting_coords: ty.List[ty.Tuple[int, int]] = self.anchor_coords
+        self.dest_coords: ty.List[ty.Tuple[int, int]] = self.node_coords
 
 
 class AbstractVRP(AbstractProblem):
@@ -204,3 +204,8 @@ class GaussianSampledClusteringProblem(AbstractClusteringProblem,
                                        AbstractGaussianProblem):
     def __init__(self, **kwargs):
         super(GaussianSampledClusteringProblem, self).__init__(**kwargs)
+
+
+class GaussianSampledTSP(AbstractTSP, AbstractGaussianProblem):
+    def __init__(self, **kwargs):
+        super(GaussianSampledTSP, self).__init__(**kwargs)

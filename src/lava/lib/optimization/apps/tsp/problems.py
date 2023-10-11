@@ -7,19 +7,15 @@ import numpy as np
 import typing as ty
 
 
-class VRP:
-    """Vehicle Routing Problem specification.
+class TravellingSalesmanProblem:
+    """Travelling Salesman Problem specification.
 
-    N customer nodes need to be visited by M vehicles, while minimizing the
-    overall cost of the traversal.
-
-    For complete specification of a VRP, a dictionary mapping the node IDs to
-    the node coordinates and a dictionary mapping the vehicle IDs to their
-    initial coordinates are sufficient.
+    N customer nodes need to be visited by a travelling salesman,
+    while minimizing the overall distance of the traversal.
     """
     def __init__(self,
-                 node_coords: ty.List[ty.Tuple[int, int]],
-                 vehicle_coords: ty.Union[int, ty.List[ty.Tuple[int, int]]],
+                 waypt_coords: ty.List[ty.Tuple[int, int]],
+                 starting_pt: ty.Tuple[int, int],
                  edges: ty.Optional[ty.List[ty.Tuple[int, int]]] = None):
         """
         Parameters
@@ -44,20 +40,19 @@ class VRP:
         visited by the vehicles.
         """
         super().__init__()
-        self._node_coords = node_coords
-        self._vehicle_coords = vehicle_coords
-        self._num_nodes = len(self._node_coords)
-        self._num_vehicles = len(self._vehicle_coords)
-        self._vehicle_ids = list(np.arange(1, self._num_vehicles + 1))
-        self._node_ids = list(np.arange(
-            self._num_vehicles + 1, self._num_vehicles + self._num_nodes + 1))
-        self._nodes = dict(zip(self._node_ids, self._node_coords))
+        self._waypt_coords = waypt_coords
+        self._starting_pt_coords = starting_pt
+        self._num_waypts = len(self._waypt_coords)
+        self._starting_pt_id = 1
+        self._waypt_ids = list(np.arange(2, self._num_waypts + 2))
+        self._nodes = {self._starting_pt_id: self._starting_pt_coords}
+        self._nodes.update(dict(zip(self._waypt_ids, self._waypt_coords)))
         if edges:
             self._edges = edges
         else:
             self._edges = []
-        self._vehicles = dict(zip(self._vehicle_ids, self._vehicle_coords))
-        self._problem_graph = self._generate_problem_graph()
+
+        self._problem_graph = None
 
     @property
     def nodes(self):
@@ -69,42 +64,43 @@ class VRP:
 
     @property
     def node_ids(self):
-        return self._node_ids
+        return list(self._nodes.keys())
 
     @property
     def node_coords(self):
-        return self._node_coords
+        return list(self._nodes.values())
 
     @property
     def num_nodes(self):
-        return self._num_nodes
+        return len(list(self._nodes.keys()))
 
     @property
     def edges(self):
         return self._edges
 
     @property
-    def vehicles(self):
-        return self._vehicles
-
-    @vehicles.setter
-    def vehicles(self, vehicles: ty.Dict[int, ty.Tuple[int, int]]):
-        self._vehicles = vehicles
+    def waypt_coords(self):
+        return self._waypt_coords
 
     @property
-    def vehicle_ids(self):
-        return self._vehicle_ids
+    def waypt_ids(self):
+        return self._waypt_ids
 
     @property
-    def vehicle_init_coords(self):
-        return self._vehicle_coords
-
-    @property
-    def num_vehicles(self):
-        return self._num_vehicles
+    def num_waypts(self):
+        return len(self._waypt_coords)
 
     @property
     def problem_graph(self):
+        """NetworkX problem graph is created and returned.
+
+        If edges are specified, they are taken into account.
+        Returns
+        -------
+        A graph object corresponding to the problem.
+        """
+        if not self._problem_graph:
+            self._generate_problem_graph()
         return self._problem_graph
 
     def _generate_problem_graph(self):
@@ -117,24 +113,7 @@ class VRP:
         else:
             gph = ntx.complete_graph(self.node_ids, create_using=ntx.DiGraph())
 
-        node_type_dict = dict(zip(self.node_ids,
-                                  ["Node"] * len(self.node_ids)))
-        # Associate node type as "Node" and node coordinates as attributes
-        ntx.set_node_attributes(gph, node_type_dict, name="Type")
         ntx.set_node_attributes(gph, self.nodes, name="Coordinates")
-
-        # Add vehicles as nodes
-        gph.add_nodes_from(self.vehicle_ids)
-        # Associate node type as "Vehicle" and vehicle coordinates as attributes
-        vehicle_type_dict = dict(zip(self.vehicle_ids,
-                                     ["Vehicle"] * len(self.vehicle_ids)))
-        ntx.set_node_attributes(gph, vehicle_type_dict, name="Type")
-        ntx.set_node_attributes(gph, self.vehicles, name="Coordinates")
-
-        # Add edges from initial vehicle positions to all nodes (oneway edges)
-        for vid in self.vehicle_ids:
-            for nid in self.node_ids:
-                gph.add_edge(vid, nid)
 
         # Compute Euclidean distance along all edges and assign them as edge
         # weights
@@ -145,4 +124,4 @@ class VRP:
                 np.array(gph.nodes[edge[1]]["Coordinates"]) - np.array(
                     gph.nodes[edge[0]]["Coordinates"]))
 
-        return gph
+        self._problem_graph = gph

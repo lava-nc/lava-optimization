@@ -139,7 +139,7 @@ class ClusteringSolver:
         if not scfg.only_gen_q_mat:
             prob = QUBO(q=q_mat)
             self._solver = OptimizationSolver(problem=prob)
-            scfg.hyperparameters.update({
+            hparams = {
                 'neuron_model': 'nebm-sa-refract',
                 'refract': 10,
                 'refract_scaling': 6,
@@ -147,7 +147,9 @@ class ClusteringSolver:
                 'min_temperature': 1,
                 'max_temperature': 5,
                 'steps_per_temperature': 200
-            })
+            }
+            if not scfg.hyperparameters:
+                scfg.hyperparameters.update(hparams)
             report: SolverReport = self._solver.solve(config=scfg)
             if report.profiler:
                 self._profiler = report.profiler

@@ -119,7 +119,7 @@ class TSPSolver:
         if not scfg.only_gen_q_mat:
             tsp = QUBO(q=q_mat)
             tsp_solver = OptimizationSolver(problem=tsp)
-            scfg.hyperparameters.update({
+            hparams = {
                 'neuron_model': 'nebm-sa-refract',
                 'refract': 50,
                 'refract_scaling': 6,
@@ -127,7 +127,9 @@ class TSPSolver:
                 'min_temperature': 1,
                 'max_temperature': 5,
                 'steps_per_temperature': 200
-            })
+            }
+            if not scfg.hyperparameters:
+                scfg.hyperparameters.update(hparams)
             report: SolverReport = tsp_solver.solve(config=scfg)
             if report.profiler:
                 self._profiler = report.profiler

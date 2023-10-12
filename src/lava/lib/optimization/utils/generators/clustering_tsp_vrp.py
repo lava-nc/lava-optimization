@@ -203,6 +203,6 @@ class GaussianSampledClusteringProblem(AbstractClusteringProblem,
         super(GaussianSampledClusteringProblem, self).__init__(**kwargs)
 
 
-class GaussianSampledTSP(AbstractTSP, AbstractGaussianProblem):
+class UniformlySampledTSP(AbstractTSP, AbstractUniformProblem):
     def __init__(self, **kwargs):
-        super(GaussianSampledTSP, self).__init__(**kwargs)
+        super(UniformlySampledTSP, self).__init__(**kwargs)

@@ -2,19 +2,18 @@ import unittest
 import numpy as np
 from lava.lib.optimization.apps.tsp.problems import TravellingSalesmanProblem
 from lava.lib.optimization.utils.generators.clustering_tsp_vrp import (
-    GaussianSampledTSP)
+    UniformlySampledTSP)
 
 
-class testTravellingSalesmanProblem(unittest.TestCase):
+class TestTravellingSalesmanProblem(unittest.TestCase):
     def setUp(self) -> None:
         np.random.seed(2)
-        self.gtsp = GaussianSampledTSP(num_starting_pts=1,
-                                       num_dest_nodes=5,
-                                       domain=[(0, 0), (25, 25)],
-                                       variance=3)
+        self.utsp = UniformlySampledTSP(num_starting_pts=1,
+                                        num_dest_nodes=5,
+                                        domain=[(0, 0), (25, 25)])
         self.tsp = TravellingSalesmanProblem(
-            waypt_coords=self.gtsp.dest_coords,
-            starting_pt=self.gtsp.starting_coords[0]
+            waypt_coords=self.utsp.dest_coords,
+            starting_pt=self.utsp.starting_coords[0]
         )
 
     def test_init(self):

@@ -3,20 +3,16 @@
 # See: https://spdx.org/licenses/
 
 
-import networkx as ntx
 import numpy as np
 
 from networkx.algorithms.approximation import maximum_independent_set
 from typing import List, Dict, Tuple, Optional
 
 import matplotlib.pyplot as plt
-from matplotlib.patches import PathPatch
-from matplotlib.path import Path
 
 from lava.utils import loihi
 from lava.lib.optimization.apps.scheduler.problems import \
     (SchedulingProblem, SatelliteScheduleProblem)
-from lava.lib.optimization.apps.scheduler.utils.util_funcs import *
 from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.solvers.generic.solver import (OptimizationSolver,
                                                           SolverConfig)
@@ -35,12 +31,15 @@ class Scheduler:
 
         Parameters
         ----------
-        sp (SchedulingProblem) : Scheduling problem object as defined in
-        lava.lib.optimization.apps.scheduler.problems
-        qubo_weights (tuple(int, int)) : The QUBO weight matrix parameters
-        for diagonal and off-diagonal weights. Default is (1, 8).
-        probe_cost (bool) : Toggle whether to probe cost during the solver
-        run. Default is False.
+        sp : SchedulingProblem
+            Scheduling problem object as defined in
+            lava.lib.optimization.apps.scheduler.problems
+        qubo_weights : tuple(int, int)
+            The QUBO weight matrix parameters for diagonal and off-diagonal
+            weights. Default is (1, 8).
+        probe_cost : bool
+            Toggle whether to probe cost during the solver run. Default is
+            False.
         """
         self._problem = sp
         self._graph = sp.graph
@@ -87,22 +86,13 @@ class Scheduler:
         Set hyperparameters for QUBO solver
         Parameters
         ----------
-        hp_update (tuple of dict and bool) :
-        The bool part toggles whether to update the existing hyperparameters
-            or to set new ones from scratch.
+        hp_update : tuple(dict, bool)
+            The bool part toggles whether to update the existing
+            hyperparameters or to set new ones from scratch.
 
-        The dict part of the tuple has the following keys:
-            - temperature: annealing parameter. Value of this key should be
-            an integer, typically between 1 and 10. Default is 8.
-            - refract: refractory period for each neuron for which it stays
-            "on" or "off". Value of this key should be a NumPy integer array of
-            length equal to the number of nodes in the problem graph. Default
-            value is comprised by random integers between 64 and 127.
-            - refract_counter: Counter for the *initial* number of time-steps
-            for which neurons should stay "off". Value of this key should be
-            a NumPy integer array of length equal to the number of nodes in
-            the problem graph. Default value is comprised by random integers
-            between 0 and 64.
+        Notes
+        -----
+        Refer to the QUBO Solver documentation for the hyperparameters.
         """
         update = hp_update[1]
         if not update:
@@ -129,9 +119,11 @@ class Scheduler:
     @probe_cost.setter
     def probe_cost(self, val: bool):
         """Toggle whether to probe cost during the solver run.
+
         Parameters
         ----------
-        val (bool) : Default is False.
+        val : bool
+            Default is False.
         """
         self._probe_cost = val
 

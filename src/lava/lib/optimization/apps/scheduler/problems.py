@@ -20,7 +20,7 @@ class SchedulingProblem:
                  seed: int = 42):
         """Schedule `num_tasks` tasks among `num_agents` agents such that
         every agent performs exactly one task and every task gets assigned
-        exactly one agent.
+        to exactly one agent.
 
         Parameters
         ----------
@@ -30,10 +30,11 @@ class SchedulingProblem:
         num_tasks (int) : number of tasks to be performed. Default is
         arbitrarily chosen as 3.
 
-        sat_cutoff (float or int) : If float, this is the satisfiability
-        cut-off calculated as the ratio between the number of tasks that get
-        assigned an agent to the total number of tasks. A fraction between 0
-        and 1. If int, this is the target cost for the underlying QUBO
+        sat_cutoff (float or int) : If provided as a float, it is interpreted
+        as satisfiability cut-off, which is the ratio between the number
+        of tasks for which an agent gets assigned to the total number of
+        tasks. Needs to be a fraction between 0 and 1 in this case.
+        If provided as an int, this is the target cost for the underlying QUBO
         solver. Default is 0.99 (i.e., 99% of the total number of tasks get
         assigned an agent).
 
@@ -107,6 +108,12 @@ class SchedulingProblem:
         self._random_seed = val
 
     def is_node_valid(self, *args):
+        """Checks if a node is valid to be included in the problem graph.
+
+        Over-ridden by derived child classes to suit their purpose. The base
+        class method always returns True, indicating that all nodes are valid
+        in the case of a base Scheduling Problem.
+        """
         return True
 
     def is_edge_conflicting(self, node1, node2):
@@ -117,15 +124,21 @@ class SchedulingProblem:
 
     def generate(self, seed=None):
         """ Generate a new scheduler problem. """
-        if seed != self.random_seed:  # set seed only if it's different
+        if self.random_seed:
+            np.random.seed(self.random_seed)
+        if not self.random_seed or seed != self.random_seed:
+            # set seed only if it's different
             self.random_seed = seed
             np.random.seed(seed)
         self.graph = ntx.Graph()
-        self.generate_valid_nodes()
-        self.generate_edges_from_constraints()
-        self.rescale_adjacency()
+        self._generate_valid_nodes()
+        self._generate_edges_from_constraints()
+        self._rescale_adjacency()
 
-    def generate_valid_nodes(self):
+    def _generate_valid_nodes(self):
+        """Generate nodes and check if they are valid before adding them to
+        the problem graph.
+        """
         node_id = 0
         if self.agent_attrs is None:
             self.agent_attrs = np.reshape(self.agent_ids,
@@ -136,9 +149,11 @@ class SchedulingProblem:
                 np.tile(np.reshape(self.task_ids,
                                    (len(self.task_ids), 1)), (1, 2)))
         task_id_attr_map = dict(zip(self.task_ids, self.task_attrs))
-        for aid, a_attr in agent_id_attr_map.items():
-            for tid, t_attr in task_id_attr_map.items():
+        for aid, a_attr in agent_id_attr_map.items():  # for all agents
+            for tid, t_attr in task_id_attr_map.items():  # for all tasks
+                # Check if (agent, task) is a valid node
                 if self.is_node_valid(aid, tid):
+                    # If it is, add it to the problem graph
                     self.graph.add_node(node_id,
                                         agent_id=aid,
                                         task_id=tid,
@@ -146,7 +161,7 @@ class SchedulingProblem:
                                         task_attr=t_attr)
                     node_id += 1
 
-    def generate_edges_from_constraints(self):
+    def _generate_edges_from_constraints(self):
         num_nodes = len(self.graph.nodes)
         self.adjacency = (
             np.zeros((num_nodes, num_nodes), dtype=int))
@@ -158,7 +173,7 @@ class SchedulingProblem:
                     self.graph.add_edge(n1, n2)
                     self.adjacency[n1, n2] = 1
 
-    def rescale_adjacency(self):
+    def _rescale_adjacency(self):
         """ Scale the adjacency matrix weights for QUBO solver. """
         self.adjacency = np.triu(self.adjacency)
         self.adjacency += self.adjacency.T - 2 * np.diag(
@@ -176,6 +191,25 @@ class SatelliteScheduleProblem(SchedulingProblem):
 
     The problem is represented as an infeasibility graph and can be solved by
     finding the Maximum Independent Set.
+
+    Parameters
+    ----------
+    num_satellites : int, default = 6
+        The number of satellites to generate schedules for.
+    view_height : float, default = 0.25
+        The range from minimum to maximum viewable angle for each satellite.
+    view_coords : Optional[np.ndarray], default = None
+        The view coordinates (i.e. minimum viewable angle) for each
+        satellite in a numpy array. If None, view coordinates will be
+        evenly distributed across the viewable range.
+    num_requests : int, default = 48
+        The number of requests to generate.
+    turn_rate : float, default = 2
+        How quickly each satellite may reorient its view angle.
+    solution_criteria : float, default = 0.99
+        The target for a successful solution. The solver will stop
+        looking for a better schedule if the specified fraction of
+        requests is satisfied.
     """
 
     def __init__(
@@ -190,24 +224,6 @@ class SatelliteScheduleProblem(SchedulingProblem):
             seed: int = 42,
     ):
         """ Create a SatelliteScheduleProblem.
-        Parameters
-        ----------
-        num_satellites : int, default = 6
-            The number of satellites to generate schedules for.
-        view_height : float, default = 0.25
-            The range from minimum to maximum viewable angle for each satellite.
-        view_coords : Optional[np.ndarray], default = None
-            The view coordinates (i.e. minimum viewable angle) for each
-            satellite in a numpy array. If None, view coordinates will be
-            evenly distributed across the viewable range.
-        num_requests : int, default = 48
-            The number of requests to generate.
-        turn_rate : float, default = 2
-            How quickly each satellite may reorient its view angle.
-        solution_criteria : float, default = 0.99
-            The target for a successful solution. The solver will stop
-            looking for a better schedule if the specified fraction of
-            requests is satisfied.
         """
         super(SatelliteScheduleProblem,
               self).__init__(num_agents=num_satellites,
@@ -232,7 +248,7 @@ class SatelliteScheduleProblem(SchedulingProblem):
         self.qubo_problem = None
         self.generate_requests(requests)
 
-    def generate_requests(self, requests=None):
+    def generate_requests(self, requests=None) -> None:
         """ Generate a random set of requests in the 2D plane. """
         if requests is not None:
             self.requests = requests

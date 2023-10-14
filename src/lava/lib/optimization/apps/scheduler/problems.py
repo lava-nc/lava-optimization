@@ -233,20 +233,21 @@ class SatelliteScheduleProblem(SchedulingProblem):
         self.num_satellites = self.num_agents
         self.num_requests = self.num_tasks
 
-        self.view_height = view_height
+        self.view_height = view_height * (1 / (num_satellites - 1))
         if view_coords is None:
-            self.view_coords = np.linspace(0 - view_height / 2,
-                                           1 - view_height / 2,
+            self.view_coords = np.linspace(0,
+                                           1,
                                            num_satellites)
         else:
             self.view_coords = view_coords
-        self.agent_attrs = list(zip([view_height] * num_satellites,
+        self.agent_attrs = list(zip([self.view_height] * num_satellites,
                                     self.view_coords))
         self.satellites = self.agent_ids
         self.turn_rate = turn_rate
         self.requests = None
         self.qubo_problem = None
         self.generate_requests(requests)
+        self.request_density = self.requests.shape[0] / (1 + self.view_height)
 
     def generate_requests(self, requests=None) -> None:
         """ Generate a random set of requests in the 2D plane. """
@@ -255,6 +256,8 @@ class SatelliteScheduleProblem(SchedulingProblem):
         else:
             np.random.seed(self.random_seed)
             self.requests = np.random.random((self.num_requests, 2))
+            self.requests[:, 1] = (1 + self.view_height) * (
+                self.requests[:, 1]) - (self.view_height / 2)
             order = np.argsort(self.requests[:, 0])
             self.requests = self.requests[order, :]
         self.task_attrs = self.requests.tolist()
@@ -264,8 +267,8 @@ class SatelliteScheduleProblem(SchedulingProblem):
         view_height = self.agent_attrs[sat_id][0]
         satellite_y_coord = self.agent_attrs[sat_id][1]
         request_y_coord = self.task_attrs[req_id][1]
-        lower_bound = satellite_y_coord
-        upper_bound = satellite_y_coord + view_height
+        lower_bound = satellite_y_coord - view_height / 2
+        upper_bound = satellite_y_coord + view_height / 2
         return lower_bound <= request_y_coord <= upper_bound
 
     def is_req_reachable(self, n1, n2):
@@ -293,18 +296,18 @@ class SatelliteScheduleProblem(SchedulingProblem):
                     s=2)
         for y in self.view_coords:
             codes = [Path.MOVETO, Path.LINETO, Path.LINETO, Path.CLOSEPOLY]
-            verts = [[-0.05, y + self.view_height / 2],
-                     [0.05, y + self.view_height],
-                     [0.05, y + 0.0],
-                     [-0.05, y + 0.0]]
+            verts = [[-0.05, y],
+                     [0.05, y + self.view_height / 2],
+                     [0.05, y - self.view_height / 2],
+                     [-0.05, y]]
             plt.gca().add_patch(
                 PathPatch(Path(verts, codes), ec='none', alpha=0.3,
                           fc='lightblue'))
-            plt.scatter([-0.05], [y + self.view_height / 2],
+            plt.scatter([-0.05], [y], # + self.view_height / 2
                         s=10, marker='s', c='gray')
             plt.plot([0, 1],
-                     [y + self.view_height / 2,
-                      y + self.view_height / 2],
+                     [y,  # + self.view_height / 2
+                      y],  # + self.view_height / 2],
                      'C1--', lw=0.75)
         plt.xticks([])
         plt.yticks([])

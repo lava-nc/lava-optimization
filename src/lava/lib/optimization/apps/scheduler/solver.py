@@ -4,6 +4,7 @@
 
 
 import numpy as np
+import time
 
 from networkx.algorithms.approximation import maximum_independent_set
 from typing import List, Dict, Tuple, Optional
@@ -174,15 +175,17 @@ class Scheduler:
 
     def solve_with_netx(self):
         """ Find an approximate maximum independent set using networkx. """
+        start_time = time.time()
         solution = maximum_independent_set(self.graph)
+        self.netx_time = time.time() - start_time
         solution = np.array(list(solution))
         self._netx_solution = np.zeros((solution.size, 4))
         nds = self.graph.nodes
         for j, sol_node in enumerate(solution):
-            agent_id = nds[sol_node]["agent_id"]
-            task_attrs = nds[sol_node]["task_attr"]
+            satellite_id = nds[sol_node]["agent_id"]
+            request_coords = nds[sol_node]["task_attr"]
             self._netx_solution[j, :] = (
-                np.hstack((sol_node, agent_id, task_attrs)))
+                np.hstack((sol_node, satellite_id, request_coords)))
 
     def solve_with_lava_qubo(self, timeout=1000):
         """ Find a maximum independent set using QUBO in Lava. """
@@ -206,10 +209,10 @@ class Scheduler:
         self._lava_solution = np.zeros((solution.size, 4))
         nds = self.graph.nodes
         for j, sol_node in enumerate(solution):
-            agent_id = nds[sol_node]["agent_id"]
-            task_attrs = nds[sol_node]["task_attr"]
+            satellite_id = nds[sol_node]["agent_id"]
+            request_coords = nds[sol_node]["task_attr"]
             self._lava_solution[j, :] = (
-                np.hstack((sol_node, agent_id, task_attrs)))
+                np.hstack((sol_node, satellite_id, request_coords)))
 
 
 class SatelliteScheduler(Scheduler):

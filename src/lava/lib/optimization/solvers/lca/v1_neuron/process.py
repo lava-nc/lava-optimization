@@ -21,6 +21,7 @@ class V1Neuron(AbstractProcess):
     bias: bias applied every timestep for 1 layer dynamics
     two_layer: If false, use 1 layer dynamics, otherwise use 2 layer dynamics
     """
+
     def __init__(self,
                  vth: float,
                  tau: float,
@@ -29,7 +30,6 @@ class V1Neuron(AbstractProcess):
                  bias: ty.Optional[ty.Union[int, np.ndarray]] = 0,
                  two_layer: ty.Optional[bool] = True,
                  **kwargs) -> None:
-
         super().__init__(shape=shape,
                          vth=vth,
                          tau=tau,

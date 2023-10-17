@@ -303,7 +303,7 @@ class SatelliteScheduleProblem(SchedulingProblem):
             plt.gca().add_patch(
                 PathPatch(Path(verts, codes), ec='none', alpha=0.3,
                           fc='lightblue'))
-            plt.scatter([-0.05], [y], # + self.view_height / 2
+            plt.scatter([-0.05], [y],  # + self.view_height / 2
                         s=10, marker='s', c='gray')
             plt.plot([0, 1],
                      [y,  # + self.view_height / 2

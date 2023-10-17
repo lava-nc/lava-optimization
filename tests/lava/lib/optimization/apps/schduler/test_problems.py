@@ -1,7 +1,7 @@
 # Copyright (C) 2023 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
-
+import pprint
 import unittest
 
 import numpy as np
@@ -44,7 +44,7 @@ class TestSatelliteSchedulingProblem(unittest.TestCase):
         self.ssp = SatelliteScheduleProblem(num_satellites=3,
                                             num_requests=12,
                                             requests=requests,
-                                            view_height=0.25,
+                                            view_height=0.5,
                                             seed=42)
 
     def test_init(self):
@@ -52,19 +52,19 @@ class TestSatelliteSchedulingProblem(unittest.TestCase):
 
     def test_generate(self):
         self.ssp.generate(seed=42)
-        gt_graph_dict = {0: {'agent_attr': (0.25, 0.375),
+        gt_graph_dict = {0: {'agent_attr': (0.25, 0.5),
                              'agent_id': 1,
                              'task_attr': [0.30424224, 0.52475643],
                              'task_id': 5},
-                         1: {'agent_attr': (0.25, 0.375),
+                         1: {'agent_attr': (0.25, 0.5),
                              'agent_id': 1,
                              'task_attr': [0.73199394, 0.59865848],
                              'task_id': 10},
-                         2: {'agent_attr': (0.25, 0.875),
+                         2: {'agent_attr': (0.25, 1.0),
                              'agent_id': 2,
                              'task_attr': [0.02058449, 0.96990985],
                              'task_id': 0},
-                         3: {'agent_attr': (0.25, 0.875),
+                         3: {'agent_attr': (0.25, 1.0),
                              'agent_id': 2,
                              'task_attr': [0.37454012, 0.95071431],
                              'task_id': 6}}

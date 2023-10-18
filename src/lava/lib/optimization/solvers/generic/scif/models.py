@@ -383,7 +383,6 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
     """***Deprecated*** Concrete implementation of Stochastic Constraint
     Integrate and Fire (SCIF) neuron for solving QUBO problems.
     """
-
     a_in = LavaPyType(PyInPort.VEC_DENSE, int, precision=8)
     s_sig_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
     s_wta_out = LavaPyType(PyOutPort.VEC_DENSE, int, precision=8)
@@ -411,7 +410,8 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         #   need to replace it with Loihi-conformant LFSR function
         prand = np.zeros(shape=self.state.shape)
         if prand.size > 0:
-            rand_nums = np.random.randint(0, (2**16) - 1, size=prand.size)
+            rand_nums = \
+                np.random.randint(0, (2 ** 16) - 1, size=prand.size)
             # Assign random numbers only to neurons, for which noise is enabled
             prand = np.right_shift(
                 (rand_nums * self.noise_ampl).astype(int), self.noise_shift
@@ -442,12 +442,8 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         lfsr_to_intg = lfsr[intg_idx]
 
         state_to_intg += lfsr_to_intg + cost_diag_intg + a_in_to_intg
-        np.clip(
-            state_to_intg,
-            a_min=-(2**23),
-            a_max=2**23 - 1,
-            out=state_to_intg,
-        )
+        np.clip(state_to_intg, a_min=-(2 ** 23), a_max=2 ** 23 - 1,
+                out=state_to_intg)
         self.state[intg_idx] = state_to_intg
 
         # WTA spike indices when threshold is exceeded
@@ -492,10 +488,10 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         s_sig[sig_spk_idx] = (
             self.cost_diagonal[sig_spk_idx] + self.a_in_data[sig_spk_idx]
         )
-
         return s_sig
 
     def _gen_wta_spks(self):
+
         # indices of neurons to be integrated:
         intg_idx = np.where(self.state >= 0)
         # indices of neurons in refractory:
@@ -520,6 +516,7 @@ class PyModelQuboScifRefracFixed(PyLoihiProcessModel):
         return s_wta
 
     def run_spk(self) -> None:
+
         # Receive synaptic input
         self.a_in_data = self.a_in.recv().astype(int)
 

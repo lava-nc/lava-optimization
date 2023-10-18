@@ -129,7 +129,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
 
         self.refract_counter = Var(
             shape=shape,
-            init=(refract or 0)
+            init=refract
             + np.right_shift(
                 np.random.randint(0, 2**8, size=shape), (refract_scaling or 0)
             ),

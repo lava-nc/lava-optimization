@@ -2,13 +2,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
-try:
-    from lava.magma.core.model.nc.net import NetL2
-except ImportError:
-
-    class NetL2:
-        pass
-
 
 import numpy as np
 from lava.lib.optimization.solvers.generic.cost_integrator.process import (
@@ -45,6 +38,7 @@ from lava.proc.sparse.process import Sparse
 from lava.lib.optimization.utils.datatype_converter import convert_to_fp
 from scipy.sparse import csr_matrix
 
+# todo the following is also used in solver.py, we should import, not redefine
 CPUS = [CPU, "CPU"]
 NEUROCORES = [Loihi2NeuroCore, NeuroCore, "Loihi2"]
 BACKEND_MSG = f""" was requested as backend. However,
@@ -70,6 +64,7 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
         backend = proc.backend
         neuron_model = proc.hyperparameters.get("neuron_model", "qp-lp_pipg")
 
+        # todo invert conditional for readability.
         if neuron_model == "qp-lp_pipg":
             # adding them here to show that they are need for the neurons models
             # since some values are calculated based on these weights
@@ -90,6 +85,10 @@ class ContinuousVariablesModel(AbstractSubProcessModel):
                 "alpha_decay_indices", [0]
             )
             alpha = proc.hyperparameters.get("alpha", 1)
+            # TODO: Why is the parameterization different with backend? Simplify
+            # TODO maybe we are letting lower level details transpire,
+            #  the backend handling might need to be done by the process
+            #  initializer.
             if backend in CPUS:
                 self.ProjGrad = ProjectedGradientNeuronsPIPGeq(
                     shape=init_state.shape,
@@ -137,7 +136,7 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
         # The input shape is a 2D vector (shape of the weight matrix).
         backend = proc.backend
         neuron_model = proc.hyperparameters.get("neuron_model", "qp-lp_pipg")
-
+        # TODO:  invert conditional to simplify
         if neuron_model == "qp-lp_pipg":
             # adding them here to show that they are need for the neurons models
             # since some values are calculated based on these weights
@@ -158,7 +157,7 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
                 "beta_growth_indices", [0]
             )
             lr_change = proc.hyperparameters.get("lr_change_type", "indices")
-
+            # TODO try to simplify to avoid the use of backend conditional
             if backend in CPUS:
                 self.conn_A = Sparse(
                     weights=csr_matrix(A_pre),
@@ -248,6 +247,15 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         available_sa_models = ['nebm-sa', 'nebm-sa-balanced',
                                'nebm-sa-refract-approx-unbalanced',
                                'nebm-sa-refract-approx', 'nebm-sa-refract']
+        # TODO perform method straction to shorten the following code maybe
+        #  each proc should get the params internally? So, it could accept
+        #  the proc.hyperparameters dict alongside the other params,
+        #  or we just unpack, hyperparameters should satisfy model interface
+        #  otherwise we can let it fail. If not good UX we could also ignore
+        #  unnecessary params. we could do neuron_proc = get_proc(
+        #  neuron_model) then neruon_proc(**proc.hyperparameters) that will
+        #  eliminate all following lines and reduce to 2 lines. It also means
+        #  defaults are only handled at the leaf proc level.
         if neuron_model == "nebm":
             temperature = proc.hyperparameters.get("temperature", 1)
             refract = proc.hyperparameters.get("refract", 0)

@@ -197,7 +197,9 @@ class SubGDModel(AbstractSubProcessModel):
             shape=shape_constraint_matrix_T,
             weights=constraint_matrix_T,
         )
-
+        # TODO: perform method extraction, this is doing more than one thing
+        #  by definition. Maybe the inner conditional is unnecessary if the
+        #  interface is common and the leaf proc deals with the input
         if sparse:
             if model == "SigDel":
                 print("[INFO]: Using Sigma Delta Solution Neurons")
@@ -305,6 +307,7 @@ class PyProjGradPIPGeqModel(PyLoihiProcessModel):
         self.connectivity_spike = 0
 
     def run_spk(self):
+        # TODO all this conditionals should be done in an extracted method.
         self.decay_counter += 1
         a_in = self.a_in.recv()
         if self.decay_counter % 2 == 1:
@@ -373,6 +376,7 @@ class PyPIneurPIPGeqModel(PyLoihiProcessModel):
         self.growth_counter += 1
         a_in = self.a_in.recv()
 
+        # TODO all this conditionals should be done in an extracted method.
         if self.growth_counter % 2 == 1:
             if self.lr_growth_type == "schedule":
                 if self.growth_counter == self.beta_growth_schedule:
@@ -436,6 +440,7 @@ class PyDelNeurModel(PyLoihiProcessModel):
         delta_state = s_in - self.x_internal
         self.x_internal = s_in
         self.decay_counter += 1
+        # TODO all this conditionals should be done in an extracted method.
         if self.theta_decay_type == "schedule":
             if self.decay_counter == self.theta_decay_schedule:
                 # TODO: guard against shift overflows in fixed-point

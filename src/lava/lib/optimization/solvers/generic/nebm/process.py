@@ -57,6 +57,7 @@ class NEBM(AbstractProcess):
         # Initial state determined in DiscreteVariables
         self.state = Var(shape=shape, init=init_state.astype(int))
 
+        # TODO:  is this property indented wrongly?
         @property
         def shape(self) -> ty.Tuple[int, ...]:
             return self.proc_params["shape"]
@@ -124,7 +125,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
         )
 
         self.temperature = Var(shape=shape, init=int(max_temperature))
-
+        # TODO we can avoid line breaking by adding an intermediary variable
         self.refract_counter = Var(
             shape=shape,
             init=refract
@@ -141,6 +142,8 @@ class NEBMSimulatedAnnealing(AbstractProcess):
             else np.zeros(shape=shape, dtype=int),
         )
 
+
+        # TODO here too, is this property idented wrongly?
         @property
         def shape(self) -> ty.Tuple[int, ...]:
             return self.proc_params["shape"]

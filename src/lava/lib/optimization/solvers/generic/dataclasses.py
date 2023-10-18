@@ -15,6 +15,8 @@ from lava.proc.dense.process import Dense
 from lava.proc.sparse.process import Sparse
 
 
+# TODO  convert all these into subproc models, move to
+#  hierarchical_processes.py file and delete dataclasses.py
 @dataclass
 class CostMinimizer:
     """Processes implementing an optimization problem's cost function."""

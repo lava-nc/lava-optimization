@@ -60,6 +60,9 @@ from lava.lib.optimization.solvers.generic.sub_process_models import (
     NEBMSimulatedAnnealingAbstractModel,
 )
 
+# Todo: avoid the following try in this file, do it on a separate file from
+#  which the proc -> model mapping can be imported. That way irrelevant
+#  classes will not harm readability
 try:
     from lava.proc.dense.ncmodels import NcModelDense
     from lava.proc.sparse.ncmodel import NcModelSparse
@@ -105,11 +108,7 @@ except ImportError:
     class NcL2ModelPI:
         pass
 
-
-from lava.lib.optimization.solvers.generic.read_gate.models import (
-    ReadGatePyModel,
-)
-
+# Todo:  the following should be defined in a file to
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 HP_TYPE = ty.Union[ty.Dict, ty.List[ty.Dict]]
 CPUS = [CPU, "CPU"]

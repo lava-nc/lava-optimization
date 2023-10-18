@@ -153,6 +153,8 @@ class SolverProcessBuilder:
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
         ) -> None:
+            # TODO try method extraction to simplify some methods might be
+            #  useful for both proc and model constructors
             super(type(self), self).__init__(
                 backend=backend,
                 hyperparameters=hyperparameters,
@@ -229,6 +231,8 @@ class SolverProcessBuilder:
         """
 
         def constructor(self, proc):
+            # TODO try method extraction to simplify some methods might be
+            #  useful for both proc and model constructors
             discrete_var_shape = None
             if hasattr(proc, "discrete_variables"):
                 discrete_var_shape = proc.discrete_variables.shape

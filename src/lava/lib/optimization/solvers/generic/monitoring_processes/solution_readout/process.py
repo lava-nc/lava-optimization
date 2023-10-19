@@ -56,4 +56,3 @@ class SolutionReadout(AbstractProcess):
         self.cost_in = InPort(shape=(2,))
         self.timestep_in = InPort(shape=(2,))
         self.acknowledgement = OutPort(shape=(1,))
-

@@ -63,7 +63,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
         self.acknowledgement.send(np.asarray([1]))
         timestep, _ = self.cost_in.recv()
         self.acknowledgement.send(np.asarray([1]))
-        raw_solution=None
+        raw_solution = None
         if not self._is_multichip:
             raw_solution = self.read_solution.recv()
         return timestep, raw_solution

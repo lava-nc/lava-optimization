@@ -162,6 +162,9 @@ class SolverConfig:
         backend.
     log_level: int
         Select log verbosity (40: default, 20: verbose).
+    folded_compilation: bool
+        A boolean flag to enable folded compilation, available only on
+        "Loihi2" backend. Default value is False.
     """
 
     timeout: int = 1e3

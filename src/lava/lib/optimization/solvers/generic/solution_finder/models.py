@@ -79,8 +79,8 @@ class SolutionFinderModel(AbstractSubProcessModel):
                     np.eye(*cost_coefficients[2].init.shape)
                 )
                 self.cost_minimizer = CostMinimizer(
-                    Dense(
-                        weights=weights,
+                    Sparse(
+                        weights=csr_matrix(weights),
                         num_message_bits=24,
                     )
                 )

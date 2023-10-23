@@ -1,0 +1,13 @@
+# Lava Optimization - Developer Guide
+
+Welcome to the Lava Optimization developer guide! Lava Optimization is an open-source software framework and community for developing neuro-inspired parallel iterative optimization algorithms, and map them to heterogeneous hardware platforms.
+
+Lava Optimization is an open, community-developed code base. 
+
+The purpose of this document is to provide a guide for contributing to Lava Optimization and explain how the Lava Project operates. The Lava Project can only grow through the contributions and work of this community. 
+
+Thanks for your interest in contributing to Lava!
+
+- Steps for creating good issues or pull requests.
+- Links to external documentation, mailing lists, or a code of conduct.
+- Community and behavioral expectations.

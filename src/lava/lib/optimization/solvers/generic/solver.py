@@ -443,7 +443,8 @@ class OptimizationSolver:
             return Loihi1SimCfg(exception_proc_model_map=pdict,
                                 select_sub_proc_model=True)
         elif backend in NEUROCORES:
-
+            from lava.lib.optimization.solvers.generic.read_gate.ncmodels \
+                import get_read_gate_model_class_c
             pdict = {
                 self.solver_process: self.solver_model,
                 ReadGate: get_read_gate_model_class_c(num_in_ports),

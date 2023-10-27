@@ -42,8 +42,10 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     NEBMAbstract,
     NEBMSimulatedAnnealingAbstract,
 )
-from lava.lib.optimization.solvers.generic.monitoring_processes \
-    .solution_readout.models import SolutionReadoutPyModel
+from lava.lib.optimization.solvers.generic.monitoring_processes. \
+    solution_readout.models import (
+        SolutionReadoutPyModel,
+    )
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.nebm.process import (
     NEBM,
@@ -74,10 +76,6 @@ try:
         NcL2ModelPG,
         NcL2ModelPI,
     )
-
-    from lava.lib.optimization.solvers.generic.read_gate.ncmodels import (
-        get_read_gate_model_class_c,
-    )
 except ImportError:
 
     class ReadGateCModel:
@@ -102,9 +100,6 @@ except ImportError:
         pass
 
     class NcL2ModelPI:
-        pass
-
-    def get_read_gate_model_class_c():
         pass
 
 
@@ -426,14 +421,13 @@ class OptimizationSolver:
         self, backend: BACKENDS, probes=None, num_in_ports: int = None
     ):
         from lava.lib.optimization.solvers.generic.read_gate.process import (
-            ReadGate,
+            ReadGate
         )
 
         if backend in CPUS:
             from lava.lib.optimization.solvers.generic.read_gate.models import (
                 get_read_gate_model_class,
             )
-
             ReadGatePyModel = get_read_gate_model_class(num_in_ports)
             pdict = {
                 self.solver_process: self.solver_model,
@@ -446,9 +440,8 @@ class OptimizationSolver:
                 ProportionalIntegralNeuronsPIPGeq: PyPIneurPIPGeqModel,
                 ProjectedGradientNeuronsPIPGeq: PyProjGradPIPGeqModel,
             }
-            return Loihi1SimCfg(
-                exception_proc_model_map=pdict, select_sub_proc_model=True
-            )
+            return Loihi1SimCfg(exception_proc_model_map=pdict,
+                                select_sub_proc_model=True)
         elif backend in NEUROCORES:
 
             pdict = {
@@ -459,7 +452,7 @@ class OptimizationSolver:
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMNcModel,
                 NEBMSimulatedAnnealingAbstract:
-                    NEBMSimulatedAnnealingAbstractModel,
+                NEBMSimulatedAnnealingAbstractModel,
                 NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
                 CostIntegrator: CostIntegratorNcModel,
                 ProportionalIntegralNeuronsPIPGeq: NcL2ModelPI,

@@ -291,7 +291,7 @@ class SolverProcessBuilder:
                     )
             proc.finders = finders
             # Variable aliasing
-            if not proc.is_continuous:  # or not proc._is_multichip:
+            if not proc.is_continuous: # or not proc._is_multichip:
                 if hasattr(proc, "cost_coefficients"):
                     finder_idx = 0
                     proc.vars.optimum.alias(self.solution_reader.min_cost)

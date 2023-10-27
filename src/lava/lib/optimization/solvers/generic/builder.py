@@ -70,6 +70,7 @@ class SolverProcessBuilder:
         problem: OptimizationProblem,
         backend: BACKENDS,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
+        num_steps: int,
     ):
         """Create and set a solver process for the specified optimization
         problem.
@@ -86,13 +87,14 @@ class SolverProcessBuilder:
             variables defining the problem. The temperature provides the
             level of noise.
         """
-        self._create_process_constructor(backend, problem, hyperparameters)
+        self._create_process_constructor(backend, problem, hyperparameters,
+                                         num_steps)
         SolverProcess = type(
             "OptimizationSolverProcess",
             (AbstractProcess,),
             {"__init__": self._process_constructor},
         )
-        self._process = SolverProcess(backend, hyperparameters)
+        self._process = SolverProcess(backend, hyperparameters, num_steps)
 
     def create_solver_model(
         self,
@@ -129,6 +131,7 @@ class SolverProcessBuilder:
         backend: BACKENDS,
         problem: OptimizationProblem,
         hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
+        num_steps: int,
     ):
         """Create __init__ method for the OptimizationSolverProcess class.
 
@@ -150,6 +153,7 @@ class SolverProcessBuilder:
             self,
             backend: BACKENDS,
             hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
+            num_steps: int,
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
         ) -> None:
@@ -159,6 +163,7 @@ class SolverProcessBuilder:
                 name=name,
                 log_config=log_config,
             )
+            self.num_steps=num_steps
             self.problem = problem
             self.hyperparameters = hyperparameters
             self.backend = backend
@@ -241,6 +246,7 @@ class SolverProcessBuilder:
             hyperparameters = proc.hyperparameters
             problem = proc.problem
             backend = proc.backend
+            num_steps=proc.num_steps
 
             hps = (
                 hyperparameters
@@ -253,6 +259,7 @@ class SolverProcessBuilder:
                     var_shape=discrete_var_shape,
                     target_cost=target_cost,
                     num_in_ports=len(hps),
+                    num_steps=num_steps
                 )
             finders = []
             for idx, hp in enumerate(hps):

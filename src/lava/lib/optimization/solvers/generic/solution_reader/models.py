@@ -18,9 +18,11 @@ class SolutionReaderModel(AbstractSubProcessModel):
         var_shape = proc.proc_params.get("var_shape")
         target_cost = proc.proc_params.get("target_cost")
         num_in_ports = proc.proc_params.get("num_in_ports")
+        num_steps = proc.proc_params.get("num_steps")
 
         self.read_gate = ReadGate(
-            shape=var_shape, target_cost=target_cost, num_in_ports=num_in_ports
+            shape=var_shape, target_cost=target_cost, num_in_ports=num_in_ports,
+            num_steps=num_steps
         )
         self.solution_readout = SolutionReadout(
             shape=var_shape, target_cost=target_cost

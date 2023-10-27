@@ -353,6 +353,7 @@ class OptimizationSolver:
             problem=self.problem,
             backend=config.backend,
             hyperparameters=config.hyperparameters or dict(),
+            num_steps=config.timeout,
         )
         self._process_builder.create_solver_model(
             target_cost=config.target_cost,

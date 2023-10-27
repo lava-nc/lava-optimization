@@ -47,16 +47,19 @@ class ReadGate(AbstractProcess):
             shape: ty.Tuple[int, ...],
             target_cost=None,
             num_in_ports=1,
+            num_steps=None,
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
     ) -> None:
         super().__init__(
             shape=shape,
+            num_steps=num_steps,
             target_cost=target_cost,
             num_in_ports=num_in_ports,
             name=name,
             log_config=log_config,
         )
+        self.num_steps = Var(shape=(1,), init=num_steps)
         self.target_cost = Var(shape=(1,), init=target_cost)
         self.best_solution = Var(shape=shape, init=-1)
         for idx in range(num_in_ports):

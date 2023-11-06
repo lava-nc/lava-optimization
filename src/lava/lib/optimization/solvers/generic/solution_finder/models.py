@@ -115,10 +115,10 @@ class SolutionFinderModel(AbstractSubProcessModel):
                 self.cost_convergence_check.cost_first_byte
             )
             self.cost_convergence_check.cost_out_last_bytes.connect(
-                getattr(proc.out_ports, f"cost_out_last_bytes_{idx}")
+                getattr(proc.out_ports, f"cost_out_last_bytes")
             )
             self.cost_convergence_check.cost_out_first_byte.connect(
-                getattr(proc.out_ports, f"cost_out_first_byte_{idx}")
+                getattr(proc.out_ports, f"cost_out_first_byte")
             )
 
         elif continuous_var_shape:

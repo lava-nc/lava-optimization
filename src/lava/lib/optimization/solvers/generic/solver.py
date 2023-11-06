@@ -323,11 +323,9 @@ class OptimizationSolver:
                     num_steps=config.timeout,
                 )
                 probes.append(self._state_tracker)
-        run_cfg = self._get_run_config(
-            backend=config.backend,
-            probes=probes,
-            num_in_ports=num_in_ports,
-        )
+        run_cfg = self._get_run_config(config=config,
+                                       probes=probes,
+                                       num_in_ports=num_in_ports)
         run_condition = RunSteps(num_steps=config.timeout)
         self._prepare_profiler(config=config, run_cfg=run_cfg)
         return run_condition, run_cfg
@@ -417,14 +415,13 @@ class OptimizationSolver:
         else:
             return tracker.time_series
 
-    def _get_run_config(
-        self, backend: BACKENDS, probes=None, num_in_ports: int = None
-    ):
+    def _get_run_config(self, config: SolverConfig, probes=None,
+                        num_in_ports: int = None):
         from lava.lib.optimization.solvers.generic.read_gate.process import (
             ReadGate
         )
 
-        if backend in CPUS:
+        if config.backend in CPUS:
             from lava.lib.optimization.solvers.generic.read_gate.models import (
                 get_read_gate_model_class,
             )
@@ -442,7 +439,7 @@ class OptimizationSolver:
             }
             return Loihi1SimCfg(exception_proc_model_map=pdict,
                                 select_sub_proc_model=True)
-        elif backend in NEUROCORES:
+        elif config.backend in NEUROCORES:
             from lava.lib.optimization.solvers.generic.read_gate.ncmodels \
                 import get_read_gate_model_class_c
             pdict = {
@@ -465,7 +462,7 @@ class OptimizationSolver:
                 callback_fxs=probes,
             )
         else:
-            raise NotImplementedError(str(backend) + BACKEND_MSG)
+            raise NotImplementedError(str(config.backend) + BACKEND_MSG)
 
     def _prepare_profiler(self, config: SolverConfig, run_cfg) -> None:
         if config.probe_time or config.probe_energy:

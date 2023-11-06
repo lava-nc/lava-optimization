@@ -5,16 +5,16 @@ import numpy as np
 from lava.lib.optimization.solvers.generic.monitoring_processes\
     .solution_readout.process import SolutionReadout
 from lava.magma.core.decorator import implements, requires
-from lava.magma.core.model.py.model import PyLoihiProcessModel
+from lava.magma.core.model.py.model import PyAsyncProcessModel
 from lava.magma.core.model.py.ports import PyInPort, PyOutPort
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.resources import CPU
-from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
+from lava.magma.core.sync.protocols.async_protocol import AsyncProtocol
 
 
-@implements(SolutionReadout, protocol=LoihiProtocol)
+@implements(SolutionReadout, protocol=AsyncProtocol)
 @requires(CPU)
-class SolutionReadoutPyModel(PyLoihiProcessModel):
+class SolutionReadoutPyModel(PyAsyncProcessModel):
     """CPU model for the SolutionReadout process.
     The process receives two types of messages, an updated cost and the
     state of
@@ -43,7 +43,7 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
     def _is_multichip(self):
         return False
 
-    def run_spk(self):
+    def run_async(self):
         if self.stop:
             return
         raw_cost, min_cost_id = self.cost_in.recv()

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import numpy as np
+import typing as ty
 
 from lava.lib.optimization.solvers.generic.read_gate.process import ReadGate
 from lava.magma.core.decorator import implements, requires

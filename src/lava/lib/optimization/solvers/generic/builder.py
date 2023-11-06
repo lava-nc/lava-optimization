@@ -277,13 +277,13 @@ class SolverProcessBuilder:
                 setattr(self, f"finder_{idx}", finder)
                 finders.append(finder)
                 if not proc.is_continuous:
-                    getattr(finder, f"cost_out_last_bytes_{idx}").connect(
+                    getattr(finder, f"cost_out_last_bytes").connect(
                         getattr(
                             self.solution_reader,
                             f"read_gate_in_port_last_bytes_{idx}",
                         )
                     )
-                    getattr(finder, f"cost_out_first_byte_{idx}").connect(
+                    getattr(finder, f"cost_out_first_byte").connect(
                         getattr(
                             self.solution_reader,
                             f"read_gate_in_port_first_byte_{idx}",

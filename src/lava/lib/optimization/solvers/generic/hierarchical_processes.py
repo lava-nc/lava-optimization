@@ -67,6 +67,7 @@ class DiscreteVariablesProcess(AbstractProcess):
         self,
         shape: ty.Tuple[int, ...],
         cost_diagonal: npty.ArrayLike = None,
+        cost_off_diagonal: npty.ArrayLike = None,
         hyperparameters: ty.Dict[str, ty.Union[int, npty.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
@@ -79,6 +80,9 @@ class DiscreteVariablesProcess(AbstractProcess):
         cost_diagonal: npty.ArrayLike
             The diagonal of the coefficient of the quadratic term on the cost
             function.
+        cost_off_diagonal: npty.ArrayLike
+            The off-diagonal of the coefficient of the quadratic term on the
+            cost function.
         hyperparameters: dict, optional
         name: str, optional
             Name of the Process. Default is 'Process_ID', where ID is an integer
@@ -88,6 +92,7 @@ class DiscreteVariablesProcess(AbstractProcess):
         super().__init__(
             shape=shape,
             cost_diagonal=cost_diagonal,
+            cost_off_diagonal=cost_off_diagonal,
             name=name,
             log_config=log_config,
         )
@@ -326,8 +331,6 @@ class NEBMAbstract(AbstractProcess):
     added_input: InPort
         The addition of all inputs (per dynamical system) at this
         timestep will be received by this port.
-    replace_assignment: InPort
-        Todo: deprecate
     messages: OutPort
         The payload to be sent to other dynamical systems when firing.
     local_cost: OutPort
@@ -413,7 +416,6 @@ class NEBMAbstract(AbstractProcess):
         self.state = Var(shape=shape, init=init_state)
         self.input_duration = Var(shape=shape, init=input_duration)
         self.min_state = Var(shape=shape, init=min_state)
-        self.min_integration = Var(shape=shape, init=min_integration)
         self.firing = Var(shape=shape, init=init_value)
         self.prev_assignment = Var(shape=shape, init=False)
         self.cost_diagonal = Var(shape=shape, init=cost_diagonal)
@@ -421,7 +423,7 @@ class NEBMAbstract(AbstractProcess):
         self.min_cost = Var(shape=shape, init=False)
 
 
-class NEBMSimulatedAnnealingAbstract(AbstractProcess):
+class SimulatedAnnealingLocalAbstract(AbstractProcess):
     r"""Event-driven stochastic discrete dynamical system with two outputs.
 
     The main output is intended as input to other dynamical systems on
@@ -433,8 +435,6 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
     added_input: InPort
         The addition of all inputs (per dynamical system) at this
         timestep will be received by this port.
-    replace_assignment: InPort
-        Todo: deprecate
     messages: OutPort
         The payload to be sent to other dynamical systems when firing.
     local_cost: OutPort
@@ -449,20 +449,18 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
         self,
         *,
         cost_diagonal: npty.ArrayLike,
-        max_temperature: int = 10,
-        min_temperature: int = 0,
-        delta_temperature: int = 1,
-        exp_temperature: int = None,
-        steps_per_temperature: int = 100,
-        refract_scaling: int = 14,
-        shape: ty.Tuple[int, ...] = (1,),
-        init_state: npty.ArrayLike = 0,
-        min_integration: npty.ArrayLike = -1000,
+        max_temperature: int,
+        min_temperature: int,
+        delta_temperature: int,
+        exp_temperature: int,
+        steps_per_temperature: int,
+        refract_scaling: int,
+        annealing_schedule: str,
+        shape: ty.Tuple[int, ...],
+        init_state: npty.ArrayLike,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
-        init_value: npty.ArrayLike = 0,
-        annealing_schedule: str = 'linear',
-        neuron_model: str,
+        init_value: npty.ArrayLike,
     ) -> None:
         """
 
@@ -501,12 +499,10 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             exp_temperature=exp_temperature,
             steps_per_temperature=steps_per_temperature,
             refract_scaling=refract_scaling,
-            min_integration=min_integration,
             cost_diagonal=cost_diagonal,
             name=name,
             log_config=log_config,
             init_value=init_value,
-            neuron_model=neuron_model,
             annealing_schedule=annealing_schedule,
         )
         self.added_input = InPort(shape=shape)
@@ -523,7 +519,103 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             shape=shape, init=steps_per_temperature
         )
         self.state = Var(shape=shape, init=init_state)
-        self.min_integration = Var(shape=shape, init=min_integration)
+        self.firing = Var(shape=shape, init=init_value)
+        self.prev_assignment = Var(shape=shape, init=False)
+        self.cost_diagonal = Var(shape=shape, init=cost_diagonal)
+        self.assignment = Var(shape=shape, init=False)
+        self.min_cost = Var(shape=shape, init=False)
+
+class SimulatedAnnealingAbstract(AbstractProcess):
+    r"""Event-driven stochastic discrete dynamical system with two outputs.
+
+    The main output is intended as input to other dynamical systems on
+    the network, whilst the second output is to transfer local information to be
+    integrated by an auxiliary dynamical system or circuit.
+
+    Attributes
+    ----------
+    added_input: InPort
+        The addition of all inputs (per dynamical system) at this
+        timestep will be received by this port.
+    messages: OutPort
+        The payload to be sent to other dynamical systems when firing.
+    local_cost: OutPort
+        the cost component corresponding to this dynamical system, i.e.,
+        c_i = sum_j{Q_{ij} \cdot x_i}  will be sent through this port. The cost
+        integrator will then complete the cost computation  by adding all
+        contributions, i.e., x^T \cdot Q \cdot x = sum_i{c_i}.
+
+    """
+
+    def __init__(
+        self,
+        *,
+        cost_diagonal: npty.ArrayLike,
+        cost_off_diagonal: npty.ArrayLike,
+        max_temperature: int,
+        min_temperature: int,
+        delta_temperature: int,
+        exp_temperature: int,
+        steps_per_temperature: int,
+        shape: ty.Tuple[int, ...],
+        init_state: npty.ArrayLike,
+        init_value: npty.ArrayLike,
+        annealing_schedule: str,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        """
+
+        Parameters
+        ----------
+        shape: tuple
+            The shape of the set of dynamical systems to be created.
+        init_state: npty.ArrayLike, optional
+            The starting value of the state variable.
+        temperature: npty.ArrayLike, optional
+            the temperature of the systems, defining the level of noise.
+        refractory_period: npty.ArrayLike, optional
+            Number of timesteps to wait after firing and reset before resuming
+            updating.
+        cost_diagonal: npty.ArrayLike, optional
+            The linear coefficients on the cost function of the optimization
+            problem where this system will be used.
+        name: str, optional
+            Name of the Process. Default is 'Process_ID', where ID is an
+            integer value that is determined automatically.
+        log_config: LogConfig, optional
+            Configuration options for logging.
+        init_value: int, optional
+        """
+        super().__init__(
+            shape=shape,
+            init_state=init_state,
+            max_temperature=max_temperature,
+            min_temperature=min_temperature,
+            delta_temperature=delta_temperature,
+            exp_temperature=exp_temperature,
+            steps_per_temperature=steps_per_temperature,
+            cost_diagonal=cost_diagonal,
+            cost_off_diagonal=cost_off_diagonal,
+            name=name,
+            log_config=log_config,
+            init_value=init_value,
+            annealing_schedule=annealing_schedule,
+        )
+        self.added_input = InPort(shape=shape)
+        self.messages = OutPort(shape=shape)
+        self.local_cost = OutPort(shape=shape)
+
+        self.integration = Var(shape=shape, init=0)
+        self.max_temperature = Var(shape=shape, init=max_temperature)
+        self.temperature = Var(shape=(1,), init=max_temperature)
+        self.min_temperature = Var(shape=shape, init=min_temperature)
+        self.delta_temperature = Var(shape=shape, init=delta_temperature)
+        self.exp_temperature = Var(shape=shape, init=exp_temperature)
+        self.steps_per_temperature = Var(
+            shape=shape, init=steps_per_temperature
+        )
+        self.state = Var(shape=shape, init=init_state)
         self.firing = Var(shape=shape, init=init_value)
         self.prev_assignment = Var(shape=shape, init=False)
         self.cost_diagonal = Var(shape=shape, init=cost_diagonal)

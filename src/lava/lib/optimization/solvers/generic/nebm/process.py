@@ -61,7 +61,7 @@ class NEBM(AbstractProcess):
             return self.proc_params["shape"]
 
 
-class NEBMSimulatedAnnealingLocal(AbstractProcess):
+class SimulatedAnnealingLocal(AbstractProcess):
     """
     Non-equilibrium Boltzmann (NEBM) neuron model to solve QUBO problems.
     This model uses purely information available at the level of individual
@@ -69,21 +69,15 @@ class NEBMSimulatedAnnealingLocal(AbstractProcess):
     Process NEBMSimulatedAnnealing.
     """
 
-    enabled_neuron_models = ['nebm-sa-refract']
-    deprecated_neuron_models = ['nebm-sa-refract-approx',
-                                'nebm-sa-balanced',
-                                'nebm-sa-refract-approx-unbalanced']
-
     def __init__(
         self,
         *,
         shape: ty.Tuple[int, ...],
         cost_diagonal: npty.ArrayLike,
-        max_temperature: int,
-        refract_scaling: ty.Optional[int],
-        init_value=0,
-        init_state=None,
-        neuron_model: str,
+        max_temperature: npty.ArrayLike,
+        refract_scaling: ty.Union[npty.ArrayLike, None],
+        init_value: npty.ArrayLike,
+        init_state: npty.ArrayLike,
     ):
         """
         SA Process.
@@ -109,12 +103,11 @@ class NEBMSimulatedAnnealingLocal(AbstractProcess):
             can be found in NEBMSimulatedAnnealing.enabled_neuron_models.
         """
 
-        self._validate_input(neuron_model)
+        #self._validate_input(neuron_model)
         super().__init__(
             shape=shape,
             cost_diagonal=cost_diagonal,
             refract_scaling=refract_scaling,
-            neuron_model=neuron_model,
         )
 
         self.a_in = InPort(shape=shape)
@@ -143,45 +136,26 @@ class NEBMSimulatedAnnealingLocal(AbstractProcess):
             else np.zeros(shape=shape, dtype=int),
         )
 
-    def _validate_input(self, neuron_model: str) -> None:
-        """Validates input. At the moment, it only checks that the user has
-        chosen a supported neuron model is """
-
-        if neuron_model in self.enabled_neuron_models:
-            return
-        elif neuron_model in self.deprecated_neuron_models:
-            raise NotImplementedError(
-                f"The model {neuron_model} has been deprecated. Instead, we "
-                f"recommend switching to the new neuron model 'nebm-sa-refract'"
-                f" for a better solver performance.")
-        else:
-            raise ValueError(
-                f"The model {neuron_model} does not exist. Please specify a "
-                f"correct neuron model as hyperparameter.")
-
     @property
     def shape(self) -> ty.Tuple[int, ...]:
         return self.proc_params["shape"]
 
 
-class NEBMSimulatedAnnealing(NEBMSimulatedAnnealingLocal):
+class SimulatedAnnealing(SimulatedAnnealingLocal):
     """
     Non-equilibrium Boltzmann (NEBM) neuron model to solve QUBO problems.
     This model combines the switching intentions of all NEBM neurons to
     decide whether to switch or not, to avoid conflicting variable switches.
     """
 
-    enabled_neuron_models = ['nebm-sa', 'nebm-sa-refract']
-
     def __init__(
         self,
         *,
         shape: ty.Tuple[int, ...],
         cost_diagonal: npty.ArrayLike,
-        max_temperature: int,
-        init_value=0,
-        init_state=None,
-        neuron_model: str,
+        max_temperature: npty.ArrayLike,
+        init_value: npty.ArrayLike,
+        init_state: npty.ArrayLike,
     ):
         """
         SA Process.
@@ -210,11 +184,10 @@ class NEBMSimulatedAnnealing(NEBMSimulatedAnnealingLocal):
         super().__init__(
             shape=shape,
             cost_diagonal=cost_diagonal,
-            refract_scaling=None,
             max_temperature=max_temperature,
+            refract_scaling=None,
             init_value=init_value,
             init_state=init_state,
-            neuron_model=neuron_model,
         )
 
         # number of NEBM neurons that suggest switching in a time step

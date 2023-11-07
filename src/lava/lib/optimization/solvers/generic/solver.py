@@ -42,7 +42,8 @@ from lava.lib.optimization.solvers.generic.cost_integrator.process import (
 )
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     NEBMAbstract,
-    NEBMSimulatedAnnealingAbstract,
+    SimulatedAnnealingAbstract,
+    SimulatedAnnealingLocalAbstract,
 )
 from lava.lib.optimization.solvers.generic.monitoring_processes. \
     solution_readout.models import (
@@ -51,7 +52,8 @@ from lava.lib.optimization.solvers.generic.monitoring_processes. \
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.nebm.process import (
     NEBM,
-    NEBMSimulatedAnnealing,
+    SimulatedAnnealing,
+    SimulatedAnnealingLocal,
 )
 from lava.lib.optimization.solvers.generic.annealing.process import Annealing
 from lava.lib.optimization.solvers.generic.scif.models import (
@@ -60,7 +62,8 @@ from lava.lib.optimization.solvers.generic.scif.models import (
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.lib.optimization.solvers.generic.sub_process_models import (
     NEBMAbstractModel,
-    NEBMSimulatedAnnealingAbstractModel,
+    SimulatedAnnealingAbstractModel,
+    SimulatedAnnealingLocalAbstractModel,
 )
 
 try:
@@ -72,7 +75,8 @@ try:
     )
     from lava.lib.optimization.solvers.generic.nebm.ncmodels import (
         NEBMNcModel,
-        NEBMSimulatedAnnealingNcModel,
+        SimulatedAnnealingNcModel,
+        SimulatedAnnealingLocalNcModel,
     )
     from lava.lib.optimization.solvers.generic.annealing.ncmodels import (
         AnnealingNcModel,
@@ -96,7 +100,10 @@ except ImportError:
     class NEBMNcModel:
         pass
 
-    class NEBMSimulatedAnnealingNcModel:
+    class SimulatedAnnealingNcModel:
+        pass
+
+    class SimulatedAnnealingLocalNcModel:
         pass
 
     class AnnealingNcModel:
@@ -466,9 +473,11 @@ class OptimizationSolver:
                 Sparse: NcModelSparse,
                 NEBMAbstract: NEBMAbstractModel,
                 NEBM: NEBMNcModel,
-                NEBMSimulatedAnnealingAbstract:
-                NEBMSimulatedAnnealingAbstractModel,
-                NEBMSimulatedAnnealing: NEBMSimulatedAnnealingNcModel,
+                SimulatedAnnealingAbstract:
+                SimulatedAnnealingAbstractModel,
+                SimulatedAnnealingLocalAbstract:
+                    SimulatedAnnealingLocalAbstractModel,
+                SimulatedAnnealingLocal: SimulatedAnnealingLocalNcModel,
                 Annealing: AnnealingNcModel,
                 CostIntegrator: CostIntegratorNcModel,
                 ProportionalIntegralNeuronsPIPGeq: NcL2ModelPI,

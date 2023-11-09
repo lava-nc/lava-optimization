@@ -20,13 +20,6 @@
       </ul>
     </li>
     <li>
-      <a href="#examples">Examples</a>
-      <ul>
-        <li><a href="#solving-qp-problems">Solving QP</a></li>
-        <li><a href="#solving-qubo">Solving QUBO</a></li>
-      </ul>
-    </li>
-    <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#requirements">Requirements</a></li>
@@ -94,57 +87,6 @@ The instance of an ``Optimization problem`` is the valid input for instantiating
 
 ### Quadratic Unconstrained Binary Optimization
 - [Solving Maximum Independent Set.](https://github.com/lava-nc/lava-optimization/blob/release/v0.2.0/tutorials/tutorial_02_solving_qubos.ipynb)
-
-## Examples
-
-### Solving QP problems 
-
-Currently, QP problems can be solved using the specific ``QPSolver``. In future releases, this will be merged with the generic API of ``OptimizationSolver`` (used in the next example).
-
-```python
-import numpy as np
-from lava.lib.optimization.problems.problems import QP
-from lava.lib.optimization.solvers.qp.solver import QPSolver
-
-# Define QP problem
-Q = np.array([[100, 0, 0], [0, 15, 0], [0, 0, 5]])
-p = np.array([[1, 2, 1]]).T
-A = -np.array([[1, 2, 2], [2, 100, 3]])
-k = -np.array([[-50, 50]]).T
-
-problem = QP(Q, p, A, k)
-
-# Define hyper-parameters
-alpha, beta = 0.001, 1
-alpha_d, beta_g = 10000, 10000
-iterations = 400
-
-# Solve using QPSolver
-solver = QPSolver(alpha=alpha,
-                  beta=beta,
-                  alpha_decay_schedule=alpha_d,
-                  beta_growth_schedule=beta_g)
-solver.solve(problem, iterations=iterations)
-```
-
-### Solving QUBO
-```python
-import numpy as np
-from lava.lib.optimization.problems.problems import QUBO
-from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
-
-# Define QUBO problem
-q = np.array([[-5, 2, 4, 0],
-              [ 2,-3, 1, 0],
-              [ 4, 1,-8, 5],
-              [ 0, 0, 5,-6]]))
-
-qubo = QUBO(q)
-
-# Solve using generic OptimizationSolver
-solver = OptimizationSolver(problem=qubo1)
-solution = solver.solve(timeout=3000, target_cost=-50, backend=“Loihi2”)
-```
 
 ## Getting Started
 

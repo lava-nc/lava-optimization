@@ -20,6 +20,9 @@ class SolutionReadout(AbstractProcess):
     name: Name of the Process. Default is 'Process_ID', where ID is an
     integer value that is determined automatically.
     log_config: Configuration options for logging.
+    time_steps_per_algorithmic_step: the number of iteration steps that a
+    single algorithmic step requires. This value is required to decode the
+    variable values from the spk_hist of a process.
 
     Attributes
     ----------
@@ -39,6 +42,7 @@ class SolutionReadout(AbstractProcess):
         self,
         shape: ty.Tuple[int, ...],
         target_cost=None,
+        time_steps_per_algorithmic_step: int = 1,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
@@ -52,6 +56,9 @@ class SolutionReadout(AbstractProcess):
         self.solution_step = Var(shape=(1,), init=-1)
         self.min_cost = Var(shape=(2,), init=-1)
         self.target_cost = Var(shape=(1,), init=target_cost)
+        self.time_steps_per_algorithmic_step = Var(
+            shape=(1,),
+            init=time_steps_per_algorithmic_step)
         self.read_solution = InPort(shape=shape)
         self.cost_in = InPort(shape=(2,))
         self.timestep_in = InPort(shape=(1,))

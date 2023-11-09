@@ -247,6 +247,10 @@ class StochasticIntegrateAndFire(AbstractProcess):
 
     """
 
+    # This variable defines the time steps for a single algorithmic step
+    # Used by the SolutionReadOut to extract variables from the spk_hist
+    time_steps_per_algorithmic_step = 1
+
     def __init__(
         self,
         *,
@@ -340,6 +344,10 @@ class NEBMAbstract(AbstractProcess):
         contributions, i.e., x^T \cdot Q \cdot x = sum_i{c_i}.
 
     """
+
+    # This variable defines the time steps for a single algorithmic step
+    # Used by the SolutionReadOut to extract variables from the spk_hist
+    time_steps_per_algorithmic_step = 1
 
     def __init__(
         self,
@@ -445,6 +453,10 @@ class SimulatedAnnealingLocalAbstract(AbstractProcess):
 
     """
 
+    # This variable defines the time steps for a single algorithmic step
+    # Used by the SolutionReadOut to extract variables from the spk_hist
+    time_steps_per_algorithmic_step = 1
+
     def __init__(
         self,
         *,
@@ -546,6 +558,10 @@ class SimulatedAnnealingAbstract(AbstractProcess):
         contributions, i.e., x^T \cdot Q \cdot x = sum_i{c_i}.
 
     """
+
+    # This variable defines the time steps for a single algorithmic step
+    # Used by the SolutionReadOut to extract variables from the spk_hist
+    time_steps_per_algorithmic_step = 2
 
     def __init__(
         self,

@@ -247,8 +247,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             wta_weight
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
-        neuron_model = proc.hyperparameters.get("neuron_model",
-                                                'nebm-sa-refract')
+        neuron_model = proc.hyperparameters.get("neuron_model")
 
         cost_off_diagonal = proc.proc_params.get("cost_off_diagonal")
 
@@ -302,13 +301,16 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                 "init_state", np.zeros(shape, dtype=int)
             )
 
-            self.s_bit = NEBMAbstract(temperature=temperature,
-                                      refract=refract,
-                                      refract_counter=refract_counter,
-                                      init_state=init_state,
-                                      shape=shape,
-                                      cost_diagonal=diagonal,
-                                      init_value=init_value)
+            nebm_params = {
+                'temperature': temperature,
+                'refract': refract,
+                'refract_counter': refract_counter,
+                'init_state': init_state,
+                'shape': shape,
+                'cost_diagonal': diagonal,
+                'init_value': init_value}
+
+            self.s_bit = NEBMAbstract(**nebm_params)
         elif neuron_model == 'scif':
             noise_amplitude = proc.hyperparameters.get("noise_amplitude", 1)
             noise_precision = proc.hyperparameters.get("noise_precision", 5)
@@ -346,6 +348,24 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         self.s_bit.out_ports.messages.connect(proc.out_ports.s_out)
         self.s_bit.out_ports.local_cost.connect(proc.out_ports.local_cost)
         proc.vars.variable_assignment.alias(self.s_bit.prev_assignment)
+
+    @staticmethod
+    def get_neuron_process(hyperparameters):
+        """Given the neuron_model, return the appropriate class for the
+        neurons representing discrete variables."""
+
+        neuron_model = hyperparameters.get("neuron_model")
+
+        if neuron_model == 'sa':
+            return SimulatedAnnealingAbstract
+        elif neuron_model == 'nebm-sa-refract':
+            return SimulatedAnnealingLocalAbstract
+        elif neuron_model == 'nebm':
+            return NEBMAbstract
+        elif neuron_model == 'scif':
+            return StochasticIntegrateAndFire
+        else:
+            raise ValueError(f"Please choose a supported neuron model")
 
 
 @implements(proc=CostConvergenceChecker, protocol=LoihiProtocol)

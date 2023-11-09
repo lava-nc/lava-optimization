@@ -89,6 +89,9 @@ try:
         NcL2ModelPG,
         NcL2ModelPI,
     )
+    from lava.lib.optimization.solvers.generic.sub_process_models import (
+        DiscreteVariablesModel
+    )
 except ImportError:
 
     class ReadGateCModel:
@@ -425,8 +428,17 @@ class OptimizationSolver:
             tracker=self._state_tracker, var_name="variable_assignment"
         )
         if state_timeseries is not None:
+            time_steps_per_algorithmic_step = 1
+            # Some solvers for discrete optimization require more than 1 time
+            # step per algorithmic step
+            if self._is_problem_discrete():
+                time_steps_per_algorithmic_step = \
+                    DiscreteVariablesModel.get_neuron_process(
+                        config.hyperparameters).\
+                        time_steps_per_algorithmic_step
             state_timeseries = SolutionReadoutPyModel.decode_solution(
-                state_timeseries
+                raw_solution=state_timeseries,
+                time_steps_per_algorithmic_step=time_steps_per_algorithmic_step
             )
         return cost_timeseries, state_timeseries
 
@@ -538,8 +550,15 @@ class OptimizationSolver:
                 .variables_assignment.get()
                 .astype(np.int32)
             )
-            raw_solution &= 0x3F
-            return raw_solution.astype(np.int8) >> 5
+            time_steps_per_algorithmic_step = \
+                DiscreteVariablesModel.get_neuron_process(
+                    config.hyperparameters). \
+                    time_steps_per_algorithmic_step
+            raw_solution = SolutionReadoutPyModel.decode_solution(
+                raw_solution=raw_solution,
+                time_steps_per_algorithmic_step=time_steps_per_algorithmic_step
+            )
+            return raw_solution
         else:
             best_assignment = self.solver_process.best_variable_assignment
             return best_assignment.aliased_var.get()

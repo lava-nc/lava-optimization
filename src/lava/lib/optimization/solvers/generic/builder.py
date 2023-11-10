@@ -58,19 +58,10 @@ class SolverProcessBuilder:
         if self._process is None:
             raise Exception(msg)
 
-    def verify_model_exists(self):
-        """Assert the solver process model has already been created."""
-        msg = """Process model has not been created yet. Make sure the
-        create_solver_model method was already called."""
-        if self._model is None:
-            raise Exception(msg)
-
     def create_solver_process(
-        self,
-        problem: OptimizationProblem,
-        backend: BACKENDS,
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
-        num_steps: int,
+            self,
+            problem: OptimizationProblem,
+            config: "SolverConfig"
     ):
         """Create and set a solver process for the specified optimization
         problem.
@@ -87,37 +78,38 @@ class SolverProcessBuilder:
             variables defining the problem. The temperature provides the
             level of noise.
         """
-        self._create_process_constructor(backend, problem, hyperparameters,
-                                         num_steps)
+        self._create_process_constructor(problem=problem)
         SolverProcess = type(
             "OptimizationSolverProcess",
             (AbstractProcess,),
             {"__init__": self._process_constructor},
         )
-        self._process = SolverProcess(backend, hyperparameters, num_steps)
+        self._process = SolverProcess(config=config)
+
+    def verify_model_exists(self):
+        """Assert the solver process model has already been created."""
+        msg = """Process model has not been created yet. Make sure the
+        create_solver_model method was already called."""
+        if self._model is None:
+            raise Exception(msg)
 
     def create_solver_model(
-        self,
-        target_cost: int,
-        requirements: ty.List[AbstractComputeResource],
-        protocol: AbstractSyncProtocol,
+            self,
+            requirements: ty.List[AbstractComputeResource],
+            protocol: AbstractSyncProtocol,
     ):
         """Create and set the model class for the solver process in the
         building pipeline.
 
         Parameters
         ----------
-        target_cost: int
-            A cost value provided by the user as a target for the solution to be
-            found by the solver, when a solution with such cost is found and
-            read, execution ends.
         requirements: ty.List[AbstractComputeResource]
             Specifies which resources the ProcessModel requires.
         protocol: AbstractSyncProtocol
             The SyncProtocol that the ProcessModel implements.
         """
         self.verify_process_exists()
-        self._create_model_constructor(target_cost)
+        self._create_model_constructor()
         SolverModel = type(
             "OptimizationSolverModel",
             (AbstractSubProcessModel,),
@@ -127,11 +119,8 @@ class SolverProcessBuilder:
         self._model = SolverModel
 
     def _create_process_constructor(
-        self,
-        backend: BACKENDS,
-        problem: OptimizationProblem,
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
-        num_steps: int,
+            self,
+            problem: OptimizationProblem,
     ):
         """Create __init__ method for the OptimizationSolverProcess class.
 
@@ -142,55 +131,41 @@ class SolverProcessBuilder:
             constraints which will be used to ensemble the necessary variables
             and ports with their shape and initial values deriving from the
             problem specification.
-        hyperparameters: dict
-            A dictionary specifying values for temperature and init_value.
-            Both are array-like of. init_value defines initial values for the
-            variables defining the problem. The temperature provides the
-            level of noise.
         """
 
         def constructor(
-            self,
-            backend: BACKENDS,
-            hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]],
-            num_steps: int,
-            name: ty.Optional[str] = None,
-            log_config: ty.Optional[LogConfig] = None,
+                self,
+                config: "SolverConfig",
+                name: ty.Optional[str] = None
         ) -> None:
-            super(type(self), self).__init__(
-                backend=backend,
-                hyperparameters=hyperparameters,
-                name=name,
-                log_config=log_config,
-            )
-            self.num_steps=num_steps
+            super(type(self), self).__init__(config=config, name=name)
+            self.config = config
             self.problem = problem
-            self.hyperparameters = hyperparameters
-            self.backend = backend
-            self.is_continuous = 0
-            self.is_discrete = 0
+            self.is_continuous = False
+            self.is_discrete = False
+
             if not hasattr(problem, "variables"):
                 raise Exception(
                     "An optimization problem must contain " "variables."
                 )
             if (
-                hasattr(problem.variables, "continuous")
-                and problem.variables.continuous.num_variables is not None
+                    hasattr(problem.variables, "continuous")
+                    and problem.variables.continuous.num_variables is not None
             ):
                 self.continuous_variables = Var(
                     shape=(problem.variables.continuous.num_variables,)
                 )
-                self.is_continuous = 1
+                self.is_continuous = True
             if (
-                hasattr(problem.variables, "discrete")
-                and problem.variables.discrete.num_variables is not None
+                    hasattr(problem.variables, "discrete")
+                    and problem.variables.discrete.num_variables is not None
             ):
                 self.discrete_variables = Var(
                     shape=(
                         problem.variables.discrete.num_variables,
                     )
                 )
-                self.is_discrete = 1
+                self.is_discrete = True
             self.cost_diagonal = None
             if hasattr(problem, "cost"):
                 mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
@@ -207,8 +182,11 @@ class SolverProcessBuilder:
                     shape=(problem.variables.discrete.num_variables,)
                 )
                 # Total cost=optimality_first_byte<<24+optimality_last_bytes
-                self.optimality_last_bytes = Var(shape=(1,))
-                self.optimality_first_byte = Var(shape=(1,))
+                for idx in range(self.config.num_replicas):
+                    setattr(self, f"optimality_last_bytes_{idx}",
+                            Var(shape=(1,)))
+                    setattr(self, f"optimality_first_byte_{idx}",
+                            Var(shape=(1,)))
                 self.optimum = Var(shape=(2,))
                 self.feasibility = Var(shape=(1,))
                 self.solution_step = Var(shape=(1,))
@@ -221,16 +199,9 @@ class SolverProcessBuilder:
 
         self._process_constructor = constructor
 
-    def _create_model_constructor(self, target_cost: int):
+    def _create_model_constructor(self):
         """Create __init__ method for the OptimizationSolverModel
         corresponding to the process in the building pipeline.
-
-        Parameters
-        ----------
-        target_cost: int
-            A cost value provided by the user as a target for the solution to be
-            found by the solver, when a solution with such cost is found and
-            read, execution ends.
         """
 
         def constructor(self, proc):
@@ -243,23 +214,21 @@ class SolverProcessBuilder:
             cost_diagonal = proc.cost_diagonal
             cost_coefficients = proc.cost_coefficients
             constraints = proc.problem.constraints
-            hyperparameters = proc.hyperparameters
             problem = proc.problem
-            backend = proc.backend
-            num_steps=proc.num_steps
+            config = proc.config
 
             hps = (
-                hyperparameters
-                if isinstance(hyperparameters, list)
-                else [hyperparameters]
+                config.hyperparameters
+                if isinstance(config.hyperparameters, list)
+                else [config.hyperparameters]
             )
             #
             if not proc.is_continuous:
                 self.solution_reader = SolutionReader(
                     var_shape=discrete_var_shape,
-                    target_cost=target_cost,
+                    target_cost=config.target_cost,
                     num_in_ports=len(hps),
-                    num_steps=num_steps
+                    num_steps=config.num_steps
                 )
             finders = []
             for idx, hp in enumerate(hps):
@@ -267,7 +236,7 @@ class SolverProcessBuilder:
                     cost_diagonal=cost_diagonal,
                     cost_coefficients=cost_coefficients,
                     constraints=constraints,
-                    backend=backend,
+                    backend=config.backend,
                     hyperparameters=hp,
                     discrete_var_shape=discrete_var_shape,
                     continuous_var_shape=continuous_var_shape,
@@ -291,19 +260,21 @@ class SolverProcessBuilder:
                     )
             proc.finders = finders
             # Variable aliasing
-            if not proc.is_continuous: # or not proc._is_multichip:
+            if not proc.is_continuous:  # or not proc._is_multichip:
                 if hasattr(proc, "cost_coefficients"):
-                    finder_idx = 0
-                    proc.vars.optimum.alias(self.solution_reader.min_cost)
-                    # Cost = optimality_first_byte << 24 + optimality_last_bytes
-                    proc.vars.optimality_last_bytes.alias(
-                        proc.finders[finder_idx].cost_last_bytes
-                    )
-                    proc.vars.optimality_first_byte.alias(
-                        proc.finders[finder_idx].cost_first_byte
-                    )
+                    for finder_idx in range(config.num_replicas):
+                        proc.vars.optimum.alias(self.solution_reader.min_cost)
+                        # Cost = optimality_first_byte << 24 + optimality_last_bytes
+                        getattr(proc.vars, f"optimality_last_bytes_"
+                                           f"{finder_idx}").alias(
+                            proc.finders[finder_idx].cost_last_bytes
+                        )
+                        getattr(proc.vars,
+                                f"optimality_first_byte_{finder_idx}").alias(
+                            proc.finders[finder_idx].cost_first_byte
+                        )
                 proc.vars.variable_assignment.alias(
-                    proc.finders[finder_idx].variables_assignment
+                    proc.finders[0].variables_assignment
                 )
                 proc.vars.best_variable_assignment.alias(
                     self.solution_reader.solution
@@ -325,7 +296,7 @@ class SolverProcessBuilder:
 
     @staticmethod
     def _map_rank_to_coefficients_vars(
-        coefficients: CoefficientTensorsMixin,
+            coefficients: CoefficientTensorsMixin,
     ) -> ty.Dict[int, AbstractProcessMember]:
         """Creates a dictionary of Lava variables from a coefficients object.
 
@@ -341,7 +312,7 @@ class SolverProcessBuilder:
         return vars
 
     def _in_ports_from_coefficients(
-        self, coefficients: CoefficientTensorsMixin
+            self, coefficients: CoefficientTensorsMixin
     ) -> ty.Dict[int, AbstractProcessMember]:
         """Create input ports for the various ranks of a coefficients object.
 
@@ -358,10 +329,10 @@ class SolverProcessBuilder:
         return in_ports
 
     def _decorate_process_model(
-        self,
-        solver_model: "OptimizationSolverModel",
-        requirements: ty.List[AbstractComputeResource],
-        protocol: AbstractSyncProtocol,
+            self,
+            solver_model: "OptimizationSolverModel",
+            requirements: ty.List[AbstractComputeResource],
+            protocol: AbstractSyncProtocol,
     ) -> AbstractProcessModel:
         """Replicate the functionality of the decorators for creating Lava
         ProcessModels.

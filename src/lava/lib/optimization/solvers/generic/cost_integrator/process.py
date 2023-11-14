@@ -56,7 +56,7 @@ class CostIntegrator(AbstractProcess):
         *,
         shape: ty.Tuple[int, ...] = (1,),
         min_cost: int = 0,  # trivial solution, where all variables are 0
-        name: ty.Optional[str] = None,
+        name: ty.Optional[str] = "CostIntegrator",
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
         super().__init__(shape=shape, name=name, log_config=log_config)

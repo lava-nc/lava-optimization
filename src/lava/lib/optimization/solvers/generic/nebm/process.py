@@ -113,6 +113,7 @@ class NEBMSimulatedAnnealing(AbstractProcess):
             exp_temperature=exp_temperature,
             neuron_model=neuron_model,
             annealing_schedule=annealing_schedule,
+            name="NEBMSimulatedAnnealing"
         )
 
         self.a_in = InPort(shape=shape)

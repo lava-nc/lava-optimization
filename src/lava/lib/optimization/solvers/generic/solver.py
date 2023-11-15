@@ -168,13 +168,15 @@ class SolverConfig:
     probe_time: bool = False
     probe_energy: bool = False
     log_level: int = 20
-    num_replicas: int = len(hyperparameters) if isinstance(hyperparameters,
-                                                           list) else 1
 
     @property
     def num_steps(self):
         return self.timeout
 
+    @property
+    def num_replicas(self):
+        return len(self.hyperparameters) if isinstance(self.hyperparameters,
+                                                    list) else 1
 
 @dataclass(frozen=True)
 class SolverReport:

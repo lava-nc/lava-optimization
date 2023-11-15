@@ -24,7 +24,6 @@ from lava.magma.core.resources import (
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
-from lava.proc.dense.process import Dense
 from lava.proc.sparse.process import Sparse
 from lava.lib.optimization.utils.datatype_converter import convert_to_fp
 from scipy.sparse import csr_matrix
@@ -82,6 +81,7 @@ class SolutionFinderModel(AbstractSubProcessModel):
                     Sparse(
                         weights=csr_matrix(weights),
                         num_message_bits=24,
+                        name="Q matrix"
                     )
                 )
                 if 1 in cost_coefficients.keys():

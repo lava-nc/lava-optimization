@@ -39,7 +39,7 @@ class SolutionReadout(AbstractProcess):
         self,
         shape: ty.Tuple[int, ...],
         target_cost=None,
-        name: ty.Optional[str] = None,
+        name: ty.Optional[str] = "SolutionReadout",
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
         super().__init__(

@@ -16,7 +16,7 @@ class SolutionReader(AbstractProcess):
         min_cost: int = (1 << 31) - 1,
         num_in_ports: int = 1,
         num_steps=None,
-        name: ty.Optional[str] = None,
+        name: ty.Optional[str] = "SolutionReader",
         log_config: ty.Optional[LogConfig] = None,
     ):
         super().__init__(

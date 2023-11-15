@@ -21,7 +21,7 @@ class SolutionFinder(AbstractProcess):
         continuous_var_shape,
         problem,
         idx=0,
-        name: ty.Optional[str] = None,
+        name: ty.Optional[str] = "SolutionFinder",
         log_config: ty.Optional[LogConfig] = None,
     ):
         super().__init__(

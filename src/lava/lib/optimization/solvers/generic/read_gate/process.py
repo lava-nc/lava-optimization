@@ -48,7 +48,7 @@ class ReadGate(AbstractProcess):
             target_cost=None,
             num_in_ports=1,
             num_steps=None,
-            name: ty.Optional[str] = None,
+            name: ty.Optional[str] = "ReadGate",
             log_config: ty.Optional[LogConfig] = None,
     ) -> None:
         super().__init__(

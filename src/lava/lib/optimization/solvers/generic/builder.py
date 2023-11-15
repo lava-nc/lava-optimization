@@ -186,6 +186,8 @@ class SolverProcessBuilder:
                             Var(shape=(1,)))
                     setattr(self, f"optimality_first_byte_{idx}",
                             Var(shape=(1,)))
+                    setattr(self, f"internal_state_{idx}",
+                            Var(shape=(problem.variables.discrete.num_variables,)))
                 self.optimum = Var(shape=(2,))
                 self.feasibility = Var(shape=(1,))
                 self.solution_step = Var(shape=(1,))
@@ -274,6 +276,10 @@ class SolverProcessBuilder:
                         getattr(proc.vars,
                                 f"variable_assignment_{finder_idx}").alias(
                             proc.finders[finder_idx].variables_assignment
+                        )
+                        getattr(proc.vars,
+                                f"internal_state_{finder_idx}").alias(
+                            proc.finders[finder_idx].internal_state
                         )
                 proc.vars.best_variable_assignment.alias(
                     self.solution_reader.solution

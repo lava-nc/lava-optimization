@@ -120,6 +120,7 @@ class SolutionFinderModel(AbstractSubProcessModel):
             self.cost_convergence_check.cost_out_first_byte.connect(
                 getattr(proc.out_ports, f"cost_out_first_byte")
             )
+            proc.vars.internal_state.alias(self.variables.internal_state)
 
         elif continuous_var_shape:
             self.constraints = ConstraintEnforcing()

@@ -98,6 +98,10 @@ class VariablesImplementation:
     def variables_assignment_cont(self):
         return self.continuous.variable_assignment
 
+    @property
+    def internal_state(self):
+        return self.discrete.internal_state
+
 
 @dataclass
 class ProximalGradientMinimizer:

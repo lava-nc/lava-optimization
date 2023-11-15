@@ -335,6 +335,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         self.s_bit.out_ports.messages.connect(proc.out_ports.s_out)
         self.s_bit.out_ports.local_cost.connect(proc.out_ports.local_cost)
         proc.vars.variable_assignment.alias(self.s_bit.prev_assignment)
+        proc.vars.internal_state.alias(self.s_bit.state)
 
 
 @implements(proc=CostConvergenceChecker, protocol=LoihiProtocol)

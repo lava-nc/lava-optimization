@@ -165,6 +165,7 @@ class SolverConfig:
     probe_state: bool = False
     probe_time: bool = False
     probe_energy: bool = False
+    probe_internal_state: bool = False
     log_level: int = 20
 
     @property
@@ -202,6 +203,7 @@ class SolverReport:
     best_timestep: int = None
     cost_timeseries: np.ndarray = None
     state_timeseries: np.ndarray = None
+    internal_state_timeseries: np.ndarray = None
     solver_config: SolverConfig = None
     profiler: Profiler = None
 
@@ -256,6 +258,7 @@ class OptimizationSolver:
         self._cost_tracker_first_byte = None
         self._cost_tracker_last_bytes = None
         self._state_tracker = None
+        self._internal_state_tracker = None
 
     def solve(self, config: SolverConfig = SolverConfig()) -> SolverReport:
         """
@@ -277,7 +280,7 @@ class OptimizationSolver:
         run_condition, run_cfg = self._prepare_solver(config)
         self.solver_process.run(condition=run_condition, run_cfg=run_cfg)
         best_state, best_cost, best_timestep = self._get_results(config)
-        cost_timeseries, state_timeseries = self._get_probing(config)
+        cost_timeseries, state_timeseries, internal_state_timeseries = self._get_probing(config)
         self.solver_process.stop()
         return SolverReport(
             problem=self.problem,
@@ -288,6 +291,7 @@ class OptimizationSolver:
             profiler=self._profiler,
             cost_timeseries=cost_timeseries,
             state_timeseries=state_timeseries,
+            internal_state_timeseries=internal_state_timeseries
         )
 
     def _prepare_solver(self, config: SolverConfig):
@@ -301,6 +305,9 @@ class OptimizationSolver:
             if config.probe_state:
                 self._create_state_probes(config)
                 probes.extend(self._state_tracker)
+            if config.probe_internal_state:
+                self._create_internal_state_probes(config)
+                probes.extend(self._internal_state_tracker)
         elif config.backend in CPUS:
             if config.probe_cost:
                 self._cost_tracker_first_byte = Monitor()
@@ -375,6 +382,15 @@ class OptimizationSolver:
                 )
             )
 
+    def _create_internal_state_probes(self, config: SolverConfig):
+        self._internal_state_tracker = []
+        for idx in range(config.num_replicas):
+            self._internal_state_tracker.append(
+                StateProbe(
+                    getattr(self.solver_process, f"internal_state_{idx}")
+                )
+            )
+
     def _get_requirements_and_protocol(
             self, backend: BACKENDS
     ) -> ty.Tuple[AbstractComputeResource, AbstractSyncProtocol]:
@@ -391,7 +407,7 @@ class OptimizationSolver:
 
     def _get_probing(
             self, config: SolverConfig()
-    ) -> ty.Tuple[np.ndarray, np.ndarray]:
+    ) -> ty.Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Return the cost and state timeseries if probed.
 
@@ -435,7 +451,25 @@ class OptimizationSolver:
                 state_timeseries[idx, :, :] = states.reshape(
                     (1, config.num_steps, self.problem.num_variables), order='F'
                 )
-        return cost_timeseries, state_timeseries
+        internal_state_timeseries = None
+        if self._internal_state_tracker is not None:
+            internal_state_timeseries = np.empty(
+                shape=(
+                    config.num_replicas,
+                    config.num_steps, 
+                    self.problem.num_variables
+                ),
+                dtype=int
+            )
+            for idx in range(config.num_replicas):
+                internal_states = self._get_probed_data(
+                    tracker=self._internal_state_tracker[idx],
+                    var_name=f"internal_state_{idx}",
+                )
+                internal_state_timeseries[idx, :, :] = internal_states.reshape(
+                    (1, config.num_steps, self.problem.num_variables), order='F'
+                )
+        return cost_timeseries, state_timeseries, internal_state_timeseries
 
     def _get_probed_data(self, tracker, var_name):
         if tracker is None:

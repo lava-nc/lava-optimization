@@ -99,6 +99,7 @@ class DiscreteVariablesProcess(AbstractProcess):
         self.variable_assignment = Var(shape=shape)
         self.cost_diagonal = cost_diagonal
         self.local_cost = OutPort(shape=shape)
+        self.internal_state = Var(shape=shape)
 
 
 class CostConvergenceChecker(AbstractProcess):

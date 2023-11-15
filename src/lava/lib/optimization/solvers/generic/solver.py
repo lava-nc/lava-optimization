@@ -362,8 +362,7 @@ class OptimizationSolver:
         for probe_id in range(config.num_replicas):
             self._cost_tracker_last_bytes.append(StateProbe(
                 getattr(self.solver_process,
-                        f"optimality_last_bytes_"
-                        f"{probe_id}"))
+                        f"optimality_last_bytes_{probe_id}"))
             )
             self._cost_tracker_first_byte.append(StateProbe(
                 getattr(self.solver_process,
@@ -404,11 +403,11 @@ class OptimizationSolver:
             for idx in range(config.num_replicas):
                 last_bytes = self._get_probed_data(
                     tracker=self._cost_tracker_last_bytes[idx],
-                    var_name="optimality_last_bytes",
+                    var_name=f"optimality_last_bytes_{idx}",
                 )
                 first_byte = self._get_probed_data(
                     tracker=self._cost_tracker_first_byte[idx],
-                    var_name="optimality_first_byte",
+                    var_name=f"optimality_first_byte_{idx}",
                 )
                 cost_timeseries[idx, :] = (first_byte << 24) + last_bytes
 

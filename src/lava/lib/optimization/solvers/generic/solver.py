@@ -299,10 +299,8 @@ class OptimizationSolver:
                 probes.extend(self._cost_tracker_first_byte)
                 probes.extend(self._cost_tracker_last_bytes)
             if config.probe_state:
-                self._state_tracker = StateProbe(
-                    self.solver_process.variable_assignment
-                )
-                probes.append(self._state_tracker)
+                self._create_state_probes(config)
+                probes.extend(self._state_tracker)
         elif config.backend in CPUS:
             if config.probe_cost:
                 self._cost_tracker_first_byte = Monitor()
@@ -355,19 +353,27 @@ class OptimizationSolver:
         self.solver_model = self._process_builder.solver_model
         self.solver_process._log_config.level = config.log_level
 
-    def _create_cost_probes(self, config):
+    def _create_cost_probes(self, config) -> None:
         self._cost_tracker_last_bytes = []
         self._cost_tracker_first_byte = []
-        for probe_id in range(config.num_replicas):
+        for idx in range(config.num_replicas):
             self._cost_tracker_last_bytes.append(StateProbe(
                 getattr(self.solver_process,
-                        f"optimality_last_bytes_{probe_id}"))
+                        f"optimality_last_bytes_{idx}"))
             )
             self._cost_tracker_first_byte.append(StateProbe(
                 getattr(self.solver_process,
-                        f"optimality_first_byte_{probe_id}")
+                        f"optimality_first_byte_{idx}")
             ))
-        return
+    
+    def _create_state_probes(self, config) -> None:
+        self._state_tracker = []
+        for idx in range(config.num_replicas):
+            self._state_tracker.append(
+                StateProbe(
+                    getattr(self.solver_process, f"variable_assignment_{idx}")
+                )
+            )
 
     def _get_requirements_and_protocol(
             self, backend: BACKENDS
@@ -410,13 +416,25 @@ class OptimizationSolver:
                 )
                 cost_timeseries[idx, :] = (first_byte << 24) + last_bytes
 
-        state_timeseries = self._get_probed_data(
-            tracker=self._state_tracker, var_name="variable_assignment"
-        )
-        if state_timeseries is not None:
-            state_timeseries = SolutionReadoutPyModel.decode_solution(
-                state_timeseries
+        state_timeseries = None
+        if self._state_tracker is not None:
+            state_timeseries = np.empty(
+                shape=(
+                    config.num_replicas,
+                    config.num_steps, 
+                    self.problem.num_variables
+                ),
+                dtype=int
             )
+            for idx in range(config.num_replicas):
+                states = self._get_probed_data(
+                    tracker=self._state_tracker[idx],
+                    var_name=f"variable_assignment_{idx}",
+                )
+                states: np.ndarray = SolutionReadoutPyModel.decode_solution(states)
+                state_timeseries[idx, :, :] = states.reshape(
+                    (1, config.num_steps, self.problem.num_variables), order='F'
+                )
         return cost_timeseries, state_timeseries
 
     def _get_probed_data(self, tracker, var_name):

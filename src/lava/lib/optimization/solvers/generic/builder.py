@@ -175,14 +175,13 @@ class SolverProcessBuilder:
                         2
                     ].diagonal()
             if not self.is_continuous:
-                self.variable_assignment = Var(
-                    shape=(problem.variables.discrete.num_variables,)
-                )
                 self.best_variable_assignment = Var(
                     shape=(problem.variables.discrete.num_variables,)
                 )
                 # Total cost=optimality_first_byte<<24+optimality_last_bytes
                 for idx in range(self.config.num_replicas):
+                    setattr(self, f"variable_assignment_{idx}",
+                            Var(shape=(problem.variables.discrete.num_variables,)))
                     setattr(self, f"optimality_last_bytes_{idx}",
                             Var(shape=(1,)))
                     setattr(self, f"optimality_first_byte_{idx}",
@@ -272,9 +271,10 @@ class SolverProcessBuilder:
                                 f"optimality_first_byte_{finder_idx}").alias(
                             proc.finders[finder_idx].cost_first_byte
                         )
-                proc.vars.variable_assignment.alias(
-                    proc.finders[0].variables_assignment
-                )
+                        getattr(proc.vars,
+                                f"variable_assignment_{finder_idx}").alias(
+                            proc.finders[finder_idx].variables_assignment
+                        )
                 proc.vars.best_variable_assignment.alias(
                     self.solution_reader.solution
                 )
@@ -286,10 +286,6 @@ class SolverProcessBuilder:
                 self.solution_reader.ref_port.connect_var(
                     finders[0].variables_assignment
                 )
-
-            proc.vars.variable_assignment.alias(
-                proc.finders[0].variables_assignment
-            )
 
         self._model_constructor = constructor
 

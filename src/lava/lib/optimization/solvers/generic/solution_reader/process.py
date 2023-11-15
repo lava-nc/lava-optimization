@@ -15,7 +15,7 @@ class SolutionReader(AbstractProcess):
         target_cost,
         min_cost: int = (1 << 31) - 1,
         num_in_ports: int = 1,
-        num_steps=None,
+        num_steps: int = None,
         name: ty.Optional[str] = "SolutionReader",
         log_config: ty.Optional[LogConfig] = None,
     ):
@@ -27,7 +27,7 @@ class SolutionReader(AbstractProcess):
             name=name,
             log_config=log_config,
         )
-        self.num_steps=num_steps
+        self.num_steps = num_steps
         self.solution = Var(shape=var_shape, init=-1)
         self.solution_step = Var(shape=(1,), init=-1)
         self.min_cost = Var(shape=(2,), init=min_cost)

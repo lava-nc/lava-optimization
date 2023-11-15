@@ -45,9 +45,7 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     NEBMSimulatedAnnealingAbstract,
 )
 from lava.lib.optimization.solvers.generic.monitoring_processes. \
-    solution_readout.models import (
-    SolutionReadoutPyModel,
-)
+    solution_readout.models import SolutionReadoutPyModel
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
 from lava.lib.optimization.solvers.generic.nebm.process import (
     NEBM,
@@ -175,8 +173,9 @@ class SolverConfig:
 
     @property
     def num_replicas(self):
-        return len(self.hyperparameters) if isinstance(self.hyperparameters,
-                                                    list) else 1
+        return len(self.hyperparameters) \
+            if isinstance(self.hyperparameters, list) else 1
+
 
 @dataclass(frozen=True)
 class SolverReport:
@@ -495,7 +494,7 @@ class OptimizationSolver:
             best_cost, idx = self.solver_process.optimum.get()
             best_cost = SolutionReadoutPyModel.decode_cost(best_cost)
             best_timestep = (
-                    self.solver_process.solution_step.aliased_var.get() - 2
+                self.solver_process.solution_step.aliased_var.get() - 2
             )
         best_state = self._get_best_state(config, int(idx))
 
@@ -515,8 +514,8 @@ class OptimizationSolver:
 
     def _is_problem_discrete(self):
         return (
-                hasattr(self.problem.variables, "discrete")
-                and self.problem.variables.discrete.num_variables is not None
+            hasattr(self.problem.variables, "discrete")
+            and self.problem.variables.discrete.num_variables is not None
         )
 
     def _get_and_decode_discrete_vars(self, config: SolverConfig, idx: int):
@@ -534,8 +533,8 @@ class OptimizationSolver:
 
     def _is_problem_continuous(self):
         return (
-                hasattr(self.problem.variables, "continuous")
-                and self.problem.variables.continuous.num_variables is not None
+            hasattr(self.problem.variables, "continuous")
+            and self.problem.variables.continuous.num_variables is not None
         )
 
     def _get_and_decode_continuous_vars(self, idx: int):

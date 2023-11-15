@@ -264,7 +264,6 @@ class SolverProcessBuilder:
                 if hasattr(proc, "cost_coefficients"):
                     for finder_idx in range(config.num_replicas):
                         proc.vars.optimum.alias(self.solution_reader.min_cost)
-                        # Cost = optimality_first_byte << 24 + optimality_last_bytes
                         getattr(proc.vars, f"optimality_last_bytes_"
                                            f"{finder_idx}").alias(
                             proc.finders[finder_idx].cost_last_bytes

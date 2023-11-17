@@ -42,6 +42,7 @@ class SolutionFinder(AbstractProcess):
         )
         self.cost_last_bytes = Var(shape=(1,), init=(0,))
         self.cost_first_byte = Var(shape=(1,), init=(0,))
-        self.internal_state = Var(shape=discrete_var_shape, init=(0,))
+        if discrete_var_shape is not None:
+            self.internal_state = Var(shape=discrete_var_shape, init=(0,))
         self.cost_out_last_bytes = OutPort(shape=(1,))
         self.cost_out_first_byte = OutPort(shape=(1,))

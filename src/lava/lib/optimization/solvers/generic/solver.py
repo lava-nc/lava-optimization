@@ -435,7 +435,7 @@ class OptimizationSolver:
                 time_steps_per_algorithmic_step = \
                     DiscreteVariablesModel.get_neuron_process(
                         config.hyperparameters).\
-                        time_steps_per_algorithmic_step
+                    time_steps_per_algorithmic_step
             state_timeseries = SolutionReadoutPyModel.decode_solution(
                 raw_solution=state_timeseries,
                 time_steps_per_algorithmic_step=time_steps_per_algorithmic_step
@@ -552,8 +552,8 @@ class OptimizationSolver:
             )
             time_steps_per_algorithmic_step = \
                 DiscreteVariablesModel.get_neuron_process(
-                    config.hyperparameters). \
-                    time_steps_per_algorithmic_step
+                    config.hyperparameters).\
+                time_steps_per_algorithmic_step
             raw_solution = SolutionReadoutPyModel.decode_solution(
                 raw_solution=raw_solution,
                 time_steps_per_algorithmic_step=time_steps_per_algorithmic_step

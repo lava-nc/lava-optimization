@@ -256,9 +256,10 @@ class SolverProcessBuilder:
                     var_shape=discrete_var_shape,
                     target_cost=target_cost,
                     num_in_ports=len(hps),
-                    time_steps_per_algorithmic_step= \
-                        DiscreteVariablesModel.get_neuron_process(
-                    proc.hyperparameters).time_steps_per_algorithmic_step
+                    time_steps_per_algorithmic_step=DiscreteVariablesModel.
+                    get_neuron_process(
+                        proc.hyperparameters).
+                    time_steps_per_algorithmic_step
                 )
             finders = []
             for idx, hp in enumerate(hps):

@@ -25,8 +25,9 @@ class SolutionReaderModel(AbstractSubProcessModel):
             shape=var_shape, target_cost=target_cost, num_in_ports=num_in_ports
         )
         self.solution_readout = SolutionReadout(
-            shape=var_shape, target_cost=target_cost,
-            time_steps_per_algorithmic_step = time_steps_per_algorithmic_step,
+            shape=var_shape,
+            target_cost=target_cost,
+            time_steps_per_algorithmic_step=time_steps_per_algorithmic_step,
         )
         self.read_gate.cost_out.connect(self.solution_readout.cost_in)
         self.read_gate.solution_out.connect(self.solution_readout.read_solution)

@@ -537,6 +537,7 @@ class SimulatedAnnealingLocalAbstract(AbstractProcess):
         self.assignment = Var(shape=shape, init=False)
         self.min_cost = Var(shape=shape, init=False)
 
+
 class SimulatedAnnealingAbstract(AbstractProcess):
     r"""Event-driven stochastic discrete dynamical system with two outputs.
 

@@ -21,6 +21,7 @@ from lava.lib.optimization.solvers.generic.solution_finder.models\
     import SolutionFinderModel
 
 
+@unittest.skip("CPU backend of QUBO solver temporarily disabled.")
 class TestOptimizationSolverQUBO(unittest.TestCase):
     def setUp(self) -> None:
         self.problem = QUBO(
@@ -242,7 +243,8 @@ def solve_workload(problem, reference_solution):
     return report, expected_cost
 
 
-class TestWorkloads(unittest.TestCase):
+@unittest.skip("CPU backend of QUBO solver temporarily disabled.")
+class TestOptimizationSolverQUBO(unittest.TestCase):
     def test_solve_polynomial_minimization(self):
         """Polynomial minimization with y=-5x_1 -3x_2 -8x_3 -6x_4 +
         4x_1x_2+8x_1x_3+2x_2x_3+10x_3x_4

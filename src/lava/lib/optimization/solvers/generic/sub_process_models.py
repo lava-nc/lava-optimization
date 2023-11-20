@@ -576,7 +576,8 @@ class SimulatedAnnealingAbstractModel(AbstractSubProcessModel):
             'max_temperature': max_temperature,
             'cost_diagonal': cost_diagonal,
             'init_value': init_value,
-            'init_state': init_state,}
+            'init_state': init_state,
+        }
 
         # the simulated annealing neuron requires 2 Loihi time steps for a
         # single algorithmic time step

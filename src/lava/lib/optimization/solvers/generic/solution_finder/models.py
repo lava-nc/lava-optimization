@@ -176,4 +176,3 @@ class SolutionFinderModel(AbstractSubProcessModel):
         q_off_diag = cost_coefficients[2].init * np.logical_not(
             np.eye(*cost_coefficients[2].init.shape))
         return q_off_diag
-

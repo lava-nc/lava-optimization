@@ -103,7 +103,6 @@ class SimulatedAnnealingLocal(AbstractProcess):
             can be found in NEBMSimulatedAnnealing.enabled_neuron_models.
         """
 
-        #self._validate_input(neuron_model)
         super().__init__(
             shape=shape,
             cost_diagonal=cost_diagonal,

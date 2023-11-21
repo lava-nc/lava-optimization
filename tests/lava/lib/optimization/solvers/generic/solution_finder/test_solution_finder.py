@@ -5,7 +5,7 @@ import unittest
 import os
 
 import numpy as np
-from lava.lib.optimization.problems.problems import QUBO, QP
+from lava.lib.optimization.problems.problems import QP
 from lava.lib.optimization.solvers.generic.read_gate.models import (
     get_read_gate_model_class,
 )

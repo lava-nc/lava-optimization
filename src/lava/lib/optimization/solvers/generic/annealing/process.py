@@ -5,7 +5,7 @@ import numpy as np
 import typing as ty
 from numpy import typing as npty
 
-from lava.magma.core.process.ports.ports import InPort, OutPort
+from lava.magma.core.process.ports.ports import OutPort
 from lava.magma.core.process.process import AbstractProcess
 from lava.magma.core.process.variable import Var
 
@@ -102,10 +102,12 @@ class Annealing(AbstractProcess):
                              f"{self.supported_anneal_schedules} are "
                              f"supported.")
         if steps_per_temperature < 0:
-            raise ValueError(f"steps_per_temperature > 0 required.")
+            raise ValueError(f"steps_per_temperature is "
+                             f"{steps_per_temperature} but must be > 0.")
         if annealing_schedule == 'geometric':
             geometric_constant = np.right_shift(delta_temperature,
                                                 exp_temperature)
             if geometric_constant > 1 or geometric_constant < 0:
                 raise ValueError(f"delta_temperature >> exp_temperature "
-                                 f"should be between 0 to 1.")
+                                 f"should be between 0 to 1, but is"
+                                 f" {geometric_constant}.")

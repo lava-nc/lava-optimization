@@ -78,8 +78,9 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             # The binary solution was attained 1 step ago. Shift down by 4.
             return raw_solution.astype(np.int8) >> 2
         else:
-            raise ValueError(f"The value of time steps that a single "
-                             f"algorithmic step requires is undefined.")
+            raise ValueError(f"The number of time steps that a single "
+                             f"algorithmic step requires must be either 1 or "
+                             f"2 but is {time_steps_per_algorithmic_step}.")
 
     def _printout_new_solution(self, cost, min_cost_id, timestep):
         self.log.info(

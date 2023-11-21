@@ -598,10 +598,10 @@ class OptimizationSolver:
         """
 
         if (config.backend in CPUS) and isinstance(self.problem, QUBO):
-            warnings.warn(f"Please note that we are currently advancing only "
-                          f"the Loihi 2 backend of the QUBO solver. Until "
-                          f"further notice, the CPU implementation uses "
-                          f"an outdated algorithm. We thus recommend running "
-                          f"your workloads on Loihi 2 to leverage the latest "
-                          f"algorithms for optimal latency, energy "
-                          f"consumption, and solution accuracy. ")
+            warnings.warn("Please note that we are currently advancing only "
+                          "the Loihi 2 backend of the QUBO solver. Until "
+                          "further notice, the CPU implementation uses "
+                          "an outdated algorithm. We thus recommend running "
+                          "your workloads on Loihi 2 to leverage the latest "
+                          "algorithms for optimal latency, energy "
+                          "consumption, and solution accuracy. ")

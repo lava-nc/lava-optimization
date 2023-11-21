@@ -367,7 +367,7 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         elif neuron_model == 'scif':
             return StochasticIntegrateAndFire
         else:
-            raise ValueError(f"Please choose a supported neuron model")
+            raise ValueError("Please choose a supported neuron model")
 
 
 @implements(proc=CostConvergenceChecker, protocol=LoihiProtocol)

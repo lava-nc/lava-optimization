@@ -22,7 +22,7 @@ from lava.lib.optimization.solvers.generic.solution_finder.models\
 
 
 @unittest.skip("CPU backend of QUBO solver temporarily disabled.")
-class TestOptimizationSolverQUBO(unittest.TestCase):
+class TestOptimizationSolverQUBOSetup(unittest.TestCase):
     def setUp(self) -> None:
         self.problem = QUBO(
             np.array(

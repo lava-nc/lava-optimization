@@ -282,8 +282,10 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                     **nebm_params
                 )
             elif neuron_model == 'nebm-sa-refract':
+                refract_seed = proc.hyperparameters.get("refract_seed", 0)
                 refract_scaling = proc.hyperparameters.get("refract_scaling", 4)
                 nebm_params['refract_scaling'] = refract_scaling
+                nebm_params['refract_seed'] = refract_seed
                 self.s_bit = SimulatedAnnealingLocalAbstract(
                     **nebm_params
                 )
@@ -498,6 +500,7 @@ class SimulatedAnnealingLocalAbstractModel(AbstractSubProcessModel):
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))
         refract_scaling = proc.proc_params.get("refract_scaling")
+        refract_seed = proc.proc_params.get("refract_seed")
 
         annealing_params = {
             'shape': (1,),
@@ -515,7 +518,8 @@ class SimulatedAnnealingLocalAbstractModel(AbstractSubProcessModel):
             'cost_diagonal': cost_diagonal,
             'init_value': init_value,
             'init_state': init_state,
-            'refract_scaling': refract_scaling}
+            'refract_scaling': refract_scaling,
+            'refract_seed': refract_seed}
 
         self.nebm = SimulatedAnnealingLocal(**nebm_params)
 

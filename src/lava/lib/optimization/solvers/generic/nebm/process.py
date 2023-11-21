@@ -76,6 +76,7 @@ class SimulatedAnnealingLocal(AbstractProcess):
         cost_diagonal: npty.ArrayLike,
         max_temperature: npty.ArrayLike,
         refract_scaling: ty.Union[npty.ArrayLike, None],
+        refract_seed: int,
         init_value: npty.ArrayLike,
         init_state: npty.ArrayLike,
     ):
@@ -94,6 +95,9 @@ class SimulatedAnnealingLocal(AbstractProcess):
                 rand(0, 255) >> refract_scaling
             Refract_scaling thus denotes the order of magnitude of timesteps a
             neuron remains in a state after a transition.
+        refract_seed : int
+            Random seed to initialize the refractory periods. Allows
+            repeatability.
         init_value : ArrayLike
             The spiking history with which the network is initialized
         init_state : ArrayLike
@@ -120,6 +124,7 @@ class SimulatedAnnealingLocal(AbstractProcess):
 
         self.temperature = Var(shape=shape, init=int(max_temperature))
 
+        np.random.seed(refract_seed)
         self.refract_counter = Var(
             shape=shape,
             init=0 + np.right_shift(
@@ -185,6 +190,7 @@ class SimulatedAnnealing(SimulatedAnnealingLocal):
             cost_diagonal=cost_diagonal,
             max_temperature=max_temperature,
             refract_scaling=None,
+            refract_seed=0,
             init_value=init_value,
             init_state=init_state,
         )

@@ -467,6 +467,7 @@ class SimulatedAnnealingLocalAbstract(AbstractProcess):
         exp_temperature: int,
         steps_per_temperature: int,
         refract_scaling: int,
+        refract_seed: int,
         annealing_schedule: str,
         shape: ty.Tuple[int, ...],
         init_state: npty.ArrayLike,
@@ -482,16 +483,42 @@ class SimulatedAnnealingLocalAbstract(AbstractProcess):
             The shape of the set of dynamical systems to be created.
         init_state: npty.ArrayLike, optional
             The starting value of the state variable.
-        temperature: npty.ArrayLike, optional
-            the temperature of the systems, defining the level of noise.
+        max_temperature: npty.ArrayLike, int
+            The maximum/initial temperature of the systems. The temperature,
+            defines the level of noise.
+        min_temperature: npty.ArrayLike, int
+            The minimum temperature of the systems. Once reached during
+            annealing, the temperature will be reset to max_temperature.
+        delta_temperature: npty.ArrayLike, int
+            Defines the temperature annealing. For a linear annealing
+            schedule, the temperature is changed in each annnealing step
+            according to
+                T -= delta_temperature
+            In the geometrich annealin schedule, according to
+                T *= delta_temperature * 2**(-exp_temperature)
+        exp_temperature: npty.ArrayLike, int
+            Defines the temperature annealing, together with delta_temperature.
+            Must only be provided if annealing_schedule=='geometric'.
+        steps_per_temperature: npty.ArrayLike
+            Steps that the Boltzmann machine runs for before the next
+            temperature annealing step takes place.
+        annealing_schedule: npty.ArrayLike(str), str
+            'linear' or 'geometric'.
         min_integration: npty.ArrayLike, optional
             The minimum value for the total input (addition of all valid inputs
             at a given timestep). The total input value will be truncated at
             this value if adding current and preserved inputs results in a lower
             value.
-        refractory_period: npty.ArrayLike, optional
-            Number of timesteps to wait after firing and reset before resuming
-            updating.
+        refract_scaling : ArrayLike
+            After a neuron has switched its binary variable, it remains in a
+            refractory state that prevents any variable switching for a
+            number of time steps. This number of time steps is determined by
+                rand(0, 255) >> refract_scaling
+            Refract_scaling thus denotes the order of magnitude of timesteps a
+            neuron remains in a state after a transition.
+        refract_seed : int
+            Random seed to initialize the refractory periods. Allows
+            repeatability.
         cost_diagonal: npty.ArrayLike, optional
             The linear coefficients on the cost function of the optimization
             problem where this system will be used.
@@ -511,6 +538,7 @@ class SimulatedAnnealingLocalAbstract(AbstractProcess):
             exp_temperature=exp_temperature,
             steps_per_temperature=steps_per_temperature,
             refract_scaling=refract_scaling,
+            refract_seed=refract_seed,
             cost_diagonal=cost_diagonal,
             name=name,
             log_config=log_config,

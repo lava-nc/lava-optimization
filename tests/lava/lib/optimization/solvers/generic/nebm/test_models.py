@@ -30,6 +30,7 @@ def solve_nebm(q, time=100, target=-10, refract=1, counter=0, temp=0):
     return solver.solve(config=config)
 
 
+@unittest.skip("CPU backend of QUBO solver is temporarily deactivated")
 class TestPyNEBM(unittest.TestCase):
     def test_boltzmann(self):
         # temp = 0 and delta_e >= 0, p(switch) = 0

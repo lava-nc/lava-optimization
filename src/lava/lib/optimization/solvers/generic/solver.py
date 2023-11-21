@@ -3,8 +3,11 @@
 # See: https://spdx.org/licenses/
 
 import typing as ty
+from lava.lib.optimization.solvers.generic.monitoring_processes. \
+    solution_readout.process import SolutionReadout
 import numpy as np
 
+from enum import Enum
 from dataclasses import dataclass
 
 from lava.lib.optimization.solvers.generic.qp.models import (
@@ -44,6 +47,7 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
 )
 from lava.lib.optimization.solvers.generic.monitoring_processes. \
     solution_readout.models import (
+        SolutionReadoutAsyncPyModel,
         SolutionReadoutPyModel,
     )
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
@@ -106,10 +110,6 @@ except ImportError:
         pass
 
 
-from lava.lib.optimization.solvers.generic.read_gate.models import (
-    ReadGatePyModel,
-)
-
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 HP_TYPE = ty.Union[ty.Dict, ty.List[ty.Dict]]
 CPUS = [CPU, "CPU"]
@@ -125,6 +125,11 @@ backend = Loihi2NeuroCore
 backend = NeuroCoreS
 The explicit resource classes can be imported from
 lava.magma.core.resources"""
+
+
+class ReadoutMode(Enum):
+    TARGET = 1
+    STREAMING = 2
 
 
 @dataclass
@@ -177,6 +182,7 @@ class SolverConfig:
     probe_energy: bool = False
     log_level: int = 40
     folded_compilation: bool = False
+    readout_mode: ReadoutMode = ReadoutMode.TARGET
 
 
 @dataclass(frozen=True)
@@ -339,7 +345,7 @@ class OptimizationSolver:
                 )
                 probes.append(self._state_tracker)
         run_cfg = self._get_run_config(
-            backend=config.backend,
+            config=config,
             probes=probes,
             num_in_ports=num_in_ports,
         )
@@ -432,7 +438,7 @@ class OptimizationSolver:
             return tracker.time_series
 
     def _get_run_config(
-        self, backend: BACKENDS, probes=None, num_in_ports: int = None
+        self, config: SolverConfig, probes=None, num_in_ports: int = None
     ):
         from lava.lib.optimization.solvers.generic.read_gate.process import (
             ReadGate
@@ -441,7 +447,7 @@ class OptimizationSolver:
             get_read_gate_model_class,
         )
 
-        if backend in CPUS:
+        if config.backend in CPUS:
             ReadGatePyModel = get_read_gate_model_class(num_in_ports)
             pdict = {
                 self.solver_process: self.solver_model,
@@ -453,13 +459,13 @@ class OptimizationSolver:
                 QuboScif: PyModelQuboScifFixed,
                 ProportionalIntegralNeuronsPIPGeq: PyPIneurPIPGeqModel,
                 ProjectedGradientNeuronsPIPGeq: PyProjGradPIPGeqModel,
+                SolutionReadout: SolutionReadoutPyModel
             }
             return Loihi1SimCfg(exception_proc_model_map=pdict,
                                 select_sub_proc_model=True)
-        elif backend in NEUROCORES:
+        elif config.backend in NEUROCORES:
             pdict = {
                 self.solver_process: self.solver_model,
-                ReadGate: ReadGateCModel,
                 Dense: NcModelDense,
                 Sparse: NcModelSparse,
                 NEBMAbstract: NEBMAbstractModel,
@@ -470,14 +476,19 @@ class OptimizationSolver:
                 CostIntegrator: CostIntegratorNcModel,
                 ProportionalIntegralNeuronsPIPGeq: NcL2ModelPI,
                 ProjectedGradientNeuronsPIPGeq: NcL2ModelPG,
+                ReadGate: ReadGateCModel,
+                SolutionReadout: SolutionReadoutAsyncPyModel
             }
+            if config.readout_mode == ReadoutMode.TARGET:
+                pdict.update({
+                    ReadGate: ReadGateCModel,
+                    SolutionReadout: SolutionReadoutAsyncPyModel
+                })
             return Loihi2HwCfg(
                 exception_proc_model_map=pdict,
                 select_sub_proc_model=True,
                 callback_fxs=probes,
             )
-        else:
-            raise NotImplementedError(str(backend) + BACKEND_MSG)
 
     def _prepare_profiler(self, config: SolverConfig, run_cfg) -> None:
         if config.probe_time or config.probe_energy:

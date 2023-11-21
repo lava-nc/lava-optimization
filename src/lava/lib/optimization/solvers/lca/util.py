@@ -41,4 +41,4 @@ def get_fixed_pt_scale(sparse_coding):
     The scale is the largest power of 2 such that the sparse_coding * scale does
     not exceed 2**24
     """
-    return 2**(24 - np.ceil(np.log2(np.max(np.abs(sparse_coding)))))
+    return 2 ** (24 - np.ceil(np.log2(np.max(np.abs(sparse_coding)))))

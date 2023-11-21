@@ -99,12 +99,13 @@ The instance of an ``Optimization problem`` is the valid input for instantiating
 
 ### Solving QP problems 
 
-Currently, QP problems can be solved using the specific ``QPSolver``. In future releases, this will be merged with the generic API of ``OptimizationSolver`` (used in the next example).
-
 ```python
 import numpy as np
 from lava.lib.optimization.problems.problems import QP
-from lava.lib.optimization.solvers.qp.solver import QPSolver
+from lava.lib.optimization.solvers.generic.solver import (
+        SolverConfig,
+        OptimizationSolver,
+)
 
 # Define QP problem
 Q = np.array([[100, 0, 0], [0, 15, 0], [0, 0, 5]])
@@ -112,26 +113,33 @@ p = np.array([[1, 2, 1]]).T
 A = -np.array([[1, 2, 2], [2, 100, 3]])
 k = -np.array([[-50, 50]]).T
 
-problem = QP(Q, p, A, k)
+qp = QP(Q, p, A, k)
 
 # Define hyper-parameters
-alpha, beta = 0.001, 1
-alpha_d, beta_g = 10000, 10000
-iterations = 400
+hyperparameters = {
+  "neuron_model": "qp-lp_pipg",
+  "alpha_mantissa": 160,
+  "alpha_exponent": -8,
+  "beta_mantissa": 7,
+  "beta_exponent": -10,
+  "decay_schedule_parameters": (100, 100, 0),
+  "growth_schedule_parameters": (3, 2),
+}
 
 # Solve using QPSolver
-solver = QPSolver(alpha=alpha,
-                  beta=beta,
-                  alpha_decay_schedule=alpha_d,
-                  beta_growth_schedule=beta_g)
-solver.solve(problem, iterations=iterations)
+solver = OptimizationSolver(problem=qp)
+config = SolverConfig(timeout=400, hyperparameters=hyperparameters, backend="Loihi2")
+solver.solve(config=config)
 ```
 
 ### Solving QUBO
 ```python
 import numpy as np
 from lava.lib.optimization.problems.problems import QUBO
-from lava.lib.optimization.solvers.generic.solver import OptimizationSolver
+from lava.lib.optimization.solvers.generic.solver import (
+        SolverConfig,
+        OptimizationSolver,
+)
 
 # Define QUBO problem
 q = np.array([[-5, 2, 4, 0],
@@ -142,8 +150,9 @@ q = np.array([[-5, 2, 4, 0],
 qubo = QUBO(q)
 
 # Solve using generic OptimizationSolver
-solver = OptimizationSolver(problem=qubo1)
-solution = solver.solve(timeout=3000, target_cost=-50, backend=“Loihi2”)
+solver = OptimizationSolver(problem=qubo)
+config = SolverConfig(timeout=3000, target_cost=-50, backend="Loihi2")
+solution = solver.solve(config=config)
 ```
 
 ## Getting Started

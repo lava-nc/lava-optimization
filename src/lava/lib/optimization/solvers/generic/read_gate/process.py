@@ -71,4 +71,5 @@ class ReadGate(AbstractProcess):
         self.best_solution = Var(shape=shape, init=-1)
         self.send_pause_request = OutPort(shape=(1,))
         self.solution_out = OutPort(shape=shape)
+        self.acknowledgment_in = InPort(shape=(1,))
         self.solution_reader = RefPort(shape=shape)

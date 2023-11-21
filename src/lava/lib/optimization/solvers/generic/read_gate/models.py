@@ -83,6 +83,9 @@ def get_readgate_members(num_in_ports):
         "solution_reader": LavaPyType(
             PyRefPort.VEC_DENSE, np.int32, precision=32
         ),
+        "acknowledgment_in": LavaPyType(
+            PyInPort.VEC_DENSE, np.int32, precision=32
+        ),
         "min_cost": None,
         "min_cost_id": None,
         "solution": None,
@@ -141,6 +144,9 @@ class ReadGatePyModelD(PyLoihiProcessModel):
     )
     send_pause_request: PyOutPort = LavaPyType(
         PyOutPort.VEC_DENSE, np.int32, precision=32
+    )
+    acknowledgment_in: PyInPort = LavaPyType(
+        PyInPort.VEC_DENSE, np.int32, precision=32
     )
     solution_reader = LavaPyType(PyRefPort.VEC_DENSE, np.int32, precision=32)
     min_cost: int = None

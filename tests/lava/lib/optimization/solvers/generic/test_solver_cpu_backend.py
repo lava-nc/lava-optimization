@@ -132,6 +132,42 @@ class TestOptimizationSolverQUBO(unittest.TestCase):
             np.all(report.best_state == states[report.best_timestep])
         )
 
+    def test_multiple_calls_to_solve(self) -> None:
+        config = SolverConfig(
+            timeout=50, target_cost=-20, backend="CPU", keep_running=True
+        )
+        report = self.solver.solve(config=config)
+
+        self.assertTrue(self.solver.solver_process.runtime._is_started)
+
+        config = SolverConfig(
+            timeout=50, target_cost=-20, backend="CPU", keep_running=False
+        )
+        report = self.solver.solve(config=config)
+
+        # TODO : Check solution is correct
+        # TODO : Check solver stopped
+        self.assertFalse(self.solver.solver_process.runtime._is_started)
+
+    def test_valid_problem_reconfiguration_without_rerunning(self) -> None:
+        problem = QUBO(np.array([[1, 0], [1, 1]], dtype=int))
+        self.solver.reconfigure_problem(problem=problem)
+        self.assertIs(self.solver.problem, problem)
+
+    def test_valid_problem_reconfiguration_after_rerunning(self) -> None:
+        # TODO : try to reconfigure the problem with a valid one
+
+        pass
+
+    def test_invalid_problem_reconfiguration(self) -> None:
+        problem = QUBO(np.random.randint(0, 10, size=(10, 10)))
+        self.assertNotEqual(problem.num_variables, self.problem.num_variables)
+        self.assertRaises(
+            ValueError, 
+            self.solver.reconfigure_problem,
+            problem
+        )
+
 
 class TestOptimizationSolverQP(unittest.TestCase):
     def setUp(self) -> None:

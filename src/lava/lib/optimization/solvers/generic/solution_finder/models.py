@@ -79,10 +79,11 @@ class SolutionFinderModel(AbstractSubProcessModel):
                 )
                 self.cost_minimizer = CostMinimizer(
                     Sparse(
-                        weights=csr_matrix(weights),
+                        weights=csr_matrix(self.proc.cost_weights.init),
                         num_message_bits=24,
                     )
                 )
+                proc.cost_minimizer = self.cost_minimizer
                 if 1 in cost_coefficients.keys():
                     q_diag = (
                         cost_coefficients[1].init

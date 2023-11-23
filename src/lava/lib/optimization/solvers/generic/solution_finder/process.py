@@ -42,3 +42,11 @@ class SolutionFinder(AbstractProcess):
         self.cost_first_byte = Var(shape=(1,), init=(0,))
         self.cost_out_last_bytes = OutPort(shape=(1,))
         self.cost_out_first_byte = OutPort(shape=(1,))
+
+    def reconfigure_cost_coefficients(self, cost_coefficients: dict):
+        if self.cost_minimizer is None:
+            raise Error("Cost coefficients cannot be reconfigured before the proc model is created.")
+        
+        self.cost_minimizer.coefficients_2nd_order.weights.set(
+            cost_coefficients[2]
+        )

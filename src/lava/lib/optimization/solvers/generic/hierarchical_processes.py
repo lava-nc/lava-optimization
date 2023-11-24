@@ -9,7 +9,6 @@ import numpy as np
 from lava.magma.core.process.ports.ports import InPort, OutPort
 from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
-from numpy import typing as npt
 
 
 class ContinuousVariablesProcess(AbstractProcess):
@@ -21,7 +20,7 @@ class ContinuousVariablesProcess(AbstractProcess):
         shape: ty.Tuple[int, ...],
         problem: OptimizationProblem,
         backend,
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        hyperparameters: ty.Dict[str, ty.Union[int, npty.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
@@ -67,8 +66,9 @@ class DiscreteVariablesProcess(AbstractProcess):
     def __init__(
         self,
         shape: ty.Tuple[int, ...],
-        cost_diagonal: npt.ArrayLike = None,
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        cost_diagonal: npty.ArrayLike = None,
+        cost_off_diagonal: npty.ArrayLike = None,
+        hyperparameters: ty.Dict[str, ty.Union[int, npty.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
@@ -77,9 +77,12 @@ class DiscreteVariablesProcess(AbstractProcess):
         ----------
         shape: tuple
             A tuple of the form (number of variables, domain size).
-        cost_diagonal: npt.ArrayLike
+        cost_diagonal: npty.ArrayLike
             The diagonal of the coefficient of the quadratic term on the cost
             function.
+        cost_off_diagonal: npty.ArrayLike
+            The off-diagonal of the coefficient of the quadratic term on the
+            cost function.
         hyperparameters: dict, optional
         name: str, optional
             Name of the Process. Default is 'Process_ID', where ID is an integer
@@ -89,6 +92,7 @@ class DiscreteVariablesProcess(AbstractProcess):
         super().__init__(
             shape=shape,
             cost_diagonal=cost_diagonal,
+            cost_off_diagonal=cost_off_diagonal,
             name=name,
             log_config=log_config,
         )
@@ -180,7 +184,7 @@ class ContinuousConstraintsProcess(AbstractProcess):
         shape_out: ty.Tuple[int, ...],
         problem: OptimizationProblem,
         backend,
-        hyperparameters: ty.Dict[str, ty.Union[int, npt.ArrayLike]] = None,
+        hyperparameters: ty.Dict[str, ty.Union[int, npty.ArrayLike]] = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
@@ -243,39 +247,43 @@ class StochasticIntegrateAndFire(AbstractProcess):
 
     """
 
+    # This variable defines the time steps for a single algorithmic step
+    # Used by the SolutionReadOut to extract variables from the spk_hist
+    time_steps_per_algorithmic_step = 1
+
     def __init__(
         self,
         *,
-        step_size: npt.ArrayLike,
+        step_size: npty.ArrayLike,
         shape: ty.Tuple[int, ...] = (1,),
-        init_state: npt.ArrayLike = 0,
-        noise_amplitude: npt.ArrayLike = 1,
-        noise_precision: npt.ArrayLike = 8,
-        sustained_on_tau: npt.ArrayLike = -3,
-        threshold: npt.ArrayLike = 10,
-        cost_diagonal: npt.ArrayLike = 0,
+        init_state: npty.ArrayLike = 0,
+        noise_amplitude: npty.ArrayLike = 1,
+        noise_precision: npty.ArrayLike = 8,
+        sustained_on_tau: npty.ArrayLike = -3,
+        threshold: npty.ArrayLike = 10,
+        cost_diagonal: npty.ArrayLike = 0,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
-        init_value: npt.ArrayLike = 0,
+        init_value: npty.ArrayLike = 0,
     ) -> None:
         """
         Parameters
         ----------
         shape: tuple
             The shape of the set of dynamical systems to be created.
-        init_state: npt.ArrayLike, optional
+        init_state: npty.ArrayLike, optional
             The starting value of the state variable.
-        step_size: npt.ArrayLike, optional
+        step_size: npty.ArrayLike, optional
             a value to be added to the state variable at each timestep.
-        noise_amplitude: npt.ArrayLike, optional
+        noise_amplitude: npty.ArrayLike, optional
             The width/range for the stochastic perturbation to the state
             variable. A random number within this range will be added to the
             state variable at each timestep.
-        steps_to_fire: npt.ArrayLike, optional
+        steps_to_fire: npty.ArrayLike, optional
             After how many timesteps would the dynamical system fire and reset
             without stochastic perturbation. Note that if noise_amplitude > 0,
             the system will stochastically deviate from this value.
-        cost_diagonal: npt.ArrayLike, optional
+        cost_diagonal: npty.ArrayLike, optional
             The linear coefficients on the cost function of the optimization
             problem where this system will be used.
         name: str, optional
@@ -327,8 +335,6 @@ class NEBMAbstract(AbstractProcess):
     added_input: InPort
         The addition of all inputs (per dynamical system) at this
         timestep will be received by this port.
-    replace_assignment: InPort
-        Todo: deprecate
     messages: OutPort
         The payload to be sent to other dynamical systems when firing.
     local_cost: OutPort
@@ -339,21 +345,25 @@ class NEBMAbstract(AbstractProcess):
 
     """
 
+    # This variable defines the time steps for a single algorithmic step
+    # Used by the SolutionReadOut to extract variables from the spk_hist
+    time_steps_per_algorithmic_step = 1
+
     def __init__(
         self,
         *,
-        temperature: npt.ArrayLike,
+        temperature: npty.ArrayLike,
         refract: ty.Optional[ty.Union[int, npty.NDArray]],
         refract_counter: ty.Optional[ty.Union[int, npty.NDArray]],
         shape: ty.Tuple[int, ...] = (1,),
-        init_state: npt.ArrayLike = 0,
-        input_duration: npt.ArrayLike = 6,
-        min_state: npt.ArrayLike = 1000,
-        min_integration: npt.ArrayLike = -1000,
-        cost_diagonal: npt.ArrayLike = 0,
+        init_state: npty.ArrayLike = 0,
+        input_duration: npty.ArrayLike = 6,
+        min_state: npty.ArrayLike = 1000,
+        min_integration: npty.ArrayLike = -1000,
+        cost_diagonal: npty.ArrayLike = 0,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
-        init_value: npt.ArrayLike = 0,
+        init_value: npty.ArrayLike = 0,
     ) -> None:
         """
 
@@ -361,26 +371,26 @@ class NEBMAbstract(AbstractProcess):
         ----------
         shape: tuple
             The shape of the set of dynamical systems to be created.
-        init_state: npt.ArrayLike, optional
+        init_state: npty.ArrayLike, optional
             The starting value of the state variable.
-        temperature: npt.ArrayLike, optional
+        temperature: npty.ArrayLike, optional
             the temperature of the systems, defining the level of noise.
-        input_duration: npt.ArrayLike, optional
+        input_duration: npty.ArrayLike, optional
             Number of timesteps by which each input should be preserved.
-        min_state: npt.ArrayLike, optional
+        min_state: npty.ArrayLike, optional
             The minimum value for the state variable. The state variable will be
             truncated at this value if updating results in a lower value.
-        min_integration: npt.ArrayLike, optional
+        min_integration: npty.ArrayLike, optional
             The minimum value for the total input (addition of all valid inputs
             at a given timestep). The total input value will be truncated at
             this value if adding current and preserved inputs results in a lower
             value.
-        refract: npt.ArrayLike, optional
+        refract: npty.ArrayLike, optional
             Number of timesteps to wait after firing and reset before resuming
             updating.
-        refract_counter: npt.ArrayLike, optional
+        refract_counter: npty.ArrayLike, optional
             Number of timesteps to initially suppress a unit firing.
-        cost_diagonal: npt.ArrayLike, optional
+        cost_diagonal: npty.ArrayLike, optional
             The linear coefficients on the cost function of the optimization
             problem where this system will be used.
         name: str, optional
@@ -407,7 +417,6 @@ class NEBMAbstract(AbstractProcess):
         self.added_input = InPort(shape=shape)
         self.messages = OutPort(shape=shape)
         self.local_cost = OutPort(shape=shape)
-
         self.integration = Var(shape=shape, init=0)
         self.temperature = Var(shape=shape, init=temperature)
         self.refract = Var(shape=shape, init=refract)
@@ -415,7 +424,6 @@ class NEBMAbstract(AbstractProcess):
         self.state = Var(shape=shape, init=init_state)
         self.input_duration = Var(shape=shape, init=input_duration)
         self.min_state = Var(shape=shape, init=min_state)
-        self.min_integration = Var(shape=shape, init=min_integration)
         self.firing = Var(shape=shape, init=init_value)
         self.prev_assignment = Var(shape=shape, init=False)
         self.cost_diagonal = Var(shape=shape, init=cost_diagonal)
@@ -423,7 +431,7 @@ class NEBMAbstract(AbstractProcess):
         self.min_cost = Var(shape=shape, init=False)
 
 
-class NEBMSimulatedAnnealingAbstract(AbstractProcess):
+class SimulatedAnnealingLocalAbstract(AbstractProcess):
     r"""Event-driven stochastic discrete dynamical system with two outputs.
 
     The main output is intended as input to other dynamical systems on
@@ -435,8 +443,6 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
     added_input: InPort
         The addition of all inputs (per dynamical system) at this
         timestep will be received by this port.
-    replace_assignment: InPort
-        Todo: deprecate
     messages: OutPort
         The payload to be sent to other dynamical systems when firing.
     local_cost: OutPort
@@ -447,25 +453,27 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
 
     """
 
+    # This variable defines the time steps for a single algorithmic step
+    # Used by the SolutionReadOut to extract variables from the spk_hist
+    time_steps_per_algorithmic_step = 1
+
     def __init__(
         self,
         *,
-        max_temperature: int = 10,
-        min_temperature: int = 0,
-        delta_temperature: int = 1,
-        exp_temperature: int = None,
-        steps_per_temperature: int = 100,
-        refract_scaling: int = 14,
-        refract: ty.Optional[ty.Union[int, npty.NDArray]],
-        shape: ty.Tuple[int, ...] = (1,),
-        init_state: npt.ArrayLike = 0,
-        min_integration: npt.ArrayLike = -1000,
-        cost_diagonal: npt.ArrayLike = 0,
+        cost_diagonal: npty.ArrayLike,
+        max_temperature: int,
+        min_temperature: int,
+        delta_temperature: int,
+        exp_temperature: int,
+        steps_per_temperature: int,
+        refract_scaling: int,
+        refract_seed: int,
+        annealing_schedule: str,
+        shape: ty.Tuple[int, ...],
+        init_state: npty.ArrayLike,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
-        init_value: npt.ArrayLike = 0,
-        annealing_schedule: str = 'linear',
-        neuron_model: str,
+        init_value: npty.ArrayLike,
     ) -> None:
         """
 
@@ -473,19 +481,45 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
         ----------
         shape: tuple
             The shape of the set of dynamical systems to be created.
-        init_state: npt.ArrayLike, optional
+        init_state: npty.ArrayLike, optional
             The starting value of the state variable.
-        temperature: npt.ArrayLike, optional
-            the temperature of the systems, defining the level of noise.
-        min_integration: npt.ArrayLike, optional
+        max_temperature: npty.ArrayLike, int
+            The maximum/initial temperature of the systems. The temperature,
+            defines the level of noise.
+        min_temperature: npty.ArrayLike, int
+            The minimum temperature of the systems. Once reached during
+            annealing, the temperature will be reset to max_temperature.
+        delta_temperature: npty.ArrayLike, int
+            Defines the temperature annealing. For a linear annealing
+            schedule, the temperature is changed in each annnealing step
+            according to
+                T -= delta_temperature
+            In the geometrich annealin schedule, according to
+                T *= delta_temperature * 2**(-exp_temperature)
+        exp_temperature: npty.ArrayLike, int
+            Defines the temperature annealing, together with delta_temperature.
+            Must only be provided if annealing_schedule=='geometric'.
+        steps_per_temperature: npty.ArrayLike
+            Steps that the Boltzmann machine runs for before the next
+            temperature annealing step takes place.
+        annealing_schedule: npty.ArrayLike(str), str
+            'linear' or 'geometric'.
+        min_integration: npty.ArrayLike, optional
             The minimum value for the total input (addition of all valid inputs
             at a given timestep). The total input value will be truncated at
             this value if adding current and preserved inputs results in a lower
             value.
-        refractory_period: npt.ArrayLike, optional
-            Number of timesteps to wait after firing and reset before resuming
-            updating.
-        cost_diagonal: npt.ArrayLike, optional
+        refract_scaling : ArrayLike
+            After a neuron has switched its binary variable, it remains in a
+            refractory state that prevents any variable switching for a
+            number of time steps. This number of time steps is determined by
+                rand(0, 255) >> refract_scaling
+            Refract_scaling thus denotes the order of magnitude of timesteps a
+            neuron remains in a state after a transition.
+        refract_seed : int
+            Random seed to initialize the refractory periods. Allows
+            repeatability.
+        cost_diagonal: npty.ArrayLike, optional
             The linear coefficients on the cost function of the optimization
             problem where this system will be used.
         name: str, optional
@@ -504,13 +538,11 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
             exp_temperature=exp_temperature,
             steps_per_temperature=steps_per_temperature,
             refract_scaling=refract_scaling,
-            refract=refract,
-            min_integration=min_integration,
+            refract_seed=refract_seed,
             cost_diagonal=cost_diagonal,
             name=name,
             log_config=log_config,
             init_value=init_value,
-            neuron_model=neuron_model,
             annealing_schedule=annealing_schedule,
         )
         self.added_input = InPort(shape=shape)
@@ -519,15 +551,116 @@ class NEBMSimulatedAnnealingAbstract(AbstractProcess):
 
         self.integration = Var(shape=shape, init=0)
         self.max_temperature = Var(shape=shape, init=max_temperature)
+        self.temperature = Var(shape=(1,), init=max_temperature)
         self.min_temperature = Var(shape=shape, init=min_temperature)
         self.delta_temperature = Var(shape=shape, init=delta_temperature)
         self.exp_temperature = Var(shape=shape, init=exp_temperature)
         self.steps_per_temperature = Var(
             shape=shape, init=steps_per_temperature
         )
-        self.refract = Var(shape=shape, init=refract)
         self.state = Var(shape=shape, init=init_state)
-        self.min_integration = Var(shape=shape, init=min_integration)
+        self.firing = Var(shape=shape, init=init_value)
+        self.prev_assignment = Var(shape=shape, init=False)
+        self.cost_diagonal = Var(shape=shape, init=cost_diagonal)
+        self.assignment = Var(shape=shape, init=False)
+        self.min_cost = Var(shape=shape, init=False)
+
+
+class SimulatedAnnealingAbstract(AbstractProcess):
+    r"""Event-driven stochastic discrete dynamical system with two outputs.
+
+    The main output is intended as input to other dynamical systems on
+    the network, whilst the second output is to transfer local information to be
+    integrated by an auxiliary dynamical system or circuit.
+
+    Attributes
+    ----------
+    added_input: InPort
+        The addition of all inputs (per dynamical system) at this
+        timestep will be received by this port.
+    messages: OutPort
+        The payload to be sent to other dynamical systems when firing.
+    local_cost: OutPort
+        the cost component corresponding to this dynamical system, i.e.,
+        c_i = sum_j{Q_{ij} \cdot x_i}  will be sent through this port. The cost
+        integrator will then complete the cost computation  by adding all
+        contributions, i.e., x^T \cdot Q \cdot x = sum_i{c_i}.
+
+    """
+
+    # This variable defines the time steps for a single algorithmic step
+    # Used by the SolutionReadOut to extract variables from the spk_hist
+    time_steps_per_algorithmic_step = 2
+
+    def __init__(
+        self,
+        *,
+        cost_diagonal: npty.ArrayLike,
+        cost_off_diagonal: npty.ArrayLike,
+        max_temperature: int,
+        min_temperature: int,
+        delta_temperature: int,
+        exp_temperature: int,
+        steps_per_temperature: int,
+        shape: ty.Tuple[int, ...],
+        init_state: npty.ArrayLike,
+        init_value: npty.ArrayLike,
+        annealing_schedule: str,
+        name: ty.Optional[str] = None,
+        log_config: ty.Optional[LogConfig] = None,
+    ) -> None:
+        """
+
+        Parameters
+        ----------
+        shape: tuple
+            The shape of the set of dynamical systems to be created.
+        init_state: npty.ArrayLike, optional
+            The starting value of the state variable.
+        temperature: npty.ArrayLike, optional
+            the temperature of the systems, defining the level of noise.
+        refractory_period: npty.ArrayLike, optional
+            Number of timesteps to wait after firing and reset before resuming
+            updating.
+        cost_diagonal: npty.ArrayLike, optional
+            The linear coefficients on the cost function of the optimization
+            problem where this system will be used.
+        name: str, optional
+            Name of the Process. Default is 'Process_ID', where ID is an
+            integer value that is determined automatically.
+        log_config: LogConfig, optional
+            Configuration options for logging.
+        init_value: int, optional
+        """
+        super().__init__(
+            shape=shape,
+            init_state=init_state,
+            max_temperature=max_temperature,
+            min_temperature=min_temperature,
+            delta_temperature=delta_temperature,
+            exp_temperature=exp_temperature,
+            steps_per_temperature=steps_per_temperature,
+            cost_diagonal=cost_diagonal,
+            cost_off_diagonal=cost_off_diagonal,
+            name=name,
+            log_config=log_config,
+            init_value=init_value,
+            annealing_schedule=annealing_schedule,
+        )
+        self.added_input = InPort(shape=shape)
+        self.messages = OutPort(shape=shape)
+        self.local_cost = OutPort(shape=shape)
+
+        self.integration = Var(shape=shape, init=0)
+        self.max_temperature = Var(shape=shape, init=max_temperature)
+        self.temperature = Var(shape=(1,), init=max_temperature)
+        self.min_temperature = Var(shape=shape, init=min_temperature)
+        self.delta_temperature = Var(shape=shape, init=delta_temperature)
+        self.exp_temperature = Var(shape=shape, init=exp_temperature)
+        self.steps_per_temperature = Var(
+            shape=shape, init=steps_per_temperature
+        )
+        self.state = Var(shape=shape, init=init_state)
         self.firing = Var(shape=shape, init=init_value)
         self.prev_assignment = Var(shape=shape, init=False)
         self.cost_diagonal = Var(shape=shape, init=cost_diagonal)

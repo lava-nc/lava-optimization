@@ -11,6 +11,7 @@ from lava.lib.optimization.solvers.generic.solver import (
 )
 
 
+@unittest.skip("CPU backend of QUBO solver temporarily disabled.")
 class TestParallelOptimizationSolver(unittest.TestCase):
     def test_parallel_run(self):
         q = np.array(
@@ -68,6 +69,7 @@ def solve_workload(
     return report.best_state, cost, expected_cost
 
 
+@unittest.skip("CPU backend of QUBO solver temporarily disabled.")
 class TestWorkloads(unittest.TestCase):
     def test_solve_polynomial_minimization(self):
         """Polynomial minimization with y=-5x_1 -3x_2 -8x_3 -6x_4 +

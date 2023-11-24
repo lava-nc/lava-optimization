@@ -15,9 +15,9 @@ def prepare_problem_and_report():
     np.random.seed(0)
     size = 5
     timeout = 100
-    problem = QUBO(
-        q=np.random.randint(0, 20, size=(size, size), dtype=np.int32)
-    )
+    q = np.random.randint(0, 20, size=(size, size), dtype=np.int32)
+    q_symm = ((q + q.T) / 2).astype(int)
+    problem = QUBO(q=q_symm)
     states = np.random.randint(0, 2, size=(timeout, size), dtype=np.int32)
     costs = list(map(problem.evaluate_cost, states))
     report = SolverReport(

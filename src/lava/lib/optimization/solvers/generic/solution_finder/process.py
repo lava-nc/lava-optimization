@@ -43,10 +43,14 @@ class SolutionFinder(AbstractProcess):
         self.cost_out_last_bytes = OutPort(shape=(1,))
         self.cost_out_first_byte = OutPort(shape=(1,))
 
-    def reconfigure_cost_coefficients(self, cost_coefficients: dict):
+    def reconfigure_cost_coefficients(self, second_order_coeff: np.ndarray):
+        print("MODEL                        ", self.model_class)
         if self.cost_minimizer is None:
             raise Error("Cost coefficients cannot be reconfigured before the proc model is created.")
-        
+
         self.cost_minimizer.coefficients_2nd_order.weights.set(
-            cost_coefficients[2]
+            second_order_coeff * np.logical_not(np.eye(*second_order_coeff.shape))
         )
+        #self.variables.importances.set(
+        #    second_order_coeff.diagonal()
+        #)

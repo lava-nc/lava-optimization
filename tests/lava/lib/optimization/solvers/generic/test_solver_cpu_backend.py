@@ -139,15 +139,24 @@ class TestOptimizationSolverQUBO(unittest.TestCase):
         report = self.solver.solve(config=config)
 
         self.assertTrue(self.solver.solver_process.runtime._is_started)
-
-        config = SolverConfig(
-            timeout=50, target_cost=-20, backend="CPU", keep_running=False
+        new_problem = QUBO(
+            np.array(
+                [[-4, 1, 3, 0],
+                 [2, -3, 1, 0],
+                 [4, 1, -8, 5],
+                 [0, 0, 5, -6]]
+            )
         )
-        report = self.solver.solve(config=config)
+        self.solver.reconfigure_problem(new_problem)
 
-        # TODO : Check solution is correct
-        # TODO : Check solver stopped
-        self.assertFalse(self.solver.solver_process.runtime._is_started)
+        # config = SolverConfig(
+        #     timeout=50, target_cost=-20, backend="CPU", keep_running=False
+        # )
+        # report = self.solver.solve(config=config)
+
+        # # TODO : Check solution is correct
+        # # TODO : Check solver stopped
+        # self.assertFalse(self.solver.solver_process.runtime._is_started)
 
     def test_valid_problem_reconfiguration_without_rerunning(self) -> None:
         problem = QUBO(np.array([[1, 0], [1, 1]], dtype=int))

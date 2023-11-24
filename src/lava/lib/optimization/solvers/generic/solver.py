@@ -271,12 +271,16 @@ class OptimizationSolver:
     def reconfigure_problem(self, problem: OptimizationProblem) -> None:
         if not isinstance(problem, QUBO):
             raise NotImplementedError("Problem configuration is only enabled for QUBO problems.")
+        if type(self.problem) != type(problem):
+            raise ValueError("New problem must be in the same problem class.")
+        if self.problem.num_variables != problem.num_variables:
+            raise ValueError("Problem cannot be reconfigured with a larger one.")
         if self.solver_process is not None:
-            if type(self.problem) != type(problem):
-                raise ValueError("New problem must be in the same problem class.")
-            if self.problem.num_variables != problem.num_variables:
-                raise ValueError("Problem cannot be reconfigured with a larger one.")
-            self.solver_model.
+            print("is running ", self.solver_process.runtime._is_running)
+            print("is started ", self.solver_process.runtime._is_started)
+            self.solver_process.finders[0].reconfigure_cost_coefficients(
+                problem.q
+            )
         self._problem = problem
 
     def solve(self, config: SolverConfig = SolverConfig()) -> SolverReport:

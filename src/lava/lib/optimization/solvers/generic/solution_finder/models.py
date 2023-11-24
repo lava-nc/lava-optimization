@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import numpy as np
+import typing as ty
 from lava.lib.optimization.solvers.generic.dataclasses import (
     ConstraintEnforcing,
     VariablesImplementation,
@@ -57,6 +58,7 @@ class SolutionFinderModel(AbstractSubProcessModel):
 
         # Subprocesses
         self.variables = VariablesImplementation()
+        proc.variables = self.variables
         if discrete_var_shape is not None:
             hyperparameters.update(
                 dict(
@@ -74,24 +76,17 @@ class SolutionFinderModel(AbstractSubProcessModel):
             self.cost_minimizer = None
             self.cost_convergence_check = None
             if cost_coefficients is not None:
-                weights = cost_coefficients[2].init * np.logical_not(
-                    np.eye(*cost_coefficients[2].init.shape)
+                off_diagonal, diagonal = SolutionFinderModel._get_qubo_decomposed_weights(
+                    cost_coefficients=cost_coefficients
                 )
                 self.cost_minimizer = CostMinimizer(
                     Sparse(
-                        weights=csr_matrix(self.proc.cost_weights.init),
+                        weights=csr_matrix(off_diagonal),
                         num_message_bits=24,
                     )
                 )
                 proc.cost_minimizer = self.cost_minimizer
-                if 1 in cost_coefficients.keys():
-                    q_diag = (
-                        cost_coefficients[1].init
-                        + cost_coefficients[2].init.diagonal()
-                    )
-                else:
-                    q_diag = cost_coefficients[2].init.diagonal()
-                self.variables.importances = q_diag
+                self.variables.importances = diagonal
                 self.cost_convergence_check = CostConvergenceChecker(
                     shape=discrete_var_shape
                 )
@@ -194,3 +189,14 @@ class SolutionFinderModel(AbstractSubProcessModel):
             q_diag = cost_coefficients[2].init.diagonal()
 
         return q_off_diag @ init_value + q_diag
+
+    @staticmethod
+    def _get_qubo_decomposed_weights(
+        cost_coefficients: list
+    ) -> ty.Tuple[np.ndarray, np.ndarray]:
+        off_diagonal = cost_coefficients[2].init * np.logical_not(
+            np.eye(*cost_coefficients[2].init.shape)
+        )
+        diagonal = cost_coefficients[2].init.diagonal() \
+            + cost_coefficients[1].init if 1 in cost_coefficients.keys() else 0
+        return off_diagonal, diagonal

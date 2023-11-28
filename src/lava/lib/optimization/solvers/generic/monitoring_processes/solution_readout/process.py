@@ -48,12 +48,17 @@ class SolutionReadout(AbstractProcess):
             name=name,
             log_config=log_config,
         )
+
+        # Vars
         self.solution = Var(shape=shape, init=-1)
         self.solution_step = Var(shape=(1,), init=-1)
         self.min_cost = Var(shape=(2,), init=-1)
         self.target_cost = Var(shape=(1,), init=target_cost)
 
+        # InPorts
         self.read_solution = InPort(shape=shape)
         self.cost_in = InPort(shape=(2,))
         self.timestep_in = InPort(shape=(1,))
+
+        # OutPorts
         self.acknowledgment_out = OutPort(shape=(1,))

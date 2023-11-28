@@ -1,6 +1,7 @@
 # Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
+import time
 import numpy as np
 from lava.lib.optimization.solvers.generic.monitoring_processes\
     .solution_readout.process import SolutionReadout
@@ -129,19 +130,14 @@ class SolutionReadoutAsyncPyModel(PyAsyncProcessModel):
     def run_async(self):
         raw_cost, min_cost_id = self.cost_in.recv()
         if raw_cost != 0:
-            timestep, raw_solution = self._receive_data()
+            timestep = self.timestep_in.recv()[0]
             cost = self.decode_cost(raw_cost)
             self.solution_step = abs(timestep)
-            self.solution[:] = self.decode_solution(raw_solution)
             self.min_cost[:] = np.asarray([cost[0], min_cost_id])
-            if cost[0] < 0:
-                self._printout_new_solution(cost, min_cost_id, timestep)
-            self._printout_if_converged()
-
-    def _receive_data(self):
-        timestep = self.timestep_in.recv()[0]
-        raw_solution = self.read_solution.recv()
-        return timestep, raw_solution
+            self.process_to_service.send(PyAsyncProcessModel.Response.REQ_PAUSE)
+            self._req_pause = True
+            time.sleep(1)
+            self.acknowledgment_out.send(np.array([1]))
 
     @staticmethod
     def decode_cost(raw_cost) -> np.ndarray:

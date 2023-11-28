@@ -30,6 +30,9 @@ class SolutionReaderModel(AbstractSubProcessModel):
         self.read_gate.send_pause_request.connect(
             self.solution_readout.timestep_in
         )
+        self.solution_readout.acknowledgment_out.connect(
+            self.read_gate.acknowledgment_in
+        )
 
         proc.vars.solution.alias(self.solution_readout.solution)
         proc.vars.min_cost.alias(self.solution_readout.min_cost)

@@ -101,26 +101,6 @@ class TestMISProblem(unittest.TestCase):
         correct_set_size = 2
         self.assertEqual(mis.sum(), correct_set_size)
 
-    def test_qubo_solution(self):
-        """Tests that a solution with the optimal cost is found by
-        OptimizationSolver with the QUBO formulation."""
-        optimal_cost = -2
-        qubo = self.problem.get_as_qubo(w_diag=1, w_off=4)
-
-        config = SolverConfig(
-            timeout=1000,
-            target_cost=optimal_cost,
-            backend="CPU",
-            hyperparameters={
-                "temperature": 1,
-                "refract": np.random.randint(2, 8, 10)
-            }
-        )
-
-        solver = OptimizationSolver(qubo)
-        report = solver.solve(config=config)
-        self.assertEqual(qubo.evaluate_cost(report.best_state), optimal_cost)
-
 
 if __name__ == "__main__":
     unittest.main()

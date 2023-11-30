@@ -21,7 +21,8 @@ from lava.lib.optimization.solvers.generic.hierarchical_processes import (
     ContinuousConstraintsProcess,
     StochasticIntegrateAndFire,
     NEBMAbstract,
-    NEBMSimulatedAnnealingAbstract,
+    SimulatedAnnealingAbstract,
+    SimulatedAnnealingLocalAbstract,
 )
 from lava.magma.core.resources import (
     CPU,
@@ -30,8 +31,10 @@ from lava.magma.core.resources import (
 )
 from lava.lib.optimization.solvers.generic.nebm.process import (
     NEBM,
-    NEBMSimulatedAnnealing,
+    SimulatedAnnealing,
+    SimulatedAnnealingLocal,
 )
+from lava.lib.optimization.solvers.generic.annealing.process import Annealing
 from lava.lib.optimization.solvers.generic.scif.process import QuboScif
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
@@ -228,7 +231,7 @@ class ContinuousConstraintsModel(AbstractSubProcessModel):
 class DiscreteVariablesModel(AbstractSubProcessModel):
     """Model for the DiscreteVariables process.
 
-    The model composes a population of StochasticIntegrateAndFire units and
+    The model composes a population of Boltzmann units and
     connects them via Dense processes as to represent integer or binary
     variables.
     """
@@ -244,11 +247,52 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
             wta_weight
             * np.logical_not(np.eye(shape[1] if len(shape) == 2 else 0)),
         )
-        neuron_model = proc.hyperparameters.get("neuron_model", "nebm")
-        available_sa_models = ['nebm-sa', 'nebm-sa-balanced',
-                               'nebm-sa-refract-approx-unbalanced',
-                               'nebm-sa-refract-approx', 'nebm-sa-refract']
-        if neuron_model == "nebm":
+        neuron_model = proc.hyperparameters.get("neuron_model")
+
+        cost_off_diagonal = proc.proc_params.get("cost_off_diagonal")
+
+        if neuron_model in ["sa", "nebm-sa-refract"]:
+            max_temperature = proc.hyperparameters.get("max_temperature", 1000)
+            min_temperature = proc.hyperparameters.get("min_temperature", 0)
+            delta_temperature = proc.hyperparameters.get("delta_temperature", 1)
+            exp_temperature = proc.hyperparameters.get("exp_temperature", None)
+            steps_per_temperature = proc.hyperparameters.get(
+                "steps_per_temperature", 1
+            )
+            init_value = proc.hyperparameters.get(
+                "init_value", np.zeros(shape, dtype=int))
+            init_state = cost_off_diagonal @ init_value
+            annealing_schedule = proc.hyperparameters.get("annealing_schedule",
+                                                          'linear')
+            nebm_params = {
+                'shape': shape,
+                'max_temperature': max_temperature,
+                'min_temperature': min_temperature,
+                'delta_temperature': delta_temperature,
+                'exp_temperature': exp_temperature,
+                'steps_per_temperature': steps_per_temperature,
+                'cost_diagonal': diagonal,
+                'init_value': init_value,
+                'init_state': init_state,
+                'annealing_schedule': annealing_schedule,
+            }
+            if neuron_model == 'sa':
+                nebm_params['cost_off_diagonal'] = cost_off_diagonal
+                self.s_bit = SimulatedAnnealingAbstract(
+                    **nebm_params
+                )
+            elif neuron_model == 'nebm-sa-refract':
+                refract_seed = proc.hyperparameters.get("refract_seed", 0)
+                refract_scaling = proc.hyperparameters.get("refract_scaling", 4)
+                nebm_params['refract_scaling'] = refract_scaling
+                nebm_params['refract_seed'] = refract_seed
+                self.s_bit = SimulatedAnnealingLocalAbstract(
+                    **nebm_params
+                )
+        elif neuron_model == "nebm":
+            raise NotImplementedError(
+                "The neuron model nebm has been deprecated. Please use the "
+                "more performant 'nebm-sa' neuron model.")
             temperature = proc.hyperparameters.get("temperature", 1)
             refract = proc.hyperparameters.get("refract", 0)
             refract_counter = proc.hyperparameters.get("refract_counter", 0)
@@ -259,13 +303,16 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                 "init_state", np.zeros(shape, dtype=int)
             )
 
-            self.s_bit = NEBMAbstract(temperature=temperature,
-                                      refract=refract,
-                                      refract_counter=refract_counter,
-                                      init_state=init_state,
-                                      shape=shape,
-                                      cost_diagonal=diagonal,
-                                      init_value=init_value)
+            nebm_params = {
+                'temperature': temperature,
+                'refract': refract,
+                'refract_counter': refract_counter,
+                'init_state': init_state,
+                'shape': shape,
+                'cost_diagonal': diagonal,
+                'init_value': init_value}
+
+            self.s_bit = NEBMAbstract(**nebm_params)
         elif neuron_model == 'scif':
             noise_amplitude = proc.hyperparameters.get("noise_amplitude", 1)
             noise_precision = proc.hyperparameters.get("noise_precision", 5)
@@ -287,38 +334,6 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
                 sustained_on_tau=on_tau,
                 cost_diagonal=diagonal,
             )
-        elif neuron_model in available_sa_models:
-            max_temperature = proc.hyperparameters.get("max_temperature", 10)
-            min_temperature = proc.hyperparameters.get("min_temperature", 0)
-            delta_temperature = proc.hyperparameters.get(
-                "delta_temperature", 1
-            )
-            exp_temperature = proc.hyperparameters.get("exp_temperature", None)
-            steps_per_temperature = proc.hyperparameters.get(
-                "steps_per_temperature", 100
-            )
-            refract_scaling = proc.hyperparameters.get("refract_scaling", 14)
-            refract = proc.hyperparameters.get("refract", 0)
-            init_value = proc.hyperparameters.get(
-                "init_value", np.zeros(shape, dtype=int))
-            init_state = proc.hyperparameters.get(
-                "init_state", np.zeros(shape, dtype=int))
-            annealing_schedule = proc.hyperparameters.get(
-                "annealing_schedule", "linear")
-            self.s_bit = NEBMSimulatedAnnealingAbstract(
-                shape=shape,
-                max_temperature=max_temperature,
-                min_temperature=min_temperature,
-                delta_temperature=delta_temperature,
-                exp_temperature=exp_temperature,
-                steps_per_temperature=steps_per_temperature,
-                refract=refract,
-                refract_scaling=refract_scaling,
-                init_value=init_value,
-                init_state=init_state,
-                neuron_model=neuron_model,
-                annealing_schedule=annealing_schedule,
-            )
         else:
             AssertionError("Unknown neuron model specified")
         if weights.shape != (0, 0):
@@ -335,6 +350,24 @@ class DiscreteVariablesModel(AbstractSubProcessModel):
         self.s_bit.out_ports.messages.connect(proc.out_ports.s_out)
         self.s_bit.out_ports.local_cost.connect(proc.out_ports.local_cost)
         proc.vars.variable_assignment.alias(self.s_bit.prev_assignment)
+
+    @staticmethod
+    def get_neuron_process(hyperparameters):
+        """Given the neuron_model, return the appropriate class for the
+        neurons representing discrete variables."""
+
+        neuron_model = hyperparameters.get("neuron_model")
+
+        if neuron_model == 'sa':
+            return SimulatedAnnealingAbstract
+        elif neuron_model == 'nebm-sa-refract':
+            return SimulatedAnnealingLocalAbstract
+        elif neuron_model == 'nebm':
+            return NEBMAbstract
+        elif neuron_model == 'scif':
+            return StochasticIntegrateAndFire
+        else:
+            raise ValueError("Please choose a supported neuron model")
 
 
 @implements(proc=CostConvergenceChecker, protocol=LoihiProtocol)
@@ -448,43 +481,143 @@ class NEBMAbstractModel(AbstractSubProcessModel):
         proc.vars.state.alias(self.nebm.vars.state)
 
 
-@implements(proc=NEBMSimulatedAnnealingAbstract, protocol=LoihiProtocol)
+@implements(proc=SimulatedAnnealingLocalAbstract, protocol=LoihiProtocol)
 @requires(Loihi2NeuroCore)
-class NEBMSimulatedAnnealingAbstractModel(AbstractSubProcessModel):
+class SimulatedAnnealingLocalAbstractModel(AbstractSubProcessModel):
     """
     ProcessModel for an NEBM process with Simulated Annealing.
     """
 
     def __init__(self, proc):
         shape = proc.proc_params.get("shape", (1,))
-        max_temperature = proc.proc_params.get("max_temperature", 10)
-        min_temperature = proc.proc_params.get("min_temperature", 0)
-        delta_temperature = proc.proc_params.get("delta_temperature", 1)
-        exp_temperature = proc.proc_params.get("exp_temperature", 1)
-        steps_per_temperature = proc.proc_params.get(
-            "steps_per_temperature", 100
-        )
-        refract_scaling = proc.proc_params.get("refract_scaling", 14)
-        refract = proc.proc_params.get("refract", (1,))
+        cost_diagonal = proc.proc_params.get("cost_diagonal")
+        max_temperature = proc.proc_params.get("max_temperature")
+        min_temperature = proc.proc_params.get("min_temperature")
+        annealing_schedule = proc.proc_params.get("annealing_schedule")
+        delta_temperature = proc.proc_params.get("delta_temperature")
+        exp_temperature = proc.proc_params.get("exp_temperature")
+        steps_per_temperature = proc.proc_params.get("steps_per_temperature")
         init_value = proc.proc_params.get("init_value", np.zeros(shape))
         init_state = proc.proc_params.get("init_state", np.zeros(shape))
-        neuron_model = proc.proc_params.get("neuron_model")
-        self.nebm = NEBMSimulatedAnnealing(
-            shape=shape,
-            max_temperature=max_temperature,
-            min_temperature=min_temperature,
-            delta_temperature=delta_temperature,
-            exp_temperature=exp_temperature,
-            steps_per_temperature=steps_per_temperature,
-            refract_scaling=refract_scaling,
-            refract=refract,
-            init_value=init_value,
-            init_state=init_state,
-            neuron_model=neuron_model,
+        refract_scaling = proc.proc_params.get("refract_scaling")
+        refract_seed = proc.proc_params.get("refract_seed")
+
+        annealing_params = {
+            'shape': (1,),
+            'max_temperature': max_temperature,
+            'min_temperature': min_temperature,
+            'delta_temperature': delta_temperature,
+            'steps_per_temperature': steps_per_temperature,
+            'exp_temperature': exp_temperature,
+            'annealing_schedule': annealing_schedule,
+        }
+
+        nebm_params = {
+            'shape': shape,
+            'max_temperature': max_temperature,
+            'cost_diagonal': cost_diagonal,
+            'init_value': init_value,
+            'init_state': init_state,
+            'refract_scaling': refract_scaling,
+            'refract_seed': refract_seed}
+
+        self.nebm = SimulatedAnnealingLocal(**nebm_params)
+
+        self.annealing = Annealing(
+            **annealing_params
         )
+        # Connect Annealing neuron to NEBMSimulatedAnnealing neurons
+        weights_anneal = np.ones((shape[0], 1))
+        self.dense = Dense(weights=weights_anneal, num_message_bits=24)
+        self.annealing.out_ports.delta_temperature_out.connect(
+            self.dense.in_ports.s_in
+        )
+        self.dense.out_ports.a_out.connect(
+            self.nebm.in_ports.delta_temperature_in
+        )
+
         proc.in_ports.added_input.connect(self.nebm.in_ports.a_in)
         self.nebm.s_wta_out.connect(proc.out_ports.messages)
         self.nebm.s_sig_out.connect(proc.out_ports.local_cost)
 
         proc.vars.prev_assignment.alias(self.nebm.vars.spk_hist)
         proc.vars.state.alias(self.nebm.vars.state)
+        proc.vars.temperature.alias(self.annealing.temperature)
+
+
+@implements(proc=SimulatedAnnealingAbstract, protocol=LoihiProtocol)
+@requires(Loihi2NeuroCore)
+class SimulatedAnnealingAbstractModel(AbstractSubProcessModel):
+    """
+    ProcessModel for an NEBM process with Simulated Annealing.
+    """
+
+    def __init__(self, proc):
+        shape = proc.proc_params.get("shape", (1,))
+        cost_diagonal = proc.proc_params.get("cost_diagonal")
+        max_temperature = proc.proc_params.get("max_temperature")
+        min_temperature = proc.proc_params.get("min_temperature")
+        annealing_schedule = proc.proc_params.get("annealing_schedule")
+        delta_temperature = proc.proc_params.get("delta_temperature")
+        exp_temperature = proc.proc_params.get("exp_temperature")
+        steps_per_temperature = proc.proc_params.get("steps_per_temperature")
+        init_value = proc.proc_params.get("init_value", np.zeros(shape))
+        init_state = proc.proc_params.get("init_state", np.zeros(shape))
+        cost_off_diagonal = proc.proc_params.get("cost_off_diagonal")
+
+        annealing_params = {
+            'shape': (1,),
+            'max_temperature': max_temperature,
+            'min_temperature': min_temperature,
+            'delta_temperature': delta_temperature,
+            'steps_per_temperature': steps_per_temperature,
+            'exp_temperature': exp_temperature,
+            'annealing_schedule': annealing_schedule,
+        }
+
+        nebm_params = {
+            'shape': shape,
+            'max_temperature': max_temperature,
+            'cost_diagonal': cost_diagonal,
+            'init_value': init_value,
+            'init_state': init_state,
+        }
+
+        # the simulated annealing neuron requires 2 Loihi time steps for a
+        # single algorithmic time step
+        annealing_params['steps_per_temperature'] = 2 * steps_per_temperature
+        self.nebm = SimulatedAnnealing(
+            **nebm_params
+        )
+
+        self.annealing = Annealing(
+            **annealing_params
+        )
+        # Connect Annealing neuron to NEBMSimulatedAnnealing neurons
+        weights_anneal = np.ones((shape[0], 1))
+        self.dense_annealing = Dense(weights=weights_anneal,
+                                     num_message_bits=24)
+        self.annealing.out_ports.delta_temperature_out.connect(
+            self.dense_annealing.in_ports.s_in
+        )
+        self.dense_annealing.out_ports.a_out.connect(
+            self.nebm.in_ports.delta_temperature_in
+        )
+
+        # Connect NEBM neurons to avoid conflicting variable switching
+        # If Q_ij == 0, then neurons i and j can always independently switch
+        # variables without conflict. Thus, only link neurons where Q_ij != 0
+        # ToDo: Ensure that synapses are all 1bit
+        weights_conflicts = (cost_off_diagonal != 0).astype(int)
+        self.sparse_conflicts = Sparse(weights=weights_conflicts,
+                                       num_message_bits=24)
+        self.nebm.suggest_switch_out.connect(self.sparse_conflicts.s_in)
+        self.sparse_conflicts.a_out.connect(self.nebm.n_switches_in)
+
+        proc.in_ports.added_input.connect(self.nebm.in_ports.a_in)
+        self.nebm.s_wta_out.connect(proc.out_ports.messages)
+        self.nebm.s_sig_out.connect(proc.out_ports.local_cost)
+
+        proc.vars.prev_assignment.alias(self.nebm.vars.spk_hist)
+        proc.vars.state.alias(self.nebm.vars.state)
+        proc.vars.temperature.alias(self.annealing.temperature)

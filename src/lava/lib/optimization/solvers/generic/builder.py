@@ -24,6 +24,9 @@ from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
 from lava.magma.core.resources import AbstractComputeResource
 from lava.magma.core.sync.protocol import AbstractSyncProtocol
+from lava.lib.optimization.solvers.generic.sub_process_models import (
+    DiscreteVariablesModel
+)
 from numpy import typing as npt
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
@@ -253,6 +256,10 @@ class SolverProcessBuilder:
                     var_shape=discrete_var_shape,
                     target_cost=target_cost,
                     num_in_ports=len(hps),
+                    time_steps_per_algorithmic_step=DiscreteVariablesModel.
+                    get_neuron_process(
+                        proc.hyperparameters).
+                    time_steps_per_algorithmic_step
                 )
             finders = []
             for idx, hp in enumerate(hps):

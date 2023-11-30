@@ -26,6 +26,8 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
 
     solution: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     solution_step: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
+    time_steps_per_algorithmic_step: np.ndarray = LavaPyType(np.ndarray,
+                                                             np.int32, 32)
     read_solution: PyInPort = LavaPyType(
         PyInPort.VEC_DENSE, np.int32, precision=32
     )
@@ -45,7 +47,10 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
             timestep, raw_solution = self._receive_data()
             cost = self.decode_cost(raw_cost)
             self.solution_step = abs(timestep)
-            self.solution[:] = self.decode_solution(raw_solution)
+            self.solution[:] = self.decode_solution(
+                raw_solution=raw_solution,
+                time_steps_per_algorithmic_step=self.
+                time_steps_per_algorithmic_step)
             self.min_cost[:] = np.asarray([cost[0], min_cost_id])
             if cost[0] < 0:
                 self._printout_new_solution(cost, min_cost_id, timestep)
@@ -62,10 +67,20 @@ class SolutionReadoutPyModel(PyLoihiProcessModel):
         return np.array([raw_cost]).astype(np.int32)
 
     @staticmethod
-    def decode_solution(raw_solution) -> np.ndarray:
-        raw_solution &= 0x1F  # AND with 0x1F (=0b11111) retains 5 LSBs
-        # The binary solution was attained 2 steps ago. Shift down by 4.
-        return raw_solution.astype(np.int8) >> 4
+    def decode_solution(raw_solution,
+                        time_steps_per_algorithmic_step) -> np.ndarray:
+        if time_steps_per_algorithmic_step == 1:
+            raw_solution &= 0x1F  # AND with 0x1F (=0b11111) retains 5 LSBs
+            # The binary solution was attained 2 steps ago. Shift down by 4.
+            return raw_solution.astype(np.int8) >> 4
+        elif time_steps_per_algorithmic_step == 2:
+            raw_solution &= 0x7  # AND with 0x7 (=0b111) retains 3 LSBs
+            # The binary solution was attained 1 step ago. Shift down by 4.
+            return raw_solution.astype(np.int8) >> 2
+        else:
+            raise ValueError(f"The number of time steps that a single "
+                             f"algorithmic step requires must be either 1 or "
+                             f"2 but is {time_steps_per_algorithmic_step}.")
 
     def _printout_new_solution(self, cost, min_cost_id, timestep):
         self.log.info(

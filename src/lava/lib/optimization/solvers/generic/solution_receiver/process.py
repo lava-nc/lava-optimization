@@ -54,6 +54,7 @@ class SolutionReadout(AbstractProcess):
     def __init__(
         self,
         shape_in: ty.Tuple[int, ...],
+        num_message_bits = 24,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
@@ -76,6 +77,7 @@ class SolutionReadout(AbstractProcess):
             Configuration options for logging.z"""
         super().__init__(
             shape=shape_in,
+            num_message_bits=num_message_bits,
             name=name,
             log_config=log_config,
         )
@@ -123,6 +125,7 @@ class SolutionReceiver(AbstractProcess):
         best_cost_init: int,
         best_state_init: int,
         best_timestep_init: int,
+        num_message_bits: int = 24,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
@@ -131,11 +134,12 @@ class SolutionReceiver(AbstractProcess):
             name=name,
             log_config=log_config,
         )
-        num_spike_integrators = np.ceil(shape[0] / 32.).astype(int)
+        num_spike_integrators = np.ceil(shape[0] / num_message_bits).astype(int)
 
         self.best_state = Var(shape=shape, init=best_state_init)
         self.best_timestep = Var(shape=(1,), init=best_timestep_init)
         self.best_cost = Var(shape=(1,), init=best_cost_init)
+        self.num_message_bits = Var(shape=(1,), init=num_message_bits)
         self.cost_in = InPort(shape=(1,))
         self.timestep_in = InPort(shape=(1,))
         self.state_in = InPort(shape=(num_spike_integrators,))

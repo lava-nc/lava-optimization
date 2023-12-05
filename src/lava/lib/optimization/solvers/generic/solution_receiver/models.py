@@ -39,6 +39,7 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
     best_state: np.ndarray = LavaPyType(np.ndarray, np.int8, 32)
     best_timestep: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     best_cost: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
+    num_message_bits: np.ndarray = LavaPyType(np.ndarray, np.int8, 32)
 
     state_in: PyInPort = LavaPyType(
         PyInPort.VEC_DENSE, np.int32, precision=32
@@ -49,30 +50,36 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
                                    precision=32)
 
     def run_async(self):
-        buffer = self.cost_in.recv()
+        num_message_bits = self.num_message_bits[0]
 
-        self.best_cost =buffer
+        buffer_cost = 0
+        buffer_timestep = 0
+        while buffer_cost == 0:
+            buffer_cost = self.cost_in.recv()
+            buffer_timestep = self.timestep_in.recv()
 
-        print(self.best_cost)
+        # CProcModel currently has integer overflow
+        if buffer_cost > 0:
+            buffer_cost -= 2**num_message_bits
 
-        self.best_timestep = self.timestep_in.recv()
-        print(self.best_timestep)
-        compressed_states = self.state_in.recv()
+        self.best_cost = buffer_cost
+        self.best_timestep = buffer_timestep
 
-        print(compressed_states)
+        compressed_states = np.zeros(self.state_in.shape)
+        while not np.any(compressed_states):
+            compressed_states = self.state_in.recv()
 
-        buffer = self._decompress_state(compressed_states).copy()
-        print(buffer)
+        buffer = self._decompress_state(compressed_states, num_message_bits).copy()
+
         self.best_state[:] = buffer[0]
-        print(self.best_state)
 
         self._req_pause = True
 
     @staticmethod
-    def _decompress_state(compressed_states):
+    def _decompress_state(compressed_states, num_message_bits):
         """Add info!"""
         boolean_array = (compressed_states[:, None] & (
-                1 << np.arange(31, -1, -1))) != 0
+                1 << np.arange(num_message_bits - 1, -1, -1))) != 0
         # reshape into a 1D array
         boolean_array.reshape(-1)
         return boolean_array.astype(np.int8)
@@ -99,26 +106,29 @@ class SolutionReadoutModel(AbstractSubProcessModel):
     """
 
     def __init__(self, proc):
+        num_message_bits = proc.proc_params.get("num_message_bits")
 
         # Define the dense input layer
         num_variables = np.prod(proc.proc_params.get("shape"))
-        num_spike_integrators = np.ceil(num_variables / 32.).astype(int)
+        num_spike_integrators = np.ceil(num_variables / num_message_bits).astype(int)
 
-        weights = self._get_input_weights(num_variables, num_spike_integrators)
+        weights = self._get_input_weights(num_vars=num_variables,
+                                          num_spike_int=num_spike_integrators,
+                                          num_spike_integrators=num_message_bits)
 
         self.synapses_in = Sparse(weights=weights,
                                   sign_mode=SignMode.EXCITATORY,
                                   num_weight_bits=1,
-                                  num_message_bits=32)
+                                  num_message_bits=num_message_bits)
 
-        self.spike_integrators = SpikeIntegrator(shape=(num_spike_integrators))
+        self.spike_integrators = SpikeIntegrator(shape=(num_spike_integrators,))
 
         self.out_adapter_cost_integrator = eio.spike.NxToPyAdapter(
             shape=(1,),
-            num_message_bits=32)
+            num_message_bits=num_message_bits)
         self.out_adapter_best_state = eio.spike.NxToPyAdapter(
             shape=(num_spike_integrators,),
-            num_message_bits=32)
+            num_message_bits=num_message_bits)
 
         self.solution_receiver = SolutionReceiver(
             shape=(1,),
@@ -146,21 +156,22 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         proc.vars.best_cost.alias(self.solution_receiver.best_cost)
 
     @staticmethod
-    def _get_input_weights(num_vars, num_spike_int, num_vars_per_int = 32):
+    def _get_input_weights(num_vars, num_spike_int, num_vars_per_int):
         """To be verified. Deprecated due to efficiency"""
         weights = np.zeros((num_spike_int, num_vars), dtype=np.int8)
         for spike_integrator in range(num_spike_int - 1):
             variable_start = num_vars_per_int*spike_integrator
             weights[spike_integrator, variable_start:variable_start + num_vars_per_int] = 1
 
-        # The last spike integrator might be connected by less than 32 neurons
+        # The last spike integrator might be connected by less than
+        # num_vars_per_int neurons
         # This happens when mod(num_variables, num_vars_per_int) != 0
         weights[-1, num_vars_per_int*(spike_integrator + 1): -1] = 1
 
         return weights
 
     @staticmethod
-    def _get_input_weights_index(num_vars, num_spike_int, num_vars_per_int=32):
+    def _get_input_weights_index(num_vars, num_spike_int, num_vars_per_int):
         """To be verified"""
         weights = np.zeros((num_spike_int, num_vars), dtype=np.int8)
 

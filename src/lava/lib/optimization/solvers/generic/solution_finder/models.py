@@ -194,4 +194,5 @@ class SolutionFinderModel(AbstractSubProcessModel):
         else:
             q_diag = cost_coefficients[2].init.diagonal()
 
-        return q_off_diag @ init_value + q_diag
+        # return q_off_diag @ init_value + q_diag
+        return np.asarray(init_value)

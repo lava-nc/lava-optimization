@@ -59,6 +59,7 @@ from lava.lib.optimization.solvers.generic.sub_process_models import (
     NEBMAbstractModel,
     NEBMSimulatedAnnealingAbstractModel,
 )
+from lava.magma.core.callback_fx import IterableCallBack
 
 try:
     from lava.proc.dense.ncmodels import NcModelDense
@@ -522,10 +523,40 @@ class OptimizationSolver:
                 ProportionalIntegralNeuronsPIPGeq: NcL2ModelPI,
                 ProjectedGradientNeuronsPIPGeq: NcL2ModelPG,
             }
+            pre_run_fxs = []
+            post_run_fxs = \
+                [
+                    lambda b: b.nxChips[0].nxCores[0].fetchAll(),
+                    lambda b: b.nxChips[0].nxCores[1].fetchAll(),
+                    lambda b: b.nxChips[0].nxCores[2].fetchAll(),
+                    lambda b: b.nxChips[0].nxCores[3].fetchAll(),
+                    # lambda b: print(b.nxChips[0].nxCores[0].activityCounter),
+                    # lambda b: print(b.nxChips[1].nxCores[0].activityCounter),
+                    # lambda b: print(b.nxChips[2].nxCores[0].activityCounter),
+                    # lambda b: print(b.nxChips[3].nxCores[0].activityCounter),
+                    lambda b: print(b.nxChips[0].nxCores[
+                                        0].neuronInterface.group[
+                                        0].axonMap),
+                    lambda b: print("Core 0"),
+                    lambda b: print(b.nxChips[0].nxCores[
+                                        1].neuronInterface.group[
+                                        0].axonMap),
+                    lambda b: print("Core 1"),
+                    lambda b: print(b.nxChips[0].nxCores[
+                                        2].neuronInterface.group[
+                                        0].axonMap),
+                    lambda b: print("Core 2"),
+                    lambda b: print(b.nxChips[0].nxCores[
+                                        3].neuronInterface.group[
+                                        0].axonMap),
+                    lambda b: print("Core 3"),
+
+                ]
             return Loihi2HwCfg(
                 exception_proc_model_map=pdict,
                 select_sub_proc_model=True,
-                callback_fxs=probes,
+                callback_fxs=[IterableCallBack(pre_run_fxs,
+                                                      post_run_fxs)]
             )
         else:
             raise NotImplementedError(str(config.backend) + BACKEND_MSG)
@@ -548,7 +579,7 @@ class OptimizationSolver:
             best_timestep = (
                 self.solver_process.solution_step.aliased_var.get() - 2
             )
-        best_state = self._get_best_state(config, int(idx))
+        best_state = self._get_best_state(config, int(idx)).astype(int)
 
         if self.solver_process.is_discrete:
             return best_state, int(best_cost), int(best_timestep)

@@ -352,7 +352,8 @@ class CostConvergenceCheckerModel(AbstractSubProcessModel):
         # Instantiate child processes
         # The input shape is a 2D vector (shape of the weight matrix).
         shape = proc.proc_params.get("shape", (1,))
-        weights = proc.proc_params.get("weights", np.ones((1, shape[0])))
+        # weights = proc.proc_params.get("weights", np.ones((1, shape[0])))
+        weights = proc.proc_params.get("weights", np.asarray([[0, 0, 0, 1 ]]))
         self.dense = Dense(
             weights=weights, num_message_bits=24, name="Vars to CostIntegrator"
         )

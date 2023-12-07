@@ -123,16 +123,6 @@ class SolutionReadoutModel(AbstractSubProcessModel):
 
         self.spike_integrators = SpikeIntegrator(shape=(num_spike_integrators,))
 
-        self.out_adapter_cost_in = eio.spike.NxToPyAdapter(
-            shape=(1,),
-            num_message_bits=num_message_bits)
-        self.out_adapter_timestep_in = eio.spike.NxToPyAdapter(
-            shape=(1,),
-            num_message_bits=num_message_bits)
-        self.out_adapter_best_state = eio.spike.NxToPyAdapter(
-            shape=(num_spike_integrators,),
-            num_message_bits=num_message_bits)
-
         self.solution_receiver = SolutionReceiver(
             shape=(1,),
             best_cost_init = self.best_cost.get(),
@@ -141,19 +131,13 @@ class SolutionReadoutModel(AbstractSubProcessModel):
 
         # Connect the parent InPort to the InPort of the child-Process.
         proc.in_ports.states_in.connect(self.synapses_in.s_in)
-        proc.in_ports.cost_in.connect(self.out_adapter_cost_in.inp)
-        proc.in_ports.timestep_in.connect(self.out_adapter_timestep_in.inp)
+        proc.in_ports.cost_in.connect(self.solution_receiver.cost_in)
+        proc.in_ports.timestep_in.connect(self.solution_receiver.timestep_in)
 
         # Connect intermediate ports
         self.synapses_in.connect(self.spike_integrators.state_in)
         self.spike_integrators.state_out.connect(
-            self.out_adapter_best_state.inp)
-        self.out_adapter_best_state.out.connect(self.solution_receiver.state_in)
-
-        self.out_adapter_cost_in.out.connect(
-            self.solution_receiver.cost_in)
-        self.out_adapter_timestep_in.out.connect(
-            self.solution_receiver.timestep_in)
+            self.solution_receiver.state_in)
 
         # Create aliases for variables
         proc.vars.best_state.alias(self.solution_receiver.best_state)

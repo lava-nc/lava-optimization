@@ -41,37 +41,20 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
     best_cost: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     num_message_bits: np.ndarray = LavaPyType(np.ndarray, np.int8, 32)
 
-    state_in: PyInPort = LavaPyType(
+    results_in: PyInPort = LavaPyType(
         PyInPort.VEC_DENSE, np.int32, precision=32
     )
-    cost_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                              precision=32)
-    timestep_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32,
-                                   precision=32)
 
     def run_async(self):
         num_message_bits = self.num_message_bits[0]
 
-        buffer_cost = 0
-        buffer_timestep = 0
-        while buffer_cost == 0:
-            buffer_cost = self.cost_in.recv()
-            buffer_timestep = self.timestep_in.recv()
-
-        # CProcModel currently has integer overflow
-        if buffer_cost > 0:
-            buffer_cost -= 2**num_message_bits
-
-        self.best_cost = buffer_cost
-        self.best_timestep = buffer_timestep
-
-        compressed_states = np.zeros(self.state_in.shape)
-        while not np.any(compressed_states):
-            compressed_states = self.state_in.recv()
-
-        buffer = self._decompress_state(compressed_states, num_message_bits).copy()
-
-        self.best_state[:] = buffer[0]
+        results_buffer = 0
+        while not np.any(results_buffer):
+            results_buffer = self.results_in.recv()
+        
+        self.best_cost = results_buffer[0]
+        self.best_timestep = results_buffer[1]
+        self.best_state[:] = self._decompress_state(results_buffer[2:], 24)[:self.best_state.shape[0]]
 
         self._req_pause = True
 
@@ -82,7 +65,7 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
                 1 << np.arange(num_message_bits - 1, -1, -1))) != 0
         # reshape into a 1D array
         boolean_array.reshape(-1)
-        return boolean_array.astype(np.int8)
+        return boolean_array.astype(np.int8).flatten()
 
 """
 def test_code():

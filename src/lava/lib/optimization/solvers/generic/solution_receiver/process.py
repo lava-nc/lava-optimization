@@ -135,12 +135,10 @@ class SolutionReceiver(AbstractProcess):
             name=name,
             log_config=log_config,
         )
-        num_spike_integrators = np.ceil(shape[0] / num_message_bits).astype(int)
+        num_spike_integrators = 2 + np.ceil(shape[0] / num_message_bits).astype(int)
 
         self.best_state = Var(shape=shape, init=best_state_init)
         self.best_timestep = Var(shape=(1,), init=best_timestep_init)
         self.best_cost = Var(shape=(1,), init=best_cost_init)
         self.num_message_bits = Var(shape=(1,), init=num_message_bits)
-        self.cost_in = InPort(shape=(1,))
-        self.timestep_in = InPort(shape=(1,))
-        self.state_in = InPort(shape=(num_spike_integrators,))
+        self.results_in = InPort(shape=(num_spike_integrators,))

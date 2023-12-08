@@ -66,7 +66,7 @@ class DiscreteVariables:
     @property
     def num_variables(self):
         """Number of variables in this set."""
-        return len(self.domains) if self.domains is not None else None
+        return len(self.domains) if self.domains is not None else 0
 
     @domains.setter
     def domains(self, value: DType):
@@ -82,7 +82,7 @@ class ContinuousVariables:
     variable (by index) can take values.
     """
 
-    def __init__(self, num_variables=None, bounds: ty.List[ty.Tuple] = None):
+    def __init__(self, num_variables=0, bounds: ty.List[ty.Tuple] = None):
         self._num_variables = num_variables
         self._bounds = bounds
 

@@ -134,71 +134,98 @@ class SolverProcessBuilder:
         """
 
         def constructor(
-                self,
+                selfi,
                 config: "SolverConfig",
                 name: ty.Optional[str] = None
         ) -> None:
-            super(type(self), self).__init__(config=config, name=name)
-            self.config = config
-            self.problem = problem
-            self.is_continuous = False
-            self.is_discrete = False
-
-            if not hasattr(problem, "variables"):
-                raise Exception(
-                    "An optimization problem must contain " "variables."
-                )
-            if (
-                    hasattr(problem.variables, "continuous")
-                    and problem.variables.continuous.num_variables is not None
-            ):
-                self.continuous_variables = Var(
-                    shape=(problem.variables.continuous.num_variables,)
-                )
-                self.is_continuous = True
-            if (
-                    hasattr(problem.variables, "discrete")
-                    and problem.variables.discrete.num_variables is not None
-            ):
-                self.discrete_variables = Var(
-                    shape=(
-                        problem.variables.discrete.num_variables,
-                    )
-                )
-                self.is_discrete = True
-            self.cost_diagonal = None
-            if hasattr(problem, "cost"):
-                mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
-                self.cost_coefficients = mrcv(problem.cost.coefficients)
-                if self.is_discrete:
-                    self.cost_diagonal = problem.cost.coefficients[
-                        2
-                    ].diagonal()
-            if not self.is_continuous:
-                self.best_variable_assignment = Var(
-                    shape=(problem.variables.discrete.num_variables,)
-                )
-                # Total cost=optimality_first_byte<<24+optimality_last_bytes
-                for idx in range(self.config.num_replicas):
-                    setattr(self, f"variable_assignment_{idx}",
-                            Var(shape=(problem.variables.discrete.num_variables,)))
-                    setattr(self, f"optimality_last_bytes_{idx}",
-                            Var(shape=(1,)))
-                    setattr(self, f"optimality_first_byte_{idx}",
-                            Var(shape=(1,)))
-                    setattr(self, f"internal_state_{idx}",
-                            Var(shape=(problem.variables.discrete.num_variables,)))
-                self.optimum = Var(shape=(2,))
-                self.feasibility = Var(shape=(1,))
-                self.solution_step = Var(shape=(1,))
-                self.cost_monitor = Var(shape=(1,))
-            elif self.is_continuous:
-                self.variable_assignment = Var(
-                    shape=(problem.variables.continuous.num_variables,)
-                )
-            self.finders = None
+            super(type(selfi), selfi).__init__(config=config, name=name)
+            selfi.config = config
+            selfi.problem = problem
+            self._create_vars(selfi, problem)
+            selfi.finders = None
 
         self._process_constructor = constructor
+
+    def _check_problem_has_variables(self, problem: OptimizationProblem):
+        if not hasattr(problem, "variables"):
+            raise Exception(
+                "An optimization problem must contain " "variables."
+            )
+
+    def _has_continuous_vars(self, problem):
+        return self._is_continuous(problem) and self._num_cont_vars(
+            problem) > 0
+
+    def _has_discrete_vars(self, problem):
+        return self._is_discrete(problem) and self._num_disc_vars(
+            problem) > 0
+
+    def _is_continuous(self, problem):
+        return hasattr(problem.variables, "continuous")
+
+    def _is_discrete(self, problem):
+        return hasattr(problem.variables, "discrete")
+
+    def _num_cont_vars(self, problem):
+        return problem.variables.continuous.num_variables
+
+    def _num_disc_vars(self, problem):
+        return problem.variables.discrete.num_variables
+
+    def _create_discrete_vars_vars(self, selfi, prob):
+        selfi.discrete_variables = Var(shape=(self._num_disc_vars(prob),))
+        if not selfi.is_continuous:
+            selfi.best_variable_assignment = Var(
+                shape=(prob.variables.discrete.num_variables,)
+            )
+            # Total cost=optimality_first_byte<<24+optimality_last_bytes
+            for idx in range(selfi.config.num_replicas):
+                setattr(selfi, f"variable_assignment_{idx}",
+                        Var(shape=(
+                            prob.variables.discrete.num_variables,)))
+                setattr(selfi, f"optimality_last_bytes_{idx}",
+                        Var(shape=(1,)))
+                setattr(selfi, f"optimality_first_byte_{idx}",
+                        Var(shape=(1,)))
+                setattr(selfi, f"internal_state_{idx}",
+                        Var(shape=(
+                            prob.variables.discrete.num_variables,)))
+            selfi.optimum = Var(shape=(2,))
+            selfi.feasibility = Var(shape=(1,))
+            selfi.solution_step = Var(shape=(1,))
+            selfi.cost_monitor = Var(shape=(1,))
+
+    def _create_continuous_vars_vars(self, selfi, prob):
+        selfi.continuous_variables = Var(shape=(self._num_cont_vars(prob),))
+        if selfi.is_continuous:
+            selfi.variable_assignment = Var(
+                shape=(prob.variables.continuous.num_variables,)
+            )
+
+    def _create_variables_vars(self, selfi, prob):
+        selfi.is_discrete = False
+        selfi.is_continuous = False
+        if self._has_continuous_vars(prob):
+            self._create_continuous_vars_vars(selfi, prob)
+            selfi.is_continuous = True
+        if self._has_discrete_vars(prob):
+            self._create_discrete_vars_vars(selfi, prob)
+            selfi.is_discrete = True
+
+    def _create_cost_vars(self, selfi, problem):
+        selfi.cost_diagonal = None
+        if hasattr(problem, "cost"):
+            mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
+            selfi.cost_coefficients = mrcv(problem.cost.coefficients)
+            if selfi.is_discrete:
+                selfi.cost_diagonal = problem.cost.coefficients[
+                    2
+                ].diagonal()
+
+    def _create_vars(self, selfi, problem):
+        self._check_problem_has_variables(problem)
+        self._create_variables_vars(selfi, problem)
+        self._create_cost_vars(selfi, problem)
 
     def _create_model_constructor(self):
         """Create __init__ method for the OptimizationSolverModel

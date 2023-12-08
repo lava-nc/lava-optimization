@@ -567,7 +567,7 @@ class OptimizationSolver:
     def _is_problem_discrete(self):
         return (
             hasattr(self.problem.variables, "discrete")
-            and self.problem.variables.discrete.num_variables is not None
+            and self.problem.variables.discrete.num_variables > 0
         )
 
     def _get_and_decode_discrete_vars(self, config: SolverConfig, idx: int):
@@ -586,7 +586,7 @@ class OptimizationSolver:
     def _is_problem_continuous(self):
         return (
             hasattr(self.problem.variables, "continuous")
-            and self.problem.variables.continuous.num_variables is not None
+            and self.problem.variables.continuous.num_variables > 0
         )
 
     def _get_and_decode_continuous_vars(self, idx: int):

@@ -20,9 +20,10 @@ from lava.lib.optimization.solvers.generic.solution_receiver.process import \
     SolutionReceiver, SpikeIntegrator
 )
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
-from lava.proc.sparse.process import Sparse
+from lava.proc.sparse.process import Sparse, DelaySparse
 from lava.utils.weightutils import SignMode
 from lava.proc import embedded_io as eio
+from scipy.sparse import csr_matrix
 
 @implements(SolutionReceiver, protocol=AsyncProtocol)
 @requires(CPU)
@@ -51,6 +52,7 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
         results_buffer = 0
         while not np.any(results_buffer):
             results_buffer = self.results_in.recv()
+            print(results_buffer, ".....................................")
         
         self.best_cost = results_buffer[0]
         self.best_timestep = results_buffer[1]
@@ -93,34 +95,68 @@ class SolutionReadoutModel(AbstractSubProcessModel):
 
         # Define the dense input layer
         num_variables = np.prod(proc.proc_params.get("shape"))
-        num_spike_integrators = np.ceil(num_variables / num_message_bits).astype(int)
+        num_spike_integrators = 2 + np.ceil(num_variables / num_message_bits).astype(int)
 
-        weights = self._get_input_weights(num_vars=num_variables,
-                                          num_spike_int=num_spike_integrators,
-                                          num_spike_integrators=num_message_bits)
+        weights_state_in = self._get_input_weights(
+            num_vars=num_variables,
+            num_spike_int=num_spike_integrators,
+            num_vars_per_int=num_message_bits
+        )
+        delays = csr_matrix(np.zeros((num_spike_integrators, num_variables), dtype=np.int8))
+        delays[0,0] = 2
+        print("weights_state_in ", weights_state_in)
+        self.synapses_state_in = DelaySparse(
+            weights=weights_state_in,
+            delays=delays,
+            sign_mode=SignMode.EXCITATORY,
+            num_weight_bits=8,
+            num_message_bits=num_message_bits
+        )
 
-        self.synapses_in = Sparse(weights=weights,
-                                  sign_mode=SignMode.EXCITATORY,
-                                  num_weight_bits=1,
-                                  num_message_bits=num_message_bits)
+        weights_cost_in = self._get_cost_in_weights(
+            num_spike_int=num_spike_integrators,
+        )
+        print("weights_cost_in", weights_cost_in)
+        self.synapses_cost_in = DelaySparse(
+            weights=weights_cost_in,
+            delays=weights_cost_in,
+            sign_mode=SignMode.EXCITATORY,
+            num_weight_bits=8,
+            num_message_bits=32
+        )
+
+        weights_timestep_in = self._get_timestep_in_weights(
+            num_spike_int=num_spike_integrators,
+        )
+        print("weights_timestep_in", weights_timestep_in)
+        self.synapses_timestep_in = DelaySparse(
+            weights=weights_timestep_in,
+            delays=weights_timestep_in,
+            sign_mode=SignMode.EXCITATORY,
+            num_weight_bits=8,
+            num_message_bits=32
+        )
 
         self.spike_integrators = SpikeIntegrator(shape=(num_spike_integrators,))
 
         self.solution_receiver = SolutionReceiver(
-            shape=(1,),
-            best_cost_init = self.best_cost.get(),
-            best_state_init = self.best_state.get(),
-            best_timestep_init = self.best_timestep.get())
+            shape=(num_variables,),
+            best_cost_init = proc.best_cost.get(),
+            best_state_init = proc.best_state.get(),
+            best_timestep_init = proc.best_timestep.get()
+        )
 
         # Connect the parent InPort to the InPort of the child-Process.
-        proc.in_ports.states_in.connect(self.synapses_in.s_in)
-        proc.in_ports.cost_in.connect(self.solution_receiver.cost_in)
-        proc.in_ports.timestep_in.connect(self.solution_receiver.timestep_in)
+        proc.in_ports.states_in.connect(self.synapses_state_in.s_in)
+        proc.in_ports.cost_in.connect(self.synapses_cost_in.s_in)
+        proc.in_ports.timestep_in.connect(self.synapses_timestep_in.s_in)
 
         # Connect intermediate ports
-        self.synapses_in.connect(self.spike_integrators.state_in)
-        self.spike_integrators.state_out.connect(
-            self.solution_receiver.state_in)
+        self.synapses_state_in.a_out.connect(self.spike_integrators.a_in)
+        self.synapses_cost_in.a_out.connect(self.spike_integrators.a_in)
+        self.synapses_timestep_in.a_out.connect(self.spike_integrators.a_in)
+        self.spike_integrators.s_out.connect(
+            self.solution_receiver.results_in)
 
         # Create aliases for variables
         proc.vars.best_state.alias(self.solution_receiver.best_state)
@@ -131,19 +167,21 @@ class SolutionReadoutModel(AbstractSubProcessModel):
     def _get_input_weights(num_vars, num_spike_int, num_vars_per_int):
         """To be verified. Deprecated due to efficiency"""
         weights = np.zeros((num_spike_int, num_vars), dtype=np.int8)
-        for spike_integrator in range(num_spike_int - 1):
+        print(f"{num_vars=}")
+        print(f"{num_spike_int=}")
+        print(f"{num_vars_per_int=}")
+        for spike_integrator in range(2, num_spike_int - 1):
             variable_start = num_vars_per_int*spike_integrator
             weights[spike_integrator, variable_start:variable_start + num_vars_per_int] = 1
-
         # The last spike integrator might be connected by less than
         # num_vars_per_int neurons
         # This happens when mod(num_variables, num_vars_per_int) != 0
-        weights[-1, num_vars_per_int*(spike_integrator + 1): -1] = 1
+        weights[-1, num_vars_per_int*(num_spike_int - 3):] = 1
 
-        return weights
+        return csr_matrix(weights)
 
     @staticmethod
-    def _get_input_weights_index(num_vars, num_spike_int, num_vars_per_int):
+    def _get_state_in_weights_index(num_vars, num_spike_int, num_vars_per_int):
         """To be verified"""
         weights = np.zeros((num_spike_int, num_vars), dtype=np.int8)
 
@@ -157,3 +195,15 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         weights[-1, num_vars_per_int * (num_spike_int - 1):num_vars] = 1
 
         return weights
+
+    @staticmethod
+    def _get_cost_in_weights(num_spike_int: int) -> csr_matrix:
+        weights = np.zeros((num_spike_int, 1), dtype=int)
+        weights[0,0] = 1
+        return csr_matrix(weights)
+        
+    @staticmethod
+    def _get_timestep_in_weights(num_spike_int: int) -> csr_matrix:
+        weights = np.zeros((num_spike_int, 1), dtype=int)
+        weights[1,0] = 1
+        return csr_matrix(weights)

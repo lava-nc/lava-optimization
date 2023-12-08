@@ -32,7 +32,7 @@ class TestSolutionReadout(unittest.TestCase):
         integrator_last_bytes.s_out.connect(readgate.cost_in_last_bytes_0)
         integrator_first_byte.s_out.connect(readgate.cost_in_first_byte_0)
         readgate.solution_reader.connect_var(spiker.payload)
-        readgate.solution_out.connect(self.readout.read_solution)
+        readgate.solution_out.connect(self.readout.state_in)
         readgate.cost_out.connect(self.readout.cost_in)
         readgate.send_pause_request.connect(self.readout.timestep_in)
 

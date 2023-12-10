@@ -143,34 +143,52 @@ class SolverProcessBuilder:
             selfi.problem = problem
             self._create_vars(selfi, problem)
             selfi.finders = None
-
         self._process_constructor = constructor
+
+    def _create_vars(self, selfi, problem):
+        self._check_problem_has_variables(problem)
+        self._create_variables_vars(selfi, problem)
+        self._create_cost_vars(selfi, problem)
 
     def _check_problem_has_variables(self, problem: OptimizationProblem):
         if not hasattr(problem, "variables"):
             raise Exception(
                 "An optimization problem must contain " "variables."
             )
+    def _create_variables_vars(self, selfi, prob):
+        selfi.is_discrete = False
+        selfi.is_continuous = False
+        if self._has_continuous_vars(prob):
+            self._create_continuous_vars_vars(selfi, prob)
+            selfi.is_continuous = True
+        if self._has_discrete_vars(prob):
+            self._create_discrete_vars_vars(selfi, prob)
+            selfi.is_discrete = True
+
+    def _create_cost_vars(self, selfi, problem):
+        selfi.cost_diagonal = None
+        if hasattr(problem, "cost"):
+            mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
+            selfi.cost_coefficients = mrcv(problem.cost.coefficients)
+            if selfi.is_discrete:
+                selfi.cost_diagonal = problem.cost.coefficients[
+                    2
+                ].diagonal()
 
     def _has_continuous_vars(self, problem):
         return self._is_continuous(problem) and self._num_cont_vars(
             problem) > 0
 
+    def _create_continuous_vars_vars(self, selfi, prob):
+        selfi.continuous_variables = Var(shape=(self._num_cont_vars(prob),))
+        if selfi.is_continuous:
+            selfi.variable_assignment = Var(
+                shape=(prob.variables.continuous.num_variables,)
+            )
+
     def _has_discrete_vars(self, problem):
         return self._is_discrete(problem) and self._num_disc_vars(
             problem) > 0
-
-    def _is_continuous(self, problem):
-        return hasattr(problem.variables, "continuous")
-
-    def _is_discrete(self, problem):
-        return hasattr(problem.variables, "discrete")
-
-    def _num_cont_vars(self, problem):
-        return problem.variables.continuous.num_variables
-
-    def _num_disc_vars(self, problem):
-        return problem.variables.discrete.num_variables
 
     def _create_discrete_vars_vars(self, selfi, prob):
         selfi.discrete_variables = Var(shape=(self._num_disc_vars(prob),))
@@ -195,37 +213,17 @@ class SolverProcessBuilder:
             selfi.solution_step = Var(shape=(1,))
             selfi.cost_monitor = Var(shape=(1,))
 
-    def _create_continuous_vars_vars(self, selfi, prob):
-        selfi.continuous_variables = Var(shape=(self._num_cont_vars(prob),))
-        if selfi.is_continuous:
-            selfi.variable_assignment = Var(
-                shape=(prob.variables.continuous.num_variables,)
-            )
+    def _num_cont_vars(self, problem):
+        return problem.variables.continuous.num_variables
 
-    def _create_variables_vars(self, selfi, prob):
-        selfi.is_discrete = False
-        selfi.is_continuous = False
-        if self._has_continuous_vars(prob):
-            self._create_continuous_vars_vars(selfi, prob)
-            selfi.is_continuous = True
-        if self._has_discrete_vars(prob):
-            self._create_discrete_vars_vars(selfi, prob)
-            selfi.is_discrete = True
+    def _num_disc_vars(self, problem):
+        return problem.variables.discrete.num_variables
 
-    def _create_cost_vars(self, selfi, problem):
-        selfi.cost_diagonal = None
-        if hasattr(problem, "cost"):
-            mrcv = SolverProcessBuilder._map_rank_to_coefficients_vars
-            selfi.cost_coefficients = mrcv(problem.cost.coefficients)
-            if selfi.is_discrete:
-                selfi.cost_diagonal = problem.cost.coefficients[
-                    2
-                ].diagonal()
+    def _is_continuous(self, problem):
+        return hasattr(problem.variables, "continuous")
 
-    def _create_vars(self, selfi, problem):
-        self._check_problem_has_variables(problem)
-        self._create_variables_vars(selfi, problem)
-        self._create_cost_vars(selfi, problem)
+    def _is_discrete(self, problem):
+        return hasattr(problem.variables, "discrete")
 
     def _create_model_constructor(self):
         """Create __init__ method for the OptimizationSolverModel

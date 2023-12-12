@@ -87,7 +87,7 @@ class SolutionReadout(AbstractProcess):
         self.cost_in = InPort((1,))
         self.timestep_in = InPort((1,))
         self.best_state = Var(shape=(num_variables,), init=0)
-        self.best_timestep = Var(shape=(1,), init=0)
+        self.best_timestep = Var(shape=(1,), init=1)
         self.best_cost = Var(shape=(1,), init=0)
 
 

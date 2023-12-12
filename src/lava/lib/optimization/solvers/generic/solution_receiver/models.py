@@ -50,15 +50,20 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
         num_message_bits = self.num_message_bits[0]
 
         results_buffer = 0
-        while not np.any(results_buffer):
+        while self._check_if_input(results_buffer):
             results_buffer = self.results_in.recv()
-            print(results_buffer, ".....................................")
         
         self.best_cost = results_buffer[0]
-        self.best_timestep = results_buffer[1]
-        self.best_state[:] = self._decompress_state(results_buffer[2:], 24)[:self.best_state.shape[0]]
+        self.best_timestep = results_buffer[1] - 1
+        self.best_state[:] = self._decompress_state(
+            compressed_states=results_buffer[2:],
+            num_message_bits=num_message_bits)[:self.best_state.shape[0]]
 
         self._req_pause = True
+
+    @staticmethod
+    def _check_if_input(results_buffer):
+        return not results_buffer[1] > 0
 
     @staticmethod
     def _decompress_state(compressed_states, num_message_bits):

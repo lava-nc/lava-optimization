@@ -55,28 +55,51 @@ class CostIntegrator(AbstractProcess):
         self,
         *,
         shape: ty.Tuple[int, ...] = (1,),
-        min_cost: int = 0,  # trivial solution, where all variables are 0
+        target_cost: int = -2**31 + 1,
+        timeout: int = 2**24 - 1,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
-        super().__init__(shape=shape, name=name, log_config=log_config)
+
+        self._input_validation(target_cost=target_cost,
+                               timeout=timeout)
+
+        super().__init__(shape=shape,
+                         target_cost = target_cost,
+                         timeout = timeout,
+                         name=name,
+                         log_config=log_config)
         self.cost_in = InPort(shape=shape)
-        self.cost_out_last_bytes = OutPort(shape=shape)
-        self.cost_out_first_byte = OutPort(shape=shape)
+        self.control_states_out = OutPort(shape=shape)
+        self.best_cost_out = OutPort(shape=shape)
+        self.best_timestep_out = OutPort(shape=shape)
 
-        # Current cost initiated to zero
+        # Counter for timesteps
+        self.timestep = Var(shape=shape, init=0)
+        # Storage for best current time step
+        self.best_timestep = Var(shape=shape, init=0)
+
+        # Var to store current cost
         # Note: Total cost = cost_first_byte << 24 + cost_last_bytes
-        self.cost_last_bytes = Var(shape=shape, init=0)
-        # first 8 bit of cost
-        self.cost_first_byte = Var(shape=shape, init=0)
-
-        # Note: Total min cost = cost_min_first_byte << 24 + cost_min_last_bytes
-        # Extract first 8 bit
-        cost_min_first_byte = np.right_shift(min_cost, 24)
-        cost_min_first_byte = max(-2 ** 7, min(cost_min_first_byte, 2 ** 7 - 1))
-        # Extract last 24 bit
-        cost_min_last_bytes = min_cost & 2 ** 24 - 1
         # last 24 bit of cost
-        self.cost_min_last_bytes = Var(shape=shape, init=cost_min_last_bytes)
+        self.cost_min_last_bytes = Var(shape=shape, init=0)
         # first 8 bit of cost
-        self.cost_min_first_byte = Var(shape=shape, init=cost_min_first_byte)
+        self.cost_min_first_byte = Var(shape=shape, init=0)
+
+        # Var to store best cost found to far
+        # Note: Total min cost = cost_min_first_byte << 24 + cost_min_last_bytes
+        # last 24 bit of cost
+        self.cost_min_last_bytes = Var(shape=shape, init=0)
+        # first 8 bit of cost
+        self.cost_min_first_byte = Var(shape=shape, init=0)
+
+    @staticmethod
+    def _input_validation(target_cost, timeout) -> None:
+
+        assert (target_cost and timeout), f"Both the target_cost and the " \
+                                         f"timeout must be defined"
+        assert 0 > target_cost >= -2**31 + 1, \
+            f"The target cost must in the range [-2**32 + 1, 0), " \
+            f"but is {target_cost}."
+        assert 0 < timeout <= 2**24 - 1, f"The timeout must be in the range (" \
+                                         f"0, 2**24 - 1], but is {timeout}."

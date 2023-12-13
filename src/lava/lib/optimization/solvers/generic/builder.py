@@ -143,6 +143,7 @@ class SolverProcessBuilder:
             selfi.problem = problem
             self._create_vars(selfi, problem)
             selfi.finders = None
+
         self._process_constructor = constructor
 
     def _create_vars(self, selfi, problem):
@@ -155,6 +156,7 @@ class SolverProcessBuilder:
             raise Exception(
                 "An optimization problem must contain " "variables."
             )
+
     def _create_variables_vars(self, selfi, prob):
         selfi.is_discrete = False
         selfi.is_continuous = False
@@ -194,24 +196,22 @@ class SolverProcessBuilder:
         selfi.discrete_variables = Var(shape=(self._num_disc_vars(prob),))
         if not selfi.is_continuous:
             selfi.best_variable_assignment = Var(
-                shape=(prob.variables.discrete.num_variables,)
-            )
+                shape=(prob.variables.discrete.num_variables,))
             # Total cost=optimality_first_byte<<24+optimality_last_bytes
             for idx in range(selfi.config.num_replicas):
-                setattr(selfi, f"variable_assignment_{idx}",
-                        Var(shape=(
-                            prob.variables.discrete.num_variables,)))
-                setattr(selfi, f"optimality_last_bytes_{idx}",
-                        Var(shape=(1,)))
-                setattr(selfi, f"optimality_first_byte_{idx}",
-                        Var(shape=(1,)))
-                setattr(selfi, f"internal_state_{idx}",
-                        Var(shape=(
-                            prob.variables.discrete.num_variables,)))
+                self._create_indexed_variables(selfi, idx, prob)
             selfi.optimum = Var(shape=(2,))
             selfi.feasibility = Var(shape=(1,))
             selfi.solution_step = Var(shape=(1,))
             selfi.cost_monitor = Var(shape=(1,))
+
+    def _create_indexed_variables(self, selfi, idx, prob):
+        setattr(selfi, f"variable_assignment_{idx}",
+                Var(shape=(prob.variables.discrete.num_variables,)))
+        setattr(selfi, f"optimality_last_bytes_{idx}", Var(shape=(1,)))
+        setattr(selfi, f"optimality_first_byte_{idx}", Var(shape=(1,)))
+        setattr(selfi, f"internal_state_{idx}",
+                Var(shape=(prob.variables.discrete.num_variables,)))
 
     def _num_cont_vars(self, problem):
         return problem.variables.continuous.num_variables
@@ -229,96 +229,94 @@ class SolverProcessBuilder:
         """Create __init__ method for the OptimizationSolverModel
         corresponding to the process in the building pipeline.
         """
-
-        def constructor(self, proc):
-            discrete_var_shape = None
-            if hasattr(proc, "discrete_variables"):
-                discrete_var_shape = proc.discrete_variables.shape
-            continuous_var_shape = None
-            if hasattr(proc, "continuous_variables"):
-                continuous_var_shape = proc.continuous_variables.shape
-            cost_diagonal = proc.cost_diagonal
-            cost_coefficients = proc.cost_coefficients
-            constraints = proc.problem.constraints
-            problem = proc.problem
-            config = proc.config
-
-            hps = (
-                config.hyperparameters
-                if isinstance(config.hyperparameters, list)
-                else [config.hyperparameters]
-            )
-            #
+        def constructor(selfi, proc):
+            hps = self._get_hps(proc.config)
+            proc.finders = self._create_finders(hps, selfi, proc)
             if not proc.is_continuous:
-                self.solution_reader = SolutionReader(
-                    var_shape=discrete_var_shape,
-                    target_cost=config.target_cost,
-                    num_in_ports=len(hps),
-                    num_steps=config.num_steps
-                )
-            finders = []
-            for idx, hp in enumerate(hps):
-                finder = SolutionFinder(
-                    cost_diagonal=cost_diagonal,
-                    cost_coefficients=cost_coefficients,
-                    constraints=constraints,
-                    backend=config.backend,
-                    hyperparameters=hp,
-                    discrete_var_shape=discrete_var_shape,
-                    continuous_var_shape=continuous_var_shape,
-                    problem=problem,
-                    idx=idx
-                )
-                setattr(self, f"finder_{idx}", finder)
-                finders.append(finder)
-                if not proc.is_continuous:
-                    getattr(finder, f"cost_out_last_bytes").connect(
-                        getattr(
-                            self.solution_reader,
-                            f"read_gate_in_port_last_bytes_{idx}",
-                        )
-                    )
-                    getattr(finder, f"cost_out_first_byte").connect(
-                        getattr(
-                            self.solution_reader,
-                            f"read_gate_in_port_first_byte_{idx}",
-                        )
-                    )
-            proc.finders = finders
-            # Variable aliasing
-            if not proc.is_continuous:  # or not proc._is_multichip:
-                if hasattr(proc, "cost_coefficients"):
-                    for finder_idx in range(config.num_replicas):
-                        proc.vars.optimum.alias(self.solution_reader.min_cost)
-                        getattr(proc.vars, f"optimality_last_bytes_"
-                                           f"{finder_idx}").alias(
-                            proc.finders[finder_idx].cost_last_bytes
-                        )
-                        getattr(proc.vars,
-                                f"optimality_first_byte_{finder_idx}").alias(
-                            proc.finders[finder_idx].cost_first_byte
-                        )
-                        getattr(proc.vars,
-                                f"variable_assignment_{finder_idx}").alias(
-                            proc.finders[finder_idx].variables_assignment
-                        )
-                        getattr(proc.vars,
-                                f"internal_state_{finder_idx}").alias(
-                            proc.finders[finder_idx].internal_state
-                        )
-                proc.vars.best_variable_assignment.alias(
-                    self.solution_reader.solution
-                )
-                proc.vars.solution_step.alias(
-                    self.solution_reader.solution_step
-                )
-
-                # Connect processes
-                self.solution_reader.ref_port.connect_var(
-                    finders[0].variables_assignment
-                )
-
+                reader = self._create_solution_reader(selfi, proc, len(hps))
+                self._connect_finder_ref_ports(proc.finders, reader)
+                self._connect_finder_to_reader(proc.finders, reader)
         self._model_constructor = constructor
+
+    def _get_hps(self, config):
+        return (config.hyperparameters if isinstance(
+            config.hyperparameters, list) else [config.hyperparameters])
+
+    def _create_solution_reader(self, selfi, proc, num_in_ports):
+        selfi.solution_reader = SolutionReader(
+            var_shape=proc.discrete_variables.shape,
+            target_cost=proc.config.target_cost,
+            num_in_ports=num_in_ports,
+            num_steps=proc.config.num_steps
+        )
+        self._create_reader_aliases(proc, selfi)
+        return selfi.solution_reader
+
+    def _create_finders(self, hps, selfi, proc):
+        finder_params = self._get_fixed_finder_params(proc)
+        finders = []
+        for idx, hp in enumerate(hps):
+            finder = self._create_finder(selfi, finder_params, idx, hp)
+            setattr(selfi, f"finder_{idx}", finder)
+            finders.append(finder)
+
+        if not proc.is_continuous:
+            self._create_finders_aliases(finders, proc, proc.config, selfi)
+        return finders
+
+    def _connect_finder_ref_ports(self, finders, reader):
+        reader.ref_port.connect_var(finders[0].variables_assignment)
+
+    def _get_fixed_finder_params(self, proc):
+        config = proc.config
+        discrete_var_shape = None
+        if hasattr(proc, "discrete_variables"):
+            discrete_var_shape = proc.discrete_variables.shape
+        continuous_var_shape = None
+        if hasattr(proc, "continuous_variables"):
+            continuous_var_shape = proc.continuous_variables.shape
+        params = dict(cost_diagonal=proc.cost_diagonal,
+                      cost_coefficients=proc.cost_coefficients,
+                      constraints=proc.problem.constraints,
+                      backend=config.backend,
+                      discrete_var_shape=discrete_var_shape,
+                      continuous_var_shape=continuous_var_shape,
+                      problem=proc.problem,
+                      idx=0)
+        return params
+
+    def _connect_finder_to_reader(self, finders, reader):
+        for idx, finder in enumerate(finders):
+            finder_port1 = getattr(finder, f"cost_out_first_byte")
+            finder_port2 = getattr(finder, f"cost_out_last_bytes")
+            reader_port1 = getattr(reader, f"read_gate_in_port_first_byte_{idx}", )
+            reader_port2 = getattr(reader, f"read_gate_in_port_last_bytes_{idx}", )
+            finder_port1.connect(reader_port1)
+            finder_port2.connect(reader_port2)
+
+    def _create_finder(self, selfi, finder_params, idx, hp):
+        finder_params['idx'] = idx
+        finder_params['hyperparameters'] = hp
+        finder = SolutionFinder(**finder_params)
+        return finder
+
+    def _create_finders_aliases(self, finders, proc, config, selfi):
+        if hasattr(proc, "cost_coefficients"):
+            for idx, finder in enumerate(finders):
+                self._create_finder_aliases(idx, finder, proc, selfi)
+
+
+    def _create_finder_aliases(self, idx, finder, proc, selfi):
+        getattr(proc.vars, f"optimality_last_bytes_{idx}").alias(finder.cost_last_bytes)
+        getattr(proc.vars, f"optimality_first_byte_{idx}").alias(finder.cost_first_byte)
+        getattr(proc.vars, f"variable_assignment_{idx}").alias(finder.variables_assignment)
+        getattr(proc.vars, f"internal_state_{idx}").alias(finder.internal_state)
+
+    def _create_reader_aliases(self, proc, selfi):
+        proc.vars.optimum.alias(selfi.solution_reader.min_cost)
+        proc.vars.best_variable_assignment.alias(selfi.solution_reader.solution)
+        proc.vars.solution_step.alias(selfi.solution_reader.solution_step)
+
 
     @staticmethod
     def _map_rank_to_coefficients_vars(

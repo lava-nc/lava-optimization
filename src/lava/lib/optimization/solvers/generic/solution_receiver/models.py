@@ -54,7 +54,7 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
             results_buffer = self.results_in.recv()
         
         self.best_cost = results_buffer[0]
-        self.best_timestep = results_buffer[1] - 1
+        self.best_timestep = results_buffer[1]
         self.best_state[:] = self._decompress_state(
             compressed_states=results_buffer[2:],
             num_message_bits=num_message_bits)[:self.best_state.shape[0]]

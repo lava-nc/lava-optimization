@@ -82,9 +82,9 @@ class CostIntegrator(AbstractProcess):
         # Var to store current cost
         # Note: Total cost = cost_first_byte << 24 + cost_last_bytes
         # last 24 bit of cost
-        self.cost_min_last_bytes = Var(shape=shape, init=0)
+        self.cost_last_bytes = Var(shape=shape, init=0)
         # first 8 bit of cost
-        self.cost_min_first_byte = Var(shape=shape, init=0)
+        self.cost_first_byte = Var(shape=shape, init=0)
 
         # Var to store best cost found to far
         # Note: Total min cost = cost_min_first_byte << 24 + cost_min_last_bytes
@@ -96,8 +96,8 @@ class CostIntegrator(AbstractProcess):
     @staticmethod
     def _input_validation(target_cost, timeout) -> None:
 
-        assert (target_cost and timeout), f"Both the target_cost and the " \
-                                         f"timeout must be defined"
+        assert (target_cost is not None and timeout is not None), \
+            f"Both the target_cost and the timeout must be defined"
         assert 0 > target_cost >= -2**31 + 1, \
             f"The target cost must in the range [-2**32 + 1, 0), " \
             f"but is {target_cost}."

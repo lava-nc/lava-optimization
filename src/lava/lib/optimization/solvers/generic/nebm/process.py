@@ -115,8 +115,10 @@ class SimulatedAnnealingLocal(AbstractProcess):
 
         self.a_in = InPort(shape=shape)
         self.delta_temperature_in = InPort(shape=shape)
+        self.control_cost_integrator = InPort(shape=shape)
         self.s_sig_out = OutPort(shape=shape)
         self.s_wta_out = OutPort(shape=shape)
+        self.best_state_out = OutPort(shape=shape)
 
         self.spk_hist = Var(
             shape=shape, init=(np.zeros(shape=shape) + init_value).astype(int)
@@ -131,7 +133,11 @@ class SimulatedAnnealingLocal(AbstractProcess):
                 np.random.randint(0, 2**8, size=shape), (refract_scaling or 0)
             ),
         )
-
+        # Storage for the best state. Will get updated whenever a better
+        # state was found
+        # Default is all zeros
+        self.best_state = Var(shape=shape,
+                              init=np.zeros(shape=shape, dtype=int))
         # Initial state determined in DiscreteVariables
         self.state = Var(
             shape=shape,

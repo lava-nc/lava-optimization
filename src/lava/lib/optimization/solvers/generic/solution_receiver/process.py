@@ -8,6 +8,7 @@ from lava.magma.core.process.ports.ports import InPort, OutPort
 from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
 
+from lava.magma.core.process.ports.connection_config import ConnectionConfig
 
 class SpikeIntegrator(AbstractProcess):
     """GradedVec
@@ -53,7 +54,9 @@ class SolutionReadout(AbstractProcess):
 
     def __init__(
         self,
-        shape_in: ty.Tuple[int, ...],
+        shape: ty.Tuple[int, ...],
+        connection_config: ConnectionConfig,
+        num_bin_variables: int,
         num_message_bits = 24,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
@@ -75,18 +78,23 @@ class SolutionReadout(AbstractProcess):
             value that is determined automatically.
         log_config: LogConfig, optional
             Configuration options for logging.z"""
+
+        num_spike_integrators = 2 + np.ceil(num_bin_variables / num_message_bits).astype(int)
+
         super().__init__(
-            shape=shape_in,
+            shape=shape,
+            num_spike_integrators=num_spike_integrators,
+            num_bin_variables=num_bin_variables,
             num_message_bits=num_message_bits,
+            connection_config=connection_config,
             name=name,
             log_config=log_config,
         )
 
-        num_variables = np.prod(shape_in)
-        self.states_in = InPort(shape=(num_variables,))
+        self.states_in = InPort(shape=(num_bin_variables,))
         self.cost_in = InPort((1,))
         self.timestep_in = InPort((1,))
-        self.best_state = Var(shape=(num_variables,), init=0)
+        self.best_state = Var(shape=(num_bin_variables,), init=0)
         self.best_timestep = Var(shape=(1,), init=1)
         self.best_cost = Var(shape=(1,), init=0)
 
@@ -123,8 +131,10 @@ class SolutionReceiver(AbstractProcess):
     def __init__(
         self,
         shape: ty.Tuple[int, ...],
+        num_variables: int,
         best_cost_init: int,
         best_state_init: int,
+        num_spike_integrators: int,
         best_timestep_init: int,
         num_message_bits: int = 24,
         name: ty.Optional[str] = None,
@@ -132,12 +142,12 @@ class SolutionReceiver(AbstractProcess):
     ) -> None:
         super().__init__(
             shape=shape,
+            num_variables=num_variables,
             name=name,
             log_config=log_config,
         )
-        num_spike_integrators = 2 + np.ceil(shape[0] / num_message_bits).astype(int)
 
-        self.best_state = Var(shape=shape, init=best_state_init)
+        self.best_state = Var(shape=(num_variables,), init=best_state_init)
         self.best_timestep = Var(shape=(1,), init=best_timestep_init)
         self.best_cost = Var(shape=(1,), init=best_cost_init)
         self.num_message_bits = Var(shape=(1,), init=num_message_bits)

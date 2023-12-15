@@ -50,11 +50,15 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
         num_message_bits = self.num_message_bits[0]
 
         results_buffer = 0
+        print("Here I am!")
         while self._check_if_input(results_buffer):
             results_buffer = self.results_in.recv()
         
         self.best_cost = results_buffer[0]
         self.best_timestep = results_buffer[1]
+
+        # best states are returned with a delay of 1 timestep
+        results_buffer = self.results_in.recv()
         self.best_state[:] = self._decompress_state(
             compressed_states=results_buffer[2:],
             num_message_bits=num_message_bits)[:self.best_state.shape[0]]
@@ -99,20 +103,18 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         num_message_bits = proc.proc_params.get("num_message_bits")
 
         # Define the dense input layer
-        num_variables = np.prod(proc.proc_params.get("shape"))
-        num_spike_integrators = 2 + np.ceil(num_variables / num_message_bits).astype(int)
+        num_bin_variables = proc.proc_params.get("num_bin_variables")
+        num_spike_integrators = proc.proc_params.get("num_spike_integrators")
+
+        connection_config = proc.proc_params.get("connection_config")
 
         weights_state_in = self._get_input_weights(
-            num_vars=num_variables,
+            num_vars=num_bin_variables,
             num_spike_int=num_spike_integrators,
             num_vars_per_int=num_message_bits
         )
-        delays = csr_matrix(np.zeros((num_spike_integrators, num_variables), dtype=np.int8))
-        delays[0,0] = 2
-        print("weights_state_in ", weights_state_in)
-        self.synapses_state_in = DelaySparse(
+        self.synapses_state_in = Sparse(
             weights=weights_state_in,
-            delays=delays,
             sign_mode=SignMode.EXCITATORY,
             num_weight_bits=8,
             num_message_bits=num_message_bits
@@ -122,30 +124,31 @@ class SolutionReadoutModel(AbstractSubProcessModel):
             num_spike_int=num_spike_integrators,
         )
         print("weights_cost_in", weights_cost_in)
-        self.synapses_cost_in = DelaySparse(
+        self.synapses_cost_in = Sparse(
             weights=weights_cost_in,
-            delays=weights_cost_in,
             sign_mode=SignMode.EXCITATORY,
             num_weight_bits=8,
-            num_message_bits=32
+            num_message_bits=32,
         )
 
         weights_timestep_in = self._get_timestep_in_weights(
             num_spike_int=num_spike_integrators,
         )
         print("weights_timestep_in", weights_timestep_in)
-        self.synapses_timestep_in = DelaySparse(
+        self.synapses_timestep_in = Sparse(
             weights=weights_timestep_in,
-            delays=weights_timestep_in,
             sign_mode=SignMode.EXCITATORY,
             num_weight_bits=8,
-            num_message_bits=32
+            num_message_bits=32,
         )
 
         self.spike_integrators = SpikeIntegrator(shape=(num_spike_integrators,))
 
         self.solution_receiver = SolutionReceiver(
-            shape=(num_variables,),
+            shape=(1,),
+            num_variables = num_bin_variables,
+            num_spike_integrators = num_spike_integrators,
+            num_message_bits = num_message_bits,
             best_cost_init = proc.best_cost.get(),
             best_state_init = proc.best_state.get(),
             best_timestep_init = proc.best_timestep.get()
@@ -160,8 +163,9 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         self.synapses_state_in.a_out.connect(self.spike_integrators.a_in)
         self.synapses_cost_in.a_out.connect(self.spike_integrators.a_in)
         self.synapses_timestep_in.a_out.connect(self.spike_integrators.a_in)
+
         self.spike_integrators.s_out.connect(
-            self.solution_receiver.results_in)
+            self.solution_receiver.results_in, connection_config)
 
         # Create aliases for variables
         proc.vars.best_state.alias(self.solution_receiver.best_state)
@@ -182,6 +186,10 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         # num_vars_per_int neurons
         # This happens when mod(num_variables, num_vars_per_int) != 0
         weights[-1, num_vars_per_int*(num_spike_int - 3):] = 1
+
+        print("=" * 20)
+        print(f"{weights=}")
+        print("=" * 20)
 
         return csr_matrix(weights)
 

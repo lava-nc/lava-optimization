@@ -49,19 +49,27 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
     def run_async(self):
         num_message_bits = self.num_message_bits[0]
 
-        results_buffer = 0
+        results_buffer = np.zeros(self.results_in._shape)
         print("Here I am!")
         while self._check_if_input(results_buffer):
+            print("In while loop!")
             results_buffer = self.results_in.recv()
-        
-        self.best_cost = results_buffer[0]
-        self.best_timestep = results_buffer[1]
+        print("Finished while loop")
+        print(results_buffer)
+        self.best_cost, self.best_timestep, _ = self._decompress_state(
+            compressed_states=results_buffer,
+            num_message_bits=num_message_bits)
+        print(self.best_cost)
+        print(self.best_timestep)
+        print("-" * 20)
 
         # best states are returned with a delay of 1 timestep
         results_buffer = self.results_in.recv()
-        self.best_state[:] = self._decompress_state(
-            compressed_states=results_buffer[2:],
-            num_message_bits=num_message_bits)[:self.best_state.shape[0]]
+        _, _, self.best_state[:] = self._decompress_state(
+            compressed_states=results_buffer,
+            num_message_bits=num_message_bits) #[:self.best_state.shape[0]]
+        print(self.best_state)
+        print("Finished")
 
         self._req_pause = True
 
@@ -72,11 +80,14 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
     @staticmethod
     def _decompress_state(compressed_states, num_message_bits):
         """Add info!"""
-        boolean_array = (compressed_states[:, None] & (
+        cost = compressed_states[0]
+        timestep = compressed_states[1]
+
+        states = (compressed_states[2:, None] & (
                 1 << np.arange(num_message_bits - 1, -1, -1))) != 0
         # reshape into a 1D array
-        boolean_array.reshape(-1)
-        return boolean_array.astype(np.int8).flatten()
+        states.reshape(-1)
+        return cost, timestep, states.astype(np.int8).flatten()
 
 """
 def test_code():

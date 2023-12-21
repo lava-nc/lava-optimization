@@ -1,8 +1,9 @@
-# Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2023 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import numpy as np
 import typing as ty
+import numpy.typing as npty
 
 from lava.magma.core.process.ports.ports import InPort, OutPort
 from lava.magma.core.process.process import AbstractProcess, LogConfig
@@ -31,7 +32,7 @@ class SpikeIntegrator(AbstractProcess):
 
 
 class SolutionReadout(AbstractProcess):
-    r"""Process which implementation holds the solution readout layer
+    r"""Process which implements the solution readout layer
     on the solver of an optimization problem.
 
     Attributes
@@ -133,7 +134,7 @@ class SolutionReceiver(AbstractProcess):
         shape: ty.Tuple[int, ...],
         num_variables: int,
         best_cost_init: int,
-        best_state_init: int,
+        best_state_init: ty.Union[npty.ArrayLike, int],
         num_spike_integrators: int,
         best_timestep_init: int,
         num_message_bits: int = 24,

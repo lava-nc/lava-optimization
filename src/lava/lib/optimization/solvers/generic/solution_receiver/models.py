@@ -9,6 +9,7 @@ from lava.magma.core.model.py.model import (
     PyLoihiProcessModel,
     PyAsyncProcessModel
 )
+from bitstring import Bits
 from lava.magma.core.model.py.ports import PyInPort
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
@@ -24,6 +25,7 @@ from lava.proc.sparse.process import Sparse, DelaySparse
 from lava.utils.weightutils import SignMode
 from lava.proc import embedded_io as eio
 from scipy.sparse import csr_matrix
+
 
 @implements(SolutionReceiver, protocol=AsyncProtocol)
 @requires(CPU)
@@ -48,29 +50,38 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
 
     def run_async(self):
         num_message_bits = self.num_message_bits[0]
+        num_vars = self.best_state.shape[0]
 
+        print("+" * 20)
+        print(self.best_state)
+        print("+" * 20)
         results_buffer = np.zeros(self.results_in._shape)
-        print("Here I am!")
+        print("Starting reception")
         while self._check_if_input(results_buffer):
             print("In while loop!")
             results_buffer = self.results_in.recv()
         print("Finished while loop")
-        print(results_buffer)
+        print(f"{results_buffer=}")
         self.best_cost, self.best_timestep, _ = self._decompress_state(
             compressed_states=results_buffer,
-            num_message_bits=num_message_bits)
-        print(self.best_cost)
-        print(self.best_timestep)
+            num_message_bits=num_message_bits,
+            num_vars=num_vars)
+        print(f"{self.best_cost=}")
+        print(f"{self.best_timestep=}")
         print("-" * 20)
 
         # best states are returned with a delay of 1 timestep
         results_buffer = self.results_in.recv()
-        _, _, self.best_state[:] = self._decompress_state(
+        print("Received further results")
+        _, _, states = self._decompress_state(
             compressed_states=results_buffer,
-            num_message_bits=num_message_bits) #[:self.best_state.shape[0]]
-        print(self.best_state)
+            num_message_bits=num_message_bits,
+            num_vars=num_vars) #[:self.best_state.shape[0]]
         print("Finished")
-
+        print(f"{self.best_state=}")
+        print(f"{states=}")
+        self.best_state = states
+        print(f"{self.best_state}")
         self._req_pause = True
 
     @staticmethod
@@ -78,16 +89,22 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
         return not results_buffer[1] > 0
 
     @staticmethod
-    def _decompress_state(compressed_states, num_message_bits):
+    def _decompress_state(compressed_states, num_message_bits, num_vars):
         """Add info!"""
-        cost = compressed_states[0]
-        timestep = compressed_states[1]
-
+        cost = int(compressed_states[0])
+        timestep = int(compressed_states[1])
         states = (compressed_states[2:, None] & (
-                1 << np.arange(num_message_bits - 1, -1, -1))) != 0
+                1 << np.arange(0, num_message_bits))) != 0
+                #1 << np.arange(num_message_bits - 1, -1, -1))) != 0
         # reshape into a 1D array
         states.reshape(-1)
-        return cost, timestep, states.astype(np.int8).flatten()
+        # If n_vars is not a multiple of num_message_bits, then last entries
+        # must be cut off
+        states = states.astype(np.int8).flatten()[:num_vars]
+        return cost, timestep, states
+
+
+
 
 """
 def test_code():
@@ -122,22 +139,26 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         weights_state_in = self._get_input_weights(
             num_vars=num_bin_variables,
             num_spike_int=num_spike_integrators,
-            num_vars_per_int=num_message_bits
+            num_vars_per_int=num_message_bits,
         )
         self.synapses_state_in = Sparse(
             weights=weights_state_in,
-            sign_mode=SignMode.EXCITATORY,
+            #sign_mode=SignMode.EXCITATORY,
             num_weight_bits=8,
-            num_message_bits=num_message_bits
+            num_message_bits=num_message_bits,
+            weight_exp=0,
         )
 
+        #CAREFUL! Weights are negated here, since CostIn will always be < 0
+        # but SpikeIntegrators only deal with positive numbers.
+        # This is accounted for in self._decompress_state()
         weights_cost_in = self._get_cost_in_weights(
             num_spike_int=num_spike_integrators,
         )
-        print("weights_cost_in", weights_cost_in)
+        #print("weights_cost_in", weights_cost_in)
         self.synapses_cost_in = Sparse(
             weights=weights_cost_in,
-            sign_mode=SignMode.EXCITATORY,
+            #sign_mode=SignMode.INHIBITORY,
             num_weight_bits=8,
             num_message_bits=32,
         )
@@ -145,10 +166,10 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         weights_timestep_in = self._get_timestep_in_weights(
             num_spike_int=num_spike_integrators,
         )
-        print("weights_timestep_in", weights_timestep_in)
+        #print("weights_timestep_in", weights_timestep_in)
         self.synapses_timestep_in = Sparse(
             weights=weights_timestep_in,
-            sign_mode=SignMode.EXCITATORY,
+            #sign_mode=SignMode.EXCITATORY,
             num_weight_bits=8,
             num_message_bits=32,
         )
@@ -186,10 +207,11 @@ class SolutionReadoutModel(AbstractSubProcessModel):
     @staticmethod
     def _get_input_weights(num_vars, num_spike_int, num_vars_per_int):
         """To be verified. Deprecated due to efficiency"""
+
         weights = np.zeros((num_spike_int, num_vars), dtype=np.int8)
-        print(f"{num_vars=}")
-        print(f"{num_spike_int=}")
-        print(f"{num_vars_per_int=}")
+        #print(f"{num_vars=}")
+        #print(f"{num_spike_int=}")
+        #print(f"{num_vars_per_int=}")
         for spike_integrator in range(2, num_spike_int - 1):
             variable_start = num_vars_per_int*spike_integrator
             weights[spike_integrator, variable_start:variable_start + num_vars_per_int] = 1
@@ -198,9 +220,9 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         # This happens when mod(num_variables, num_vars_per_int) != 0
         weights[-1, num_vars_per_int*(num_spike_int - 3):] = 1
 
-        print("=" * 20)
-        print(f"{weights=}")
-        print("=" * 20)
+        #print("=" * 20)
+        #print(f"{weights=}")
+        #print("=" * 20)
 
         return csr_matrix(weights)
 

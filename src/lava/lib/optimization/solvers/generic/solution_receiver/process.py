@@ -58,7 +58,7 @@ class SolutionReadout(AbstractProcess):
         shape: ty.Tuple[int, ...],
         connection_config: ConnectionConfig,
         num_bin_variables: int,
-        num_message_bits = 24,
+        num_message_bits = 32,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:

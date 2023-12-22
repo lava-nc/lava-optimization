@@ -158,7 +158,6 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         #print("weights_cost_in", weights_cost_in)
         self.synapses_cost_in = Sparse(
             weights=weights_cost_in,
-            #sign_mode=SignMode.INHIBITORY,
             num_weight_bits=8,
             num_message_bits=32,
         )
@@ -214,7 +213,8 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         #print(f"{num_vars_per_int=}")
         for spike_integrator in range(2, num_spike_int - 1):
             variable_start = num_vars_per_int*spike_integrator
-            weights[spike_integrator, variable_start:variable_start + num_vars_per_int] = 1
+            weights[spike_integrator, variable_start:variable_start +
+                                                     num_vars_per_int] = 1
         # The last spike integrator might be connected by less than
         # num_vars_per_int neurons
         # This happens when mod(num_variables, num_vars_per_int) != 0

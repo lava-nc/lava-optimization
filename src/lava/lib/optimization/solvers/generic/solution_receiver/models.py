@@ -192,9 +192,6 @@ class SolutionReadoutModel(AbstractSubProcessModel):
             weight_exp=24,
         )
 
-        #CAREFUL! Weights are negated here, since CostIn will always be < 0
-        # but SpikeIntegrators only deal with positive numbers.
-        # This is accounted for in self._decompress_state()
         weights_cost_in = self._get_cost_in_weights(
             num_spike_int=num_spike_integrators,
         )
@@ -256,18 +253,20 @@ class SolutionReadoutModel(AbstractSubProcessModel):
     def _get_input_weights(num_vars, num_spike_int, num_vars_per_int, weight_exp):
         """To be verified. Deprecated due to efficiency"""
 
-        weights = np.zeros((num_spike_int, num_vars), dtype=np.int8)
+        weights = np.zeros((num_spike_int, num_vars), dtype=np.uint8)
         #print(f"{num_vars=}")
         #print(f"{num_spike_int=}")
         #print(f"{num_vars_per_int=}")
+        # The first two SpikeIntegrators receive best_cost and best_timestep
         for spike_integrator in range(2, num_spike_int - 1):
-            variable_start = 32 * (spike_integrator - 2) + weight_exp
+            variable_start = num_vars_per_int * (spike_integrator - 2) + weight_exp
             weights[spike_integrator, variable_start:variable_start +
-                                                     9] = np.power(2, np.arange(8))
+                                                     8] = np.power(2,
+                                                                   np.arange(8))
         # The last spike integrator might be connected by less than
         # num_vars_per_int neurons
         # This happens when mod(num_variables, num_vars_per_int) != 0
-        variable_start = 32 * (num_spike_int - 3) + weight_exp
+        variable_start = num_vars_per_int * (num_spike_int - 3) + weight_exp
         weights[-1, variable_start:] = np.power(2, np.arange(weights.shape[1]-variable_start))
 
         #print("=" * 20)

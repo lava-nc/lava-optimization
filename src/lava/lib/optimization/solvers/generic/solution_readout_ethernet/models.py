@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import numpy as np
-from lava.lib.optimization.solvers.generic.monitoring_processes\
-    .solution_readout.process import SolutionReadout
+from lava.lib.optimization.solvers.generic.solution_readout_ethernet.process import SolutionReadoutEthernet
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import (
     PyLoihiProcessModel,
@@ -16,7 +15,7 @@ from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.async_protocol import AsyncProtocol
 
-from lava.lib.optimization.solvers.generic.solution_receiver.process import \
+from lava.lib.optimization.solvers.generic.solution_readout_ethernet.process import \
     (
     SolutionReceiver, SpikeIntegrator
 )
@@ -52,36 +51,21 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
         num_message_bits = self.num_message_bits[0]
         num_vars = self.best_state.shape[0]
 
-        print("+" * 20)
-        print(self.best_state)
-        print("+" * 20)
         results_buffer = np.zeros(self.results_in._shape)
-        print("Starting reception")
         while self._check_if_input(results_buffer):
-            print("In while loop!")
             results_buffer = self.results_in.recv()
-        print("Finished while loop")
-        print(f"{results_buffer=}")
         self.best_cost, self.best_timestep, _ = self._decompress_state(
             compressed_states=results_buffer,
             num_message_bits=num_message_bits,
             num_vars=num_vars)
-        print(f"{self.best_cost=}")
-        print(f"{self.best_timestep=}")
-        print("-" * 20)
 
         # best states are returned with a delay of 1 timestep
         results_buffer = self.results_in.recv()
-        print("Received further results")
         _, _, states = self._decompress_state(
             compressed_states=results_buffer,
             num_message_bits=num_message_bits,
             num_vars=num_vars) #[:self.best_state.shape[0]]
-        print("Finished")
-        print(f"{self.best_state=}")
-        print(f"{states=}")
         self.best_state = states
-        print(f"{self.best_state}")
         self._req_pause = True
 
     @staticmethod
@@ -120,9 +104,9 @@ def test_code():
     print(boolean_array)
 """
 
-@implements(proc=SolutionReadout, protocol=LoihiProtocol)
+@implements(proc=SolutionReadoutEthernet, protocol=LoihiProtocol)
 @requires(CPU)
-class SolutionReadoutModel(AbstractSubProcessModel):
+class SolutionReadoutEthernetModel(AbstractSubProcessModel):
     """Model for the SolutionReadout process.
 
     """
@@ -195,7 +179,7 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         weights_cost_in = self._get_cost_in_weights(
             num_spike_int=num_spike_integrators,
         )
-        #print("weights_cost_in", weights_cost_in)
+
         self.synapses_cost_in = Sparse(
             weights=weights_cost_in,
             num_weight_bits=8,
@@ -205,7 +189,7 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         weights_timestep_in = self._get_timestep_in_weights(
             num_spike_int=num_spike_integrators,
         )
-        #print("weights_timestep_in", weights_timestep_in)
+
         self.synapses_timestep_in = Sparse(
             weights=weights_timestep_in,
             #sign_mode=SignMode.EXCITATORY,
@@ -254,9 +238,7 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         """To be verified. Deprecated due to efficiency"""
 
         weights = np.zeros((num_spike_int, num_vars), dtype=np.uint8)
-        #print(f"{num_vars=}")
-        #print(f"{num_spike_int=}")
-        #print(f"{num_vars_per_int=}")
+
         # The first two SpikeIntegrators receive best_cost and best_timestep
         for spike_integrator in range(2, num_spike_int - 1):
             variable_start = num_vars_per_int * (spike_integrator - 2) + weight_exp
@@ -268,10 +250,6 @@ class SolutionReadoutModel(AbstractSubProcessModel):
         # This happens when mod(num_variables, num_vars_per_int) != 0
         variable_start = num_vars_per_int * (num_spike_int - 3) + weight_exp
         weights[-1, variable_start:] = np.power(2, np.arange(weights.shape[1]-variable_start))
-
-        #print("=" * 20)
-        #print(f"{weights=}")
-        #print("=" * 20)
 
         return csr_matrix(weights)
 

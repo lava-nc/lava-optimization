@@ -31,7 +31,7 @@ class SpikeIntegrator(AbstractProcess):
         self.s_out = OutPort(shape=shape)
 
 
-class SolutionReadout(AbstractProcess):
+class SolutionReadoutEthernet(AbstractProcess):
     r"""Process which implements the solution readout layer
     on the solver of an optimization problem.
 

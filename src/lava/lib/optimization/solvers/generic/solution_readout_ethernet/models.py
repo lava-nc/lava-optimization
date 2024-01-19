@@ -120,6 +120,8 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
 
         connection_config = proc.proc_params.get("connection_config")
 
+        self.spike_integrators = SpikeIntegrator(shape=(num_spike_integrators,))
+
         weights_state_in_0 = self._get_input_weights(
             num_vars=num_bin_variables,
             num_spike_int=num_spike_integrators,
@@ -134,52 +136,66 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
             weight_exp=0,
         )
 
-        weights_state_in_1 = self._get_input_weights(
-            num_vars=num_bin_variables,
-            num_spike_int=num_spike_integrators,
-            num_vars_per_int=num_message_bits,
-            weight_exp=8
-        )
-        self.synapses_state_in_1 = Sparse(
-            weights=weights_state_in_1,
-            #sign_mode=SignMode.EXCITATORY,
-            num_weight_bits=8,
-            num_message_bits=num_message_bits,
-            weight_exp=8,
-        )
+        proc.in_ports.states_in.connect(self.synapses_state_in_0.s_in)
+        self.synapses_state_in_0.a_out.connect(self.spike_integrators.a_in)
 
-        weights_state_in_2 = self._get_input_weights(
-            num_vars=num_bin_variables,
-            num_spike_int=num_spike_integrators,
-            num_vars_per_int=num_message_bits,
-            weight_exp=16
-        )
-        self.synapses_state_in_2 = Sparse(
-            weights=weights_state_in_2,
-            #sign_mode=SignMode.EXCITATORY,
-            num_weight_bits=8,
-            num_message_bits=num_message_bits,
-            weight_exp=16,
-        )
+        if num_bin_variables > 8:
+            weights_state_in_1 = self._get_input_weights(
+                num_vars=num_bin_variables,
+                num_spike_int=num_spike_integrators,
+                num_vars_per_int=num_message_bits,
+                weight_exp=8
+            )
+            self.synapses_state_in_1 = Sparse(
+                weights=weights_state_in_1,
+                #sign_mode=SignMode.EXCITATORY,
+                num_weight_bits=8,
+                num_message_bits=num_message_bits,
+                weight_exp=8,
+            )
 
-        weights_state_in_3 = self._get_input_weights(
-            num_vars=num_bin_variables,
-            num_spike_int=num_spike_integrators,
-            num_vars_per_int=num_message_bits,
-            weight_exp=24
-        )
-        self.synapses_state_in_3 = Sparse(
-            weights=weights_state_in_3,
-            #sign_mode=SignMode.EXCITATORY,
-            num_weight_bits=8,
-            num_message_bits=num_message_bits,
-            weight_exp=24,
-        )
+            proc.in_ports.states_in.connect(self.synapses_state_in_1.s_in)
+            self.synapses_state_in_1.a_out.connect(self.spike_integrators.a_in)
+            
+        if num_bin_variables > 16:
+            weights_state_in_2 = self._get_input_weights(
+                num_vars=num_bin_variables,
+                num_spike_int=num_spike_integrators,
+                num_vars_per_int=num_message_bits,
+                weight_exp=16
+            )
+            self.synapses_state_in_2 = Sparse(
+                weights=weights_state_in_2,
+                #sign_mode=SignMode.EXCITATORY,
+                num_weight_bits=8,
+                num_message_bits=num_message_bits,
+                weight_exp=16,
+            )
 
+            proc.in_ports.states_in.connect(self.synapses_state_in_2.s_in)
+            self.synapses_state_in_2.a_out.connect(self.spike_integrators.a_in)
+
+        if num_bin_variables > 24:
+            weights_state_in_3 = self._get_input_weights(
+                num_vars=num_bin_variables,
+                num_spike_int=num_spike_integrators,
+                num_vars_per_int=num_message_bits,
+                weight_exp=24
+            )
+            self.synapses_state_in_3 = Sparse(
+                weights=weights_state_in_3,
+                #sign_mode=SignMode.EXCITATORY,
+                num_weight_bits=8,
+                num_message_bits=num_message_bits,
+                weight_exp=24,
+            )
+            proc.in_ports.states_in.connect(self.synapses_state_in_3.s_in)
+            self.synapses_state_in_3.a_out.connect(self.spike_integrators.a_in)
+
+        # Connect the CostIntegrator  
         weights_cost_in = self._get_cost_in_weights(
             num_spike_int=num_spike_integrators,
         )
-
         self.synapses_cost_in = Sparse(
             weights=weights_cost_in,
             num_weight_bits=8,
@@ -189,15 +205,19 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         weights_timestep_in = self._get_timestep_in_weights(
             num_spike_int=num_spike_integrators,
         )
-
         self.synapses_timestep_in = Sparse(
             weights=weights_timestep_in,
             #sign_mode=SignMode.EXCITATORY,
             num_weight_bits=8,
             num_message_bits=32,
         )
+      
+        proc.in_ports.cost_in.connect(self.synapses_cost_in.s_in)
+        self.synapses_cost_in.a_out.connect(self.spike_integrators.a_in)
+        proc.in_ports.timestep_in.connect(self.synapses_timestep_in.s_in)
+        self.synapses_timestep_in.a_out.connect(self.spike_integrators.a_in)
 
-        self.spike_integrators = SpikeIntegrator(shape=(num_spike_integrators,))
+        # Define and connect the SolutionReceiver
 
         self.solution_receiver = SolutionReceiver(
             shape=(1,),
@@ -208,22 +228,6 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
             best_state_init = proc.best_state.get(),
             best_timestep_init = proc.best_timestep.get()
         )
-
-        # Connect the parent InPort to the InPort of the child-Process.
-        proc.in_ports.states_in.connect(self.synapses_state_in_0.s_in)
-        proc.in_ports.states_in.connect(self.synapses_state_in_1.s_in)
-        proc.in_ports.states_in.connect(self.synapses_state_in_2.s_in)
-        proc.in_ports.states_in.connect(self.synapses_state_in_3.s_in)
-        proc.in_ports.cost_in.connect(self.synapses_cost_in.s_in)
-        proc.in_ports.timestep_in.connect(self.synapses_timestep_in.s_in)
-
-        # Connect intermediate ports
-        self.synapses_state_in_0.a_out.connect(self.spike_integrators.a_in)
-        self.synapses_state_in_1.a_out.connect(self.spike_integrators.a_in)
-        self.synapses_state_in_2.a_out.connect(self.spike_integrators.a_in)
-        self.synapses_state_in_3.a_out.connect(self.spike_integrators.a_in)
-        self.synapses_cost_in.a_out.connect(self.spike_integrators.a_in)
-        self.synapses_timestep_in.a_out.connect(self.spike_integrators.a_in)
 
         self.spike_integrators.s_out.connect(
             self.solution_receiver.results_in, connection_config)

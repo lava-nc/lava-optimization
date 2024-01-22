@@ -2,27 +2,25 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import numpy as np
-from lava.lib.optimization.solvers.generic.solution_readout_ethernet.process import SolutionReadoutEthernet
+from lava.lib.optimization.solvers.qubo.solution_readout.process import (
+    SolutionReadoutEthernet
+)
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.model import (
-    PyLoihiProcessModel,
     PyAsyncProcessModel
 )
-from bitstring import Bits
 from lava.magma.core.model.py.ports import PyInPort
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.async_protocol import AsyncProtocol
 
-from lava.lib.optimization.solvers.generic.solution_readout_ethernet.process import \
+from lava.lib.optimization.solvers.qubo.solution_readout.process import \
     (
     SolutionReceiver, SpikeIntegrator
 )
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
-from lava.proc.sparse.process import Sparse, DelaySparse
-from lava.utils.weightutils import SignMode
-from lava.proc import embedded_io as eio
+from lava.proc.sparse.process import Sparse
 from scipy.sparse import csr_matrix
 
 

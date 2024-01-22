@@ -7,60 +7,6 @@ from lava.magma.core.process.process import AbstractProcess
 from lava.magma.core.process.variable import Var
 
 
-class NEBM(AbstractProcess):
-    """
-    Non-equilibrium Boltzmann (NEBM) neuron model to solve QUBO problems.
-    """
-
-    def __init__(
-        self,
-        *,
-        shape: ty.Tuple[int, ...],
-        temperature: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
-        refract: ty.Optional[ty.Union[int, npty.NDArray]] = 1,
-        refract_counter: ty.Optional[ty.Union[int, npty.NDArray]] = 0,
-        init_value=0,
-        init_state=0,
-        neuron_model: str = 'nebm',
-    ):
-        """
-        NEBM Process.
-
-        Parameters
-        ----------
-        shape: Tuple
-            Number of neurons. Default is (1,).
-        temperature: ArrayLike
-            Temperature of the system, defining the level of noise.
-        refract : ArrayLike
-            Minimum number of timesteps a neuron remains in a state after a
-            transition.
-        init_value : ArrayLike
-            The spiking history with which the network is initialized
-        init_state : ArrayLike
-            The state of neurons with which the network is initialized
-        """
-        super().__init__(shape=shape)
-
-        self.a_in = InPort(shape=shape)
-        self.s_sig_out = OutPort(shape=shape)
-        self.s_wta_out = OutPort(shape=shape)
-
-        self.spk_hist = Var(
-            shape=shape, init=(np.zeros(shape=shape) + init_value).astype(int)
-        )
-        self.temperature = Var(shape=shape, init=int(temperature))
-        self.refract = Var(shape=shape, init=refract)
-        self.refract_counter = Var(shape=shape, init=refract_counter)
-
-        # Initial state determined in DiscreteVariables
-        self.state = Var(shape=shape, init=init_state.astype(int))
-
-        @property
-        def shape(self) -> ty.Tuple[int, ...]:
-            return self.proc_params["shape"]
-
-
 class SimulatedAnnealingLocal(AbstractProcess):
     """
     Non-equilibrium Boltzmann (NEBM) neuron model to solve QUBO problems.
@@ -115,8 +61,10 @@ class SimulatedAnnealingLocal(AbstractProcess):
 
         self.a_in = InPort(shape=shape)
         self.delta_temperature_in = InPort(shape=shape)
+        self.control_cost_integrator = InPort(shape=shape)
         self.s_sig_out = OutPort(shape=shape)
         self.s_wta_out = OutPort(shape=shape)
+        self.best_state_out = OutPort(shape=shape)
 
         self.spk_hist = Var(
             shape=shape, init=(np.zeros(shape=shape) + init_value).astype(int)
@@ -131,7 +79,11 @@ class SimulatedAnnealingLocal(AbstractProcess):
                 np.random.randint(0, 2**8, size=shape), (refract_scaling or 0)
             ),
         )
-
+        # Storage for the best state. Will get updated whenever a better
+        # state was found
+        # Default is all zeros
+        self.best_state = Var(shape=shape,
+                              init=np.zeros(shape=shape, dtype=int))
         # Initial state determined in DiscreteVariables
         self.state = Var(
             shape=shape,

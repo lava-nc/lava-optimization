@@ -1,6 +1,6 @@
 import numpy as np
 
-from lava.lib.optimization.solvers.generic.nebm.process import NEBM
+from lava.lib.optimization.solvers.qubo.simulated_annealing.process import NEBM
 from lava.magma.core.decorator import implements, requires, tag
 from lava.magma.core.model.py.model import PyLoihiProcessModel
 from lava.magma.core.model.py.ports import PyInPort, PyOutPort

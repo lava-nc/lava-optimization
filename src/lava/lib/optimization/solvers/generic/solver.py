@@ -37,7 +37,7 @@ from lava.utils.profiler import Profiler
 from lava.lib.optimization.problems.problems import QUBO
 from lava.lib.optimization.problems.problems import OptimizationProblem
 from lava.lib.optimization.solvers.generic.builder import SolverProcessBuilder
-from lava.lib.optimization.solvers.generic.cost_integrator.process import (
+from lava.lib.optimization.solvers.qubo.cost_integrator.process import (
     CostIntegrator,
 )
 from lava.lib.optimization.solvers.generic.hierarchical_processes import (
@@ -50,9 +50,8 @@ from lava.lib.optimization.solvers.generic.monitoring_processes. \
         SolutionReadoutPyModel,
     )
 from lava.lib.optimization.solvers.generic.nebm.models import NEBMPyModel
-from lava.lib.optimization.solvers.generic.nebm.process import (
+from lava.lib.optimization.solvers.qubo.simulated_annealing.process import (
     NEBM,
-    SimulatedAnnealing,
     SimulatedAnnealingLocal,
 )
 from lava.lib.optimization.solvers.generic.annealing.process import Annealing
@@ -123,11 +122,6 @@ except ImportError:
 
     class NcL2ModelPI:
         pass
-
-
-from lava.lib.optimization.solvers.generic.read_gate.models import (
-    ReadGatePyModel,
-)
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 HP_TYPE = ty.Union[ty.Dict, ty.List[ty.Dict]]

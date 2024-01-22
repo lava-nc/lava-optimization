@@ -30,7 +30,7 @@ class SolutionReaderModel(AbstractSubProcessModel):
             time_steps_per_algorithmic_step=time_steps_per_algorithmic_step,
         )
         self.read_gate.cost_out.connect(self.solution_readout.cost_in)
-        self.read_gate.solution_out.connect(self.solution_readout.state_in)
+        self.read_gate.solution_out.connect(self.solution_readout.read_solution)
         self.read_gate.send_pause_request.connect(
             self.solution_readout.timestep_in
         )

@@ -52,21 +52,20 @@ class CostIntegrator(AbstractProcess):
     """
 
     def __init__(
-        self,
-        *,
-        shape: ty.Tuple[int, ...] = (1,),
-        target_cost: int = -2**31 + 1,
-        timeout: int = 2**24 - 1,
-        name: ty.Optional[str] = None,
-        log_config: ty.Optional[LogConfig] = None,
+            self,
+            *,
+            shape: ty.Tuple[int, ...] = (1,),
+            target_cost: int = -2 ** 31 + 1,
+            timeout: int = 2 ** 24 - 1,
+            name: ty.Optional[str] = None,
+            log_config: ty.Optional[LogConfig] = None,
     ) -> None:
-
         self._input_validation(target_cost=target_cost,
                                timeout=timeout)
 
         super().__init__(shape=shape,
-                         target_cost = target_cost,
-                         timeout = timeout,
+                         target_cost=target_cost,
+                         timeout=timeout,
                          name=name,
                          log_config=log_config)
         self.cost_in = InPort(shape=shape)
@@ -95,11 +94,14 @@ class CostIntegrator(AbstractProcess):
 
     @staticmethod
     def _input_validation(target_cost, timeout) -> None:
-
-        assert (target_cost is not None and timeout is not None), \
-            f"Both the target_cost and the timeout must be defined"
-        assert 0 > target_cost >= -2**31 + 1, \
-            f"The target cost must in the range [-2**32 + 1, 0), " \
-            f"but is {target_cost}."
-        assert 0 < timeout <= 2**24 - 1, f"The timeout must be in the range (" \
-                                         f"0, 2**24 - 1], but is {timeout}."
+        if (target_cost is None and timeout is None):
+            raise ValueError(
+                f"Both the target_cost and the timeout must be defined")
+        if target_cost > 0 or target_cost < - 2 ** 31 + 1:
+            raise ValueError(
+                f"The target cost must in the range [-2**32 + 1, 0], "
+                f"but is {target_cost}.")
+        if timeout <= 0 or timeout > 2 ** 24 - 1:
+            raise ValueError(
+                f"The timeout must be in the range (0, 2**24 - 1], but is "
+                f"{timeout}.")

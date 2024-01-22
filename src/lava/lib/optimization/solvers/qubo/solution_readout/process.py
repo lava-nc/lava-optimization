@@ -11,6 +11,7 @@ from lava.magma.core.process.variable import Var
 
 from lava.magma.core.process.ports.connection_config import ConnectionConfig
 
+
 class SpikeIntegrator(AbstractProcess):
     """GradedVec
     Graded spike vector layer. Accumulates and forwards 32bit spikes.
@@ -24,7 +25,6 @@ class SpikeIntegrator(AbstractProcess):
     def __init__(
             self,
             shape: ty.Tuple[int, ...]) -> None:
-
         super().__init__(shape=shape)
 
         self.a_in = InPort(shape=shape)
@@ -54,13 +54,13 @@ class SolutionReadoutEthernet(AbstractProcess):
     """
 
     def __init__(
-        self,
-        shape: ty.Tuple[int, ...],
-        connection_config: ConnectionConfig,
-        num_bin_variables: int,
-        num_message_bits = 32,
-        name: ty.Optional[str] = None,
-        log_config: ty.Optional[LogConfig] = None,
+            self,
+            shape: ty.Tuple[int, ...],
+            connection_config: ConnectionConfig,
+            num_bin_variables: int,
+            num_message_bits=32,
+            name: ty.Optional[str] = None,
+            log_config: ty.Optional[LogConfig] = None,
     ) -> None:
         """
         Parameters
@@ -80,7 +80,8 @@ class SolutionReadoutEthernet(AbstractProcess):
         log_config: LogConfig, optional
             Configuration options for logging.z"""
 
-        num_spike_integrators = 2 + np.ceil(num_bin_variables / num_message_bits).astype(int)
+        num_spike_integrators = 2 + np.ceil(
+            num_bin_variables / num_message_bits).astype(int)
 
         super().__init__(
             shape=shape,
@@ -130,16 +131,16 @@ class SolutionReceiver(AbstractProcess):
     """
 
     def __init__(
-        self,
-        shape: ty.Tuple[int, ...],
-        num_variables: int,
-        best_cost_init: int,
-        best_state_init: ty.Union[npty.ArrayLike, int],
-        num_spike_integrators: int,
-        best_timestep_init: int,
-        num_message_bits: int = 24,
-        name: ty.Optional[str] = None,
-        log_config: ty.Optional[LogConfig] = None,
+            self,
+            shape: ty.Tuple[int, ...],
+            num_variables: int,
+            best_cost_init: int,
+            best_state_init: ty.Union[npty.ArrayLike, int],
+            num_spike_integrators: int,
+            best_timestep_init: int,
+            num_message_bits: int = 24,
+            name: ty.Optional[str] = None,
+            log_config: ty.Optional[LogConfig] = None,
     ) -> None:
         super().__init__(
             shape=shape,

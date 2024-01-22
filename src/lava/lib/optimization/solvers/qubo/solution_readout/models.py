@@ -15,8 +15,7 @@ from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.resources import CPU
 from lava.magma.core.sync.protocols.async_protocol import AsyncProtocol
 
-from lava.lib.optimization.solvers.qubo.solution_readout.process import \
-    (
+from lava.lib.optimization.solvers.qubo.solution_readout.process import (
     SolutionReceiver, SpikeIntegrator
 )
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
@@ -62,7 +61,7 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
         _, _, states = self._decompress_state(
             compressed_states=results_buffer,
             num_message_bits=num_message_bits,
-            num_vars=num_vars) #[:self.best_state.shape[0]]
+            num_vars=num_vars)
         self.best_state = states
         self._req_pause = True
 
@@ -76,8 +75,7 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
         cost = int(compressed_states[0])
         timestep = int(compressed_states[1])
         states = (compressed_states[2:, None] & (
-                1 << np.arange(0, num_message_bits))) != 0
-                #1 << np.arange(num_message_bits - 1, -1, -1))) != 0
+            1 << np.arange(0, num_message_bits))) != 0
         # reshape into a 1D array
         states.reshape(-1)
         # If n_vars is not a multiple of num_message_bits, then last entries
@@ -85,22 +83,6 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
         states = states.astype(np.int8).flatten()[:num_vars]
         return cost, timestep, states
 
-
-
-
-"""
-def test_code():
-
-    # Assuming you have a 32-bit integer numpy array
-    original_array = np.array([4294967295, 2147483647, 0, 8983218],
-                              dtype=np.uint32)
-
-    # Use bitwise AND operation to convert each integer to a boolean array
-    boolean_array = (original_array[:, None] & (1 << np.arange(31, -1, -1))) != 0
-
-    # Display the result
-    print(boolean_array)
-"""
 
 @implements(proc=SolutionReadoutEthernet, protocol=LoihiProtocol)
 @requires(CPU)
@@ -128,7 +110,6 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         )
         self.synapses_state_in_0 = Sparse(
             weights=weights_state_in_0,
-            #sign_mode=SignMode.EXCITATORY,
             num_weight_bits=8,
             num_message_bits=num_message_bits,
             weight_exp=0,
@@ -146,7 +127,6 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
             )
             self.synapses_state_in_1 = Sparse(
                 weights=weights_state_in_1,
-                #sign_mode=SignMode.EXCITATORY,
                 num_weight_bits=8,
                 num_message_bits=num_message_bits,
                 weight_exp=8,
@@ -154,7 +134,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
 
             proc.in_ports.states_in.connect(self.synapses_state_in_1.s_in)
             self.synapses_state_in_1.a_out.connect(self.spike_integrators.a_in)
-            
+
         if num_bin_variables > 16:
             weights_state_in_2 = self._get_input_weights(
                 num_vars=num_bin_variables,
@@ -164,7 +144,6 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
             )
             self.synapses_state_in_2 = Sparse(
                 weights=weights_state_in_2,
-                #sign_mode=SignMode.EXCITATORY,
                 num_weight_bits=8,
                 num_message_bits=num_message_bits,
                 weight_exp=16,
@@ -182,7 +161,6 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
             )
             self.synapses_state_in_3 = Sparse(
                 weights=weights_state_in_3,
-                #sign_mode=SignMode.EXCITATORY,
                 num_weight_bits=8,
                 num_message_bits=num_message_bits,
                 weight_exp=24,
@@ -190,7 +168,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
             proc.in_ports.states_in.connect(self.synapses_state_in_3.s_in)
             self.synapses_state_in_3.a_out.connect(self.spike_integrators.a_in)
 
-        # Connect the CostIntegrator  
+        # Connect the CostIntegrator
         weights_cost_in = self._get_cost_in_weights(
             num_spike_int=num_spike_integrators,
         )
@@ -205,26 +183,24 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         )
         self.synapses_timestep_in = Sparse(
             weights=weights_timestep_in,
-            #sign_mode=SignMode.EXCITATORY,
             num_weight_bits=8,
             num_message_bits=32,
         )
-      
+
         proc.in_ports.cost_in.connect(self.synapses_cost_in.s_in)
         self.synapses_cost_in.a_out.connect(self.spike_integrators.a_in)
         proc.in_ports.timestep_in.connect(self.synapses_timestep_in.s_in)
         self.synapses_timestep_in.a_out.connect(self.spike_integrators.a_in)
 
         # Define and connect the SolutionReceiver
-
         self.solution_receiver = SolutionReceiver(
             shape=(1,),
-            num_variables = num_bin_variables,
-            num_spike_integrators = num_spike_integrators,
-            num_message_bits = num_message_bits,
-            best_cost_init = proc.best_cost.get(),
-            best_state_init = proc.best_state.get(),
-            best_timestep_init = proc.best_timestep.get()
+            num_variables=num_bin_variables,
+            num_spike_integrators=num_spike_integrators,
+            num_message_bits=num_message_bits,
+            best_cost_init=proc.best_cost.get(),
+            best_state_init=proc.best_state.get(),
+            best_timestep_init=proc.best_timestep.get()
         )
 
         self.spike_integrators.s_out.connect(
@@ -236,22 +212,26 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         proc.vars.best_cost.alias(self.solution_receiver.best_cost)
 
     @staticmethod
-    def _get_input_weights(num_vars, num_spike_int, num_vars_per_int, weight_exp):
+    def _get_input_weights(num_vars,
+                           num_spike_int,
+                           num_vars_per_int,
+                           weight_exp) -> csr_matrix:
         """To be verified. Deprecated due to efficiency"""
 
         weights = np.zeros((num_spike_int, num_vars), dtype=np.uint8)
 
         # The first two SpikeIntegrators receive best_cost and best_timestep
         for spike_integrator in range(2, num_spike_int - 1):
-            variable_start = num_vars_per_int * (spike_integrator - 2) + weight_exp
-            weights[spike_integrator, variable_start:variable_start +
-                                                     8] = np.power(2,
-                                                                   np.arange(8))
+            variable_start = num_vars_per_int * (spike_integrator - 2) + \
+                weight_exp
+            weights[spike_integrator, variable_start:variable_start + 8] = \
+                np.power(2, np.arange(8))
         # The last spike integrator might be connected by less than
         # num_vars_per_int neurons
         # This happens when mod(num_variables, num_vars_per_int) != 0
         variable_start = num_vars_per_int * (num_spike_int - 3) + weight_exp
-        weights[-1, variable_start:] = np.power(2, np.arange(weights.shape[1]-variable_start))
+        weights[-1, variable_start:] = np.power(2, np.arange(weights.shape[1]
+                                                             - variable_start))
 
         return csr_matrix(weights)
 
@@ -261,10 +241,11 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         weights = np.zeros((num_spike_int, num_vars), dtype=np.int8)
 
         # Compute the indices for setting the values to 1
-        indices = np.arange(0, num_vars_per_int * (num_spike_int - 1), num_vars_per_int)
+        indices = np.arange(0, num_vars_per_int * (num_spike_int - 1),
+                            num_vars_per_int)
 
         # Set the values to 1 using array indexing
-        weights[:num_spike_int-1, indices:indices + num_vars_per_int] = 1
+        weights[:num_spike_int - 1, indices:indices + num_vars_per_int] = 1
 
         # Set the values for the last spike integrator
         weights[-1, num_vars_per_int * (num_spike_int - 1):num_vars] = 1
@@ -274,11 +255,11 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
     @staticmethod
     def _get_cost_in_weights(num_spike_int: int) -> csr_matrix:
         weights = np.zeros((num_spike_int, 1), dtype=int)
-        weights[0,0] = 1
+        weights[0, 0] = 1
         return csr_matrix(weights)
-        
+
     @staticmethod
     def _get_timestep_in_weights(num_spike_int: int) -> csr_matrix:
         weights = np.zeros((num_spike_int, 1), dtype=int)
-        weights[1,0] = 1
+        weights[1, 0] = 1
         return csr_matrix(weights)

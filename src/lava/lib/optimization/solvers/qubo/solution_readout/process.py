@@ -37,27 +37,34 @@ class SolutionReadoutEthernet(AbstractProcess):
 
     Attributes
     ----------
-    a_in: InPort
-        The addition of all inputs (per dynamical system) at this timestep
-        will be received by this port.
-    s_out: OutPort
-        The payload to be exchanged between the underlying dynamical systems
-        when these fire.
-    local_cost: OutPort
-        The cost components per dynamical system underlying these
-        variables, i.e., c_i = sum_j{Q_{ij} \cdot x_i}  will be sent through
-        this port. The cost integrator will then complete the cost computation
-        by adding all contributions, i.e., x^T \cdot Q \cdot x = sum_i{c_i}.
-    variable_assignment: Var
-        Holds the current value assigned to the variables by
-        the solver network.
+    best_state: Var
+        Best binary variables assignment.
+    best_cost: Var
+        Cost of best solution.
+    best_timestep: Var
+        Time step when best solution was found.
+
+    InPorts:
+    ----------
+    states_in: InPort
+        Receives the best binary (1bit) states. Shape is determined by the
+        number of
+        binary variables.
+    cost_in: InPort
+        Receives the best 32bit cost.
+    timestep_in: InPort
+        Receives the best 32bit timestep.
+
+    OutPorts:
+    ----------
     """
 
     def __init__(
             self,
             shape: ty.Tuple[int, ...],
-            connection_config: ConnectionConfig,
+            timeout: int,
             num_bin_variables: int,
+            connection_config: ConnectionConfig,
             num_message_bits=32,
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
@@ -67,13 +74,11 @@ class SolutionReadoutEthernet(AbstractProcess):
         ----------
         shape: tuple
             A tuple of the form (number of variables, domain size).
-        cost_diagonal: npty.ArrayLike
-            The diagonal of the coefficient of the quadratic term on the cost
-            function.
-        cost_off_diagonal: npty.ArrayLike
-            The off-diagonal of the coefficient of the quadratic term on the
-            cost function.
-        hyperparameters: dict, optional
+        num_bin_variables: int
+            The number of binary (1bit) variables.
+        num_message_bits: int
+            Defines the number of bits of a single message via spikeIO.
+            Currently only tested for 32bits.
         name: str, optional
             Name of the Process. Default is 'Process_ID', where ID is an integer
             value that is determined automatically.
@@ -87,6 +92,7 @@ class SolutionReadoutEthernet(AbstractProcess):
             shape=shape,
             num_spike_integrators=num_spike_integrators,
             num_bin_variables=num_bin_variables,
+            timeout=timeout,
             num_message_bits=num_message_bits,
             connection_config=connection_config,
             name=name,
@@ -107,14 +113,14 @@ class SolutionReceiver(AbstractProcess):
     Parameters
     ----------
     shape: The shape of the set of nodes, or process, which state will be read.
-    target_cost: cost value at which, once attained by the network,
-    this process will stop execution.
-    name: Name of the Process. Default is 'Process_ID', where ID is an
-    integer value that is determined automatically.
-    log_config: Configuration options for logging.
-    time_steps_per_algorithmic_step: the number of iteration steps that a
-    single algorithmic step requires. This value is required to decode the
-    variable values from the spk_hist of a process.
+    target_cost: int
+        cost value at which, once attained by the network, this process will
+        stop execution.
+    name: str
+        Name of the Process. Default is 'Process_ID', where ID is an integer
+        value that is determined automatically.
+    log_config:
+        Configuration options for logging.
 
     Attributes
     ----------
@@ -134,6 +140,7 @@ class SolutionReceiver(AbstractProcess):
             self,
             shape: ty.Tuple[int, ...],
             num_variables: int,
+            timeout: int,
             best_cost_init: int,
             best_state_init: ty.Union[npty.ArrayLike, int],
             num_spike_integrators: int,
@@ -144,7 +151,6 @@ class SolutionReceiver(AbstractProcess):
     ) -> None:
         super().__init__(
             shape=shape,
-            num_variables=num_variables,
             name=name,
             log_config=log_config,
         )
@@ -153,4 +159,5 @@ class SolutionReceiver(AbstractProcess):
         self.best_timestep = Var(shape=(1,), init=best_timestep_init)
         self.best_cost = Var(shape=(1,), init=best_cost_init)
         self.num_message_bits = Var(shape=(1,), init=num_message_bits)
+        self.timeout = Var(shape=(1,), init=timeout)
         self.results_in = InPort(shape=(num_spike_integrators,))

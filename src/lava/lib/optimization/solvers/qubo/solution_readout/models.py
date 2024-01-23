@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import numpy as np
+import itertools
+
 from lava.lib.optimization.solvers.qubo.solution_readout.process import (
     SolutionReadoutEthernet
 )
@@ -39,6 +41,7 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
     best_timestep: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     best_cost: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     num_message_bits: np.ndarray = LavaPyType(np.ndarray, np.int8, 32)
+    timeout: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
 
     results_in: PyInPort = LavaPyType(
         PyInPort.VEC_DENSE, np.int32, precision=32
@@ -47,10 +50,14 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
     def run_async(self):
         num_message_bits = self.num_message_bits[0]
         num_vars = self.best_state.shape[0]
+        timeout = self.timeout[0]
 
-        results_buffer = np.zeros(self.results_in._shape)
-        while self._check_if_input(results_buffer):
+        # Iterating for timeout - 1 because an additional step is used to
+        # recv the state
+        for _ in itertools.repeat(None, timeout - 1):
             results_buffer = self.results_in.recv()
+            if self._check_if_input(results_buffer):
+                break
         self.best_cost, self.best_timestep, _ = self._decompress_state(
             compressed_states=results_buffer,
             num_message_bits=num_message_bits,
@@ -67,7 +74,7 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
 
     @staticmethod
     def _check_if_input(results_buffer):
-        return not results_buffer[1] > 0
+        return results_buffer[1] > 0
 
     @staticmethod
     def _decompress_state(compressed_states, num_message_bits, num_vars):
@@ -93,6 +100,8 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
 
     def __init__(self, proc):
         num_message_bits = proc.proc_params.get("num_message_bits")
+
+        timeout = proc.proc_params.get("timeout")
 
         # Define the dense input layer
         num_bin_variables = proc.proc_params.get("num_bin_variables")
@@ -198,6 +207,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
             num_variables=num_bin_variables,
             num_spike_integrators=num_spike_integrators,
             num_message_bits=num_message_bits,
+            timeout=timeout,
             best_cost_init=proc.best_cost.get(),
             best_state_init=proc.best_state.get(),
             best_timestep_init=proc.best_timestep.get()

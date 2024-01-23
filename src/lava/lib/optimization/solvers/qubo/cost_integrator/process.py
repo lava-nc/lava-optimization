@@ -3,7 +3,6 @@
 # See: https://spdx.org/licenses/
 import typing as ty
 
-import numpy as np
 from lava.magma.core.process.ports.ports import InPort, OutPort
 from lava.magma.core.process.process import AbstractProcess, LogConfig
 from lava.magma.core.process.variable import Var
@@ -118,7 +117,7 @@ class CostIntegrator(AbstractProcess):
     def _input_validation(target_cost, timeout) -> None:
         if (target_cost is None and timeout is None):
             raise ValueError(
-                f"Both the target_cost and the timeout must be defined")
+                "Both the target_cost and the timeout must be defined")
         if target_cost > 0 or target_cost < - 2 ** 31 + 1:
             raise ValueError(
                 f"The target cost must in the range [-2**32 + 1, 0], "

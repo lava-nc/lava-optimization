@@ -10,13 +10,24 @@ from lava.magma.core.process.variable import Var
 
 
 class CostIntegrator(AbstractProcess):
-    """Node that integrates cost components and produces output when a better
-    cost is found.
+    """Node that monitors execution of the QUBOSolver. It integrates the cost
+    components from all variables. Whenever a new better solution is found,
+    it stores the new best cost and the associated timestep, while triggering
+    the variable neurons to store the new best state. Waits for stopping
+    criteria to be reached, either target_cost or timeout. Once reached,
+    it spikes out the best cost, timestep, and a trigger for the variable
+    neurons to spike out the best state.
 
     Parameters
     ----------
     shape : tuple(int)
         The expected number and topology of the input cost components.
+    target_cost: int
+        Target cost of the QUBO solver. Once reached, the best_cost,
+        best_timestep, and best_state are spiked out.
+    timeout: int
+        Timeout of the QUBO solver. Once reached, the best_cost,
+        best_timestep, and best_state are spiked out.
     name : str, optional
         Name of the Process. Default is 'Process_ID', where ID is an
         integer value that is determined automatically.
@@ -25,23 +36,27 @@ class CostIntegrator(AbstractProcess):
     InPorts
     -------
     cost_in
-        input to be additively integrated.
+        input from the variable neurons. Added, this input denotes
+        the total cost of the current variable assignment.
 
     OutPorts
     --------
-    cost_out_last_bytes: OutPort
-        Notifies the next process about the detection of a better cost.
-        Messages the last 3 byte of the new best cost.
-        Total cost = cost_out_first_byte << 24 + cost_out_last_bytes.
-    cost_out_first_byte: OutPort
-        Notifies the next process about the detection of a better cost.
-        Messages the first byte of the new best cost.
+    control_states_out
+        Port to the variable neurons.
+        Can send either of the following three values:
+            1 -> store the state, since it is the new best state
+            2 -> store the state and spike it, since stopping criteria reached
+            3 -> spike the best state
+    best_cost_out
+        Port to the SolutionReadout. Sends the best cost found.
+    best_timestep_out
+        Port to the SolutionReadout. Sends the timestep when the best cost
+        was found.
 
     Vars
     ----
-    cost
-        Holds current cost as addition of input spikes' payloads
-
+    timestep
+        Holds current timestep
     cost_min_last_bytes
         Current minimum cost, i.e., the lowest reported cost so far.
         Saves the last 3 bytes.
@@ -49,14 +64,21 @@ class CostIntegrator(AbstractProcess):
     cost_min_first_byte
         Current minimum cost, i.e., the lowest reported cost so far.
         Saves the first byte.
+    cost_last_bytes
+        Current cost.
+        Saves the last 3 bytes.
+        cost_min = cost_min_first_byte << 24 + cost_min_last_bytes
+    cost_first_byte
+        Current cost.
+        Saves the first byte.
     """
 
     def __init__(
             self,
             *,
+            target_cost: int,
+            timeout: int,
             shape: ty.Tuple[int, ...] = (1,),
-            target_cost: int = -2 ** 31 + 1,
-            timeout: int = 2 ** 24 - 1,
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
     ) -> None:

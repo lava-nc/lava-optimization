@@ -538,8 +538,8 @@ class OptimizationSolver:
             if config.probe_energy:
                 self._profiler.energy_probe(
                     num_steps=config.timeout,
-                    keep_tmp_dir = config.keep_temp_probe_data,
-                    tmp_dir_path = config.temp_probe_data_dir)
+                    keep_tmp_dir=config.keep_temp_probe_data,
+                    tmp_dir_path=config.temp_probe_data_dir)
             if config.probe_activity:
                 self._profiler.activity_probe(
                     keep_tmp_dir=config.keep_temp_probe_data,

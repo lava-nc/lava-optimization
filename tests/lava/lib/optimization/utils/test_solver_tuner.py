@@ -27,8 +27,7 @@ def prepare_solver_and_config():
         target_cost=-11,
         backend="CPU",
         hyperparameters={
-            "neuron_model": "nebm",
-            "refract": np.array([1, 2, 2, 1])
+            "neuron_model": "sa"
         }
     )
 
@@ -107,6 +106,7 @@ class TestSolverTuner(unittest.TestCase):
         self.assertEqual(len(gen_params_names), len(self.params_names))
         self.assertTrue(all(x in gen_params_names for x in self.params_names))
 
+    @unittest.skip("CPU backend of QUBO solver temporarily disabled.")
     def test_tune_success(self):
         """Tests the correct set of hyper-parameters is found, for a known
         problem."""

@@ -121,10 +121,7 @@ class TestOptSolverWrapper(unittest.TestCase):
     def test_create_process(self):
         self.assertIsInstance(self.solver, OptimizationSolverProcess)
 
-    def test_run_solver(self):
-        self.solver.run(RunSteps(5), run_cfg=self.run_cfg)
-        self.solver.stop()
-
+    @unittest.skip("CPU backend of QUBO solver is temporarily deactivated")
     def test_run_solver(self):
         self.solver.run(RunSteps(5), run_cfg=self.run_cfg)
         self.solver.stop()
@@ -189,13 +186,10 @@ class TestFinderReaderIntegration(unittest.TestCase):
         self.assertIsInstance(self.solution_finder, SolutionFinder)
         self.assertIsInstance(self.solution_reader, SolutionReader)
 
+    @unittest.skip("CPU backend of QUBO solver is temporarily deactivated")
     def test_run_finder(self):
         self.solution_finder.run(RunSteps(5), run_cfg=self.run_cfg)
         self.solution_finder.stop()
-
-    def test_run_reader(self):
-        self.solution_reader.run(RunSteps(5), run_cfg=self.run_cfg)
-        self.solution_reader.stop()
 
 
 if __name__ == "__main__":

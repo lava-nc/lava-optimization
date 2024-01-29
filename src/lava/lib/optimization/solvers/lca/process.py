@@ -31,6 +31,7 @@ class LCA1Layer(AbstractProcess):
     tau: time constant mantissa
     tau_exp: time constant exponent
     """
+
     def __init__(
             self,
             weights: np.ndarray,
@@ -40,7 +41,6 @@ class LCA1Layer(AbstractProcess):
             tau: ty.Optional[float] = 0.1,
             tau_exp: ty.Optional[int] = 0,
             **kwargs) -> None:
-
         super().__init__(**kwargs)
 
         self.threshold = Var(shape=(1,), init=threshold)
@@ -83,6 +83,7 @@ class LCA2Layer(AbstractProcess):
     tau_exp: Time constant exponent
     spike_height: Accumulator spike height
     """
+
     def __init__(
             self,
             weights: np.ndarray,

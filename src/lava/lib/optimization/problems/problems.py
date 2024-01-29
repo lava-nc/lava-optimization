@@ -65,8 +65,8 @@ class QUBO(OptimizationProblem):
 
         Parameters
         ----------
-        q: squared Q matrix defining the QUBO problem over a binary
-        vector x as: minimize x^T*Q*x.
+        q: squared, symmetric, int Q matrix defining the QUBO problem over a
+        binary vector x as: minimize x^T*Q*x.
         """
         super().__init__()
         self.validate_input(q)
@@ -109,19 +109,25 @@ class QUBO(OptimizationProblem):
         return int(self._q_cost(solution))
 
     def validate_input(self, q):
-        """Validate the cost coefficient is a square matrix.
+        """Validate that cost coefficient is a square, symmetric, int matrix.
 
         Parameters
         ----------
         q: Quadratic coefficient of the cost function.
 
         """
+
         m, n = q.shape
         if m != n:
             raise ValueError("q matrix is not a square matrix.")
         if not issubclass(q.dtype.type, np.integer):
             raise NotImplementedError(
                 "Non integer q matrices are not supported yet."
+            )
+        # matrix must be symmetric for current implementation
+        if not np.allclose(q, q.T, rtol=1e-05, atol=1e-08):
+            raise NotImplementedError(
+                "Only symmetric matrixes are currently supported."
             )
 
     def verify_solution(self, solution):

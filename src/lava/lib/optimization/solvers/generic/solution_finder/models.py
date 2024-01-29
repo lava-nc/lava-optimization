@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 import numpy as np
+from numpy import typing as npty
 from lava.lib.optimization.solvers.generic.dataclasses import (
     ConstraintEnforcing,
     VariablesImplementation,
@@ -58,25 +59,19 @@ class SolutionFinderModel(AbstractSubProcessModel):
         # Subprocesses
         self.variables = VariablesImplementation()
         if discrete_var_shape is not None:
-            hyperparameters.update(
-                dict(
-                    init_state=self._get_init_state(
-                        hyperparameters, cost_coefficients, discrete_var_shape
-                    )
-                )
-            )
+
             self.variables.discrete = DiscreteVariablesProcess(
                 shape=discrete_var_shape,
                 cost_diagonal=cost_diagonal,
+                cost_off_diagonal=self._get_q_off(cost_coefficients),
                 hyperparameters=hyperparameters,
             )
 
             self.cost_minimizer = None
             self.cost_convergence_check = None
             if cost_coefficients is not None:
-                weights = cost_coefficients[2].init * np.logical_not(
-                    np.eye(*cost_coefficients[2].init.shape)
-                )
+                weights = self._get_q_off(cost_coefficients)
+
                 self.cost_minimizer = CostMinimizer(
                     Sparse(
                         weights=csr_matrix(weights),
@@ -175,21 +170,9 @@ class SolutionFinderModel(AbstractSubProcessModel):
                 self.variables.variables_assignment_cont
             )
 
-    def _get_init_state(
-        self, hyperparameters, cost_coefficients, discrete_var_shape
-    ):
-        init_value = hyperparameters.get(
-            "init_value", np.zeros(discrete_var_shape, dtype=int)
-        )
-        q_off_diag = cost_coefficients[2].init * np.logical_not(
-            np.eye(*cost_coefficients[2].init.shape)
-        )
-        if 1 in cost_coefficients.keys():
-            q_diag = (
-                cost_coefficients[1].init
-                + cost_coefficients[2].init.diagonal()
-            )
-        else:
-            q_diag = cost_coefficients[2].init.diagonal()
+    def _get_q_off(self, cost_coefficients) -> npty.ArrayLike:
+        """Returns the off-diagonal elements of the Q matrix"""
 
-        return q_off_diag @ init_value + q_diag
+        q_off_diag = cost_coefficients[2].init * np.logical_not(
+            np.eye(*cost_coefficients[2].init.shape))
+        return q_off_diag

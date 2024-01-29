@@ -65,6 +65,7 @@ class TestMISProblem(unittest.TestCase):
         qubo = self.problem.get_as_qubo(w_diag, w_off)
         self.assertTrue(np.all(qubo.q[np.diag_indices(4)] == -w_diag))
         self.assertTrue(np.all(qubo.q[qubo.q > 0] == w_off / 2))
+        self.assertTrue(np.all(qubo.q == qubo.q.T))
 
     def test_find_maximum_independent_set(self):
         """Tests the correct maximum independent set is returned."""

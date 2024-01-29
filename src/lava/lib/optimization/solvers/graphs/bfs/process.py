@@ -32,6 +32,7 @@ class BreadthFirstSearch(AbstractProcess):
         self,
         shape: ty.Tuple[int, ...],
         connection_config: ConnectionConfig,
+        adjacency_matrix = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
     ) -> None:
@@ -65,6 +66,6 @@ class BreadthFirstSearch(AbstractProcess):
 
 
     def _input_validation(self, adjacency_matrix):
-     assert abs(adjacency_matrix-adjacency_matrix.T)>1e-10).nnz==0,f"Matrices"\ 
+     assert (abs(adjacency_matrix-adjacency_matrix.T)>1e-10).nnz==0,f"Matrices"\ 
      f"need to be symmetric to continue with bfs"
 

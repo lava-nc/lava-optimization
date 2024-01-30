@@ -26,12 +26,17 @@ class BreadthFirstSearch(AbstractProcess):
         before reading out the state of the spike counter. 
     adjacency_matrix: np.ndarray
         Defines the connectivity of the graph (unweighted/undirected).
+    num_nodes_per_aggregator:
+
+    num_nodes_per_distributor:
+
     """
 
     def __init__(
         self,
-        shape: ty.Tuple[int, ...],
         connection_config: ConnectionConfig,
+        num_nodes_per_aggregator=512,
+        num_nodes_per_distributor=512,
         adjacency_matrix = None,
         name: ty.Optional[str] = None,
         log_config: ty.Optional[LogConfig] = None,
@@ -49,16 +54,19 @@ class BreadthFirstSearch(AbstractProcess):
             Configuration options for logging.z"""
 
         super().__init__(
-            shape=(1,),
             adjacency_matrix = adjacency_matrix,
             connection_config=connection_config,
+            num_nodes_per_aggregator=num_nodes_per_aggregator,
+            num_nodes_per_distributor=num_nodes_per_distributor,
             name=name,
             log_config=log_config,
         )
 
         # To initiate graph search provide (start_node_ID, target_node_ID)
         self.start_search = InPort(shape=(2,)) 
-        self.shortest_path_nodes = OutPort(shape=(1,))
+        
+        # OutPort will be activated later for robotic implementation
+        #self.shortest_path_nodes = OutPort(shape=(1,))
         # Only symmetric adjacency matrices are allowed here
         self._input_validation(adjacency_matrix)
         self.adjacency_matrix = Var(shape=adjacency_matrix.shape)
@@ -66,6 +74,6 @@ class BreadthFirstSearch(AbstractProcess):
 
 
     def _input_validation(self, adjacency_matrix):
-     assert (abs(adjacency_matrix-adjacency_matrix.T)>1e-10).nnz==0,f"Matrices"\ 
-     f"need to be symmetric to continue with bfs"
+        assert (abs(adjacency_matrix-adjacency_matrix.T)>1e-10).nnz==0,f"Matrices"\ 
+        f"need to be symmetric to continue with bfs"
 

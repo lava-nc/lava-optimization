@@ -70,6 +70,7 @@ class BreadthFirstSearch(AbstractProcess):
         # Only symmetric adjacency matrices are allowed here
         self._input_validation(adjacency_matrix)
         self.adjacency_matrix = Var(shape=adjacency_matrix.shape)
+        self.shortest_path_value = Var(shape=1)
    
 
 

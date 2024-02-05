@@ -67,6 +67,7 @@ class BreadthFirstSearch(AbstractProcess):
         
         # OutPort will be activated later for robotic implementation
         #self.shortest_path_nodes = OutPort(shape=(1,))
+        
         # Only symmetric adjacency matrices are allowed here
         self._input_validation(adjacency_matrix)
         self.adjacency_matrix = Var(shape=adjacency_matrix.shape)
@@ -75,6 +76,59 @@ class BreadthFirstSearch(AbstractProcess):
 
 
     def _input_validation(self, adjacency_matrix):
-        assert (abs(adjacency_matrix-adjacency_matrix.T)>1e-10).nnz==0,f"Matrices"\ 
+        assert (abs(adjacency_matrix-adjacency_matrix.T)>1e-10).nnz==0,f"Matrices" \
         f"need to be symmetric to continue with bfs"
 
+class BFSNeuron(AbstractProcess):
+    """The neurons that produce a single spiking wavefront to perform shortest
+    path search. The start and destination neurons are set before this neuron 
+    starts executing. Once this is done, the forward pass begins from the start 
+    neuron through the adjacency matrix that the neurons are connected to. The 
+    forwards passes continue till the destination neuron has been found and then
+    the backward passes are initated through the same adjaceny matrix albeit 
+    through different ports. During the backward pass, if the neuron is on the 
+    shortest path, it sends a signal out through the s_out_spk_o ports to the 
+    solution readout module. The IDs of the corresponding readout are thus 
+    recieved on host which are in-turn processed to figure out the shortest path
+    from start to destination in the correct sequence. 
+
+    Parameters
+    ----------
+
+    shape : int tuple, optional
+        A tuple defining the shape of the BFS neurons. Defaults to (1,). Is 
+        usually equal to the number of graph nodes. 
+
+    """
+    def __init__(self, **kwargs: ty.Any):
+        super().__init__(**kwargs)
+        shape = kwargs.get("shape", (1,))
+
+        # Ports
+        # In/outPorts that come from/go to the adjacency matrix
+        
+        # Forward pass
+        self.a_in_fwd = InPort(shape=(shape[0],))
+        self.s_out_fwd = OutPort(shape=(shape[0],))
+        
+        # Backward pass
+        self.a_in_bwd = InPort(shape=(shape[0],))
+        self.s_out_bwd = OutPort(shape=(shape[0],))
+
+        # Scaling ports
+        self.a_in_dist = InPort(shape=(shape[0],))
+        self.s_out_agg = OutPort(shape=(shape[0],))
+
+        # I/O ports
+        self.a_in_spk_i = InPort(shape=(shape[0],))
+        self.s_out_spk_o = OutPort(shape=(shape[0],))
+
+        # Constants used as flgs during execution
+        self.dest_flg = 64     # 0b01000000
+        self.start_flg = 128   # 0b10000000
+        self.fwd_inc_done = 96 # 0b01100000
+
+        # Vars for ProcModels
+        self.counter_mem = Var(shape=shape, init=0)
+        self.global_depth = Var(shape=shape, init=0)
+        self.status_reg = Var(shape=shape, init=0)

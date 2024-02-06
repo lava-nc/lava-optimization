@@ -97,12 +97,22 @@ class BFSNeuron(AbstractProcess):
     shape : int tuple, optional
         A tuple defining the shape of the BFS neurons. Defaults to (1,). Is 
         usually equal to the number of graph nodes. 
+    status: np.array
+        A numpy array that specifies which of the neurons is a start neuron or 
+        a destination neuron. The start neuron position has a code of 128 and 
+        the destination neuron has a code of 64. There cannot be more than 1 
+        start and destination neurons each. All other neurons should be set to 
+        status 0. Ensure that there is atleast one destination node and start 
+        node.
 
     """
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
         shape = kwargs.get("shape", (1,))
-
+        # start node code = 128 
+        # dest node code = 64
+        status = kwargs.get("status", 0)
+        self._check_status_sanity(status)
         # Ports
         # In/outPorts that come from/go to the adjacency matrix
         
@@ -125,9 +135,24 @@ class BFSNeuron(AbstractProcess):
         # Constants used as flgs during execution
         self.dest_flg = 64     # 0b01000000
         self.start_flg = 128   # 0b10000000
-        self.fwd_inc_done = 96 # 0b01100000
+        self.fwd_inc_done = 32 # 0b00100000
 
         # Vars for ProcModels
         self.counter_mem = Var(shape=shape, init=0)
         self.global_depth = Var(shape=shape, init=0)
-        self.status_reg = Var(shape=shape, init=0)
+        self.status_reg = Var(shape=shape, init=status)
+    
+    def _check_status_sanity(self, status):
+        '''
+        helper function to ensure that there are not more than 1 neuron marked as 
+        start or destination. Also to ensure that all the other neurons are 0.
+        Function also ensures that there is atleast one destination node and 
+        start node
+        '''
+        allowed_values = [0, 62, 128]
+        contains_other_values = np.any(np.isin(status, allowed_values))
+        num_destinations =  len(np.where(status == 64)[0])
+        num_starts =  len(np.where(status == 128)[0])
+        assert (num_destinations < 1 and num_destinations!=0) , f"You have either no destination node or more than 1 destination node"
+        assert (num_starts < 1 and num_starts!=0) , f"You have either no start node or more than 1 start node"
+        assert contains_other_values==False, f"Status contains values that are not permitted. Please check that your array contains only 0, 64, and 128"

@@ -39,7 +39,7 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         # When num_message_bits=0, the spikes are binary.
         self.graph_edges = Sparse(weights=self.adjacency_matrix,
                              sign_mode=SignMode.EXCITATORY,
-                             num_message_bits=0
+                             num_message_bits=8
                              )
         
         self.solution_readout = SolutionReadoutEthernet(
@@ -71,26 +71,23 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
             conn_mat = overcomplete_conn_mat[:, num_nodes]
             return conn_mat
         
-        # TODO: Ask PS if the num_message_bits for connection processes here 
-        # is 32 or 24
         # Build large block sparse connection process that corresponds
         # to the graph nodes being connected to aggregator neurons. 
         conn_mat = graph_nodes_to_dist_or_agg(num_nodes, num_aggregators, 
                                               num_nodes_per_aggregator)
         self.graph_neur_to_agg = Sparse(weights=conn_mat,
                              sign_mode=SignMode.EXCITATORY,
-                             num_message_bits=32)
+                             num_message_bits=24)
         
-        self.aggregator_neuron = SpikeIntegrators(shape=(num_aggregators,))
+        self.aggregator_neuron = SpikeIntegrator(shape=(num_aggregators,))
   
         # Connection process that connects aggregator neurons 
         # to the GlobalDepthNeuron.
         conn_mat = np.ones((num_aggregators, 1))
         self.agg_to_glbl_dpth = Sparse(weights=conn_mat,
                                     sign_mode=SignMode.EXCITATORY,
-                                    num_message_bits=32)
+                                    num_message_bits=24)
         
-        # TODO: also use spike_integrator for this?
         self.global_depth_neuron = SpikeIntegrator((1,)) 
 
         # Use distributor neuron to distribute global depth values to 
@@ -100,10 +97,14 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         conn_mat = np.ones((1, num_distributors))
         self.glbl_dpth_to_dist_neur = Sparse(weights=conn_mat,
                                     sign_mode=SignMode.EXCITATORY,
-                                    num_message_bits=32)
+                                    num_message_bits=24)
 
         # TODO: two inports are required here?
-        self.distributor_neuron = SpikeIntegrators2inPorts(shape=(num_distributors, ))
+        # PS: dont send this via distributor neuron. Spike Input can be probably
+        # be used to address a specific neuron efficiently
+        # PS: We try to test things without spike input first. Manually set the 
+        # target and destination by using Vars.
+        self.distributor_neuron = SpikeIntegrator(shape=(num_distributors, ))
         
         # Build large block sparse connection process that corresponds
         # to the distributor neurons being connected to graph nodes.
@@ -116,37 +117,33 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
 
         # Connect the parent InPort to the InPort of the child-Process.
         # TODO: Do we spike the start and target ID through a port on the the graph
-        # neurons or do we do it through aggregator neurons?
-        
+        # neurons or do we do it through distributor neurons?
         proc.in_ports.start_search.connect(self.distributor_neuron.a_in_2)
         self.distributor_neuron.s_out_2.connect(self.dist_to_graph_neur_conn.s_in)
-        self.dist_to_graph_neur_conn.a_out.connect(self.graph_nodes.a_in_spk_i)
+        self.dist_to_graph_neur_conn.a_out.connect(self.graph_nodes.a_in_4)
         
         # Connections are undirected
             # Forward connections
-        self.graph_nodes.s_out_fwd.connect(self.graph_edges.s_in)
-        self.graph_edges.a_out(self.graph_nodes.a_in_fwd)
+        self.graph_nodes.s_out_1.connect(self.graph_edges.s_in)
+        self.graph_edges.a_out(self.graph_nodes.a_in_1)
 
             # Backward connections
-        self.graph_nodes.s_out_bwd.connect(self.graph_edges.s_in)
-        self.graph_edges.a_out(self.graph_nodes.a_in_bwd)
+        self.graph_nodes.s_out_2.connect(self.graph_edges.s_in)
+        self.graph_edges.a_out(self.graph_nodes.a_in_2)
 
         # Scaling connections
-        self.graph_nodes.s_out_agg.connect(self.graph_neur_to_agg.s_in)
+        self.graph_nodes.s_out_3.connect(self.graph_neur_to_agg.s_in)
         self.graph_neur_to_agg.a_out.connect(self.aggregator_neuron.a_in)
         self.aggregator_neuron.s_out.connect(self.agg_to_glbl_dpth.s_in)
         self.agg_to_glbl_dpth.connect(self.global_depth_neuron.a_in)
         self.global_depth_neuron.s_out.connect(self.glbl_dpth_to_dist_neur.s_in)
         self.glbl_dpth_to_dist_neur.a_out(self.distributor_neuron.a_in_1)
         self.distributor_neuron.s_out_1.connect(self.dist_to_graph_neur_conn.s_in)
-        self.dist_to_graph_neur_conn.a_out.connect(self.graph_nodes.a_in_dist)
+        self.dist_to_graph_neur_conn.a_out.connect(self.graph_nodes.a_in_3)
 
 
         # Readout connections
-        # TODO: Can we connect a neuron directly to solution readout module 
-        # without a connection process?
-        self.graph_neuron.s_out_spk_o(self.solution_readout.state_in)
-       
-        # TODO: Create aliases for variables if necessary
-        proc.vars.shortest_path_value.alias(self.global_depth_neuron.glbl_depth)
+        # SolutionReadoutEthernet starts with a connection layer. Therefore
+        # neuron can be connected
+        self.graph_neuron.s_out_4(self.solution_readout.state_in)
     

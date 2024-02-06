@@ -71,7 +71,6 @@ class BreadthFirstSearch(AbstractProcess):
         # Only symmetric adjacency matrices are allowed here
         self._input_validation(adjacency_matrix)
         self.adjacency_matrix = Var(shape=adjacency_matrix.shape)
-        self.shortest_path_value = Var(shape=1)
    
 
 
@@ -108,20 +107,20 @@ class BFSNeuron(AbstractProcess):
         # In/outPorts that come from/go to the adjacency matrix
         
         # Forward pass
-        self.a_in_fwd = InPort(shape=(shape[0],))
-        self.s_out_fwd = OutPort(shape=(shape[0],))
+        self.a_in_1 = InPort(shape=(shape[0],))
+        self.s_out_1 = OutPort(shape=(shape[0],))
         
         # Backward pass
-        self.a_in_bwd = InPort(shape=(shape[0],))
-        self.s_out_bwd = OutPort(shape=(shape[0],))
+        self.a_in_2 = InPort(shape=(shape[0],))
+        self.s_out_2 = OutPort(shape=(shape[0],))
 
         # Scaling ports
-        self.a_in_dist = InPort(shape=(shape[0],))
-        self.s_out_agg = OutPort(shape=(shape[0],))
+        self.a_in_3 = InPort(shape=(shape[0],))
+        self.s_out_3 = OutPort(shape=(shape[0],))
 
         # I/O ports
-        self.a_in_spk_i = InPort(shape=(shape[0],))
-        self.s_out_spk_o = OutPort(shape=(shape[0],))
+        self.a_in_4 = InPort(shape=(shape[0],))
+        self.s_out_4 = OutPort(shape=(shape[0],))
 
         # Constants used as flgs during execution
         self.dest_flg = 64     # 0b01000000

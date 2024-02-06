@@ -70,7 +70,6 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
             num_message_bits=num_message_bits,
             num_vars=num_vars)
         self.best_state = states
-        self._req_pause = True
 
     @staticmethod
     def _check_if_input(results_buffer):

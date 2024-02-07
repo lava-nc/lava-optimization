@@ -77,6 +77,9 @@ class Annealing(AbstractProcess):
         self.delta_temperature_out = OutPort(shape=shape)
 
         self.temperature = Var(shape=shape, init=np.int_(max_temperature))
+        self.steps_per_temperature = Var(
+            shape=shape, init=np.int_(steps_per_temperature)
+        )
 
     @property
     def shape(self) -> ty.Tuple[int, ...]:

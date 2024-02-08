@@ -219,6 +219,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         proc.vars.best_state.alias(self.solution_receiver.best_state)
         proc.vars.best_timestep.alias(self.solution_receiver.best_timestep)
         proc.vars.best_cost.alias(self.solution_receiver.best_cost)
+        proc.vars.timeout.alias(self.solution_receiver.timeout)
 
     @staticmethod
     def _get_input_weights(num_vars,

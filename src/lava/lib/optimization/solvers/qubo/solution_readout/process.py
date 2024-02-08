@@ -105,7 +105,7 @@ class SolutionReadoutEthernet(AbstractProcess):
         self.best_state = Var(shape=(num_bin_variables,), init=0)
         self.best_timestep = Var(shape=(1,), init=1)
         self.best_cost = Var(shape=(1,), init=0)
-
+        self.timeout = Var(shape=(1,), init=timeout)
 
 class SolutionReceiver(AbstractProcess):
     """Process to readout solution from SNN and make it available on host.

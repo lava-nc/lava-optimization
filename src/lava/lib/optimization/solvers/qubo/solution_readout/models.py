@@ -3,6 +3,8 @@
 # See: https://spdx.org/licenses/
 import numpy as np
 import itertools
+import typing as ty
+import numpy.typing as npty
 
 from lava.lib.optimization.solvers.qubo.solution_readout.process import (
     SolutionReadoutEthernet
@@ -36,49 +38,57 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
     user, once this cost is reached by the solver network, this process
     will request the runtime service to pause execution.
     """
-
     best_state: np.ndarray = LavaPyType(np.ndarray, np.int8, 32)
     best_timestep: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     best_cost: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     num_message_bits: np.ndarray = LavaPyType(np.ndarray, np.int8, 32)
     timeout: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
-
-    results_in: PyInPort = LavaPyType(
-        PyInPort.VEC_DENSE, np.int32, precision=32
-    )
+    results_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, 32)
 
     def run_async(self):
+        self.best_timestep[:] = 1
+        self.best_cost[:] = 0
+        self.best_state[:] = 0
         num_message_bits = self.num_message_bits[0]
         num_vars = self.best_state.shape[0]
         timeout = self.timeout[0]
-
         # Iterating for timeout - 1 because an additional step is used to
         # recv the state
-        for _ in itertools.repeat(None, timeout - 1):
+        while True:
             results_buffer = self.results_in.recv()
-            if self._check_if_input(results_buffer):
-                break
-        self.best_cost, self.best_timestep, _ = self._decompress_state(
+            if self._check_if_input(results_buffer): break
+        self.best_cost[:], self.best_timestep[:], _ = self._decompress_state(
             compressed_states=results_buffer,
             num_message_bits=num_message_bits,
-            num_vars=num_vars)
-
+            num_vars=num_vars,
+            timeout=timeout
+        )
         # best states are returned with a delay of 1 timestep
         results_buffer = self.results_in.recv()
-        _, _, states = self._decompress_state(
+        _, _, self.best_state = self._decompress_state(
             compressed_states=results_buffer,
             num_message_bits=num_message_bits,
-            num_vars=num_vars)
-        self.best_state = states
+            num_vars=num_vars,
+            timeout=timeout
+        )
 
     @staticmethod
-    def _check_if_input(results_buffer):
+    def _check_if_input(results_buffer: np.ndarray) -> bool:
         return results_buffer[1] > 0
 
     @staticmethod
-    def _decompress_state(compressed_states, num_message_bits, num_vars):
+    def _decompress_state(
+        compressed_states: np.ndarray,
+        num_message_bits: int,
+        num_vars: int,
+        timeout: int
+    ) -> ty.Tuple[int, int, np.ndarray]:
         """Add info!"""
         cost = int(compressed_states[0])
+        # Explanation for this:
+        # The CostIntegrator initialized its inverse_timestep with timeout-2
+        # It notices that a best solution has been found 1 timestep after the variable neurons
+        # At this time, it has already subtracted 1 from inverse_timestep twice
         timestep = int(compressed_states[1])
         states = (compressed_states[2:, None] & (
             1 << np.arange(0, num_message_bits))) != 0
@@ -89,13 +99,15 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
         states = states.astype(np.int8).flatten()[:num_vars]
         return cost, timestep, states
 
+    @staticmethod
+    def postprocess_best_timestep(time_step, timeout) -> int:
+        return timeout - time_step - 3
+
 
 @implements(proc=SolutionReadoutEthernet, protocol=LoihiProtocol)
 @requires(CPU)
 class SolutionReadoutEthernetModel(AbstractSubProcessModel):
-    """Model for the SolutionReadout process.
-
-    """
+    """Model for the SolutionReadout process."""
 
     def __init__(self, proc):
         num_message_bits = proc.proc_params.get("num_message_bits")
@@ -222,10 +234,12 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         proc.vars.timeout.alias(self.solution_receiver.timeout)
 
     @staticmethod
-    def _get_input_weights(num_vars,
-                           num_spike_int,
-                           num_vars_per_int,
-                           weight_exp) -> csr_matrix:
+    def _get_input_weights(
+        num_vars: int,
+        num_spike_int: int,
+        num_vars_per_int: int,
+        weight_exp: int
+    ) -> csr_matrix:
         """To be verified. Deprecated due to efficiency"""
 
         weights = np.zeros((num_spike_int, num_vars), dtype=np.uint8)
@@ -246,7 +260,11 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         return csr_matrix(weights)
 
     @staticmethod
-    def _get_state_in_weights_index(num_vars, num_spike_int, num_vars_per_int):
+    def _get_state_in_weights_index(
+        num_vars: int,
+        num_spike_int: int,
+        num_vars_per_int: int
+    ) -> np.ndarray:
         """To be verified"""
         weights = np.zeros((num_spike_int, num_vars), dtype=np.int8)
 

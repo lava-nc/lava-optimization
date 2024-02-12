@@ -80,6 +80,9 @@ class Annealing(AbstractProcess):
         self.steps_per_temperature = Var(
             shape=shape, init=np.int_(steps_per_temperature)
         )
+        self.temperature_counter = Var(
+            shape=shape, init=np.int_(steps_per_temperature)
+        )
 
     @property
     def shape(self) -> ty.Tuple[int, ...]:

@@ -98,7 +98,8 @@ class SolutionReadoutEthernet(AbstractProcess):
             name=name,
             log_config=log_config,
         )
-
+        # Default values for best_cost, best_state, and best_timestep are also
+        # assigned in the proc models run_async method.
         self.states_in = InPort(shape=(num_bin_variables,))
         self.cost_in = InPort((1,))
         self.timestep_in = InPort((1,))
@@ -106,6 +107,7 @@ class SolutionReadoutEthernet(AbstractProcess):
         self.best_timestep = Var(shape=(1,), init=1)
         self.best_cost = Var(shape=(1,), init=0)
         self.timeout = Var(shape=(1,), init=timeout)
+
 
 class SolutionReceiver(AbstractProcess):
     """Process to readout solution from SNN and make it available on host.

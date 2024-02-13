@@ -71,6 +71,11 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
             num_vars=num_vars,
             timeout=timeout
         )
+        print("==============================================================")
+        print("Solution found!")
+        print(f"Best cost: {int(self.best_cost[0])}")
+        print(f"Best state: {self.best_state.tolist()}")
+        print("==============================================================")
 
     @staticmethod
     def _check_if_input(results_buffer: np.ndarray) -> bool:

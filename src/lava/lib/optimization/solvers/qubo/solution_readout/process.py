@@ -107,8 +107,8 @@ class SolutionReadoutEthernet(AbstractProcess):
         )
 
         # Generate Var and InPort for 1bit variables
-        self.variables_1bit_in = InPort(shape=(variables_1bit_num,))
         self.variables_1bit = Var(shape=(variables_1bit_num,), init=0)
+        self.variables_1bit_in = InPort(shape=(variables_1bit_num,))
         
         # Generate Vars and Inports for 32bit variables
         self.variables_32bit = Var(shape=(variables_32bit_num,),
@@ -205,7 +205,7 @@ class SolutionReceiver(AbstractProcess):
         # Define Vars
         self.variables_1bit = Var(shape=(variables_1bit_num,),
                                   init=variables_1bit_init)
-        self.variables_32bit = Var(shape=(variables_1bit_num,),
+        self.variables_32bit = Var(shape=(variables_32bit_num,),
                                    init=variables_32bit_init)
         
         # Define InPorts

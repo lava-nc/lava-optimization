@@ -68,10 +68,11 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
 
         # best states are returned with a delay of 1 timestep
         results_buffer = self.results_in.recv()
-        _, states = self._decompress_state(
+        _, results_buffer = self._decompress_state(
             compressed_states=results_buffer,
             num_message_bits=num_message_bits,
-            variables_1bit_num=variables_1bit_num)
+            variables_1bit_num=variables_1bit_num,
+            variables_32bit_num=variables_32bit_num)
         self.variables_1bit = results_buffer
         
         # End execution
@@ -96,12 +97,13 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
         
         variables_1bit = (compressed_states[variables_32bit_num:, None] & (
             1 << np.arange(0, num_message_bits))) != 0
+        
         # reshape into a 1D array
         variables_1bit.reshape(-1)
         # If n_vars is not a multiple of num_message_bits, then last entries
         # must be cut off
         variables_1bit = variables_1bit.astype(np.int8).flatten()[:variables_1bit_num]
-        
+
         return variables_32bit, variables_1bit
 
 
@@ -131,7 +133,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
             variables_1bit_num=variables_1bit_num,
             variables_32bit_num=variables_32bit_num,
             num_spike_int=num_spike_integrators,
-            num_1_bit_vars_per_int=num_message_bits,
+            num_1bit_vars_per_int=num_message_bits,
             weight_exp=0
         )
         self.synapses_variables_1bit_in_0 = Sparse(
@@ -151,7 +153,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
                 variables_1bit_num=variables_1bit_num,
                 variables_32bit_num=variables_32bit_num,
                 num_spike_int=num_spike_integrators,
-                num_1_bit_vars_per_int=num_message_bits,
+                num_1bit_vars_per_int=num_message_bits,
                 weight_exp=8
             )
             self.synapses_variables_1bit_in_1 = Sparse(
@@ -161,7 +163,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
                 weight_exp=8,
             )
 
-            proc.in_ports.states_in.connect(
+            proc.in_ports.variables_1bit_in.connect(
                 self.synapses_variables_1bit_in_1.s_in)
             self.synapses_variables_1bit_in_1.a_out.connect(
                 self.spike_integrators.a_in)
@@ -171,7 +173,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
                 variables_1bit_num=variables_1bit_num,
                 variables_32bit_num=variables_32bit_num,
                 num_spike_int=num_spike_integrators,
-                num_1_bit_vars_per_int=num_message_bits,
+                num_1bit_vars_per_int=num_message_bits,
                 weight_exp=16
             )
             self.synapses_variables_1bit_in_2 = Sparse(
@@ -181,7 +183,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
                 weight_exp=16,
             )
 
-            proc.in_ports.states_in.connect(
+            proc.in_ports.variables_1bit_in.connect(
                 self.synapses_variables_1bit_in_2.s_in)
             self.synapses_variables_1bit_in_2.a_out.connect(
                 self.spike_integrators.a_in)
@@ -191,7 +193,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
                 variables_1bit_num=variables_1bit_num,
                 variables_32bit_num=variables_32bit_num,
                 num_spike_int=num_spike_integrators,
-                num_1_bit_vars_per_int=num_message_bits,
+                num_1bit_vars_per_int=num_message_bits,
                 weight_exp=24
             )
             self.synapses_variables_1bit_in_3 = Sparse(
@@ -200,7 +202,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
                 num_message_bits=num_message_bits,
                 weight_exp=24,
             )
-            proc.in_ports.states_in.connect(
+            proc.in_ports.variables_1bit_in.connect(
                 self.synapses_variables_1bit_in_3.s_in)
             self.synapses_variables_1bit_in_3.a_out.connect(
                 self.spike_integrators.a_in)
@@ -213,6 +215,9 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
                     var_index=ii),
                 num_weight_bits=8,
                 num_message_bits=32,)
+            print("#" * 20)
+            print(type(proc.in_ports))
+            print("#" * 20)
             proc.in_ports.variables_32bit_in[ii].connect(synapses_in.s_in)
             synapses_in.a_out.connect(self.spike_integrators.a_in)
  
@@ -237,8 +242,8 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         proc.vars.variables_32bit.alias(self.solution_receiver.variables_32bit)
 
     @staticmethod
-    def _get_input_weights(num_1bit_variables,
-                           num_32bit_variables,
+    def _get_input_weights(variables_1bit_num,
+                           variables_32bit_num,
                            num_spike_int,
                            num_1bit_vars_per_int,
                            weight_exp) -> csr_matrix:
@@ -247,18 +252,18 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         and converge onto 1 SpikeIntegrator. For efficiency reasons, this
         function may get vectorized in the future."""
 
-        weights = np.zeros((num_spike_int, num_1bit_variables), dtype=np.uint8)
+        weights = np.zeros((num_spike_int, variables_1bit_num), dtype=np.uint8)
 
         # The first SpikeIntegrators receive 32bit variables
-        for spike_integrator_id in range(num_32bit_variables, num_spike_int - 1):
-            variable_start = num_1bit_vars_per_int * (spike_integrator_id - num_32bit_variables) + \
+        for spike_integrator_id in range(variables_32bit_num, num_spike_int - 1):
+            variable_start = num_1bit_vars_per_int * (spike_integrator_id - variables_32bit_num) + \
                 weight_exp
             weights[spike_integrator_id, variable_start:variable_start + 8] = \
                 np.power(2, np.arange(8))
         # The last spike integrator might be connected by less than
         # num_1bit_vars_per_int neurons
         # This happens when mod(num_variables, num_1bit_vars_per_int) != 0
-        variable_start = num_1bit_vars_per_int * (num_spike_int - num_32bit_variables - 1) + weight_exp
+        variable_start = num_1bit_vars_per_int * (num_spike_int - variables_32bit_num - 1) + weight_exp
         weights[-1, variable_start:] = np.power(2, np.arange(weights.shape[1]
                                                              - variable_start))
 

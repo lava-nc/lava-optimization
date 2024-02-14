@@ -69,14 +69,23 @@ class BreadthFirstSearch(AbstractProcess):
         #self.shortest_path_nodes = OutPort(shape=(1,))
         
         # Only symmetric adjacency matrices are allowed here
-        self._input_validation(adjacency_matrix)
-        self.adjacency_matrix = Var(shape=adjacency_matrix.shape)
-   
+        valid_input=self._input_validation(adjacency_matrix)
+
+        if valid_input:
+            self.adjacency_matrix = Var(shape=adjacency_matrix.shape, init=adjacency_matrix)
+        else:
+            raise ValueError("Matrix is either not symmetric or contains values\
+                             that are not 0 or 1")
 
 
-    def _input_validation(self, adjacency_matrix):
-        assert (abs(adjacency_matrix-adjacency_matrix.T)>1e-10).nnz==0,f"Matrices" \
-        f"need to be symmetric to continue with bfs"
+    def _input_validation(self, matrix):
+         """
+         Check if all elements are either 0 or 1. Also if the matrix is \
+        symmetric
+         """
+         return (np.array_equal(matrix, matrix.T) and 
+                 not(np.any(matrix>1) or np.any(matrix>1)))
+
 
 class BFSNeuron(AbstractProcess):
     """The neurons that produce a single spiking wavefront to perform shortest
@@ -95,7 +104,7 @@ class BFSNeuron(AbstractProcess):
     ----------
 
     shape : int tuple, optional
-        A tuple defining the shape of the BFS neurons. Defaults to (1,). Is 
+        A tuple defining the shape of the BFS neurons. Defaults to None. Is 
         usually equal to the number of graph nodes. 
     status: np.array
         A numpy array that specifies which of the neurons is a start neuron or 
@@ -108,11 +117,14 @@ class BFSNeuron(AbstractProcess):
     """
     def __init__(self, **kwargs: ty.Any):
         super().__init__(**kwargs)
-        shape = kwargs.get("shape", (1,))
+        
+        shape = kwargs.pop("shape", (None,))
+        
         # start node code = 128 
         # dest node code = 64
-        status = kwargs.get("status", 0)
+        status = kwargs.pop("status", 0)
         self._check_status_sanity(status)
+
         # Ports
         # In/outPorts that come from/go to the adjacency matrix
         
@@ -149,10 +161,10 @@ class BFSNeuron(AbstractProcess):
         Function also ensures that there is atleast one destination node and 
         start node
         '''
-        allowed_values = [0, 62, 128]
-        contains_other_values = np.any(np.isin(status, allowed_values))
+        allowed_values = [0, 64, 128]
+        contains_other_values = np.any(~np.isin(status, allowed_values))
         num_destinations =  len(np.where(status == 64)[0])
         num_starts =  len(np.where(status == 128)[0])
-        assert (num_destinations < 1 and num_destinations!=0) , f"You have either no destination node or more than 1 destination node"
-        assert (num_starts < 1 and num_starts!=0) , f"You have either no start node or more than 1 start node"
+        assert (num_destinations==1), f"You have either no destination node or more than 1 destination node"
+        assert (num_starts==1) , f"You have either no start node or more than 1 start node"
         assert contains_other_values==False, f"Status contains values that are not permitted. Please check that your array contains only 0, 64, and 128"

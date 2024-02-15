@@ -86,8 +86,10 @@ class SimulatedAnnealingLocal(AbstractProcess):
         # Storage for the best state. Will get updated whenever a better
         # state was found
         # Default is all zeros
-        self.best_state = Var(shape=shape,
-                              init=np.zeros(shape=shape, dtype=int))
+        self.best_variable_assignment = Var(
+            shape=shape,
+            init=np.zeros(shape=shape, dtype=int)
+        )
         # Initial state determined in DiscreteVariables
         self.state = Var(
             shape=shape,

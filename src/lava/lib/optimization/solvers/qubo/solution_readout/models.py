@@ -25,12 +25,13 @@ from lava.lib.optimization.solvers.qubo.solution_readout.process import (
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.sparse.process import Sparse
 from scipy.sparse import csr_matrix
-
+from abc import ABC, abstractmethod
 
 @implements(SolutionReceiver, protocol=AsyncProtocol)
 @requires(CPU)
-class SolutionReceiverPyModel(PyAsyncProcessModel):
+class SolutionReceiverAbstractPyModel(PyAsyncProcessModel, ABC):
     """CPU model for the SolutionReadout process.
+    This is the abstract class.
     The process receives two types of messages, an updated cost and the
     state of
     the solver network representing the current candidate solution to an
@@ -44,6 +45,43 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
     num_message_bits: np.ndarray = LavaPyType(np.ndarray, np.int8, 32)
     timeout: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     results_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, 32)
+
+    @abstractmethod
+    def run_async(self):
+            pass
+
+    @staticmethod
+    def _decompress_state(compressed_states, 
+                          num_message_bits,
+                          variables_1bit_num,
+                          variables_32bit_num):
+        """Receives the output of a recv from SolutionReadout, and extracts
+        32bit and 1bit variables!"""
+        
+        variables_32bit = compressed_states[:variables_32bit_num].astype(
+            np.int32)
+        
+        variables_1bit = (compressed_states[variables_32bit_num:, None] & (
+            1 << np.arange(0, num_message_bits))) != 0
+        
+        # reshape into a 1D array
+        variables_1bit.reshape(-1)
+        # If n_vars is not a multiple of num_message_bits, then last entries
+        # must be cut off
+        variables_1bit = variables_1bit.astype(
+            np.int8).flatten()[:variables_1bit_num]
+
+        return variables_32bit, variables_1bit
+
+
+@implements(SolutionReceiver, protocol=AsyncProtocol)
+@requires(CPU)
+class SolutionReceiverQUBOPyModel(SolutionReceiverAbstractPyModel):
+    """CPU model for the SolutionReadout process.
+    This model is specific for the QUBO Solver.
+
+    See docstring of parent class for more information
+    """
 
     def run_async(self):
         
@@ -97,27 +135,6 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
         (best_timestep) is > 0."""
         
         return results_buffer[1] > 0
-
-    @staticmethod
-    def _decompress_state(compressed_states, 
-                          num_message_bits,
-                          variables_1bit_num,
-                          variables_32bit_num):
-        """Receives the output of a recv from SolutionReadout, and extracts
-        32bit and 1bit variables!"""
-        
-        variables_32bit = compressed_states[:variables_32bit_num].astype(np.int32)
-        
-        variables_1bit = (compressed_states[variables_32bit_num:, None] & (
-            1 << np.arange(0, num_message_bits))) != 0
-        
-        # reshape into a 1D array
-        variables_1bit.reshape(-1)
-        # If n_vars is not a multiple of num_message_bits, then last entries
-        # must be cut off
-        variables_1bit = variables_1bit.astype(np.int8).flatten()[:variables_1bit_num]
-
-        return variables_32bit, variables_1bit
 
     @staticmethod
     def postprocess_best_timestep(time_step, timeout) -> int:

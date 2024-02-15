@@ -48,9 +48,10 @@ class SolutionReadoutEthernet(AbstractProcess):
     variables_1bit_in: InPort
         Receives the best binary (1bit) states. Shape is determined by the
         number of binary variables.
-    variables_32bit_in: List[InPort]
-        Receives 32bit variables. The number of InPorts is defined by
-        variables_32bit_num.
+    variables_32bit_<index>_in: InPort
+        Receives 32bit variable. The number of InPorts is defined by
+        variables_32bit_num. For each 32bit variable ii, there is a
+        corresponding InPort variables_32bit_ii_in dynamically created.
 
     OutPorts:
     ----------
@@ -106,15 +107,20 @@ class SolutionReadoutEthernet(AbstractProcess):
             log_config=log_config,
         )
 
+        self.timeout = Var(shape=(1,), init=timeout)
+
         # Generate Var and InPort for 1bit variables
+        # Default values for variables_1bit and variables_32bit are also
+        # assigned in the proc models run_async method
         self.variables_1bit = Var(shape=(variables_1bit_num,), init=0)
         self.variables_1bit_in = InPort(shape=(variables_1bit_num,))
         
         # Generate Vars and Inports for 32bit variables
         self.variables_32bit = Var(shape=(variables_32bit_num,),
                                    init=variables_32bit_init)
-        self.variables_32bit_in = [InPort((1,))
-                                   for _ in range(variables_32bit_num)]
+        # self.variables_32bit_<index>_in
+        for ii in range(variables_32bit_num):
+            setattr(self, f"variables_32bit_{ii}_in", InPort((1,)))
 
     def _validate_input(self,
                         variables_32bit_num, 

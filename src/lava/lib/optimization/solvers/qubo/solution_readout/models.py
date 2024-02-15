@@ -46,13 +46,18 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
     results_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, 32)
 
     def run_async(self):
-        self.best_timestep[:] = 1
-        self.best_cost[:] = 0
-        self.best_state[:] = 0
+        
+        # Get required user input
         num_message_bits = self.num_message_bits[0]
         variables_1bit_num = self.variables_1bit.shape[0]
         variables_32bit_num = self.variables_32bit.shape[0]
         timeout = self.timeout[0]
+
+        # Set default values, required only if the Process will be restarted
+        self.variables_32bit[1] = 1
+        self.variables_32bit[0] = 0
+        self.variables_1bit[:] = 0
+        
         # Iterating for timeout - 1 because an additional step is used to
         # recv the state
         while True:
@@ -60,7 +65,7 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
 
             if self._check_if_input(results_buffer):
                 break
-        
+
         results_buffer, _ = self._decompress_state(
             compressed_states=results_buffer,
             num_message_bits=num_message_bits,
@@ -139,96 +144,97 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
 
         # Connect the 1bit binary neurons
 
-        weights_variables_1bit_in_0 = self._get_input_weights(
+        weights_variables_1bit_0_in = self._get_input_weights(
             variables_1bit_num=variables_1bit_num,
             variables_32bit_num=variables_32bit_num,
             num_spike_int=num_spike_integrators,
             num_1bit_vars_per_int=num_message_bits,
             weight_exp=0
         )
-        self.synapses_variables_1bit_in_0 = Sparse(
-            weights=weights_variables_1bit_in_0,
+        self.synapses_variables_1bit_0_in = Sparse(
+            weights=weights_variables_1bit_0_in,
             num_weight_bits=8,
             num_message_bits=num_message_bits,
             weight_exp=0,
         )
 
         proc.in_ports.variables_1bit_in.connect(
-            self.synapses_variables_1bit_in_0.s_in)
-        self.synapses_variables_1bit_in_0.a_out.connect(
+            self.synapses_variables_1bit_0_in.s_in)
+        self.synapses_variables_1bit_0_in.a_out.connect(
             self.spike_integrators.a_in)
 
         if variables_1bit_num > 8:
-            weights_variables_1bit_in_1 = self._get_input_weights(
+            weights_variables_1bit_1_in = self._get_input_weights(
                 variables_1bit_num=variables_1bit_num,
                 variables_32bit_num=variables_32bit_num,
                 num_spike_int=num_spike_integrators,
                 num_1bit_vars_per_int=num_message_bits,
                 weight_exp=8
             )
-            self.synapses_variables_1bit_in_1 = Sparse(
-                weights=weights_variables_1bit_in_1,
+            self.synapses_variables_1bit_1_in = Sparse(
+                weights=weights_variables_1bit_1_in,
                 num_weight_bits=8,
                 num_message_bits=num_message_bits,
                 weight_exp=8,
             )
 
             proc.in_ports.variables_1bit_in.connect(
-                self.synapses_variables_1bit_in_1.s_in)
-            self.synapses_variables_1bit_in_1.a_out.connect(
+                self.synapses_variables_1bit_1_in.s_in)
+            self.synapses_variables_1bit_1_in.a_out.connect(
                 self.spike_integrators.a_in)
 
         if variables_1bit_num > 16:
-            weights_variables_1bit_in_2 = self._get_input_weights(
+            weights_variables_1bit_2_in = self._get_input_weights(
                 variables_1bit_num=variables_1bit_num,
                 variables_32bit_num=variables_32bit_num,
                 num_spike_int=num_spike_integrators,
                 num_1bit_vars_per_int=num_message_bits,
                 weight_exp=16
             )
-            self.synapses_variables_1bit_in_2 = Sparse(
-                weights=weights_variables_1bit_in_2,
+            self.synapses_variables_1bit_2_in = Sparse(
+                weights=weights_variables_1bit_2_in,
                 num_weight_bits=8,
                 num_message_bits=num_message_bits,
                 weight_exp=16,
             )
 
             proc.in_ports.variables_1bit_in.connect(
-                self.synapses_variables_1bit_in_2.s_in)
-            self.synapses_variables_1bit_in_2.a_out.connect(
+                self.synapses_variables_1bit_2_in.s_in)
+            self.synapses_variables_1bit_2_in.a_out.connect(
                 self.spike_integrators.a_in)
 
         if variables_1bit_num > 24:
-            weights_variables_1bit_in_3 = self._get_input_weights(
+            weights_variables_1bit_3_in = self._get_input_weights(
                 variables_1bit_num=variables_1bit_num,
                 variables_32bit_num=variables_32bit_num,
                 num_spike_int=num_spike_integrators,
                 num_1bit_vars_per_int=num_message_bits,
                 weight_exp=24
             )
-            self.synapses_variables_1bit_in_3 = Sparse(
-                weights=weights_variables_1bit_in_3,
+            self.synapses_variables_1bit_3_in = Sparse(
+                weights=weights_variables_1bit_3_in,
                 num_weight_bits=8,
                 num_message_bits=num_message_bits,
                 weight_exp=24,
             )
             proc.in_ports.variables_1bit_in.connect(
-                self.synapses_variables_1bit_in_3.s_in)
-            self.synapses_variables_1bit_in_3.a_out.connect(
+                self.synapses_variables_1bit_3_in.s_in)
+            self.synapses_variables_1bit_3_in.a_out.connect(
                 self.spike_integrators.a_in)
         
-        # Connect the 32bit neurons, one by one
+        # Connect the 32bit InPorts, one by one
         for ii in range(variables_32bit_num):
+            # Create the synapses for InPort ii as self.
             synapses_in = Sparse(
                 weights=self._get_32bit_in_weights(
                     num_spike_int=num_spike_integrators,
                     var_index=ii),
                 num_weight_bits=8,
                 num_message_bits=32,)
-            print("#" * 20)
-            print(type(proc.in_ports))
-            print("#" * 20)
-            proc.in_ports.variables_32bit_in[ii].connect(synapses_in.s_in)
+            setattr(self, f"synapses_variables_32bit_{ii}_in", synapses_in)
+            
+            getattr(proc.in_ports, 
+                    f"variables_32bit_{ii}_in").connect(synapses_in.s_in)
             synapses_in.a_out.connect(self.spike_integrators.a_in)
  
 
@@ -283,6 +289,10 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
     @staticmethod
     def _get_32bit_in_weights(num_spike_int: int, var_index: int) -> csr_matrix:
 
-        weights = np.zeros((num_spike_int, 1), dtype=int)
-        weights[var_index, 0] = 1
-        return csr_matrix(weights)
+        data = [1]
+        row = [var_index]
+        col = [0]
+
+        return csr_matrix((data, (row, col)), 
+                          shape=(num_spike_int, 1), 
+                          dtype=np.int8)

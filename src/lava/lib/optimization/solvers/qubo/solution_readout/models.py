@@ -3,6 +3,8 @@
 # See: https://spdx.org/licenses/
 import numpy as np
 import itertools
+import typing as ty
+import numpy.typing as npty
 
 from lava.lib.optimization.solvers.qubo.solution_readout.process import (
     SolutionReadoutEthernet
@@ -41,21 +43,21 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
     variables_32bit: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
     num_message_bits: np.ndarray = LavaPyType(np.ndarray, np.int8, 32)
     timeout: np.ndarray = LavaPyType(np.ndarray, np.int32, 32)
-
-    results_in: PyInPort = LavaPyType(
-        PyInPort.VEC_DENSE, np.int32, precision=32
-    )
+    results_in: PyInPort = LavaPyType(PyInPort.VEC_DENSE, np.int32, 32)
 
     def run_async(self):
+        self.best_timestep[:] = 1
+        self.best_cost[:] = 0
+        self.best_state[:] = 0
         num_message_bits = self.num_message_bits[0]
         variables_1bit_num = self.variables_1bit.shape[0]
         variables_32bit_num = self.variables_32bit.shape[0]
         timeout = self.timeout[0]
-
         # Iterating for timeout - 1 because an additional step is used to
         # recv the state
-        for _ in itertools.repeat(None, timeout - 1):
+        while True:
             results_buffer = self.results_in.recv()
+
             if self._check_if_input(results_buffer):
                 break
         
@@ -74,6 +76,12 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
             variables_1bit_num=variables_1bit_num,
             variables_32bit_num=variables_32bit_num)
         self.variables_1bit = results_buffer
+
+        print("==============================================================")
+        print("Solution found!")
+        print(f"{self.variables_32bit=}")
+        print(f"{self.variables_1bit=}")
+        print("==============================================================")
         
         # End execution
         self._req_pause = True
@@ -106,13 +114,15 @@ class SolutionReceiverPyModel(PyAsyncProcessModel):
 
         return variables_32bit, variables_1bit
 
+    @staticmethod
+    def postprocess_best_timestep(time_step, timeout) -> int:
+        return timeout - time_step - 3
+
 
 @implements(proc=SolutionReadoutEthernet, protocol=LoihiProtocol)
 @requires(CPU)
 class SolutionReadoutEthernetModel(AbstractSubProcessModel):
-    """Model for the SolutionReadout process.
-
-    """
+    """Model for the SolutionReadout process."""
 
     def __init__(self, proc):
         num_message_bits = proc.proc_params.get("num_message_bits")
@@ -240,6 +250,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         # Create aliases for variables
         proc.vars.variables_1bit.alias(self.solution_receiver.variables_1bit)
         proc.vars.variables_32bit.alias(self.solution_receiver.variables_32bit)
+        proc.vars.timeout.alias(self.solution_receiver.timeout)
 
     @staticmethod
     def _get_input_weights(variables_1bit_num,
@@ -271,6 +282,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
 
     @staticmethod
     def _get_32bit_in_weights(num_spike_int: int, var_index: int) -> csr_matrix:
+
         weights = np.zeros((num_spike_int, 1), dtype=int)
         weights[var_index, 0] = 1
         return csr_matrix(weights)

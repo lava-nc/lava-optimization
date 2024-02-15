@@ -346,7 +346,11 @@ class TestOptimizationSolverQUBO(unittest.TestCase):
         self.assertEqual(p.evaluate_cost(report.best_state), expected_cost)
 
     def test_solve_mis(self):
-        mis = MISProblem(num_vertices=15, connection_prob=0.9, seed=0)
+        mis = MISProblem.from_random_uniform(
+            num_vertices=15,
+            density=0.9,
+            seed=0
+        )
         problem = mis.get_as_qubo(1, 8)
         reference_solution = mis.find_maximum_independent_set()
         report, expected_cost = solve_workload(problem, reference_solution)

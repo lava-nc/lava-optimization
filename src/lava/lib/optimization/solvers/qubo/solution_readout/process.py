@@ -130,6 +130,7 @@ class SolutionReadoutEthernet(AbstractProcess):
             raise ValueError(f"The variables_32bit_num must match the number "
                                 f"of {variables_32bit_init=} provided.")
 
+
 class SolutionReceiver(AbstractProcess):
     r"""Process which receives a solution via spikeIO on the superhost. Is
     connected within a SolutionReadout process.

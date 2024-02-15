@@ -86,7 +86,6 @@ class CostIntegrator(AbstractProcess):
 
         super().__init__(shape=shape,
                          target_cost=target_cost,
-                         timeout=timeout,
                          name=name,
                          log_config=log_config)
         self.cost_in = InPort(shape=shape)
@@ -95,9 +94,9 @@ class CostIntegrator(AbstractProcess):
         self.best_timestep_out = OutPort(shape=shape)
 
         # Counter for timesteps
-        self.timestep = Var(shape=shape, init=0)
+        self.timestep_inverse = Var(shape=shape, init=timeout)
         # Storage for best current time step
-        self.best_timestep = Var(shape=shape, init=0)
+        self.best_timestep_inverse = Var(shape=shape, init=timeout)
 
         # Var to store current cost
         # Note: Total cost = cost_first_byte << 24 + cost_last_bytes

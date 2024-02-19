@@ -23,10 +23,10 @@ class CostIntegrator(AbstractProcess):
         The expected number and topology of the input cost components.
     target_cost: int
         Target cost of the QUBO solver. Once reached, the best_cost,
-        best_timestep, and best_state are spiked out.
+        best_timestep, and best_variable_assignment are spiked out.
     timeout: int
         Timeout of the QUBO solver. Once reached, the best_cost,
-        best_timestep, and best_state are spiked out.
+        best_timestep, and best_variable_assignment are spiked out.
     name : str, optional
         Name of the Process. Default is 'Process_ID', where ID is an
         integer value that is determined automatically.

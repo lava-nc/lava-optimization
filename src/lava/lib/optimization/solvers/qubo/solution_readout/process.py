@@ -62,6 +62,7 @@ class SolutionReadoutEthernet(AbstractProcess):
             shape: ty.Tuple[int, ...],
             timeout: int,
             variables_1bit_num: int,
+            variables_1bit_init: ty.Union[int, ty.List[int]],
             variables_32bit_num: int,
             variables_32bit_init: ty.Union[int, ty.List[int]],
             connection_config: ConnectionConfig,
@@ -112,9 +113,10 @@ class SolutionReadoutEthernet(AbstractProcess):
         # Generate Var and InPort for 1bit variables
         # Default values for variables_1bit and variables_32bit are also
         # assigned in the proc models run_async method
-        self.variables_1bit = Var(shape=(variables_1bit_num,), init=0)
+        self.variables_1bit = Var(shape=(variables_1bit_num,),
+                                  init=variables_1bit_init)
         self.variables_1bit_in = InPort(shape=(variables_1bit_num,))
-        
+
         # Generate Vars and Inports for 32bit variables
         self.variables_32bit = Var(shape=(variables_32bit_num,),
                                    init=variables_32bit_init)
@@ -123,7 +125,7 @@ class SolutionReadoutEthernet(AbstractProcess):
             setattr(self, f"variables_32bit_{ii}_in", InPort((1,)))
 
     def _validate_input(self,
-                        variables_32bit_num, 
+                        variables_32bit_num,
                         variables_32bit_init) -> None:
 
         if isinstance(variables_32bit_init, int) and variables_32bit_num == 1:

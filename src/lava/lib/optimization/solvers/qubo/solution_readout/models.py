@@ -48,16 +48,16 @@ class SolutionReceiverAbstractPyModel(PyAsyncProcessModel, ABC):
 
     @abstractmethod
     def run_async(self):
-            pass
+        pass
 
     @staticmethod
-    def _decompress_state(compressed_states, 
+    def _decompress_state(compressed_states,
                           num_message_bits,
                           variables_1bit_num,
                           variables_32bit_num):
         """Receives the output of a recv from SolutionReadout, and extracts
         32bit and 1bit variables!"""
-        
+
         variables_32bit = compressed_states[:variables_32bit_num].astype(
             np.int32)
         
@@ -84,7 +84,7 @@ class SolutionReceiverQUBOPyModel(SolutionReceiverAbstractPyModel):
     """
 
     def run_async(self):
-        
+
         # Get required user input
         num_message_bits = self.num_message_bits[0]
         variables_1bit_num = self.variables_1bit.shape[0]
@@ -95,7 +95,7 @@ class SolutionReceiverQUBOPyModel(SolutionReceiverAbstractPyModel):
         self.variables_32bit[1] = 1
         self.variables_32bit[0] = 0
         self.variables_1bit[:] = 0
-        
+
         # Iterating for timeout - 1 because an additional step is used to
         # recv the state
         while True:
@@ -125,20 +125,26 @@ class SolutionReceiverQUBOPyModel(SolutionReceiverAbstractPyModel):
         print(f"{self.variables_32bit=}")
         print(f"{self.variables_1bit=}")
         print("==============================================================")
-        
+
         # End execution
-        self._req_pause = True
+        #self._req_pause = True
 
     @staticmethod
-    def _check_if_input(results_buffer):
+    def _check_if_input(results_buffer) -> bool:
         """For QUBO, we know that the readout starts as soon as the 2nd output
         (best_timestep) is > 0."""
         
         return results_buffer[1] > 0
 
     @staticmethod
-    def postprocess_best_timestep(time_step, timeout) -> int:
-        return timeout - time_step - 3
+    def postprocess_variables_32bit(
+        variables_32bit,
+        timeout,
+    ) -> ty.Tuple[int, int]:
+        best_cost = variables_32bit[0]
+        best_timestep = variables_32bit[1]
+        best_timestep = timeout - best_timestep - 3
+        return best_cost, best_timestep
 
 
 @implements(proc=SolutionReadoutEthernet, protocol=LoihiProtocol)
@@ -249,8 +255,8 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
                 num_weight_bits=8,
                 num_message_bits=32,)
             setattr(self, f"synapses_variables_32bit_{ii}_in", synapses_in)
-            
-            getattr(proc.in_ports, 
+
+            getattr(proc.in_ports,
                     f"variables_32bit_{ii}_in").connect(synapses_in.s_in)
             synapses_in.a_out.connect(self.spike_integrators.a_in)
  
@@ -310,6 +316,6 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         row = [var_index]
         col = [0]
 
-        return csr_matrix((data, (row, col)), 
-                          shape=(num_spike_int, 1), 
+        return csr_matrix((data, (row, col)),
+                          shape=(num_spike_int, 1),
                           dtype=np.int8)

@@ -27,6 +27,7 @@ from lava.proc.sparse.process import Sparse
 from scipy.sparse import csr_matrix
 from abc import ABC, abstractmethod
 
+
 @implements(SolutionReceiver, protocol=AsyncProtocol)
 @requires(CPU)
 class SolutionReceiverAbstractPyModel(PyAsyncProcessModel, ABC):
@@ -60,10 +61,10 @@ class SolutionReceiverAbstractPyModel(PyAsyncProcessModel, ABC):
 
         variables_32bit = compressed_states[:variables_32bit_num].astype(
             np.int32)
-        
+
         variables_1bit = (compressed_states[variables_32bit_num:, None] & (
             1 << np.arange(0, num_message_bits))) != 0
-        
+
         # reshape into a 1D array
         variables_1bit.reshape(-1)
         # If n_vars is not a multiple of num_message_bits, then last entries
@@ -126,14 +127,11 @@ class SolutionReceiverQUBOPyModel(SolutionReceiverAbstractPyModel):
         print(f"{self.variables_1bit=}")
         print("==============================================================")
 
-        # End execution
-        #self._req_pause = True
-
     @staticmethod
     def _check_if_input(results_buffer) -> bool:
         """For QUBO, we know that the readout starts as soon as the 2nd output
         (best_timestep) is > 0."""
-        
+
         return results_buffer[1] > 0
 
     @staticmethod
@@ -244,7 +242,7 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
                 self.synapses_variables_1bit_3_in.s_in)
             self.synapses_variables_1bit_3_in.a_out.connect(
                 self.spike_integrators.a_in)
-        
+
         # Connect the 32bit InPorts, one by one
         for ii in range(variables_32bit_num):
             # Create the synapses for InPort ii as self.
@@ -259,7 +257,6 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
             getattr(proc.in_ports,
                     f"variables_32bit_{ii}_in").connect(synapses_in.s_in)
             synapses_in.a_out.connect(self.spike_integrators.a_in)
- 
 
         # Define and connect the SolutionReceiver
         self.solution_receiver = SolutionReceiver(
@@ -295,15 +292,18 @@ class SolutionReadoutEthernetModel(AbstractSubProcessModel):
         weights = np.zeros((num_spike_int, variables_1bit_num), dtype=np.uint8)
 
         # The first SpikeIntegrators receive 32bit variables
-        for spike_integrator_id in range(variables_32bit_num, num_spike_int - 1):
-            variable_start = num_1bit_vars_per_int * (spike_integrator_id - variables_32bit_num) + \
-                weight_exp
-            weights[spike_integrator_id, variable_start:variable_start + 8] = \
-                np.power(2, np.arange(8))
+        for spike_integrator_id in range(variables_32bit_num,
+                                         num_spike_int - 1):
+            variable_start = num_1bit_vars_per_int * (
+                spike_integrator_id - variables_32bit_num) + weight_exp
+            weights[spike_integrator_id,
+                    variable_start:variable_start + 8] = np.power(2,
+                                                                  np.arange(8))
         # The last spike integrator might be connected by less than
         # num_1bit_vars_per_int neurons
         # This happens when mod(num_variables, num_1bit_vars_per_int) != 0
-        variable_start = num_1bit_vars_per_int * (num_spike_int - variables_32bit_num - 1) + weight_exp
+        variable_start = num_1bit_vars_per_int * (
+            num_spike_int - variables_32bit_num - 1) + weight_exp
         weights[-1, variable_start:] = np.power(2, np.arange(weights.shape[1]
                                                              - variable_start))
 

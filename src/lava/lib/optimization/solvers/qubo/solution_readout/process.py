@@ -130,13 +130,15 @@ class SolutionReadoutEthernet(AbstractProcess):
 
         if isinstance(variables_32bit_init, int) and variables_32bit_num == 1:
             return
-        elif isinstance(variables_32bit_init, list) and len(variables_32bit_init) == variables_32bit_num:
+        elif (isinstance(variables_32bit_init, list) and 
+              len(variables_32bit_init) == variables_32bit_num):
             return
-        elif isinstance(variables_32bit_init, np.ndarray) and variables_32bit_init.shape[0] == variables_32bit_num:
+        elif (isinstance(variables_32bit_init, np.ndarray)
+              and variables_32bit_init.shape[0] == variables_32bit_num):
             return
         else:
             raise ValueError(f"The variables_32bit_num must match the number "
-                                f"of {variables_32bit_init=} provided.")
+                             f"of {variables_32bit_init=} provided.")
 
 
 class SolutionReceiver(AbstractProcess):
@@ -201,7 +203,7 @@ class SolutionReceiver(AbstractProcess):
         log_config: LogConfig, optional
             Configuration options for logging.z
         """
-        
+
         super().__init__(
             shape=shape,
             name=name,
@@ -216,6 +218,6 @@ class SolutionReceiver(AbstractProcess):
                                   init=variables_1bit_init)
         self.variables_32bit = Var(shape=(variables_32bit_num,),
                                    init=variables_32bit_init)
-        
+
         # Define InPorts
         self.results_in = InPort(shape=(num_spike_integrators,))

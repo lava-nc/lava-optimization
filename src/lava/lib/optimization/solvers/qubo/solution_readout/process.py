@@ -130,8 +130,8 @@ class SolutionReadoutEthernet(AbstractProcess):
 
         if isinstance(variables_32bit_init, int) and variables_32bit_num == 1:
             return
-        elif (isinstance(variables_32bit_init, list) and 
-              len(variables_32bit_init) == variables_32bit_num):
+        elif (isinstance(variables_32bit_init, list)
+              and len(variables_32bit_init) == variables_32bit_num):
             return
         elif (isinstance(variables_32bit_init, np.ndarray)
               and variables_32bit_init.shape[0] == variables_32bit_num):

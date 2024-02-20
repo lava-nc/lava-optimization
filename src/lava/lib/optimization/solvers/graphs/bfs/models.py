@@ -2,148 +2,174 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
+from lava.lib.optimization.solvers.qubo.solution_readout.process import (
+    SolutionReadoutEthernet,
+    SpikeIntegrator,
+)
 import numpy as np
 from lava.lib.optimization.solvers.graphs.bfs.process import BreadthFirstSearch
 from lava.lib.optimization.solvers.graphs.bfs.process import BFSNeuron
 
 from lava.magma.core.decorator import implements, requires
-from lava.magma.core.model.py.model import (
-    PyLoihiProcessModel,
-    PyAsyncProcessModel
-)
-from lava.magma.core.model.py.ports import PyInPort
-from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.resources import CPU
-from lava.magma.core.sync.protocols.async_protocol import AsyncProtocol
 
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.proc.sparse.process import Sparse
 from lava.utils.weightutils import SignMode
 from lava.proc import embedded_io as eio
 from scipy.sparse import csr_matrix
-import math 
+import math
+
 
 @implements(proc=BreadthFirstSearch, protocol=LoihiProtocol)
 @requires(CPU)
 class BreadthFirstSearchModel(AbstractSubProcessModel):
-    """Model for the SolutionReadout process.
-    """
-    def __init__(self, proc):
-        num_nodes = self.adjacency_matrix.shape[0]
-        connection_config = proc.proc_params.get("connection_config")
+    """Model for the SolutionReadout process."""
 
-        self.graph_nodes = BFSNeuron(shape=(num_nodes, ))
+    def __init__(self, proc):
+        connection_config = proc.proc_params.get("connection_config")
+        self.adjacency_matrix = proc.proc_params.get("adjacency_matrix")
+        neuron_status = proc.proc_params.get("node_description")
+        num_nodes = self.adjacency_matrix.shape[0]
+        self.graph_nodes = BFSNeuron(shape=(num_nodes,), status=neuron_status)
         # if the connectivity matrix contains only 2 values, then the weights
         # are automatically scaled to 1-bit while using num_weight_bits=8.
         # When num_message_bits=0, the spikes are binary.
-        self.graph_edges = Sparse(weights=self.adjacency_matrix,
-                             sign_mode=SignMode.EXCITATORY,
-                             num_message_bits=8
-                             )
-        
+        self.graph_edges = Sparse(
+            weights=self.adjacency_matrix,
+            sign_mode=SignMode.EXCITATORY,
+            num_message_bits=8,
+        )
+
         self.solution_readout = SolutionReadoutEthernet(
-                            connection_config=connection_config,
-                            num_bin_variables=num_nodes,
-                            num_message_bits=32
-                            )
-        
+            connection_config=connection_config,
+            num_bin_variables=num_nodes,
+            num_message_bits=32,
+            shape=num_nodes,
+            timeout=100000,
+        )
 
         # number of distributor or aggregator neurons required for the solution
-        num_nodes_per_aggregator = proc.proc_params.get("num_nodes_per_aggregator")
-        num_nodes_per_distributor = proc.proc_params.get("num_nodes_per_distributor")
-        num_aggregators = math.ceil(num_nodes/num_nodes_per_aggregator)
-        num_distributors = math.ceil(num_nodes/num_nodes_per_distributor)
-        
+        num_nodes_per_aggregator = proc.proc_params.get(
+            "num_nodes_per_aggregator"
+        )
+        num_nodes_per_distributor = proc.proc_params.get(
+            "num_nodes_per_distributor"
+        )
 
-        def graph_nodes_to_dist_or_agg(num_nodes, num_aggs_or_dists, 
-                                       num_nodes_per_agg_or_dist):
-            '''helper function to generate connectivity matrices from graph 
+        num_aggregators = math.ceil(num_nodes / num_nodes_per_aggregator)
+        num_distributors = math.ceil(num_nodes / num_nodes_per_distributor)
+
+        # Reconfigure num_nodes_per_aggregator/distributor to num_nodes if the
+        # num_nodes do not exceed the capacity of the aggregator/distributor
+        num_nodes_per_aggregator = (
+            num_nodes
+            if num_nodes < num_nodes_per_aggregator
+            else num_nodes_per_aggregator
+        )
+
+        num_nodes_per_distributor = (
+            num_nodes
+            if num_nodes < num_nodes_per_distributor
+            else num_nodes_per_distributor
+        )
+
+        def graph_nodes_to_dist_or_agg(
+            num_nodes, num_aggs_or_dists, num_nodes_per_agg_or_dist
+        ):
+            """helper function to generate connectivity matrices from graph
             nodes to aggregator neurons or distributor neurons to graph nodes.
-            Note that for distributor to neuron connections, the matrix 
+            Note that for distributor to neuron connections, the matrix
             returned by this function has to be transposed for use in the outer
-            routine. 
-            '''
+            routine.
+            """
             neuron_to_agg_motif = np.ones((1, num_nodes_per_agg_or_dist))
             connectivity_motif = np.eye(num_aggs_or_dists)
-            overcomplete_conn_mat = np.kron(connectivity_motif, 
-                                            neuron_to_agg_motif)
-            conn_mat = overcomplete_conn_mat[:, num_nodes]
+            overcomplete_conn_mat = np.kron(
+                connectivity_motif, neuron_to_agg_motif
+            )
+            conn_mat = overcomplete_conn_mat[:, :num_nodes]
             return conn_mat
-        
+
         # Build large block sparse connection process that corresponds
-        # to the graph nodes being connected to aggregator neurons. 
-        conn_mat = graph_nodes_to_dist_or_agg(num_nodes, num_aggregators, 
-                                              num_nodes_per_aggregator)
-        self.graph_neur_to_agg = Sparse(weights=conn_mat,
-                             sign_mode=SignMode.EXCITATORY,
-                             num_message_bits=24)
-        
+        # to the graph nodes being connected to aggregator neurons.
+        conn_mat = graph_nodes_to_dist_or_agg(
+            num_nodes, num_aggregators, num_nodes_per_aggregator
+        )
+        self.graph_neur_to_agg = Sparse(
+            weights=conn_mat, sign_mode=SignMode.EXCITATORY, num_message_bits=24
+        )
+
         self.aggregator_neuron = SpikeIntegrator(shape=(num_aggregators,))
-  
-        # Connection process that connects aggregator neurons 
+
+        # Connection process that connects aggregator neurons
         # to the GlobalDepthNeuron.
         conn_mat = np.ones((num_aggregators, 1))
-        self.agg_to_glbl_dpth = Sparse(weights=conn_mat,
-                                    sign_mode=SignMode.EXCITATORY,
-                                    num_message_bits=24)
-        
-        self.global_depth_neuron = SpikeIntegrator((1,)) 
+        self.agg_to_glbl_dpth = Sparse(
+            weights=conn_mat, sign_mode=SignMode.EXCITATORY, num_message_bits=24
+        )
 
-        # Use distributor neuron to distribute global depth values to 
-        # motifs of neuron populations through an identity connection. 
+        self.global_depth_neuron = SpikeIntegrator((1,))
+
+        # Use distributor neuron to distribute global depth values to
+        # motifs of neuron populations through an identity connection.
         # Absolutely essential for large graph search problems
-        
+
         conn_mat = np.ones((1, num_distributors))
-        self.glbl_dpth_to_dist_neur = Sparse(weights=conn_mat,
-                                    sign_mode=SignMode.EXCITATORY,
-                                    num_message_bits=24)
+        self.glbl_dpth_to_dist_neur = Sparse(
+            weights=conn_mat, sign_mode=SignMode.EXCITATORY, num_message_bits=24
+        )
 
         # TODO: two inports are required here?
         # PS: dont send this via distributor neuron. Spike Input can be probably
         # be used to address a specific neuron efficiently
-        # PS: We try to test things without spike input first. Manually set the 
+        # PS: We try to test things without spike input first. Manually set the
         # target and destination by using Vars.
-        self.distributor_neuron = SpikeIntegrator(shape=(num_distributors, ))
-        
+        self.distributor_neuron = SpikeIntegrator(shape=(num_distributors,))
+
         # Build large block sparse connection process that corresponds
         # to the distributor neurons being connected to graph nodes.
-        conn_mat = graph_nodes_to_dist_or_agg(num_nodes, num_distributors, 
-                                              num_nodes_per_distributor)
-        self.dist_to_graph_neur_conn= Sparse(weights=conn_mat,
-                             sign_mode=SignMode.EXCITATORY,
-                             num_message_bits=32)
-   
+        conn_mat = graph_nodes_to_dist_or_agg(
+            num_nodes, num_distributors, num_nodes_per_distributor
+        )
+        print(f"{conn_mat=}")
+        self.dist_to_graph_neur_conn = Sparse(
+            weights=conn_mat.T,
+            sign_mode=SignMode.EXCITATORY,
+            num_message_bits=32,
+        )
 
         # Connect the parent InPort to the InPort of the child-Process.
         # TODO: Do we spike the start and target ID through a port on the the graph
         # neurons or do we do it through distributor neurons?
-        proc.in_ports.start_search.connect(self.distributor_neuron.a_in_2)
-        self.distributor_neuron.s_out_2.connect(self.dist_to_graph_neur_conn.s_in)
+        # Commenting out for now. To be used with spk input to make this work
+        # proc.in_ports.start_search.connect(self.distributor_neuron.a_in_2)
+        # self.distributor_neuron.s_out_2.connect(
+        #     self.dist_to_graph_neur_conn.s_in
+        # )
         self.dist_to_graph_neur_conn.a_out.connect(self.graph_nodes.a_in_4)
-        
-        # Connections are undirected
-            # Forward connections
-        self.graph_nodes.s_out_1.connect(self.graph_edges.s_in)
-        self.graph_edges.a_out(self.graph_nodes.a_in_1)
 
-            # Backward connections
+        # Connections are undirected
+        # Forward connections
+        self.graph_nodes.s_out_1.connect(self.graph_edges.s_in)
+        self.graph_edges.a_out.connect(self.graph_nodes.a_in_1)
+
+        # Backward connections
         self.graph_nodes.s_out_2.connect(self.graph_edges.s_in)
-        self.graph_edges.a_out(self.graph_nodes.a_in_2)
+        self.graph_edges.a_out.connect(self.graph_nodes.a_in_2)
 
         # Scaling connections
         self.graph_nodes.s_out_3.connect(self.graph_neur_to_agg.s_in)
         self.graph_neur_to_agg.a_out.connect(self.aggregator_neuron.a_in)
         self.aggregator_neuron.s_out.connect(self.agg_to_glbl_dpth.s_in)
-        self.agg_to_glbl_dpth.connect(self.global_depth_neuron.a_in)
+        self.agg_to_glbl_dpth.a_out.connect(self.global_depth_neuron.a_in)
         self.global_depth_neuron.s_out.connect(self.glbl_dpth_to_dist_neur.s_in)
-        self.glbl_dpth_to_dist_neur.a_out(self.distributor_neuron.a_in_1)
-        self.distributor_neuron.s_out_1.connect(self.dist_to_graph_neur_conn.s_in)
+        self.glbl_dpth_to_dist_neur.a_out.connect(self.distributor_neuron.a_in)
+        self.distributor_neuron.s_out.connect(self.dist_to_graph_neur_conn.s_in)
         self.dist_to_graph_neur_conn.a_out.connect(self.graph_nodes.a_in_3)
-
 
         # Readout connections
         # SolutionReadoutEthernet starts with a connection layer. Therefore
         # neuron can be connected
-        self.graph_neuron.s_out_4(self.solution_readout.state_in)
-    
+        self.graph_nodes.s_out_4.connect(self.solution_readout.states_in)

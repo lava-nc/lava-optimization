@@ -24,6 +24,13 @@ class BreadthFirstSearch(AbstractProcess):
         shortest path/s is/are found. In the event of multiple shortest paths,
         connectivity with the previously read out solution nodes are checked for
         before reading out the state of the spike counter.
+    node_description:  np.array
+        A numpy array that specifies which of the neurons is a start neuron or
+        a destination neuron. The start neuron position has a code of 128 and
+        the destination neuron has a code of 64. There cannot be more than 1
+        start and destination neurons each. All other neurons should be set to
+        status 0. Ensure that there is atleast one destination node and start
+        node.
     adjacency_matrix: np.ndarray
         Defines the connectivity of the graph (unweighted/undirected).
     num_nodes_per_aggregator:
@@ -35,6 +42,7 @@ class BreadthFirstSearch(AbstractProcess):
     def __init__(
         self,
         connection_config: ConnectionConfig,
+        node_description=None,
         num_nodes_per_aggregator=512,
         num_nodes_per_distributor=512,
         adjacency_matrix=None,
@@ -55,6 +63,7 @@ class BreadthFirstSearch(AbstractProcess):
 
         super().__init__(
             adjacency_matrix=adjacency_matrix,
+            node_description=node_description,
             connection_config=connection_config,
             num_nodes_per_aggregator=num_nodes_per_aggregator,
             num_nodes_per_distributor=num_nodes_per_distributor,
@@ -67,6 +76,9 @@ class BreadthFirstSearch(AbstractProcess):
 
         # OutPort will be activated later for robotic implementation
         # self.shortest_path_nodes = OutPort(shape=(1,))
+
+        # Specify target and destination neurons
+        self.node_description = node_description
 
         # Only symmetric adjacency matrices are allowed here
         valid_input = self._input_validation(adjacency_matrix)

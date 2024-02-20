@@ -198,8 +198,8 @@ class SolutionReceiver(AbstractProcess):
             Defines the number of bits of a single message via spikeIO.
             Currently only tested for 32bits.
         name: str, optional
-            Name of the Process. Default is 'Process_ID', where ID is an integer
-            value that is determined automatically.
+            Name of the Process. Default is 'Process_ID', where ID is an
+            integer value that is determined automatically.
         log_config: LogConfig, optional
             Configuration options for logging.z
         """

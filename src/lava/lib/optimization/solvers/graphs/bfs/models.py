@@ -30,9 +30,11 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
     def __init__(self, proc):
         connection_config = proc.proc_params.get("connection_config")
         self.adjacency_matrix = proc.proc_params.get("adjacency_matrix")
-        neuron_status = proc.proc_params.get("node_description")
-        num_nodes = self.adjacency_matrix.shape[0]
-        self.graph_nodes = BFSNeuron(shape=(num_nodes,), status=neuron_status)
+        self.neuron_status = proc.proc_params.get("node_description")
+        self.num_nodes = self.adjacency_matrix.shape[0]
+        self.graph_nodes = BFSNeuron(
+            shape=(self.num_nodes,), status=self.neuron_status
+        )
         # if the connectivity matrix contains only 2 values, then the weights
         # are automatically scaled to 1-bit while using num_weight_bits=8.
         # When num_message_bits=0, the spikes are binary.
@@ -44,9 +46,9 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
 
         self.solution_readout = SolutionReadoutEthernet(
             connection_config=connection_config,
-            num_bin_variables=num_nodes,
+            num_bin_variables=self.num_nodes,
             num_message_bits=32,
-            shape=num_nodes,
+            shape=self.num_nodes,
             timeout=100000,
         )
 
@@ -58,20 +60,20 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
             "num_nodes_per_distributor"
         )
 
-        num_aggregators = math.ceil(num_nodes / num_nodes_per_aggregator)
-        num_distributors = math.ceil(num_nodes / num_nodes_per_distributor)
+        num_aggregators = math.ceil(self.num_nodes / num_nodes_per_aggregator)
+        num_distributors = math.ceil(self.num_nodes / num_nodes_per_distributor)
 
         # Reconfigure num_nodes_per_aggregator/distributor to num_nodes if the
         # num_nodes do not exceed the capacity of the aggregator/distributor
         num_nodes_per_aggregator = (
-            num_nodes
-            if num_nodes < num_nodes_per_aggregator
+            self.num_nodes
+            if self.num_nodes < num_nodes_per_aggregator
             else num_nodes_per_aggregator
         )
 
         num_nodes_per_distributor = (
-            num_nodes
-            if num_nodes < num_nodes_per_distributor
+            self.num_nodes
+            if self.num_nodes < num_nodes_per_distributor
             else num_nodes_per_distributor
         )
 
@@ -95,18 +97,18 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         # Build large block sparse connection process that corresponds
         # to the graph nodes being connected to aggregator neurons.
         conn_mat = graph_nodes_to_dist_or_agg(
-            num_nodes, num_aggregators, num_nodes_per_aggregator
+            self.num_nodes, num_aggregators, num_nodes_per_aggregator
         )
-        self.graph_neur_to_agg = Sparse(
+        self.graph_neur_to_agg_conn = Sparse(
             weights=conn_mat, sign_mode=SignMode.EXCITATORY, num_message_bits=24
         )
 
-        self.aggregator_neuron = SpikeIntegrator(shape=(num_aggregators,))
+        self.aggregator_neurons = SpikeIntegrator(shape=(num_aggregators,))
 
         # Connection process that connects aggregator neurons
         # to the GlobalDepthNeuron.
-        conn_mat = np.ones((num_aggregators, 1))
-        self.agg_to_glbl_dpth = Sparse(
+        conn_mat = np.ones((1, num_aggregators))
+        self.agg_to_glbl_dpth_conn = Sparse(
             weights=conn_mat, sign_mode=SignMode.EXCITATORY, num_message_bits=24
         )
 
@@ -116,8 +118,8 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         # motifs of neuron populations through an identity connection.
         # Absolutely essential for large graph search problems
 
-        conn_mat = np.ones((1, num_distributors))
-        self.glbl_dpth_to_dist_neur = Sparse(
+        conn_mat = np.ones((num_distributors, 1))
+        self.glbl_dpth_to_dist_conn = Sparse(
             weights=conn_mat, sign_mode=SignMode.EXCITATORY, num_message_bits=24
         )
 
@@ -126,14 +128,13 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         # be used to address a specific neuron efficiently
         # PS: We try to test things without spike input first. Manually set the
         # target and destination by using Vars.
-        self.distributor_neuron = SpikeIntegrator(shape=(num_distributors,))
+        self.distributor_neurons = SpikeIntegrator(shape=(num_distributors,))
 
         # Build large block sparse connection process that corresponds
         # to the distributor neurons being connected to graph nodes.
         conn_mat = graph_nodes_to_dist_or_agg(
-            num_nodes, num_distributors, num_nodes_per_distributor
+            self.num_nodes, num_distributors, num_nodes_per_distributor
         )
-        print(f"{conn_mat=}")
         self.dist_to_graph_neur_conn = Sparse(
             weights=conn_mat.T,
             sign_mode=SignMode.EXCITATORY,
@@ -160,13 +161,15 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         self.graph_edges.a_out.connect(self.graph_nodes.a_in_2)
 
         # Scaling connections
-        self.graph_nodes.s_out_3.connect(self.graph_neur_to_agg.s_in)
-        self.graph_neur_to_agg.a_out.connect(self.aggregator_neuron.a_in)
-        self.aggregator_neuron.s_out.connect(self.agg_to_glbl_dpth.s_in)
-        self.agg_to_glbl_dpth.a_out.connect(self.global_depth_neuron.a_in)
-        self.global_depth_neuron.s_out.connect(self.glbl_dpth_to_dist_neur.s_in)
-        self.glbl_dpth_to_dist_neur.a_out.connect(self.distributor_neuron.a_in)
-        self.distributor_neuron.s_out.connect(self.dist_to_graph_neur_conn.s_in)
+        self.graph_nodes.s_out_3.connect(self.graph_neur_to_agg_conn.s_in)
+        self.graph_neur_to_agg_conn.a_out.connect(self.aggregator_neurons.a_in)
+        self.aggregator_neurons.s_out.connect(self.agg_to_glbl_dpth_conn.s_in)
+        self.agg_to_glbl_dpth_conn.a_out.connect(self.global_depth_neuron.a_in)
+        self.global_depth_neuron.s_out.connect(self.glbl_dpth_to_dist_conn.s_in)
+        self.glbl_dpth_to_dist_conn.a_out.connect(self.distributor_neurons.a_in)
+        self.distributor_neurons.s_out.connect(
+            self.dist_to_graph_neur_conn.s_in
+        )
         self.dist_to_graph_neur_conn.a_out.connect(self.graph_nodes.a_in_3)
 
         # Readout connections

@@ -33,10 +33,13 @@ class BreadthFirstSearch(AbstractProcess):
         node.
     adjacency_matrix: np.ndarray
         Defines the connectivity of the graph (unweighted/undirected).
-    num_nodes_per_aggregator:
+    num_nodes_per_aggregator: int
+        The number of graph nodes that can connect to one aggregator neuron.
+        The limit to this is based on fan-in constraints to a core on Loihi
 
-    num_nodes_per_distributor:
-
+    num_nodes_per_distributor: int
+        The number of graph nodes that can connect to one aggregator neuron.
+        The limit to this is based on fan-out constraints from a core on Loihi
     """
 
     def __init__(

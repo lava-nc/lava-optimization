@@ -165,9 +165,9 @@ class BFSNeuron(AbstractProcess):
         self.s_out_4 = OutPort(shape=(shape[0],))
 
         # Constants used as flgs during execution
-        self.dest_flg = 64  # 0b01000000
-        self.start_flg = 128  # 0b10000000
-        self.fwd_inc_done = 32  # 0b00100000
+        self.dest_flag = Var(shape=(1,), init=64)  # 0b01000000
+        self.start_flag = Var(shape=(1,), init=128)  # 0b10000000
+        self.fwd_inc_done = Var(shape=(1,), init=32)  # 0b00100000
 
         # Vars for ProcModels
         self.counter_mem = Var(shape=shape, init=0)

@@ -69,6 +69,10 @@ class TestBFSNeuronProcess(unittest.TestCase):
         process = BFSNeuron(shape=(dim,), status=status)
 
         # test vars
+        self.assertEqual(np.all(process.vars.dest_flag.get() == 64), True)
+        self.assertEqual(np.all(process.vars.start_flag.get() == 128), True)
+        self.assertEqual(np.all(process.vars.fwd_inc_done.get() == 32), True)
+
         self.assertEqual(np.all(process.vars.counter_mem.get() == 0), True)
         self.assertEqual(np.all(process.vars.global_depth.get() == 0), True)
         self.assertEqual(np.all(process.vars.status_reg.get() == status), True)

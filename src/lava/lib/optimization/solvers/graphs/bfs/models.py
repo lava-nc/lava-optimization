@@ -157,11 +157,11 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         self.graph_edges.a_out.connect(self.graph_nodes.a_in_1)
 
         # Backward connections
-        self.graph_nodes.s_out_2.connect(self.graph_edges.s_in)
-        self.graph_edges.a_out.connect(self.graph_nodes.a_in_2)
+        self.graph_nodes.s_out_4.connect(self.graph_edges.s_in)
+        self.graph_edges.a_out.connect(self.graph_nodes.a_in_4)
 
         # Scaling connections
-        self.graph_nodes.s_out_3.connect(self.graph_neur_to_agg_conn.s_in)
+        self.graph_nodes.s_out_2.connect(self.graph_neur_to_agg_conn.s_in)
         self.graph_neur_to_agg_conn.a_out.connect(self.aggregator_neurons.a_in)
         self.aggregator_neurons.s_out.connect(self.agg_to_glbl_dpth_conn.s_in)
         self.agg_to_glbl_dpth_conn.a_out.connect(self.global_depth_neuron.a_in)
@@ -170,9 +170,9 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         self.distributor_neurons.s_out.connect(
             self.dist_to_graph_neur_conn.s_in
         )
-        self.dist_to_graph_neur_conn.a_out.connect(self.graph_nodes.a_in_3)
+        self.dist_to_graph_neur_conn.a_out.connect(self.graph_nodes.a_in_2)
 
         # Readout connections
         # SolutionReadoutEthernet starts with a connection layer. Therefore
         # neuron can be connected
-        self.graph_nodes.s_out_4.connect(self.solution_readout.states_in)
+        self.graph_nodes.s_out_3.connect(self.solution_readout.states_in)

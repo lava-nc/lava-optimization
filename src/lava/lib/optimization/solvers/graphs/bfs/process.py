@@ -152,15 +152,15 @@ class BFSNeuron(AbstractProcess):
         self.a_in_1 = InPort(shape=(shape[0],))
         self.s_out_1 = OutPort(shape=(shape[0],))
 
-        # Backward pass
+        # Scaling pass
         self.a_in_2 = InPort(shape=(shape[0],))
         self.s_out_2 = OutPort(shape=(shape[0],))
 
-        # Scaling ports
+        # I/O ports
         self.a_in_3 = InPort(shape=(shape[0],))
         self.s_out_3 = OutPort(shape=(shape[0],))
 
-        # I/O ports
+        # Backward Pass
         self.a_in_4 = InPort(shape=(shape[0],))
         self.s_out_4 = OutPort(shape=(shape[0],))
 

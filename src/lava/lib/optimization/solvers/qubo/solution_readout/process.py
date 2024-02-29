@@ -37,23 +37,21 @@ class SolutionReadoutEthernet(AbstractProcess):
 
     Attributes
     ----------
-    best_state: Var
-        Best binary variables assignment.
-    best_cost: Var
-        Cost of best solution.
-    best_timestep: Var
-        Time step when best solution was found.
+    variables_1bit: Var
+        Binary variables assignment.
+    variables_1bit: Var
+        Values of 32 bit variables. Initiated by the parameter
+        variables_32bit_init. The shape is determined by variables_32bit_num.
 
     InPorts:
     ----------
-    states_in: InPort
+    variables_1bit_in: InPort
         Receives the best binary (1bit) states. Shape is determined by the
-        number of
-        binary variables.
-    cost_in: InPort
-        Receives the best 32bit cost.
-    timestep_in: InPort
-        Receives the best 32bit timestep.
+        number of binary variables.
+    variables_32bit_<index>_in: InPort
+        Receives 32bit variable. The number of InPorts is defined by
+        variables_32bit_num. For each 32bit variable ii, there is a
+        corresponding InPort variables_32bit_ii_in dynamically created.
 
     OutPorts:
     ----------
@@ -63,7 +61,10 @@ class SolutionReadoutEthernet(AbstractProcess):
             self,
             shape: ty.Tuple[int, ...],
             timeout: int,
-            num_bin_variables: int,
+            variables_1bit_num: int,
+            variables_1bit_init: ty.Union[int, ty.List[int]],
+            variables_32bit_num: int,
+            variables_32bit_init: ty.Union[int, ty.List[int]],
             connection_config: ConnectionConfig,
             num_message_bits=32,
             name: ty.Optional[str] = None,
@@ -74,8 +75,14 @@ class SolutionReadoutEthernet(AbstractProcess):
         ----------
         shape: tuple
             A tuple of the form (number of variables, domain size).
-        num_bin_variables: int
-            The number of binary (1bit) variables.
+        timeout: int
+            After timeout time steps, the run will be stopped.
+        variables_1bit_num: int
+            The number of 1bit (binary) variables.
+        variables_32bit_num: int
+            The number of 32bit variables and ports.
+        variables_32bit_init: int, list[int]
+            The initial values for the 32bit variables.
         num_message_bits: int
             Defines the number of bits of a single message via spikeIO.
             Currently only tested for 32bits.
@@ -83,83 +90,134 @@ class SolutionReadoutEthernet(AbstractProcess):
             Name of the Process. Default is 'Process_ID', where ID is an integer
             value that is determined automatically.
         log_config: LogConfig, optional
-            Configuration options for logging.z"""
+            Configuration options for logging.z
+        """
 
-        num_spike_integrators = 2 + np.ceil(
-            num_bin_variables / num_message_bits).astype(int)
+        self._validate_input(variables_32bit_num, variables_32bit_init)
+
+        num_spike_integrators = variables_32bit_num + np.ceil(
+            variables_1bit_num / num_message_bits).astype(int)
 
         super().__init__(
             shape=shape,
-            num_spike_integrators=num_spike_integrators,
-            num_bin_variables=num_bin_variables,
             timeout=timeout,
+            num_spike_integrators=num_spike_integrators,
             num_message_bits=num_message_bits,
             connection_config=connection_config,
             name=name,
             log_config=log_config,
         )
-        # Default values for best_cost, best_state, and best_timestep are also
-        # assigned in the proc models run_async method.
-        self.states_in = InPort(shape=(num_bin_variables,))
-        self.cost_in = InPort((1,))
-        self.timestep_in = InPort((1,))
-        self.best_state = Var(shape=(num_bin_variables,), init=0)
-        self.best_timestep = Var(shape=(1,), init=1)
-        self.best_cost = Var(shape=(1,), init=0)
+
         self.timeout = Var(shape=(1,), init=timeout)
+
+        # Generate Var and InPort for 1bit variables
+        # Default values for variables_1bit and variables_32bit are also
+        # assigned in the proc models run_async method
+        self.variables_1bit = Var(shape=(variables_1bit_num,),
+                                  init=variables_1bit_init)
+        self.variables_1bit_in = InPort(shape=(variables_1bit_num,))
+
+        # Generate Vars and Inports for 32bit variables
+        self.variables_32bit = Var(shape=(variables_32bit_num,),
+                                   init=variables_32bit_init)
+        # self.variables_32bit_<index>_in
+        for ii in range(variables_32bit_num):
+            setattr(self, f"variables_32bit_{ii}_in", InPort((1,)))
+
+    def _validate_input(self,
+                        variables_32bit_num,
+                        variables_32bit_init) -> None:
+
+        if isinstance(variables_32bit_init, int) and variables_32bit_num == 1:
+            return
+        elif (isinstance(variables_32bit_init, list)
+              and len(variables_32bit_init) == variables_32bit_num):
+            return
+        elif (isinstance(variables_32bit_init, np.ndarray)
+              and variables_32bit_init.shape[0] == variables_32bit_num):
+            return
+        else:
+            raise ValueError(f"The variables_32bit_num must match the number "
+                             f"of {variables_32bit_init=} provided.")
 
 
 class SolutionReceiver(AbstractProcess):
-    """Process to readout solution from SNN and make it available on host.
-
-    Parameters
-    ----------
-    shape: The shape of the set of nodes, or process, which state will be read.
-    target_cost: int
-        cost value at which, once attained by the network, this process will
-        stop execution.
-    name: str
-        Name of the Process. Default is 'Process_ID', where ID is an integer
-        value that is determined automatically.
-    log_config:
-        Configuration options for logging.
+    r"""Process which receives a solution via spikeIO on the superhost. Is
+    connected within a SolutionReadout process.
+    The way how information is processed is defined by the run_async of the
+    PyProcModel, which must be defined for each SNN separately.
 
     Attributes
     ----------
-    read_solution: InPort
-        A message received on this ports signifies the process
-        should call read on its RefPort.
-    ref_port: RefPort
-        A reference port to a variable in another process which state
-        will be remotely accessed upon read request. Here, it reads the
-        current variables assignment by a solver to an optimization problem.
-    target_cost: Var
-        Cost value at which, once attained by the network.
+    variables_1bit: Var
+        Binary variables assignment.
+    <name defined by variables_32bit_names>: Var
+        Values of 32 bit variables. Initiated by the parameter
+        variables_32bit_init. There will be one 32bit variable for each list
+        entry of variables_32bit_names.
 
+    InPorts:
+    ----------
+    results_in: InPort
+        Receives all input from the SpikeIntegrators of a SolutionReadout
+        process.
+
+    OutPorts:
+    -------
     """
 
     def __init__(
             self,
             shape: ty.Tuple[int, ...],
-            num_variables: int,
             timeout: int,
-            best_cost_init: int,
-            best_state_init: ty.Union[npty.ArrayLike, int],
+            variables_1bit_num: int,
+            variables_1bit_init: ty.Union[npty.ArrayLike, int],
+            variables_32bit_num: int,
+            variables_32bit_init: ty.Union[npty.ArrayLike, int],
             num_spike_integrators: int,
-            best_timestep_init: int,
-            num_message_bits: int = 24,
+            num_message_bits: int,
             name: ty.Optional[str] = None,
             log_config: ty.Optional[LogConfig] = None,
     ) -> None:
+        """
+        Parameters
+        ----------
+        shape: tuple
+            A tuple of the form (number of variables, domain size).
+        timeout: int
+            After timeout time steps, the run will be stopped.
+        variables_1bit_num: int
+            The number of 1bit (binary) variables.
+        variables_1bit_init: int
+            The initial values of 1bit (binary) variables.
+        variables_32bit_num: int
+            The number of 32bit variables and ports.
+        variables_32bit_init: int, list[int]
+            The initial values for the 32bit variables.
+        num_message_bits: int
+            Defines the number of bits of a single message via spikeIO.
+            Currently only tested for 32bits.
+        name: str, optional
+            Name of the Process. Default is 'Process_ID', where ID is an
+            integer value that is determined automatically.
+        log_config: LogConfig, optional
+            Configuration options for logging.z
+        """
+
         super().__init__(
             shape=shape,
             name=name,
             log_config=log_config,
         )
 
-        self.best_state = Var(shape=(num_variables,), init=best_state_init)
-        self.best_timestep = Var(shape=(1,), init=best_timestep_init)
-        self.best_cost = Var(shape=(1,), init=best_cost_init)
         self.num_message_bits = Var(shape=(1,), init=num_message_bits)
         self.timeout = Var(shape=(1,), init=timeout)
+
+        # Define Vars
+        self.variables_1bit = Var(shape=(variables_1bit_num,),
+                                  init=variables_1bit_init)
+        self.variables_32bit = Var(shape=(variables_32bit_num,),
+                                   init=variables_32bit_init)
+
+        # Define InPorts
         self.results_in = InPort(shape=(num_spike_integrators,))

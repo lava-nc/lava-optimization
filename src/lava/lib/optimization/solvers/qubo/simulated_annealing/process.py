@@ -68,7 +68,7 @@ class SimulatedAnnealingLocal(AbstractProcess):
         self.control_cost_integrator = InPort(shape=shape)
         self.s_sig_out = OutPort(shape=shape)
         self.s_wta_out = OutPort(shape=shape)
-        self.best_state_out = OutPort(shape=shape)
+        self.best_variable_assignment_out = OutPort(shape=shape)
 
         self.spk_hist = Var(
             shape=shape, init=(np.zeros(shape=shape) + init_value).astype(int)

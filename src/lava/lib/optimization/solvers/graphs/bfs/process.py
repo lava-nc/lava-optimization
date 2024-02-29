@@ -173,6 +173,7 @@ class BFSNeuron(AbstractProcess):
         # Vars for ProcModels
         self.counter_mem = Var(shape=shape, init=0)
         self.global_depth = Var(shape=shape, init=0)
+        self.global_counter = Var(shape=shape, init=0)
         self.status_reg = Var(shape=shape, init=status)
 
     def _check_status_sanity(self, status):

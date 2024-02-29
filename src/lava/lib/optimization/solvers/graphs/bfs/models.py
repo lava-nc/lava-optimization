@@ -46,7 +46,10 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
 
         self.solution_readout = SolutionReadoutEthernet(
             connection_config=connection_config,
-            num_bin_variables=self.num_nodes,
+            variables_1bit_num=self.num_nodes,
+            variables_32bit_num=1,
+            variables_1bit_init=np.zeros((self.num_nodes,)),
+            variables_32bit_init=0,
             num_message_bits=32,
             shape=self.num_nodes,
             timeout=100000,
@@ -175,4 +178,6 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         # Readout connections
         # SolutionReadoutEthernet starts with a connection layer. Therefore
         # neuron can be connected
-        self.graph_nodes.s_out_3.connect(self.solution_readout.states_in)
+        self.graph_nodes.s_out_3.connect(
+            self.solution_readout.variables_1bit_in
+        )

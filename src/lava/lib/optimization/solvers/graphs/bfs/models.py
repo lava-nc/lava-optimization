@@ -156,12 +156,12 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
 
         # Connections are undirected
         # Forward connections
-        self.graph_nodes.s_out_1.connect(self.graph_edges.s_in)
-        self.graph_edges.a_out.connect(self.graph_nodes.a_in_1)
-
-        # Backward connections
         self.graph_nodes.s_out_4.connect(self.graph_edges.s_in)
         self.graph_edges.a_out.connect(self.graph_nodes.a_in_4)
+
+        # Backward connections
+        self.graph_nodes.s_out_3.connect(self.graph_edges.s_in)
+        self.graph_edges.a_out.connect(self.graph_nodes.a_in_3)
 
         # Scaling connections
         self.graph_nodes.s_out_2.connect(self.graph_neur_to_agg_conn.s_in)
@@ -178,6 +178,6 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         # Readout connections
         # SolutionReadoutEthernet starts with a connection layer. Therefore
         # neuron can be connected
-        self.graph_nodes.s_out_3.connect(
+        self.graph_nodes.s_out_1.connect(
             self.solution_readout.variables_1bit_in
         )

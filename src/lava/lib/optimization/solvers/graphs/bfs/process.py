@@ -148,7 +148,7 @@ class BFSNeuron(AbstractProcess):
         # Ports
         # In/outPorts that come from/go to the adjacency matrix
 
-        # Forward pass
+        # I/O ports
         self.a_in_1 = InPort(shape=(shape[0],))
         self.s_out_1 = OutPort(shape=(shape[0],))
 
@@ -156,11 +156,11 @@ class BFSNeuron(AbstractProcess):
         self.a_in_2 = InPort(shape=(shape[0],))
         self.s_out_2 = OutPort(shape=(shape[0],))
 
-        # I/O ports
+        # Backward Pass
         self.a_in_3 = InPort(shape=(shape[0],))
         self.s_out_3 = OutPort(shape=(shape[0],))
 
-        # Backward Pass
+        # Forward pass
         self.a_in_4 = InPort(shape=(shape[0],))
         self.s_out_4 = OutPort(shape=(shape[0],))
 

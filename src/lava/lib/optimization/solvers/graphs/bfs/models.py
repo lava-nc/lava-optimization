@@ -6,6 +6,7 @@ from lava.lib.optimization.solvers.qubo.solution_readout.process import (
     SolutionReadoutEthernet,
     SpikeIntegrator,
 )
+from lava.proc.dense.process import Dense
 import numpy as np
 from lava.lib.optimization.solvers.graphs.bfs.process import BreadthFirstSearch
 from lava.lib.optimization.solvers.graphs.bfs.process import BFSNeuron
@@ -20,6 +21,10 @@ from lava.utils.weightutils import SignMode
 from lava.proc import embedded_io as eio
 from scipy.sparse import csr_matrix
 import math
+
+from tests.lava.lib.optimization.solvers.qubo.solution_readout.test_models import (
+    Spiker32bit,
+)
 
 
 @implements(proc=BreadthFirstSearch, protocol=LoihiProtocol)
@@ -38,20 +43,24 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         # if the connectivity matrix contains only 2 values, then the weights
         # are automatically scaled to 1-bit while using num_weight_bits=8.
         # When num_message_bits=0, the spikes are binary.
-        self.graph_edges = Sparse(
+        self.graph_edges_fwd = Sparse(
             weights=self.adjacency_matrix,
             sign_mode=SignMode.EXCITATORY,
-            num_message_bits=8,
+            num_message_bits=24,
         )
-
+        self.graph_edges_bwd = Sparse(
+            weights=self.adjacency_matrix,
+            sign_mode=SignMode.EXCITATORY,
+            num_message_bits=24,
+        )
         self.solution_readout = SolutionReadoutEthernet(
+            shape=(1,),
             connection_config=connection_config,
             variables_1bit_num=self.num_nodes,
             variables_32bit_num=1,
             variables_1bit_init=np.zeros((self.num_nodes,)),
             variables_32bit_init=0,
             num_message_bits=32,
-            shape=self.num_nodes,
             timeout=100000,
         )
 
@@ -152,16 +161,47 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         # self.distributor_neuron.s_out_2.connect(
         #     self.dist_to_graph_neur_conn.s_in
         # )
+
+        payload_fwd = np.zeros((self.num_nodes,), dtype=np.int32)
+        payload_fwd[0] = 1
+
+        self.input_spike_fwd = Spiker32bit(
+            period=1, payload=payload_fwd, shape=(self.num_nodes,)
+        )
+
+        self.input_spike_i_o = Spiker32bit(
+            period=1,
+            payload=np.zeros((self.num_nodes,), dtype=np.int32),
+            shape=(self.num_nodes,),
+        )
+
+        self.i_o_dense_conn_spiker = Sparse(
+            weights=np.eye(
+                self.num_nodes,
+            ),
+            num_message_bits=24,
+        )
+
+        self.fwd_dense_conn_spiker = Sparse(
+            weights=np.eye(
+                self.num_nodes,
+            ),
+            num_message_bits=24,
+        )
+
         self.dist_to_graph_neur_conn.a_out.connect(self.graph_nodes.a_in_4)
 
         # Connections are undirected
         # Forward connections
-        self.graph_nodes.s_out_4.connect(self.graph_edges.s_in)
-        self.graph_edges.a_out.connect(self.graph_nodes.a_in_4)
+        self.input_spike_fwd.s_out.connect(self.fwd_dense_conn_spiker.s_in)
+        self.fwd_dense_conn_spiker.a_out.connect(self.graph_nodes.a_in_4)
+
+        self.graph_nodes.s_out_4.connect(self.graph_edges_fwd.s_in)
+        self.graph_edges_fwd.a_out.connect(self.graph_nodes.a_in_4)
 
         # Backward connections
-        self.graph_nodes.s_out_3.connect(self.graph_edges.s_in)
-        self.graph_edges.a_out.connect(self.graph_nodes.a_in_3)
+        self.graph_nodes.s_out_3.connect(self.graph_edges_bwd.s_in)
+        self.graph_edges_bwd.a_out.connect(self.graph_nodes.a_in_3)
 
         # Scaling connections
         self.graph_nodes.s_out_2.connect(self.graph_neur_to_agg_conn.s_in)
@@ -175,9 +215,16 @@ class BreadthFirstSearchModel(AbstractSubProcessModel):
         )
         self.dist_to_graph_neur_conn.a_out.connect(self.graph_nodes.a_in_2)
 
+        # Placeholder spike_i connnections
+        self.input_spike_i_o.s_out.connect(self.i_o_dense_conn_spiker.s_in)
+        self.i_o_dense_conn_spiker.a_out.connect(self.graph_nodes.a_in_1)
+
         # Readout connections
         # SolutionReadoutEthernet starts with a connection layer. Therefore
         # neuron can be connected
         self.graph_nodes.s_out_1.connect(
             self.solution_readout.variables_1bit_in
+        )
+        self.global_depth_neuron.s_out.connect(
+            self.solution_readout.variables_32bit_0_in
         )

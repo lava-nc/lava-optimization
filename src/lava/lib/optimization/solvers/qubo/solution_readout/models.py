@@ -193,7 +193,7 @@ class SolutionReceiverBFSPyModel(SolutionReceiverAbstractPyModel):
         self.variables_32bit = global_depth
 
         # Wait for 1 timestep because of distributor neurons
-        _ = self.results_in.recv()
+        # _ = self.results_in.recv()
 
         print("#" * 20)
         for depth in range(global_depth[0], 0, -1):

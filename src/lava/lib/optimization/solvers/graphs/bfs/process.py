@@ -175,6 +175,7 @@ class BFSNeuron(AbstractProcess):
         self.global_depth = Var(shape=shape, init=0)
         self.global_counter = Var(shape=shape, init=0)
         self.status_reg = Var(shape=shape, init=status)
+        self.spk_trace = Var(shape=shape, init=0)
 
     def _check_status_sanity(self, status):
         """

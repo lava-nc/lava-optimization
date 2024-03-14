@@ -1,3 +1,7 @@
+# Copyright (C) 2022-2024 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+# See: https://spdx.org/licenses/
+
 import numpy as np
 
 from lava.lib.optimization.solvers.generic.nebm.process import NEBM

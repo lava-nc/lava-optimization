@@ -47,9 +47,9 @@ classifiers = [
 "Discussions" = "https://github.com/lava-nc/lava-optimization/discussions"
 
 [tool.poetry.dependencies]
-python = ">=3.8, <3.11"
+python = ">=3.9, <3.11"
 
-lava-nc = { path = "../lava", develop = true }
+lava-nc = { git = "https://github.com/lava-nc/lava.git", branch = "demo", develop = true }
 
 numpy = "^1.24.4"
 networkx = "<=2.8"
@@ -83,7 +83,7 @@ poetry = "^1.1.13"
 pytest = "^7.2.0"
 pytest-cov = "^3.0.0"
 unittest2 = "^1.1.0"
-black = "^22.1.0"
+black = "^24.3.0"
 ipykernel = "^6.15.0"
 nbformat = "^5.3.0"
 nbconvert = ">=7.2.10, <7.3"

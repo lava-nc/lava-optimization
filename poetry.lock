@@ -1697,10 +1697,8 @@ scikit-learn = "^1.5.0"
 scipy = "^1.10.1"
 
 [package.source]
-type = "git"
-url = "https://github.com/lava-nc/lava.git"
-reference = "main"
-resolved_reference = "d22e8292e41cdb94aec9500dd252ca6814c49bf1"
+type = "directory"
+url = "../lava"
 
 [[package]]
 name = "linecache2"
@@ -3734,4 +3732,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10, <3.11"
-content-hash = "4037cb66ec391c8062f2032c82cd631f016e52245d861de473bd402b849422a5"
+content-hash = "994e549aebd3de33f1ee4e963a84d53a9a99088c62b78265bd14551591229ff8"

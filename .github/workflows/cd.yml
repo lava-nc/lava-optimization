@@ -41,7 +41,7 @@ jobs:
           lfs: true
 
       - name: Download lava-optimization artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: lava-optimization
 
@@ -82,7 +82,7 @@ jobs:
    
     steps:
       - name: Download lava-optimization artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: lava-optimization
 
@@ -154,7 +154,7 @@ jobs:
           repository: 'lava-optimization'
 
       - name: Download lava artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: lava-optimization
 

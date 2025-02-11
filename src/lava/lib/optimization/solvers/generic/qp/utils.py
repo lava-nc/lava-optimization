@@ -35,7 +35,7 @@ def ruiz_equilibriation(matrix, iterations):
     return left_preconditioner, right_preconditioner
 
 
-def convert_to_fp_floor(mat, man_bits, single_block_exp=True):
+def convert_to_fp_floor(mat, man_bits, exp_bits=None, single_block_exp=True):
     """Function that returns the exponent, mantissa representation for
     floating point numbers that need to be represented on Loihi. A global expt
     is calculated for the matrices based on the max absolute value in the
@@ -63,10 +63,14 @@ def convert_to_fp_floor(mat, man_bits, single_block_exp=True):
         expt = np.ceil(np.log2((np.abs(mat)))) - man_bits + 1
         expt[expt == -np.inf] = 0
     mat_fp_man = (mat // 2.**expt)
+    if exp_bits:
+        expt = np.clip(expt, -2.**(exp_bits - 1), 2.**(exp_bits - 1) - 1)
     return mat_fp_man.astype(int), expt.astype(int)
 
 
-def convert_to_fp_stochastic_frexp(mat, man_bits, single_block_exp=True):
+def convert_to_fp_stochastic_frexp(mat, man_bits, 
+                                   exp_bits=None, 
+                                   single_block_exp=True):
     if man_bits <= 0:
         print("Returning without rounding")
         return mat, np.float_(0)
@@ -82,8 +86,13 @@ def convert_to_fp_stochastic_frexp(mat, man_bits, single_block_exp=True):
     rand_mat = np.random.rand(*mat.shape)
     rand_idx = rand_mat < frac_mat
     int_mat[rand_idx] += 1
+
+    expt = expt - man_bits + 1
+
+    if exp_bits:
+        expt = np.clip(expt, -2.**(exp_bits - 1), 2.**(exp_bits - 1) - 1)
         
-    return int_mat, (expt - man_bits + 1).astype(np.int_)
+    return int_mat, expt.astype(np.int_)
 
 
 def pre_condition_matrices(Q, p, A, k):
@@ -207,13 +216,13 @@ def _dend_accum(weight_mat_mant,
                 prod_mode='shift'):
     if np.isscalar(weight_mat_exp):
         weight_mat_exp = np.array([weight_mat_exp])
-        out_result = weight_mat_mant @ incoming_vec
+        # out_result = weight_mat_mant @ incoming_vec
         # out_result = left_shift(out_result, weight_mat_exp).astype(np.int_)
-        out_result = ((weight_mat_mant * (2. ** weight_mat_exp)
-                      ) @ incoming_vec)  # .astype(np.int_)
-    else:
-        out_result = ((weight_mat_mant * (2. ** weight_mat_exp)
-                      ) @ incoming_vec)  # .astype(np.int_)
+        # out_result = ((weight_mat_mant * (2. ** weight_mat_exp)
+        #               ) @ incoming_vec)  # .astype(np.int_)
+    # else:
+    out_result = ((weight_mat_mant * (2. ** weight_mat_exp)
+                    ) @ incoming_vec)  # .astype(np.int_)
     
     if rounding_mode == 'nearest': 
         out_mant, out_expt = convert_to_fp_floor(out_result, 
@@ -327,10 +336,14 @@ def run_iters_fixed(Q_mant, Q_exp,
 
 def solve_qp_fixed(Q, p, A, k, 
                    num_iter=1000, 
+                   weight_bits={'Q': 8,
+                                'A': 8,
+                                'p': 24,
+                                'k': 24},
                    mantissa_bits={'Q': 8,
                                   'A': 8,
                                   'p': 24,
-                                  'k': 24},
+                                  'k': 24}, 
                    single_block_exp=True,
                    weight_quantization_mode='nearest',
                    quantize_step_size=True,
@@ -338,26 +351,39 @@ def solve_qp_fixed(Q, p, A, k,
                    dend_accum_rounding_mode='nearest',
                    dend_accum_prod_mode='shift'
                   ):
+    exp_bits = {'Q': None,
+                'A': None,
+                'p': None,
+                'k': None}
+    for key in weight_bits.keys():
+        if weight_bits[key] > mantissa_bits[key]:
+            exp_bits[key] = weight_bits[key] - mantissa_bits[key]
     if weight_quantization_mode == 'nearest':
         Q_mant, Q_exp = convert_to_fp_floor(Q, 
-                                            mantissa_bits['Q'], 
+                                            mantissa_bits['Q'],
+                                            exp_bits=exp_bits['Q'], 
                                             single_block_exp=single_block_exp)
         A_mant, A_exp = convert_to_fp_floor(A, 
-                                            mantissa_bits['A'], 
+                                            mantissa_bits['A'],
+                                            exp_bits=exp_bits['A'], 
                                             single_block_exp=single_block_exp)
         p_mant, p_exp = convert_to_fp_floor(p, 
                                             mantissa_bits['p'], 
+                                            exp_bits=exp_bits['p'],
                                             single_block_exp=single_block_exp)
     elif weight_quantization_mode == 'stochastic':
         Q_mant, Q_exp = convert_to_fp_stochastic_frexp(Q, 
-                                                    mantissa_bits['Q'], 
-                                                    single_block_exp=single_block_exp)
+                                                       mantissa_bits['Q'],
+                                                       exp_bits=exp_bits['Q'], 
+                                                       single_block_exp=single_block_exp)
         A_mant, A_exp = convert_to_fp_stochastic_frexp(A, 
-                                                    mantissa_bits['A'], 
-                                                    single_block_exp=single_block_exp)
+                                                       mantissa_bits['A'], 
+                                                       exp_bits=exp_bits['A'],
+                                                       single_block_exp=single_block_exp)
         p_mant, p_exp = convert_to_fp_stochastic_frexp(p, 
-                                                    mantissa_bits['p'], 
-                                                    single_block_exp=single_block_exp)
+                                                       mantissa_bits['p'], 
+                                                       exp_bits=exp_bits['p'],
+                                                       single_block_exp=single_block_exp)
     elif weight_quantization_mode == 'none':
         Q_mant, Q_exp = convert_to_fp_floor(Q, 
                                             man_bits=-1, 

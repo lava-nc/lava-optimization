@@ -27,18 +27,18 @@ files = [
 
 [[package]]
 name = "asteval"
-version = "0.9.33"
+version = "1.0.6"
 description = "Safe, minimalistic evaluator of python expression using ast module"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "asteval-0.9.33-py3-none-any.whl", hash = "sha256:aae3a0308575a545c8cecc43a6632219e6a90963a56380c74632cf54311e43bf"},
-    {file = "asteval-0.9.33.tar.gz", hash = "sha256:94981701f4d252c88aa5e821121b1aabef73a003da138fc6405169c9e675d24d"},
+    {file = "asteval-1.0.6-py3-none-any.whl", hash = "sha256:5e119ed306e39199fd99c881cea0e306b3f3807f050c9be79829fe274c6378dc"},
+    {file = "asteval-1.0.6.tar.gz", hash = "sha256:1aa8e7304b2e171a90d64dd269b648cacac4e46fe5de54ac0db24776c0c4a19f"},
 ]
 
 [package.extras]
-all = ["Sphinx", "build", "coverage", "pytest", "pytest-cov", "twine"]
+all = ["asteval[dev,doc,test]"]
 dev = ["build", "twine"]
 doc = ["Sphinx"]
 test = ["coverage", "pytest", "pytest-cov"]
@@ -260,7 +260,7 @@ description = "Foreign Function Interface for Python calling C code."
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
-markers = "platform_python_implementation != \"PyPy\" or implementation_name == \"pypy\" or sys_platform == \"darwin\""
+markers = "sys_platform == \"linux\" and platform_python_implementation != \"PyPy\" or implementation_name == \"pypy\" or sys_platform == \"darwin\""
 files = [
     {file = "cffi-1.17.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:f9338cc05451f1942d0d8203ec2c346c830f8e86469903d5126c1f0a13a2bcbb"},
     {file = "cffi-1.17.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:a0ce71725cacc9ebf839630772b07eeec220cbb5f03be1399e0457a1464f8e1a"},
@@ -644,6 +644,7 @@ description = "cryptography is a package which provides cryptographic recipes an
 optional = false
 python-versions = "!=3.9.0,!=3.9.1,>=3.7"
 groups = ["dev"]
+markers = "sys_platform == \"linux\""
 files = [
     {file = "cryptography-44.0.1-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:bf688f615c29bfe9dfc44312ca470989279f0e94bb9f631f85e3459af8efc009"},
     {file = "cryptography-44.0.1-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:dd7c7e2d71d908dc0f8d2027e1604102140d84b155e658c20e8ad1304317691f"},
@@ -1782,10 +1783,10 @@ optional = false
 python-versions = ">=3.10, <3.11"
 groups = ["main"]
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
-asteval = "^0.9.31"
+asteval = ">=0.9.31,<1.1.0"
 networkx = "<=2.8.7"
 numpy = "^1.24.4"
 scikit-learn = "^1.5.0"
@@ -1795,7 +1796,7 @@ scipy = "^1.10.1"
 type = "git"
 url = "https://github.com/lava-nc/lava.git"
 reference = "main"
-resolved_reference = "f71eaaaccc16debe26e01b84589e8bf0a439db08"
+resolved_reference = "3fa4efbdfe074d61fc6508d85172324b9b048855"
 
 [[package]]
 name = "linecache2"
@@ -2705,7 +2706,7 @@ description = "C parser in Python"
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
-markers = "platform_python_implementation != \"PyPy\" or implementation_name == \"pypy\" or sys_platform == \"darwin\""
+markers = "sys_platform == \"linux\" and platform_python_implementation != \"PyPy\" or implementation_name == \"pypy\" or sys_platform == \"darwin\""
 files = [
     {file = "pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc"},
     {file = "pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6"},

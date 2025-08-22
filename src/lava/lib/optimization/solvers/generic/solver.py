@@ -179,6 +179,19 @@ class SolverConfig:
     probe_energy: bool
         A boolean flag to request time profiling, available only on "Loihi2"
         backend.
+    probe_activity: bool
+        A boolean flag to request activity profiling, available only on
+        "Loihi2". Activity profiling entails reading the on-chip activity
+        counters, which record number of synaptic operations, number of
+        neuron updates, etc.
+    keep_temp_probe_data: bool
+        A boolean flag to keep temporary probe data for profiling.
+        Default is False.
+    temp_probe_data_dir: str
+        Path to the directory to save temporary probe data.
+        The time-stamp at the moment of creation of this directory is
+        appended to the name of the directory. Default is None, in which
+        case, Python's `tempfile.TemporaryDirectory()` function is used.
     log_level: int
         Select log verbosity (40: default, 20: verbose).
     folded_compilation: bool
@@ -194,6 +207,9 @@ class SolverConfig:
     probe_state: bool = False
     probe_time: bool = False
     probe_energy: bool = False
+    probe_activity: bool = False
+    keep_temp_probe_data: bool = False
+    temp_probe_data_dir: str = None
     log_level: int = 40
     folded_compilation: bool = False
 
@@ -512,12 +528,22 @@ class OptimizationSolver:
             raise NotImplementedError(str(backend) + BACKEND_MSG)
 
     def _prepare_profiler(self, config: SolverConfig, run_cfg) -> None:
-        if config.probe_time or config.probe_energy:
+        if config.probe_time or config.probe_energy or config.probe_activity:
             self._profiler = Profiler.init(run_cfg)
             if config.probe_time:
-                self._profiler.execution_time_probe(num_steps=config.timeout)
+                self._profiler.execution_time_probe(
+                    num_steps=config.timeout,
+                    keep_tmp_dir=config.keep_temp_probe_data,
+                    tmp_dir_path=config.temp_probe_data_dir)
             if config.probe_energy:
-                self._profiler.energy_probe(num_steps=config.timeout)
+                self._profiler.energy_probe(
+                    num_steps=config.timeout,
+                    keep_tmp_dir=config.keep_temp_probe_data,
+                    tmp_dir_path=config.temp_probe_data_dir)
+            if config.probe_activity:
+                self._profiler.activity_probe(
+                    keep_tmp_dir=config.keep_temp_probe_data,
+                    tmp_dir_path=config.temp_probe_data_dir)
         else:
             self._profiler = None
 

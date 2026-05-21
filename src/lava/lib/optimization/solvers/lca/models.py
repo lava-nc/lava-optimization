@@ -9,6 +9,7 @@ from lava.magma.core.model.sub.model import AbstractSubProcessModel
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.magma.core.decorator import implements, tag
 from lava.proc.dense.process import Dense
+from lava.proc.conv.process import Conv
 
 from lava.lib.optimization.solvers.lca.process import LCA1Layer, LCA2Layer
 from lava.lib.optimization.solvers.lca.v1_neuron.process import V1Neuron
@@ -26,18 +27,37 @@ class LCA2LayerModel(AbstractSubProcessModel):
         weights_exp = proc.weights_exp.get()
         input_val = proc.input.get()
         spike_height = proc.spike_height.get()
+        conv = proc.conv.get()
 
-        self.v1 = V1Neuron(shape=(weights.shape[0],), tau=T, tau_exp=T_exp,
+        if conv:
+            weights_T = np.rot90(np.transpose(weights, (3, 1, 2, 0)), 2, (1, 2))
+            kernel_size = weights.shape[1]
+            v1_height = input_val.shape[0] - (kernel_size - 1)
+            v1_width = input_val.shape[1] - (kernel_size - 1)
+            v1_shape = (v1_height, v1_width, weights.shape[0])
+            self.weights_T = Conv(weight=-weights_T, num_message_bits=24,
+                                  weight_exp=weights_exp,
+                                  padding=(kernel_size - 1, kernel_size - 1),
+                                  input_shape=v1_shape)
+            self.weights = Conv(weight=(weights * T), num_message_bits=24,
+                                weight_exp=weights_exp + T_exp,
+                                input_shape=input_val.shape)
+        else:
+            v1_shape = (weights.shape[0],)
+            # weight_exp shifted 8 bits for the weights, 6 for the v1 output.
+            self.weights_T = Dense(weights=-weights.T, num_message_bits=24,
+                                   weight_exp=weights_exp)
+
+            self.weights = Dense(weights=(weights * T), num_message_bits=24,
+                                 weight_exp=weights_exp + T_exp)
+
+
+        self.v1 = V1Neuron(shape=v1_shape, tau=T, tau_exp=T_exp,
                            vth=threshold, two_layer=True)
-        # weight_exp shifted 8 bits for the weights, 6 for the v1 output.
-        self.weights_T = Dense(weights=-weights.T, num_message_bits=24,
-                               weight_exp=weights_exp)
 
-        self.res = ResidualNeuron(shape=(weights.shape[1],),
+        self.res = ResidualNeuron(shape=input_val.shape,
                                   spike_height=spike_height, bias=input_val)
 
-        self.weights = Dense(weights=(weights * T), num_message_bits=24,
-                             weight_exp=weights_exp + T_exp)
 
         self.weights.a_out.connect(self.v1.a_in)
         self.res.s_out.connect(self.weights.s_in)
